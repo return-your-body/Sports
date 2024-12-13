@@ -80,6 +80,4 @@ if ($row = mysqli_fetch_assoc($ret)) {
     exit;
 }
 
-// 關閉資料庫連接
-mysqli_close($link);
 ?>
