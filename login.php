@@ -55,7 +55,7 @@ if ($row = mysqli_fetch_assoc($ret)) {
             header("Location: user/u_index.html?帳號=$帳號"); // 使用者頁面
             break;
         case "2":
-            header("Location: doctor/d_index.html?帳號=$帳號"); // 醫生頁面
+            header("Location: doctor/d_index.php?帳號=$帳號"); // 醫生頁面
             break;
         case "3":
             header("Location: helper/h_index.html?帳號=$帳號"); // 助手頁面
