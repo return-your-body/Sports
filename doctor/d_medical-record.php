@@ -224,8 +224,7 @@
                 <th style='border: 1px solid black; padding: 8px;'>病人姓名</th>
                 <th style='border: 1px solid black; padding: 8px;'>性別</th>
                 <th style='border: 1px solid black; padding: 8px;'>聯絡電話</th>
-                <th style='border: 1px solid black; padding: 8px;'>醫生姓名</th>
-                <th style='border: 1px solid black; padding: 8px;'>專科</th>
+                <th style='border: 1px solid black; padding: 8px;'>醫生</th>
                 <th style='border: 1px solid black; padding: 8px;'>看診日期</th>
                 <th style='border: 1px solid black; padding: 8px;'>看診時間</th>
                 <th style='border: 1px solid black; padding: 8px;'>診斷結果</th>
@@ -238,7 +237,6 @@
                 <td style='border: 1px solid black; padding: 8px;'>{$row['patient_gender']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['patient_phone']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['doctor_name']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['doctor_specialty']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['consultation_date']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['consultation_time']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['diagnosis']}</td>
