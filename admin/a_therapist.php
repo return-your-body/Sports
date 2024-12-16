@@ -1,3 +1,16 @@
+<?php
+session_start();
+// 引入資料庫連接檔案
+require '../db.php';
+
+// SQL 查詢
+$query = "SELECT doctor_id, doctor FROM doctor";
+$result = mysqli_query($link, $query);
+
+if (!$result) {
+  die("查詢失敗：" . mysqli_error($link));
+}
+?>
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
 
@@ -195,6 +208,17 @@
       <select id="year"></select>
       <label for="month">選擇月份：</label>
       <select id="month"></select>
+      <label for="the">選擇治療師：</label>
+      <select id="the" name="doctor">
+        <option value="">所有</option> <!-- 修改這一行 -->
+        <?php
+        // 從資料庫中讀取資料並顯示在下拉選單中
+        while ($row = mysqli_fetch_assoc($result)) {
+          echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
+        }
+        ?>
+      </select>
+
     </div>
     <table class="table-custom table-color-header table-custom-bordered">
       <thead>
