@@ -256,20 +256,53 @@
               <input type="date" id="date" name="date" required min="<?php echo date('Y-m-d'); ?>" title="請選擇有效的日期">
 
               <!-- 預約時間 -->
+              <!-- <label for="time">預約時間：</label>
+              <input type="time" id="time" name="time" required title="請選擇有效的時間"> -->
+            
+              <?php
+              session_start(); // 啟用 Session
+              include "../db.php"; // 引入資料庫連線
+              
+              // 從 shifttime 資料表中查詢所有時間
+              $query = "SELECT shifttime_id, shifttime FROM shifttime";
+              $result = mysqli_query($link, $query);
+
+              if (!$result) {
+                die("SQL 錯誤: " . mysqli_error($link));
+              }
+              ?>
+
+              <!-- 預約時間下拉選單 -->
               <label for="time">預約時間：</label>
-              <input type="time" id="time" name="time" required title="請選擇有效的時間">
+              <select id="time" name="time" required title="請選擇有效的時間">
+                <option value="">請選擇時間</option>
+                <?php
+                // 將資料表中的時間填入下拉選單
+                while ($row = mysqli_fetch_assoc($result)) {
+                  echo "<option value='" . $row['shifttime'] . "'>" . htmlspecialchars($row['shifttime']) . "</option>";
+                }
+                ?>
+              </select>
+
 
               <!-- 醫生姓名 -->
               <!-- <label for="doctor">醫生姓名：</label>
               <input type="doctor" id="doctor" name="doctor"> -->
               <?php
               session_start(); // 啟用 Session
+              include "../db.php"; // 引入資料庫連線
               
-              include "db.php"; // 引入資料庫連線
-              
-              // 查詢所有醫生姓名 (grade_id = 2 為醫生)
-              $query = "SELECT user_id, account FROM user WHERE grade_id = 2";
+              // 查詢所有醫生姓名 (從 doctor 表)
+              $query = "SELECT doctor.doctor_id, doctor.doctor 
+          FROM doctor
+          INNER JOIN user ON doctor.user_id = user.user_id
+          WHERE user.grade_id = 2";
+
               $result = mysqli_query($link, $query);
+
+              if (!$result) {
+                die("SQL 錯誤: " . mysqli_error($link));
+              }
               ?>
 
               <!-- 醫生姓名下拉選單 -->
@@ -277,16 +310,14 @@
               <select id="doctor" name="doctor">
                 <option value="">請選擇醫生</option>
                 <?php
-                // 將查詢結果放入下拉選單
                 while ($row = mysqli_fetch_assoc($result)) {
-                  echo "<option value='" . $row['user_id'] . "'>" . htmlspecialchars($row['account']) . "</option>";
+                  echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
                 }
                 ?>
               </select>
 
               <?php
-              // 關閉資料庫連接
-              mysqli_close($link);
+              mysqli_close($link); // 關閉資料庫連接
               ?>
 
               <!-- 備註 -->
