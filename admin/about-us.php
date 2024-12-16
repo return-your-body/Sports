@@ -28,43 +28,53 @@
     </div>
     <!-- Page-->
     <div class="page">
-      <header class="section page-header">
-        <!-- RD Navbar-->
-        <div class="rd-navbar-wrap rd-navbar-centered">
-          <nav class="rd-navbar" data-layout="rd-navbar-fixed" data-sm-layout="rd-navbar-fixed" data-md-layout="rd-navbar-fixed" data-lg-layout="rd-navbar-fixed" data-xl-layout="rd-navbar-static" data-xxl-layout="rd-navbar-static" data-xxxl-layout="rd-navbar-static" data-lg-device-layout="rd-navbar-fixed" data-xl-device-layout="rd-navbar-static" data-xxl-device-layout="rd-navbar-static" data-xxxl-device-layout="rd-navbar-static" data-stick-up-offset="1px" data-sm-stick-up-offset="1px" data-md-stick-up-offset="1px" data-lg-stick-up-offset="1px" data-xl-stick-up-offset="1px" data-xxl-stick-up-offset="1px" data-xxx-lstick-up-offset="1px" data-stick-up="true">
-            <div class="rd-navbar-inner">
-              <!-- RD Navbar Panel-->
-              <div class="rd-navbar-panel">
-                <!-- RD Navbar Toggle-->
-                <button class="rd-navbar-toggle" data-rd-navbar-toggle=".rd-navbar-nav-wrap"><span></span></button>
-                <!-- RD Navbar Brand-->
-                <div class="rd-navbar-brand">
-                  <!--Brand--><a class="brand-name" href="index.html"><img class="logo-default" src="images/logo-default-172x36.png" alt="" width="86" height="18" loading="lazy"/><img class="logo-inverse" src="images/logo-inverse-172x36.png" alt="" width="86" height="18" loading="lazy"/></a>
-                </div>
+    <header class="section page-header">
+      <!-- RD Navbar-->
+      <div class="rd-navbar-wrap rd-navbar-centered">
+        <nav class="rd-navbar" data-layout="rd-navbar-fixed" data-sm-layout="rd-navbar-fixed"
+          data-md-layout="rd-navbar-fixed" data-lg-layout="rd-navbar-fixed" data-xl-layout="rd-navbar-static"
+          data-xxl-layout="rd-navbar-static" data-xxxl-layout="rd-navbar-static" data-lg-device-layout="rd-navbar-fixed"
+          data-xl-device-layout="rd-navbar-static" data-xxl-device-layout="rd-navbar-static"
+          data-xxxl-device-layout="rd-navbar-static" data-stick-up-offset="1px" data-sm-stick-up-offset="1px"
+          data-md-stick-up-offset="1px" data-lg-stick-up-offset="1px" data-xl-stick-up-offset="1px"
+          data-xxl-stick-up-offset="1px" data-xxx-lstick-up-offset="1px" data-stick-up="true">
+          <div class="rd-navbar-inner">
+            <!-- RD Navbar Panel-->
+            <div class="rd-navbar-panel">
+              <!-- RD Navbar Toggle-->
+              <button class="rd-navbar-toggle" data-rd-navbar-toggle=".rd-navbar-nav-wrap"><span></span></button>
+              <!-- RD Navbar Brand-->
+              <div class="rd-navbar-brand">
+                <!--Brand--><a class="brand-name" href="index.php"><img class="logo-default"
+                    src="images/logo-default-172x36.png" alt="" width="86" height="18" loading="lazy" /><img
+                    class="logo-inverse" src="images/logo-inverse-172x36.png" alt="" width="86" height="18"
+                    loading="lazy" /></a>
               </div>
-              <div class="rd-navbar-nav-wrap">
-                <ul class="rd-navbar-nav">
-                  <li class="rd-nav-item"><a class="rd-nav-link" href="index.html">Home</a>
-                  </li>
-                  <li class="rd-nav-item active"><a class="rd-nav-link" href="about-us.html">About us</a>
-                  </li>
-                  <li class="rd-nav-item"><a class="rd-nav-link" href="teachers.html">Teachers</a>
-                    <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-teacher.html">Single teacher</a>
-                      </li>
-                    </ul>
-                  </li>
-                  <li class="rd-nav-item"><a class="rd-nav-link" href="courses.html">Courses</a>
-                    <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.html">Single course</a>
-                      </li>
-                    </ul>
-                  </li>
-                  <li class="rd-nav-item"><a class="rd-nav-link" href="#">Pages</a>
-                    <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="faqs.html">FAQs</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="privacy-policy.html">Privacy policy</a>
+            </div>
+            <div class="rd-navbar-nav-wrap">
+              <ul class="rd-navbar-nav">
+                <li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
+                </li>
+                <li class="rd-nav-item active"><a class="rd-nav-link" href="about-us.php">治療師時間表</a>
+                </li>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="teachers.php">新增診療項目</a>
+                  <ul class="rd-menu rd-navbar-dropdown">
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-teacher.php">Single
+                        teacher</a>
+                    </li>
+                  </ul>
+                </li>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="courses.php">病患資料</a>
+                  <ul class="rd-menu rd-navbar-dropdown">
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.php">黑名單</a>
+                    </li>
+                  </ul>
+                </li>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="#">Pages</a>
+                  <ul class="rd-menu rd-navbar-dropdown">
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="faqs.php">登出</a>
+                    </li>
+                    <!-- <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="privacy-policy.html">Privacy policy</a>
                       </li>
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="404-page.html">404 page</a>
                       </li>
@@ -79,28 +89,28 @@
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="tables.html">Tables</a>
                       </li>
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="typography.html">Typography</a>
-                      </li>
-                    </ul>
-                  </li>
-                  <li class="rd-nav-item"><a class="rd-nav-link" href="contacts.html">Contacts</a>
-                  </li>
+                      </li> -->
+                  </ul>
+                </li>
+                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="contacts.html">Contacts</a>
+                  </li> -->
+              </ul>
+            </div>
+            <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span></div>
+            <div class="rd-navbar-aside-right rd-navbar-collapse">
+              <div class="rd-navbar-social">
+                <div class="rd-navbar-social-text">Follow us</div>
+                <ul class="list-inline">
+                  <li><a class="icon novi-icon icon-default icon-custom-facebook" href="#"></a></li>
+                  <!-- <li><a class="icon novi-icon icon-default icon-custom-linkedin" href="#"></a></li> -->
+                  <li><a class="icon novi-icon icon-default icon-custom-instagram" href="#"></a></li>
                 </ul>
               </div>
-              <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span></div>
-              <div class="rd-navbar-aside-right rd-navbar-collapse">
-                <div class="rd-navbar-social">
-                  <div class="rd-navbar-social-text">Follow us</div>
-                  <ul class="list-inline">
-                    <li><a class="icon novi-icon icon-default icon-custom-facebook" href="#"></a></li>
-                    <li><a class="icon novi-icon icon-default icon-custom-linkedin" href="#"></a></li>
-                    <li><a class="icon novi-icon icon-default icon-custom-instagram" href="#"></a></li>
-                  </ul>
-                </div>
-              </div>
             </div>
-          </nav>
-        </div>
-      </header>
+          </div>
+        </nav>
+      </div>
+    </header>
       <!-- Page Header-->
       <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
         <!-- Breadcrumbs-->
@@ -109,7 +119,7 @@
             <p class="breadcrumbs-custom-subtitle">Who We Are</p>
             <p class="heading-1 breadcrumbs-custom-title">About us</p>
             <ul class="breadcrumbs-custom-path">
-              <li><a href="index.html">Home</a></li>
+              <li><a href="index.php">Home</a></li>
               <li class="active">About us</li>
             </ul>
           </div>
@@ -257,7 +267,7 @@
                 <div class="box-project-media"><img class="box-project-img" src="images/home-04-360x345.jpg" alt="" width="360" height="345" loading="lazy"/>
                 </div>
                 <div class="box-project-subtitle small">Business</div>
-                <h6 class="box-project-title"><a href="single-course.html">Development of your business skills</a></h6>
+                <h6 class="box-project-title"><a href="single-course.php">Development of your business skills</a></h6>
                 <div class="box-project-meta">
                   <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-clock3"></span><span class="box-project-meta-text">23 hours</span></div>
                   <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-credit-card"></span><span class="box-project-meta-text">$165</span></div>
@@ -269,7 +279,7 @@
                 <div class="box-project-media"><img class="box-project-img" src="images/home-05-360x345.jpg" alt="" width="360" height="345" loading="lazy"/>
                 </div>
                 <div class="box-project-subtitle small">PROGRAMMING</div>
-                <h6 class="box-project-title"><a href="single-course.html">Python programming</a></h6>
+                <h6 class="box-project-title"><a href="single-course.php">Python programming</a></h6>
                 <div class="box-project-meta">
                   <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-clock3"></span><span class="box-project-meta-text">46 hours</span></div>
                   <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-credit-card"></span><span class="box-project-meta-text">$290</span></div>
@@ -281,7 +291,7 @@
                 <div class="box-project-media"><img class="box-project-img" src="images/home-06-360x345.jpg" alt="" width="360" height="345" loading="lazy"/>
                 </div>
                 <div class="box-project-subtitle small">Programming</div>
-                <h6 class="box-project-title"><a href="single-course.html">Data structures and algorithms</a></h6>
+                <h6 class="box-project-title"><a href="single-course.php">Data structures and algorithms</a></h6>
                 <div class="box-project-meta">
                   <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-clock3"></span><span class="box-project-meta-text">18 hours</span></div>
                   <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-credit-card"></span><span class="box-project-meta-text">$120</span></div>
@@ -293,7 +303,7 @@
                 <div class="box-project-media"><img class="box-project-img" src="images/home-07-360x345.jpg" alt="" width="360" height="345" loading="lazy"/>
                 </div>
                 <div class="box-project-subtitle small">ARCHITECTURE, ART &amp; DESIGN</div>
-                <h6 class="box-project-title"><a href="single-course.html">Global housing design</a></h6>
+                <h6 class="box-project-title"><a href="single-course.php">Global housing design</a></h6>
                 <div class="box-project-meta">
                   <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-clock3"></span><span class="box-project-meta-text">34 hours</span></div>
                   <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-credit-card"></span><span class="box-project-meta-text">$195</span></div>
@@ -305,7 +315,7 @@
                 <div class="box-project-media"><img class="box-project-img" src="images/home-08-360x345.jpg" alt="" width="360" height="345" loading="lazy"/>
                 </div>
                 <div class="box-project-subtitle small">Business</div>
-                <h6 class="box-project-title"><a href="single-course.html">IT fundamentals for business</a></h6>
+                <h6 class="box-project-title"><a href="single-course.php">IT fundamentals for business</a></h6>
                 <div class="box-project-meta">
                   <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-clock3"></span><span class="box-project-meta-text">8 hours</span></div>
                   <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-credit-card"></span><span class="box-project-meta-text">$75</span></div>
@@ -317,14 +327,14 @@
                 <div class="box-project-media"><img class="box-project-img" src="images/home-09-360x345.jpg" alt="" width="360" height="345" loading="lazy"/>
                 </div>
                 <div class="box-project-subtitle small">Marketing</div>
-                <h6 class="box-project-title"><a href="single-course.html">Online marketing: SEO and SMM</a></h6>
+                <h6 class="box-project-title"><a href="single-course.php">Online marketing: SEO and SMM</a></h6>
                 <div class="box-project-meta">
                   <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-clock3"></span><span class="box-project-meta-text">43 hours</span></div>
                   <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-credit-card"></span><span class="box-project-meta-text">$145</span></div>
                 </div>
               </div>
             </div>
-            <div class="col-12 text-center mt-2 mt-xl-4"><a class="button button-primary button-nina" href="courses.html">All courses</a></div>
+            <div class="col-12 text-center mt-2 mt-xl-4"><a class="button button-primary button-nina" href="courses.php">All courses</a></div>
           </div>
         </div>
       </section>
@@ -338,7 +348,7 @@
                   <h3 class="box-cta-title"><span class="box-cta-icon icon-custom-briefcase"></span><span>Free courses</span></h3>
                   <p>Free courses contain industry-relevant content and practical tasks and projects.</p>
                 </div>
-                <div class="box-cta-inner"><a class="button button-dark button-nina" href="contacts.html">Contact us</a></div>
+                <div class="box-cta-inner"><a class="button button-dark button-nina" href="contacts.php">Contact us</a></div>
               </div>
             </div>
           </div>
@@ -355,11 +365,11 @@
             <div class="col-md-3">
               <h4>Quick links</h4>
               <ul class="list-marked">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="courses.html">Courses</a></li>
-                <li><a href="about-us.html">About us</a></li>
+                <li><a href="index.php">Home</a></li>
+                <li><a href="courses.php">Courses</a></li>
+                <li><a href="about-us.php">About us</a></li>
                 <li><a href="#">Blog</a></li>
-                <li><a href="contacts.html">Contacts</a></li>
+                <li><a href="contacts.php">Contacts</a></li>
                 <li><a href="#">Become a teacher</a></li>
               </ul>
             </div>
@@ -375,7 +385,7 @@
               </form>
             </div>
           </div>
-          <p class="rights"><span>&copy;&nbsp;</span><span class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank" href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p>
+          <p class="rights"><span>&copy;&nbsp;</span><span class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights Reserved.&nbsp;</span><a href="privacy-policy.php">Privacy Policy</a> <a target="_blank" href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p>
         </div>
       </footer>
     </div>
