@@ -168,102 +168,106 @@
         <dl class="list-terms">
 
           <?php
-          session_start(); // 啟用 Session
-          
-          include "db.php"; // 引入資料庫連線
+          session_start();
+          include "../db.php"; // 引入資料庫連線
           
           // 分頁設定
-          $records_per_page = 10; // 每頁顯示的記錄數量
-          $page = isset($_GET['page']) ? (int) $_GET['page'] : 1; // 當前頁數，預設為第 1 頁
+          $records_per_page = 10;
+          $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
           if ($page < 1)
             $page = 1;
 
-          // 計算總記錄數和總頁數
+          // 計算總記錄數
           $count_sql = "SELECT COUNT(*) AS total FROM appointment";
           $count_result = mysqli_query($link, $count_sql);
           $count_row = mysqli_fetch_assoc($count_result);
-          $total_records = $count_row['total']; // 總記錄數
-          $total_pages = ceil($total_records / $records_per_page); // 總頁數
-          
-          // 計算當前頁的起始記錄
+          $total_records = $count_row['total'];
+          $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
+
+          // 計算起始記錄
           $offset = ($page - 1) * $records_per_page;
 
-          // 查詢當前頁的資料（關聯 people 表與 appointment 表）
+          // 查詢關聯資料
           $sql = "SELECT 
-            a.appointment_id AS id, 
-            p.name AS name, 
-            p.gender AS gender, 
-            p.birthday AS birthday, 
-            a.appointment_date, 
-            a.appointment_time, 
-            a.note, 
-            a.created_at 
-        FROM 
-            appointment a
-        JOIN 
-            people p ON a.people_id = p.people_id
-        ORDER BY 
-            a.appointment_date, a.appointment_time
-        LIMIT $offset, $records_per_page";
+          a.appointment_id AS id, 
+          COALESCE(p.name, 'N/A') AS name, 
+          CASE 
+              WHEN p.gender_id = 1 THEN '男'
+              WHEN p.gender_id = 2 THEN '女'
+              ELSE 'N/A'
+          END AS gender,
+          COALESCE(p.birthday, 'N/A') AS birthday, 
+          a.appointment_date, 
+          COALESCE(st.shifttime, 'N/A') AS shifttime, 
+          COALESCE(d.doctor, 'N/A') AS doctor_name, 
+          COALESCE(a.note, 'N/A') AS note, 
+          a.created_at 
+      FROM 
+          appointment a
+      LEFT JOIN 
+          people p ON a.people_id = p.people_id
+      LEFT JOIN 
+          doctor d ON a.doctor_id = d.doctor_id
+      LEFT JOIN 
+          shifttime st ON a.shifttime_id = st.shifttime_id
+      ORDER BY 
+          a.appointment_date, st.shifttime
+      LIMIT $offset, $records_per_page";
 
           $result = mysqli_query($link, $sql);
 
           // 顯示表格
-          echo "<h1 style='text-align: center;'>預約紀錄</h1>";
-          // if (mysqli_num_rows($result) > 0) {
+          echo "<h3 style='text-align: center;'>預約紀錄</h3>";
           echo "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>
-            <tr style='background-color: #f2f2f2;'>
-                <th style='border: 1px solid black; padding: 8px;'>編號</th>
-                <th style='border: 1px solid black; padding: 8px;'>姓名</th>
-                <th style='border: 1px solid black; padding: 8px;'>性別</th>
-                <th style='border: 1px solid black; padding: 8px;'>生日</th>
-                <th style='border: 1px solid black; padding: 8px;'>預約日期</th>
-                <th style='border: 1px solid black; padding: 8px;'>預約時間</th>
-                <th style='border: 1px solid black; padding: 8px;'>醫生</th>
-                <th style='border: 1px solid black; padding: 8px;'>備註</th>
-                <th style='border: 1px solid black; padding: 8px;'>建立時間</th>
+        <tr style='background-color: #f2f2f2;'>
+            <th>編號</th>
+            <th>姓名</th>
+            <th>性別</th>
+            <th>生日</th>
+            <th>預約日期</th>
+            <th>預約時間</th>
+            <th>醫生</th>
+            <th>備註</th>
+            <th>建立時間</th>
+        </tr>";
+
+          // 判斷是否有資料
+          if (mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+              echo "<tr>
+                <td>{$row['id']}</td>
+                <td>{$row['name']}</td>
+                <td>{$row['gender']}</td>
+                <td>{$row['birthday']}</td>
+                <td>{$row['appointment_date']}</td>
+                <td>{$row['shifttime']}</td>
+                <td>{$row['doctor_name']}</td>
+                <td>{$row['note']}</td>
+                <td>{$row['created_at']}</td>
             </tr>";
-          while ($row = mysqli_fetch_assoc($result)) {
-            echo "<tr>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['id']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['name']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['gender']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['birthday']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['appointment_date']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['appointment_time']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['doctor']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['note']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['created_at']}</td>
-            </tr>";
+            }
+          } else {
+            // 如果沒有資料，顯示「目前無資料」
+            echo "<tr><td colspan='9' style='text-align: center;'>目前無資料</td></tr>";
           }
           echo "</table>";
 
-          // 顯示頁碼和總頁數
-          echo "<div style='margin-top: 20px; text-align: center;'>";
+          // 頁碼控制
+          echo "<div style='text-align: center; margin-top: 20px;'>";
           echo "<p>第 $page 頁，共 $total_pages 頁</p>";
 
-          // 顯示頁碼連結
-          if ($page > 1) {
-            echo "<a href='?page=" . ($page - 1) . "' style='margin-right: 10px;'>上一頁</a>";
-          }
+          if ($page > 1)
+            echo "<a href='?page=" . ($page - 1) . "'>上一頁</a> ";
           for ($i = 1; $i <= $total_pages; $i++) {
-            if ($i == $page) {
-              echo "<strong>$i</strong> ";
-            } else {
-              echo "<a href='?page=$i'>$i</a> ";
-            }
+            echo ($i == $page) ? "<strong>$i</strong> " : "<a href='?page=$i'>$i</a> ";
           }
-          if ($page < $total_pages) {
-            echo "<a href='?page=" . ($page + 1) . "' style='margin-left: 10px;'>下一頁</a>";
-          }
+          if ($page < $total_pages)
+            echo "<a href='?page=" . ($page + 1) . "'>下一頁</a>";
           echo "</div>";
-          // } else {
-          //   echo "<p style='text-align: center;'>目前沒有預約紀錄。</p>";
-          // }
-          
-          // 關閉資料庫連線
+
           mysqli_close($link);
           ?>
+
       </div>
     </section>
     <!--預約紀錄-->

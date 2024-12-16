@@ -1,90 +1,61 @@
 <?php
-session_start();
-include "db.php";
+session_start(); // 啟用 Session
+include "../db.php"; // 引入資料庫連線
 
-// 接收並驗證表單資料
-$name = trim($_POST['name']);
-$gender = trim($_POST['gender']);
-$phone = trim($_POST['phone']);
-$date = trim($_POST['date']);
-$time = trim($_POST['time']);
-$note = trim($_POST['note']);
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // 接收表單資料
+    $name = mysqli_real_escape_string($link, $_POST['name']);        // 預約者姓名
+    $date = mysqli_real_escape_string($link, $_POST['date']);        // 預約日期
+    $time = mysqli_real_escape_string($link, $_POST['time']);        // 預約時間
+    $doctor_id = mysqli_real_escape_string($link, $_POST['doctor']); // 醫生 ID
+    $note = mysqli_real_escape_string($link, $_POST['note']);        // 備註
 
+    // 驗證必填欄位
+    if (empty($name) || empty($date) || empty($time) || empty($doctor_id)) {
+        echo "<p>所有欄位均為必填，請返回重新輸入。</p>";
+        exit;
+    }
 
-// 防呆驗證
-if (empty($name) || empty($gender) || empty($phone) || empty($appointment_date) || empty($appointment_time)) {
-    echo "<script>
-            alert('所有欄位都必須填寫！');
-            window.location.href = 'd_appointment.php';
-          </script>";
-    exit;
-}
+    // 查詢對應的時間 ID（shifttime 表）
+    $time_query = "SELECT shifttime_id FROM shifttime WHERE shifttime = '$time'";
+    $time_result = mysqli_query($link, $time_query);
+    if (!$time_result || mysqli_num_rows($time_result) == 0) {
+        echo "<p>預約時間無效，請返回重新選擇。</p>";
+        exit;
+    }
+    $time_row = mysqli_fetch_assoc($time_result);
+    $shifttime_id = $time_row['shifttime_id'];
 
-if (!preg_match("/^[a-zA-Z0-9\u4e00-\u9fa5]+$/u", $name)) {
-    die("姓名格式錯誤，請重新輸入。");
-}
+    // 查詢對應的病人 ID（people 表）
+    $check_patient_query = "SELECT people_id FROM people WHERE name = '$name'";
+    $patient_result = mysqli_query($link, $check_patient_query);
 
-$gender = ['male', 'female', 'other'];
-if (!in_array($gender, $gender)) {
-    die("性別選擇錯誤，請重新選擇。");
-}
+    if (!$patient_result || mysqli_num_rows($patient_result) == 0) {
+        // 如果病人不存在，新增到 people 表
+        $insert_patient_query = "INSERT INTO people (name) VALUES ('$name')";
+        if (!mysqli_query($link, $insert_patient_query)) {
+            die("新增病人失敗: " . mysqli_error($link));
+        }
+        $people_id = mysqli_insert_id($link); // 取得新插入的 people_id
+    } else {
+        $patient_row = mysqli_fetch_assoc($patient_result);
+        $people_id = $patient_row['people_id'];
+    }
 
-if (!preg_match("/^09\d{2}(?!\d\1{7})\d{6}$/", $phone)) {
-    die("電話格式錯誤，請重新輸入。");
-}
-if (!strtotime($date)) {
-    die("日期格式錯誤，請重新選擇。");
-}
-if (!preg_match("/^(?:[01]\d|2[0-3]):[0-5]\d$/", $time)) {
-    die("時間格式錯誤，請重新選擇。");
-}
-if (strlen($note) > 200) {
-    die("備註內容過長，請重新輸入。");
-}
+    // 寫入 appointment 表
+    $insert_query = "INSERT INTO appointment (people_id, appointment_date, shifttime_id, doctor_id, note) 
+                     VALUES ('$people_id', '$date', '$shifttime_id', '$doctor_id', '$note')";
 
+    if (mysqli_query($link, $insert_query)) {
+        echo "<p>預約成功！</p>";
+        echo "<a href='appointment_form.php'>返回預約表單</a>";
+    } else {
+        echo "資料寫入失敗: " . mysqli_error($link);
+    }
 
-// 搜尋是否已有相同的姓名、性別和電話
-$search_sql = "SELECT people_id FROM people 
-               WHERE name = '$name' 
-               AND gender_id = (SELECT gender_id FROM gender WHERE gender = '$gender') 
-               AND phone = '$phone'";
-
-$result = mysqli_query($link, $search_sql);
-
-if ($result && mysqli_num_rows($result) > 0) {
-    // 若找到符合條件的使用者，取出 people_id
-    $row = mysqli_fetch_assoc($result);
-    $people_id = $row['people_id'];
-} 
-// else {
-//     // 若未找到，插入新的使用者資料到 people 表
-//     $insert_people_sql = "INSERT INTO people (name, gender_id, phone) 
-//                           VALUES ('$name', (SELECT gender_id FROM gender WHERE gender = '$gender'), '$phone')";
-//     if (mysqli_query($link, $insert_people_sql)) {
-//         $people_id = mysqli_insert_id($link); // 取得插入後的 people_id
-//     } else {
-//         echo "<script>
-//                 alert('新增使用者資料失敗，請稍後再試！');
-//                 window.location.href = 'appointment.php';
-//               </script>" . mysqli_error($link);
-//         exit;
-//     }
-// }
-
-// 插入預約資料到 appointment 表
-$appointment_sql = "INSERT INTO appointment (people_id, appointment_date, appointment_time, note) 
-                    VALUES ('$people_id', '$appointment_date', '$appointment_time', '$note')";
-
-if (mysqli_query($link, $appointment_sql)) {
-    echo "<script>
-            alert('預約成功！請依預約時間前來！');
-            window.location.href = 'd_appointment.php';
-          </script>";
+    // 關閉資料庫連線
+    mysqli_close($link);
 } else {
-    echo "<script>
-            alert('預約失敗，請稍後再試！');
-            window.location.href = 'd_appointment.php';
-          </script>" . mysqli_error($link);
+    echo "非法存取！";
 }
-
 ?>

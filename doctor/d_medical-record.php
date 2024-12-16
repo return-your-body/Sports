@@ -172,84 +172,98 @@
 
               <?php
               session_start(); // 啟用 Session
-              
-              include "db.php"; // 引入資料庫連線
+              include "../db.php"; // 引入資料庫連線
               
               // 分頁設定
-              $records_per_page = 10; // 每頁顯示的記錄數量
-              $page = isset($_GET['page']) ? (int) $_GET['page'] : 1; // 當前頁數，預設為第 1 頁
+              $records_per_page = 10;
+              $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
               if ($page < 1)
                 $page = 1;
 
-              // 計算總記錄數和總頁數
-              $count_sql = "SELECT COUNT(*) AS total FROM consultation";
+              $count_sql = "SELECT COUNT(*) AS total FROM medicalrecord";
               $count_result = mysqli_query($link, $count_sql);
               $count_row = mysqli_fetch_assoc($count_result);
-              $total_records = $count_row['total']; // 總記錄數
-              $total_pages = ceil($total_records / $records_per_page); // 總頁數
-              
-              // 計算當前頁的起始記錄
+              $total_records = $count_row['total'];
+              $total_pages = ceil($total_records / $records_per_page);
+
               $offset = ($page - 1) * $records_per_page;
 
-              // 查詢當前頁的看診紀錄（關聯 people 和 doctors 表）
               $sql = "SELECT 
-            c.consultation_id AS id, 
-            p.name AS patient_name, 
-            p.gender AS patient_gender, 
-            p.phone AS patient_phone, 
-            d.name AS doctor_name, 
-            d.specialty AS doctor_specialty, 
-            c.date AS consultation_date, 
-            c.time AS consultation_time, 
-            c.diagnosis, 
-            c.created_at 
+            m.medicalrecord_id AS id, 
+            COALESCE(p.name, 'N/A') AS patient_name,
+            CASE 
+                WHEN p.gender_id = 1 THEN '男'
+                WHEN p.gender_id = 2 THEN '女'
+                ELSE 'N/A'
+            END AS patient_gender,
+            COALESCE(p.birthday, 'N/A') AS patient_birthday,
+            COALESCE(d.doctor, 'N/A') AS doctor_name,
+            COALESCE(a.appointment_date, 'N/A') AS consultation_date,
+            COALESCE(st.shifttime, 'N/A') AS consultation_time,
+            COALESCE(i.item, 'N/A') AS diagnosis, 
+            COALESCE(i.price, 0) AS item_price,
+            COALESCE(i.price, 0) AS total_price, 
+            COALESCE(m.notes, 'N/A') AS notes,
+            m.created_at
         FROM 
-            consultation c
-        JOIN 
-            people p ON c.people_id = p.people_id
-        JOIN 
-            doctors d ON c.doctor_id = d.doctor_id
+            medicalrecord m
+        LEFT JOIN 
+            people p ON m.people_id = p.people_id
+        LEFT JOIN 
+            doctor d ON m.doctor_id = d.doctor_id
+        LEFT JOIN 
+            appointment a ON m.appointment_id = a.appointment_id
+        LEFT JOIN 
+            shifttime st ON a.shifttime_id = st.shifttime_id
+        LEFT JOIN 
+            item i ON m.item_id = i.item_id
         ORDER BY 
-            c.date DESC, c.time DESC
+            a.appointment_date DESC, st.shifttime DESC
         LIMIT $offset, $records_per_page";
 
               $result = mysqli_query($link, $sql);
 
-              // 顯示表格
-              echo "<h1 style='text-align: center;'>看診紀錄</h1>";
-              // if (mysqli_num_rows($result) > 0) {
-              echo "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>
-            <tr style='background-color: #f2f2f2;'>
-                <th style='border: 1px solid black; padding: 8px;'>編號</th>
-                <th style='border: 1px solid black; padding: 8px;'>病人姓名</th>
-                <th style='border: 1px solid black; padding: 8px;'>性別</th>
-                <th style='border: 1px solid black; padding: 8px;'>聯絡電話</th>
-                <th style='border: 1px solid black; padding: 8px;'>醫生</th>
-                <th style='border: 1px solid black; padding: 8px;'>看診日期</th>
-                <th style='border: 1px solid black; padding: 8px;'>看診時間</th>
-                <th style='border: 1px solid black; padding: 8px;'>診斷結果</th>
-                <th style='border: 1px solid black; padding: 8px;'>建立時間</th>
-            </tr>";
-              while ($row = mysqli_fetch_assoc($result)) {
-                echo "<tr>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['id']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['patient_name']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['patient_gender']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['patient_phone']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['doctor_name']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['consultation_date']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['consultation_time']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['diagnosis']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['created_at']}</td>
-            </tr>";
+              echo "<h3 style='text-align: center;'>看診紀錄</h3>";
+              if (mysqli_num_rows($result) > 0) {
+                echo "<table border='1' style='border-collapse: collapse; width: auto; margin-left: 0; text-align: center;'>
+                  <tr style='background-color: #f2f2f2; white-space: nowrap;'>
+                      <th style='padding: 8px;'>編號</th>
+                      <th style='padding: 8px;'>姓名</th>
+                      <th style='padding: 8px;'>性別</th>
+                      <th style='padding: 8px;'>生日</th>
+                      <th style='padding: 8px;'>醫生</th>
+                      <th style='padding: 8px;'>預約日期</th>
+                      <th style='padding: 8px;'>預約時間</th>
+                      <th style='padding: 8px;'>看診項目</th>
+                      <th style='padding: 8px;'>項目價格</th>
+                      <th style='padding: 8px;'>總計價格</th>
+                      <th style='padding: 8px;'>備註</th>
+                      <th style='padding: 8px;'>建立時間</th>
+                  </tr>";
+                while ($row = mysqli_fetch_assoc($result)) {
+                  echo "<tr style='white-space: nowrap;'>
+                      <td style='padding: 8px;'>{$row['id']}</td>
+                      <td style='padding: 8px;'>{$row['patient_name']}</td>
+                      <td style='padding: 8px;'>{$row['patient_gender']}</td>
+                      <td style='padding: 8px;'>{$row['patient_birthday']}</td>
+                      <td style='padding: 8px;'>{$row['doctor_name']}</td>
+                      <td style='padding: 8px;'>{$row['consultation_date']}</td>
+                      <td style='padding: 8px;'>{$row['consultation_time']}</td>
+                      <td style='padding: 8px;'>{$row['diagnosis']}</td>
+                      <td style='padding: 8px;'>{$row['item_price']}</td>
+                      <td style='padding: 8px;'>{$row['total_price']}</td>
+                      <td style='padding: 8px;'>{$row['notes']}</td>
+                      <td style='padding: 8px;'>{$row['created_at']}</td>
+                      </tr>";
+                }
+                echo "</table>";
+              } else {
+                echo "<p style='text-align: center;'>目前沒有看診紀錄。</p>";
               }
-              echo "</table>";
 
-              // 顯示頁碼和總頁數
+              // 分頁控制
               echo "<div style='margin-top: 20px; text-align: center;'>";
               echo "<p>第 $page 頁，共 $total_pages 頁</p>";
-
-              // 顯示頁碼連結
               if ($page > 1) {
                 echo "<a href='?page=" . ($page - 1) . "' style='margin-right: 10px;'>上一頁</a>";
               }
@@ -264,11 +278,7 @@
                 echo "<a href='?page=" . ($page + 1) . "' style='margin-left: 10px;'>下一頁</a>";
               }
               echo "</div>";
-              // } else {
-              //   echo "<p style='text-align: center;'>目前沒有看診紀錄。</p>";
-              // }
-              
-              // 關閉資料庫連線
+
               mysqli_close($link);
               ?>
 
