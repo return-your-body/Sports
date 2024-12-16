@@ -245,10 +245,10 @@
                 <option value="other">其他</option>
               </select>
 
-              <!-- 聯絡電話 -->
-              <label for="phone">聯絡電話：</label>
-              <input type="text" id="phone" name="phone" required pattern="09\d{2}(?!\d\1{7})\d{6}"
-                title="格式為 09 開頭，後接 8 位數字，不能全為相同數字">
+              <!-- 生日 -->
+              <label for="birthday">生日：</label>
+              <input type="date" id="birthday" name="birthday" required>
+
 
               <!-- 預約日期 -->
               <label for="date">預約日期：</label>

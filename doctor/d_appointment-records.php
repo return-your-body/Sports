@@ -169,7 +169,7 @@
 
           <?php
           session_start();
-          include "db.php"; // 引入資料庫連線
+          include "../db.php"; // 引入資料庫連線
           
           // 分頁設定
           $records_per_page = 10;
@@ -182,38 +182,42 @@
           $count_result = mysqli_query($link, $count_sql);
           $count_row = mysqli_fetch_assoc($count_result);
           $total_records = $count_row['total'];
-          $total_pages = ceil($total_records / $records_per_page);
+          $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
 
           // 計算起始記錄
           $offset = ($page - 1) * $records_per_page;
 
           // 查詢關聯資料
           $sql = "SELECT 
-            a.appointment_id AS id, 
-            p.name AS name, 
-            p.gender AS gender, 
-            p.birthday AS birthday, 
-            a.appointment_date, 
-            st.shifttime AS shifttime, 
-            d.doctor AS doctor_name, 
-            a.note, 
-            a.created_at 
-        FROM 
-            appointment a
-        JOIN 
-            people p ON a.people_id = p.people_id
-        JOIN 
-            doctor d ON a.doctor_id = d.doctor_id
-        JOIN 
-            shifttime st ON a.shifttime_id = st.shifttime_id
-        ORDER BY 
-            a.appointment_date, st.shifttime
-        LIMIT $offset, $records_per_page";
+          a.appointment_id AS id, 
+          COALESCE(p.name, 'N/A') AS name, 
+          CASE 
+              WHEN p.gender_id = 1 THEN '男'
+              WHEN p.gender_id = 2 THEN '女'
+              ELSE 'N/A'
+          END AS gender,
+          COALESCE(p.birthday, 'N/A') AS birthday, 
+          a.appointment_date, 
+          COALESCE(st.shifttime, 'N/A') AS shifttime, 
+          COALESCE(d.doctor, 'N/A') AS doctor_name, 
+          COALESCE(a.note, 'N/A') AS note, 
+          a.created_at 
+      FROM 
+          appointment a
+      LEFT JOIN 
+          people p ON a.people_id = p.people_id
+      LEFT JOIN 
+          doctor d ON a.doctor_id = d.doctor_id
+      LEFT JOIN 
+          shifttime st ON a.shifttime_id = st.shifttime_id
+      ORDER BY 
+          a.appointment_date, st.shifttime
+      LIMIT $offset, $records_per_page";
 
           $result = mysqli_query($link, $sql);
 
           // 顯示表格
-          echo "<h1 style='text-align: center;'>預約紀錄</h1>";
+          echo "<h3 style='text-align: center;'>預約紀錄</h3>";
           echo "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>
         <tr style='background-color: #f2f2f2;'>
             <th>編號</th>
@@ -221,24 +225,30 @@
             <th>性別</th>
             <th>生日</th>
             <th>預約日期</th>
-            <th>時間</th>
+            <th>預約時間</th>
             <th>醫生</th>
             <th>備註</th>
             <th>建立時間</th>
         </tr>";
 
-          while ($row = mysqli_fetch_assoc($result)) {
-            echo "<tr>
-            <td>{$row['id']}</td>
-            <td>{$row['name']}</td>
-            <td>{$row['gender']}</td>
-            <td>{$row['birthday']}</td>
-            <td>{$row['appointment_date']}</td>
-            <td>{$row['shifttime']}</td>
-            <td>{$row['doctor_name']}</td>
-            <td>{$row['note']}</td>
-            <td>{$row['created_at']}</td>
-        </tr>";
+          // 判斷是否有資料
+          if (mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+              echo "<tr>
+                <td>{$row['id']}</td>
+                <td>{$row['name']}</td>
+                <td>{$row['gender']}</td>
+                <td>{$row['birthday']}</td>
+                <td>{$row['appointment_date']}</td>
+                <td>{$row['shifttime']}</td>
+                <td>{$row['doctor_name']}</td>
+                <td>{$row['note']}</td>
+                <td>{$row['created_at']}</td>
+            </tr>";
+            }
+          } else {
+            // 如果沒有資料，顯示「目前無資料」
+            echo "<tr><td colspan='9' style='text-align: center;'>目前無資料</td></tr>";
           }
           echo "</table>";
 
