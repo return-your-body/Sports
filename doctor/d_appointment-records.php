@@ -219,7 +219,7 @@
                 <th style='border: 1px solid black; padding: 8px;'>生日</th>
                 <th style='border: 1px solid black; padding: 8px;'>預約日期</th>
                 <th style='border: 1px solid black; padding: 8px;'>預約時間</th>
-                <th style='border: 1px solid black; padding: 8px;'>醫生</th>
+               
                 <th style='border: 1px solid black; padding: 8px;'>備註</th>
                 <th style='border: 1px solid black; padding: 8px;'>建立時間</th>
             </tr>";
