@@ -12,7 +12,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // 驗證必填欄位
     if (empty($people_id) || empty($date) || empty($time) || empty($doctor_id)) {
-        die("所有欄位均為必填，請重新填寫！");
+        echo "<script>alert('所有欄位均為必填，請重新填寫！'); window.history.back();</script>";
+        exit;
     }
 
     // 獲取對應的 shifttime_id
@@ -21,7 +22,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($row = mysqli_fetch_assoc($result)) {
         $shifttime_id = $row['shifttime_id'];
     } else {
-        die("無效的預約時間，請重新選擇！");
+        echo "<script>alert('無效的預約時間，請重新選擇！'); window.history.back();</script>";
+        exit;
     }
 
     // 插入資料到 appointment 表
@@ -29,10 +31,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             VALUES ('$people_id', '$date', '$shifttime_id', '$doctor_id', '$note')";
 
     if (mysqli_query($link, $sql)) {
-        echo "<p style='text-align: center; color: green;'>預約成功！</p>";
-        echo "<a href='appointment_form.php'>返回預約表單</a>";
+        echo "<script>alert('預約成功！'); window.location.href='d_appointment.php';</script>";
     } else {
-        echo "錯誤：" . mysqli_error($link);
+        echo "<script>alert('發生錯誤：" . mysqli_error($link) . "'); window.history.back();</script>";
     }
 
     mysqli_close($link); // 關閉資料庫連接
