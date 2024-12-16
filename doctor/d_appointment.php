@@ -236,20 +236,6 @@
               <input type="text" id="name" name="name" required pattern="[a-zA-Z0-9\u4e00-\u9fa5]+"
                 title="姓名只能包含中文、英文或數字，請勿輸入特殊符號">
 
-              <!-- 預約者性別 -->
-              <label for="gender">性別：</label>
-              <select id="gender" name="gender" required>
-                <option value="">請選擇性別</option>
-                <option value="male">男</option>
-                <option value="female">女</option>
-                <option value="other">其他</option>
-              </select>
-
-              <!-- 生日 -->
-              <label for="birthday">生日：</label>
-              <input type="date" id="birthday" name="birthday" required>
-
-
               <!-- 預約日期 -->
               <label for="date">預約日期：</label>
               <input type="date" id="date" name="date" required min="<?php echo date('Y-m-d'); ?>" title="請選擇有效的日期">
