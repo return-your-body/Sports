@@ -219,7 +219,7 @@
                 <th style='border: 1px solid black; padding: 8px;'>生日</th>
                 <th style='border: 1px solid black; padding: 8px;'>預約日期</th>
                 <th style='border: 1px solid black; padding: 8px;'>預約時間</th>
-               
+                <th style='border: 1px solid black; padding: 8px;'>醫生</th>
                 <th style='border: 1px solid black; padding: 8px;'>備註</th>
                 <th style='border: 1px solid black; padding: 8px;'>建立時間</th>
             </tr>";
@@ -230,7 +230,7 @@
                 <td style='border: 1px solid black; padding: 8px;'>{$row['gender']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['birthday']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['appointment_date']}</td>
-             
+                <td style='border: 1px solid black; padding: 8px;'>{$row['appointment_time']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['doctor']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['note']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['created_at']}</td>
