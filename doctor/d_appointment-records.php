@@ -167,6 +167,7 @@
       <div class="container">
         <dl class="list-terms">
 
+        <div class="button button-icon button-icon-left button-xs button-primary button-nina"><span class="icon mdi mdi-magnify"></span>搜尋</div>
           <?php
           session_start();
           include "../db.php"; // 引入資料庫連線
