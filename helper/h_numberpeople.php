@@ -154,7 +154,7 @@
           <p class="heading-1 breadcrumbs-custom-title">當天人數及時段</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
-            <li class="active">當天人數/li>
+            <li class="active">當天人數及時段
           </ul>
         </div>
       </section>

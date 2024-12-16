@@ -172,6 +172,7 @@
               id="accordion1" role="tablist" aria-multiselectable="false">
               <dl class="list-terms">
 
+           
                 <style>
                   /* 通用樣式 */
                   /* body {
@@ -247,94 +248,27 @@
                   }
                 </style>
 
-                <?php
-                session_start();
-                include "../db.php"; // 引入資料庫連線
-                
-                // 確認 appointment_id 是否存在於 URL 中
-                if (!isset($_GET['appointment_id']) || empty($_GET['appointment_id'])) {
-                  die("<p>無效的預約單 ID，請返回重新選擇。</p>");
-                }
-
-                // 取得 appointment_id
-                $appointment_id = mysqli_real_escape_string($link, $_GET['appointment_id']);
-
-                // 查詢預約與相關的病人與治療項目資料
-                $sql = "SELECT 
-            p.name AS people_name, 
-            p.id_card AS people_idcard, 
-            a.appointment_date AS appointment_date,
-            d.doctor AS doctor_name,
-            i.item_name AS item,
-            i.item_price AS price
-        FROM 
-            appointment a
-        LEFT JOIN 
-            people p ON a.people_id = p.people_id
-        LEFT JOIN 
-            doctor d ON a.doctor_id = d.doctor_id
-        LEFT JOIN 
-            medicalrecord m ON a.appointment_id = m.appointment_id
-        LEFT JOIN 
-            item i ON m.item_id = i.item_id
-        WHERE 
-            a.appointment_id = '$appointment_id'";
-
-                $result = mysqli_query($link, $sql);
-
-                if (!$result || mysqli_num_rows($result) == 0) {
-                  die("<p>找不到對應的預約資料。</p>");
-                }
-
-                // 初始化變數
-                $people_name = '';
-                $people_idcard = '';
-                $appointment_date = '';
-                $doctor_name = '';
-                $items = [];
-
-                // 提取資料
-                while ($row = mysqli_fetch_assoc($result)) {
-                  $people_name = $row['people_name'];
-                  $people_idcard = $row['people_idcard'];
-                  $appointment_date = $row['appointment_date'];
-                  $doctor_name = $row['doctor_name'];
-                  $items[] = [
-                    'item' => $row['item'],
-                    'price' => $row['price']
-                  ];
-                }
-
-                // 計算總費用
-                $total_cost = array_sum(array_column($items, 'price'));
-
-                mysqli_close($link); // 關閉資料庫連線
-                ?>
-
-
-
                 <!-- 收據顯示區域 -->
                 <div id="print-area">
-                  <h1 style="text-align: center;">看診收據</h1>
-                  <p>姓名：<?php echo htmlspecialchars($people_name); ?></p>
-                  <p>病歷號：<?php echo htmlspecialchars($people_idcard); ?></p>
-                  <p>就診日期：<?php echo htmlspecialchars($appointment_date); ?></p>
-                  <p>治療師：<?php echo htmlspecialchars($doctor_name); ?></p>
-
-                  <table>
+                  <h1>看診收據</h1>
+                  <p>姓名：<?php echo $people_name; ?></p>
+                  <p>病歷號：<?php echo $people_idcard; ?></p>
+                  <p>就診日期：<?php echo $appointment_date; ?></p>
+                  <p>治療師：<?php echo $doctor_name; ?></p>
+                  <table style="border-collapse: collapse; width: 100%; text-align: center;">
                     <tr>
-                      <th>治療項目</th>
-                      <th>費用</th>
+                      <th style="border: 1px solid black;">治療項目</th>
+                      <th style="border: 1px solid black;">費用</th>
                     </tr>
                     <?php foreach ($items as $item): ?>
                       <tr>
-                        <td><?php echo htmlspecialchars($item['item']); ?></td>
-                        <td><?php echo htmlspecialchars($item['price']); ?></td>
+                        <td style="border: 1px solid black;"><?php echo $item['item']; ?></td>
+                        <td style="border: 1px solid black;"><?php echo $item['price']; ?></td>
                       </tr>
                     <?php endforeach; ?>
                     <tr>
-                      <td><strong>總費用</strong></td>
-                      <td><strong><?php echo htmlspecialchars($total_cost); ?></strong></td>
+                      <td style="border: 1px solid black;"><strong>總費用</strong></td>
+                      <td style="border: 1px solid black;"><strong><?php echo $total_cost; ?></strong></td>
                     </tr>
                   </table>
 
@@ -343,7 +277,7 @@
 
                 <!-- 列印按鈕 -->
                 <button onclick="window.print()">列印收據</button>
-                
+
                 <!-- <div class="accordion-custom-item accordion-custom-corporate">
                 <h4 class="accordion-custom-heading" id="accordion1-accordion-head-aogsrrgj">
                   <button class="accordion-custom-button" type="button" data-bs-toggle="collapse"
