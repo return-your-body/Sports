@@ -81,7 +81,7 @@
               <ul class="rd-navbar-nav">
                 <li class="rd-nav-item active"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="about-us.php">治療師時間表</a>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="a_therapist.php">治療師時間表</a>
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="teachers.php">新增診療項目</a>
                   <ul class="rd-menu rd-navbar-dropdown">
@@ -127,9 +127,9 @@
               <div class="rd-navbar-social">
                 <div class="rd-navbar-social-text">Follow us</div>
                 <ul class="list-inline">
-                  <li><a class="icon novi-icon icon-default icon-custom-facebook" href="#"></a></li>
+                  <li><a class="icon novi-icon icon-default icon-custom-facebook" href="https://www.facebook.com/ReTurnYourBody/"></a></li>
                   <!-- <li><a class="icon novi-icon icon-default icon-custom-linkedin" href="#"></a></li> -->
-                  <li><a class="icon novi-icon icon-default icon-custom-instagram" href="#"></a></li>
+                  <li><a class="icon novi-icon icon-default icon-custom-instagram" href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"></a></li>
                 </ul>
               </div>
             </div>
@@ -547,7 +547,7 @@
             <ul class="list-marked">
               <li><a href="index.php">Home</a></li>
               <li><a href="courses.php">Courses</a></li>
-              <li><a href="about-us.php">About us</a></li>
+              <li><a href="a_therapist.php">About us</a></li>
               <li><a href="#">Blog</a></li>
               <li><a href="contacts.php">Contacts</a></li>
               <li><a href="#">Become a teacher</a></li>
