@@ -249,7 +249,7 @@
           
           // 確認 appointment_id 是否存在
           if (!isset($_GET['appointment_id']) || empty($_GET['appointment_id'])) {
-            die("無效的預約單 ID。");
+            die("<p>無效的預約單 ID，請返回重試。</p>");
           }
 
           // 取得預約單 ID
@@ -280,8 +280,12 @@
 
           $result = mysqli_query($link, $sql);
 
-          if (!$result || mysqli_num_rows($result) == 0) {
-            die("找不到對應的預約資料。");
+          if (!$result) {
+            die("<p>SQL 執行失敗：" . mysqli_error($link) . "</p>");
+          }
+
+          if (mysqli_num_rows($result) == 0) {
+            die("<p>找不到對應的預約資料，請返回重試。</p>");
           }
 
           // 提取資料
@@ -295,6 +299,28 @@
 
           mysqli_close($link); // 關閉資料庫連接
           ?>
+          <!DOCTYPE html>
+          <html lang="zh-Hant">
+
+          <head>
+            <meta charset="UTF-8">
+            <title>預約單</title>
+          </head>
+
+          <body>
+            <!-- 預約單內容 -->
+            <h1>預約單</h1>
+            <p>姓名：<?php echo htmlspecialchars($people_name); ?></p>
+            <p>性別：<?php echo htmlspecialchars($people_gender); ?></p>
+            <p>生日：<?php echo htmlspecialchars($people_birthday); ?></p>
+            <p>預約日期：<?php echo htmlspecialchars($appointment_date); ?></p>
+            <p>預約時間：<?php echo htmlspecialchars($appointment_time); ?></p>
+            <p>治療師：<?php echo htmlspecialchars($doctor_name); ?></p>
+            <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
+          </body>
+
+          </html>
+
 
           <!-- 預約單內容 -->
           <div id="print-area">
