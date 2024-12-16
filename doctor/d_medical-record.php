@@ -224,9 +224,8 @@
               $result = mysqli_query($link, $sql);
 
               echo "<h3 style='text-align: center;'>看診紀錄</h3>";
-              if (mysqli_num_rows($result) > 0) {
-                echo "<table border='1' style='border-collapse: collapse; width: auto; margin-left: 0; text-align: center;'>
-                  <tr style='background-color: #f2f2f2; white-space: nowrap;'>
+              echo "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>
+            <tr style='background-color: #f2f2f2;'>
                       <th style='padding: 8px;'>編號</th>
                       <th style='padding: 8px;'>姓名</th>
                       <th style='padding: 8px;'>性別</th>
@@ -240,6 +239,8 @@
                       <th style='padding: 8px;'>備註</th>
                       <th style='padding: 8px;'>建立時間</th>
                   </tr>";
+              // 判斷是否有資料
+              if (mysqli_num_rows($result) > 0) {
                 while ($row = mysqli_fetch_assoc($result)) {
                   echo "<tr style='white-space: nowrap;'>
                       <td style='padding: 8px;'>{$row['id']}</td>
@@ -256,10 +257,12 @@
                       <td style='padding: 8px;'>{$row['created_at']}</td>
                       </tr>";
                 }
-                echo "</table>";
               } else {
-                echo "<p style='text-align: center;'>目前沒有看診紀錄。</p>";
+                // 如果沒有資料，顯示「目前無資料」
+                echo "<tr><td colspan='9' style='text-align: center;'>目前無資料</td></tr>";
               }
+              echo "</table>";
+
 
               // 分頁控制
               echo "<div style='margin-top: 20px; text-align: center;'>";
