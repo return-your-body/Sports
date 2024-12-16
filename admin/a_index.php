@@ -64,7 +64,7 @@
                     <ul class="rd-menu rd-navbar-dropdown">
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="faqs.html">登出</a>
                       </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="privacy-policy.html">Privacy policy</a>
+                      <!-- <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="privacy-policy.html">Privacy policy</a>
                       </li>
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="404-page.html">404 page</a>
                       </li>
@@ -79,7 +79,7 @@
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="tables.html">Tables</a>
                       </li>
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="typography.html">Typography</a>
-                      </li>
+                      </li> -->
                     </ul>
                   </li>
                   <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="contacts.html">Contacts</a>
