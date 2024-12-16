@@ -232,9 +232,30 @@
             <h3 style="text-align: center;">預約表單</h3>
             <form action="appointment.php" method="post">
               <!-- 預約者姓名 -->
-              <label for="name">姓名：</label>
+              <!-- <label for="name">姓名：</label>
               <input type="text" id="name" name="name" required pattern="[a-zA-Z0-9\u4e00-\u9fa5]+"
-                title="姓名只能包含中文、英文或數字，請勿輸入特殊符號">
+                title="姓名只能包含中文、英文或數字，請勿輸入特殊符號"> -->
+              <?php
+              session_start();
+              include "../db.php";
+
+              $query = "SELECT people_id, name FROM people";
+              $result = mysqli_query($link, $query);
+
+              if (!$result) {
+                die("SQL 錯誤: " . mysqli_error($link));
+              }
+              ?>
+              <!-- 姓名下拉選單 -->
+              <label for="people_id">姓名：</label>
+              <select id="people_id" name="people_id" required>
+                <option value="">請選擇姓名</option>
+                <?php
+                while ($row = mysqli_fetch_assoc($result)) {
+                  echo "<option value='" . $row['people_id'] . "'>" . htmlspecialchars($row['name']) . "</option>";
+                }
+                ?>
+              </select>
 
               <!-- 預約日期 -->
               <label for="date">預約日期：</label>
