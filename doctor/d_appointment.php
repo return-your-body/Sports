@@ -241,8 +241,6 @@
               <input type="date" id="date" name="date" required min="<?php echo date('Y-m-d'); ?>" title="請選擇有效的日期">
 
               <!-- 預約時間 -->
-              <!-- <label for="time">預約時間：</label>
-              <input type="time" id="time" name="time" required title="請選擇有效的時間"> -->
               <?php
               session_start(); // 啟用 Session
               include "../db.php"; // 引入資料庫連線
@@ -273,9 +271,6 @@
               ?>
 
               <!-- 醫生姓名 -->
-              <!-- <label for="doctor">醫生姓名：</label>
-              <input type="doctor" id="doctor" name="doctor"> -->
-
               <?php
               session_start(); // 啟用 Session
               include "../db.php"; // 引入資料庫連線
