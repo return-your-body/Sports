@@ -230,7 +230,7 @@
                 <td style='border: 1px solid black; padding: 8px;'>{$row['gender']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['birthday']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['appointment_date']}</td>
-                <td style='border: 1px solid black; padding: 8px;'>{$row['appointment_time']}</td>
+             
                 <td style='border: 1px solid black; padding: 8px;'>{$row['doctor']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['note']}</td>
                 <td style='border: 1px solid black; padding: 8px;'>{$row['created_at']}</td>
