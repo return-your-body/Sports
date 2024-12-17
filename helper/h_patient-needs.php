@@ -362,157 +362,25 @@ if (isset($_SESSION["帳號"])) {
 
     <section class="section section-lg text-center bg-gray-100">
       <div class="container-wide">
-        <h3>Our advantages</h3>
-        <div class="row row-50 justify-content-sm-center text-start">
-          <div class="col-sm-10 col-md-6 col-xl-3">
-            <article class="box-minimal box-minimal-border">
-              <div class="box-minimal-icon novi-icon mdi mdi-thumb-up-outline"></div>
-              <p class="big box-minimal-title">Individual Approach</p>
-              <hr>
-              <div class="box-minimal-text">Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit,
-                sed quia consequuntur magni dolores eos qui ratione.</div>
-            </article>
-          </div>
-          <div class="col-sm-10 col-md-6 col-xl-3">
-            <article class="box-minimal box-minimal-border">
-              <div class="box-minimal-icon novi-icon mdi mdi-account-multiple"></div>
-              <p class="big box-minimal-title">Qualified Employees</p>
-              <hr>
-              <div class="box-minimal-text">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
-                doloremque laudantium, totam rem aperiam, eaque ipsa.</div>
-            </article>
-          </div>
-          <div class="col-sm-10 col-md-6 col-xl-3">
-            <article class="box-minimal box-minimal-border">
-              <div class="box-minimal-icon novi-icon mdi mdi-headset"></div>
-              <p class="big box-minimal-title">24/7 Online Support</p>
-              <hr>
-              <div class="box-minimal-text">Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet,
-                consectetur, adipisci velit, sed quia non numquam eius modi.</div>
-            </article>
-          </div>
-          <div class="col-sm-10 col-md-6 col-xl-3">
-            <article class="box-minimal box-minimal-border">
-              <div class="box-minimal-icon novi-icon mdi mdi-credit-card"></div>
-              <p class="big box-minimal-title">Various Payment Methods</p>
-              <hr>
-              <div class="box-minimal-text">Dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis
-                nostrum exercitationem ullam corporis suscipit labori.</div>
-            </article>
-          </div>
-        </div>
+       
+       
       </div>
     </section>
 
     <section class="section section-wrap section-wrap-equal">
       <div class="section-wrap-inner">
         <div class="container container-bigger">
-          <div
-            class="row row-fix row-ten justify-content-md-center justify-content-lg-start justify-content-xl-between">
-            <div class="col-md-8 col-lg-4">
-              <div class="section-lg">
-                <h3>Development of your business skills</h3>
-                <div class="divider divider-default"></div>
-                <p>Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae
-                  consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur fugiat quo.</p><a
-                  class="button button-primary button-nina" href="single-course.html">Learn more</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-wrap-aside section-wrap-image"><img src="images/services-1-960x660.jpg" alt="" width="960"
-            height="660" />
-        </div>
-      </div>
-    </section>
-    <section class="section section-wrap section-wrap-equal section-lg-reverse">
-      <div class="section-wrap-inner">
-        <div class="container container-bigger">
-          <div class="row row-fix row-ten justify-content-md-center justify-content-lg-start justify-content-lg-end">
-            <div class="col-md-8 col-lg-4">
-              <div class="section-lg">
-                <h3>Python programming</h3>
-                <div class="divider divider-default"></div>
-                <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum
-                  deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati.</p><a
-                  class="button button-primary button-nina" href="single-course.html">Learn more</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-wrap-aside section-wrap-image"><img src="images/services-2-960x660.jpg" alt="" width="960"
-            height="660" />
-        </div>
-      </div>
-    </section>
-    <section class="section section-wrap section-wrap-equal">
-      <div class="section-wrap-inner">
-        <div class="container container-bigger">
-          <div
-            class="row row-fix row-ten justify-content-md-center justify-content-lg-start justify-content-xl-between">
-            <div class="col-md-8 col-lg-4">
-              <div class="section-lg">
-                <h3>Data structures and algorithms</h3>
-                <div class="divider divider-default"></div>
-                <p>Non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum
-                  fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero.</p><a
-                  class="button button-primary button-nina" href="single-course.html">Learn more</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-wrap-aside section-wrap-image"><img src="images/services-3-960x660.jpg" alt="" width="960"
-            height="660" />
-        </div>
-      </div>
-    </section>
-    <section class="section section-wrap section-wrap-equal section-lg-reverse">
-      <div class="section-wrap-inner">
-        <div class="container container-bigger">
-          <div class="row row-ten justify-content-md-center justify-content-lg-start justify-content-lg-end">
-            <div class="col-md-8 col-lg-4">
-              <div class="section-lg">
-                <h3>Global housing design</h3>
-                <div class="divider divider-default"></div>
-                <p>Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et
-                  voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic.</p><a
-                  class="button button-primary button-nina" href="single-course.html">Learn more</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-wrap-aside section-wrap-image"><img src="images/services-4-960x660.jpg" alt="" width="960"
-            height="660" />
-        </div>
-      </div>
-    </section>
-    <section class="section section-md bg-accent text-center text-md-start">
-      <div class="container">
-        <div class="row">
-          <div class="col-xl-11">
-            <div class="box-cta box-cta-inline">
-              <div class="box-cta-inner">
-                <h3 class="box-cta-title"><span class="box-cta-icon icon-custom-briefcase"></span><span>Free
-                    courses</span></h3>
-                <p>Free courses contain industry-relevant content and practical tasks and projects.</p>
-              </div>
-              <div class="box-cta-inner"><a class="button button-dark button-nina" href="contacts.html">Contact us</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+        
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
         <div class="row row-40">
-          <div class="col-md-4">
+          <!-- <div class="col-md-4">
             <h4>關於我們</h4>
             <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
               professional knowledge using innovative approach.</p>
-          </div>
+          </div> -->
           <div class="col-md-3">
             <h4>快速連結</h4>
             <ul class="list-marked">
@@ -525,7 +393,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="h_patient-needs.php">患者需求</a></li>
             </ul>
           </div>
-          <div class="col-md-5">
+          <!-- <div class="col-md-5">
             <h4>聯絡我們</h4>
             <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
               courses we offer.</p>
@@ -538,7 +406,7 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <button class="form-button linearicons-paper-plane"></button>
             </form>
-          </div>
+          </div> -->
         </div>
         <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
