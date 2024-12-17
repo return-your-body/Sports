@@ -46,8 +46,8 @@ if ($row = mysqli_fetch_assoc($ret)) {
     // 成功登入，設置 session 變數
     $_SESSION["帳號"] = $row["account"]; // 用戶帳號
     $_SESSION["等級"] = $row["grade"]; // 用戶等級名稱（例如：醫生、護士等）
-    $_SESSION['is_logged_in'] = true; // 設置登入狀態
-    echo "<script>sessionStorage.setItem('is_logged_in', 'true');</script>";
+    $_SESSION['登入狀態'] = true; // 設置登入狀態
+    echo "<script>sessionStorage.setItem('登入狀態', 'true');</script>";
     
     // 根據使用者等級跳轉到不同頁面
     switch ($row["grade_id"]) {
