@@ -4,7 +4,7 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-  header("Location: login.html");
+  header("Location: ../index.html");
   exit;
 }
 
@@ -276,231 +276,127 @@ if (isset($_SESSION["帳號"])) {
           </ul>
         </div>
       </section>
-
     </div>
-    <!-- a few words about us-->
-    <section class="section section-lg text-center text-md-start bg-default">
-      <div class="container">
-        <div class="row row-50 justify-content-md-center justify-content-xl-end justify-content-xxl-end">
-          <div class="col-md-9 col-lg-8 col-xl-6 col-xxl-5">
-            <div class="box-range-content">
-              <h3>A Variety of Courses</h3>
-              <p class="text-spacing-sm">Nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit
-                in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-                proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p><a
-                class="button button-primary button-nina" href="about-us.html">learn more</a>
-            </div>
-          </div>
-          <div class="col-md-9 col-lg-8 col-xl-6 col-xxl-6 jp-video-init">
-            <div class="build-video">
-              <div class="build-video-inner"><img class="image-wrap" src="images/block-video-870x500.png" alt=""
-                  width="870" height="500" />
-              </div>
-              <div class="build-video-element">
-                <div class="jp-video jp-video-single">
-                  <div class="jp-type-playlist">
-                    <!-- Hidden playlist for script-->
-                    <ul class="jp-player-list">
-                      <li class="jp-player-list-item" data-jp-m4v="video/video-bg.mp4" data-jp-title="local video"
-                        data-jp-poster="video/video-bg.jpg"></li>
-                    </ul>
-                    <!-- container in which our video will be played-->
-                    <div class="jp-jplayer"></div>
-                    <!-- main containers for our controls-->
-                    <div class="jp-gui">
-                      <div class="jp-interface">
-                        <div class="jp-controls-holder">
-                          <!-- play and pause buttons--><a class="jp-play" href="javascript:;" tabindex="1">play</a><a
-                            class="jp-pause" href="javascript:;" tabindex="1">pause</a><span
-                            class="separator sep-1"></span>
-                          <!-- progress bar-->
-                          <div class="jp-progress">
-                            <div class="jp-seek-bar">
-                              <div class="jp-play-bar"><span></span></div>
-                            </div>
-                          </div>
-                          <div class="jp-time-wrapper">
-                            <!-- time notifications-->
-                            <div class="jp-current-time"></div><span class="time-sep">/</span>
-                            <div class="jp-duration"></div>
-                          </div><span class="separator sep-2"></span>
-                          <!-- mute / unmute toggle--><a class="jp-mute" href="javascript:;" tabindex="1"
-                            title="mute">mute</a><a class="jp-unmute" href="javascript:;" tabindex="1"
-                            title="unmute">unmute</a>
-                          <!-- volume bar-->
-                          <div class="jp-volume-bar">
-                            <div class="jp-volume-bar-value"><span class="handle"></span></div>
-                          </div><span class="separator sep-2"></span>
-                          <!-- full screen toggle--><a class="jp-full-screen" href="javascript:;" tabindex="1"
-                            title="full screen">full screen</a><a class="jp-restore-screen" href="javascript:;"
-                            tabindex="1" title="restore screen">restore screen</a>
-                        </div>
-                        <!-- end jp-controls-holder-->
-                      </div>
-                      <!-- end jp-interface-->
-                    </div>
-                    <!-- end jp-gui-->
-                    <!-- unsupported message-->
-                    <div class="jp-playlist">
-                      <ul>
-                        <li></li>
-                      </ul>
-                    </div>
-                    <div class="jp-no-solution"><span>Update Required</span>Here's a message which will appear if the
-                      video isn't supported. A Flash alternative can be used here if you fancy it.</div>
-                    <!-- end jp_container_1-->
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+
+    <section class="section section-lg bg-default novi-bg novi-bg-img">
+      <div>
+        <label for="year">選擇年份：</label>
+        <select id="year"></select>
+        <label for="month">選擇月份：</label>
+        <select id="month"></select>
+        <label for="the">選擇治療師：</label>
+        <select id="the" name="doctor">
+          <option value="">所有</option> <!-- 修改這一行 -->
+          <?php
+          // 從資料庫中讀取資料並顯示在下拉選單中
+          while ($row = mysqli_fetch_assoc($result)) {
+            echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
+          }
+          ?>
+        </select>
+
       </div>
+      <table class="table-custom table-color-header table-custom-bordered">
+        <thead>
+          <tr>
+            <th>日</th>
+            <th>一</th>
+            <th>二</th>
+            <th>三</th>
+            <th>四</th>
+            <th>五</th>
+            <th>六</th>
+          </tr>
+        </thead>
+        <tbody id="calendar"></tbody>
+      </table>
+
+      <script>
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth();
+
+        const yearSelect = document.getElementById('year');
+        const monthSelect = document.getElementById('month');
+        const calendarBody = document.getElementById('calendar');
+
+        function initYearOptions() {
+          const startYear = currentYear - 5;
+          const endYear = currentYear + 5;
+          for (let year = startYear; year <= endYear; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            if (year === currentYear) option.selected = true;
+            yearSelect.appendChild(option);
+          }
+        }
+
+        function initMonthOptions() {
+          for (let month = 0; month < 12; month++) {
+            const option = document.createElement('option');
+            option.value = month;
+            option.textContent = month + 1;
+            if (month === currentMonth) option.selected = true;
+            monthSelect.appendChild(option);
+          }
+        }
+
+        function generateCalendar(year, month) {
+          calendarBody.innerHTML = ''; // 清空表格內容
+          const firstDay = new Date(year, month, 1).getDay(); // 該月第一天是星期幾
+          const lastDate = new Date(year, month + 1, 0).getDate(); // 該月最後一天是幾號
+          let row = document.createElement('tr');
+
+          // 空白單元格
+          for (let i = 0; i < firstDay; i++) {
+            const emptyCell = document.createElement('td');
+            row.appendChild(emptyCell);
+          }
+
+          // 填入日期
+          for (let date = 1; date <= lastDate; date++) {
+            if (row.children.length === 7) {
+              calendarBody.appendChild(row);
+              row = document.createElement('tr');
+            }
+
+            const dateCell = document.createElement('td');
+            const dateLink = document.createElement('a');
+            dateLink.href = "#";
+            dateLink.textContent = date;
+            dateLink.addEventListener('click', (e) => {
+              e.preventDefault();
+              alert(`您選擇的日期是：${year}-${month + 1}-${date}`);
+            });
+
+            dateCell.appendChild(dateLink);
+            row.appendChild(dateCell);
+          }
+
+          // 填補最後一行的空白單元格
+          while (row.children.length < 7) {
+            const emptyCell = document.createElement('td');
+            row.appendChild(emptyCell);
+          }
+          calendarBody.appendChild(row);
+        }
+
+        // 初始化
+        initYearOptions();
+        initMonthOptions();
+        generateCalendar(currentYear, currentMonth)
+
+        yearSelect.addEventListener('change', () => {
+          generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+        });
+        monthSelect.addEventListener('change', () => {
+          generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+        });
+      </script>
     </section>
 
-    <section class="section section-lg text-center bg-gray-100">
-      <div class="container-wide">
-        <h3>Our advantages</h3>
-        <div class="row row-50 justify-content-sm-center text-start">
-          <div class="col-sm-10 col-md-6 col-xl-3">
-            <article class="box-minimal box-minimal-border">
-              <div class="box-minimal-icon novi-icon mdi mdi-thumb-up-outline"></div>
-              <p class="big box-minimal-title">Individual Approach</p>
-              <hr>
-              <div class="box-minimal-text">Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit,
-                sed quia consequuntur magni dolores eos qui ratione.</div>
-            </article>
-          </div>
-          <div class="col-sm-10 col-md-6 col-xl-3">
-            <article class="box-minimal box-minimal-border">
-              <div class="box-minimal-icon novi-icon mdi mdi-account-multiple"></div>
-              <p class="big box-minimal-title">Qualified Employees</p>
-              <hr>
-              <div class="box-minimal-text">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
-                doloremque laudantium, totam rem aperiam, eaque ipsa.</div>
-            </article>
-          </div>
-          <div class="col-sm-10 col-md-6 col-xl-3">
-            <article class="box-minimal box-minimal-border">
-              <div class="box-minimal-icon novi-icon mdi mdi-headset"></div>
-              <p class="big box-minimal-title">24/7 Online Support</p>
-              <hr>
-              <div class="box-minimal-text">Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet,
-                consectetur, adipisci velit, sed quia non numquam eius modi.</div>
-            </article>
-          </div>
-          <div class="col-sm-10 col-md-6 col-xl-3">
-            <article class="box-minimal box-minimal-border">
-              <div class="box-minimal-icon novi-icon mdi mdi-credit-card"></div>
-              <p class="big box-minimal-title">Various Payment Methods</p>
-              <hr>
-              <div class="box-minimal-text">Dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis
-                nostrum exercitationem ullam corporis suscipit labori.</div>
-            </article>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section-wrap section-wrap-equal">
-      <div class="section-wrap-inner">
-        <div class="container container-bigger">
-          <div
-            class="row row-fix row-ten justify-content-md-center justify-content-lg-start justify-content-xl-between">
-            <div class="col-md-8 col-lg-4">
-              <div class="section-lg">
-                <h3>Development of your business skills</h3>
-                <div class="divider divider-default"></div>
-                <p>Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae
-                  consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur fugiat quo.</p><a
-                  class="button button-primary button-nina" href="single-course.html">Learn more</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-wrap-aside section-wrap-image"><img src="images/services-1-960x660.jpg" alt="" width="960"
-            height="660" />
-        </div>
-      </div>
-    </section>
-    <section class="section section-wrap section-wrap-equal section-lg-reverse">
-      <div class="section-wrap-inner">
-        <div class="container container-bigger">
-          <div class="row row-fix row-ten justify-content-md-center justify-content-lg-start justify-content-lg-end">
-            <div class="col-md-8 col-lg-4">
-              <div class="section-lg">
-                <h3>Python programming</h3>
-                <div class="divider divider-default"></div>
-                <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum
-                  deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati.</p><a
-                  class="button button-primary button-nina" href="single-course.html">Learn more</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-wrap-aside section-wrap-image"><img src="images/services-2-960x660.jpg" alt="" width="960"
-            height="660" />
-        </div>
-      </div>
-    </section>
-    <section class="section section-wrap section-wrap-equal">
-      <div class="section-wrap-inner">
-        <div class="container container-bigger">
-          <div
-            class="row row-fix row-ten justify-content-md-center justify-content-lg-start justify-content-xl-between">
-            <div class="col-md-8 col-lg-4">
-              <div class="section-lg">
-                <h3>Data structures and algorithms</h3>
-                <div class="divider divider-default"></div>
-                <p>Non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum
-                  fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero.</p><a
-                  class="button button-primary button-nina" href="single-course.html">Learn more</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-wrap-aside section-wrap-image"><img src="images/services-3-960x660.jpg" alt="" width="960"
-            height="660" />
-        </div>
-      </div>
-    </section>
-    <section class="section section-wrap section-wrap-equal section-lg-reverse">
-      <div class="section-wrap-inner">
-        <div class="container container-bigger">
-          <div class="row row-ten justify-content-md-center justify-content-lg-start justify-content-lg-end">
-            <div class="col-md-8 col-lg-4">
-              <div class="section-lg">
-                <h3>Global housing design</h3>
-                <div class="divider divider-default"></div>
-                <p>Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et
-                  voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic.</p><a
-                  class="button button-primary button-nina" href="single-course.html">Learn more</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-wrap-aside section-wrap-image"><img src="images/services-4-960x660.jpg" alt="" width="960"
-            height="660" />
-        </div>
-      </div>
-    </section>
-    <section class="section section-md bg-accent text-center text-md-start">
-      <div class="container">
-        <div class="row">
-          <div class="col-xl-11">
-            <div class="box-cta box-cta-inline">
-              <div class="box-cta-inner">
-                <h3 class="box-cta-title"><span class="box-cta-icon icon-custom-briefcase"></span><span>Free
-                    courses</span></h3>
-                <p>Free courses contain industry-relevant content and practical tasks and projects.</p>
-              </div>
-              <div class="box-cta-inner"><a class="button button-dark button-nina" href="contacts.html">Contact us</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
