@@ -176,7 +176,7 @@ if (isset($_SESSION["帳號"])) {
                       </li>
                     </ul> -->
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="h_doctorshift.php">醫生班表</a>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="h_doctorshift.php">治療師班表</a>
                   <!-- <ul class="rd-menu rd-navbar-dropdown">
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.html">Single course</a>
                       </li>
@@ -366,14 +366,14 @@ if (isset($_SESSION["帳號"])) {
               die("查詢時間失敗: " . mysqli_error($link));
             }
 
-            // 查詢醫生姓名 (doctor)
+            // 查詢治療師姓名 (doctor)
             $query_doctor = "SELECT doctor.doctor_id, doctor.doctor 
                  FROM doctor
                  INNER JOIN user ON doctor.user_id = user.user_id
                  WHERE user.grade_id = 2";
             $result_doctor = mysqli_query($link, $query_doctor);
             if (!$result_doctor) {
-              die("查詢醫生失敗: " . mysqli_error($link));
+              die("查詢治療師失敗: " . mysqli_error($link));
             }
             ?>
 
@@ -402,9 +402,9 @@ if (isset($_SESSION["帳號"])) {
                 <?php endwhile; ?>
               </select>
 
-              <label for="doctor">醫生姓名：</label>
+              <label for="doctor">治療師姓名：</label>
               <select id="doctor" name="doctor" required>
-                <option value="">請選擇醫生</option>
+                <option value="">請選擇治療師</option>
                 <?php while ($row = mysqli_fetch_assoc($result_doctor)): ?>
                   <option value="<?= htmlspecialchars($row['doctor_id']); ?>">
                     <?= htmlspecialchars($row['doctor']); ?>

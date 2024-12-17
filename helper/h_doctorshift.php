@@ -28,7 +28,7 @@ if (isset($_SESSION["帳號"])) {
 
 <head>
   <!-- Site Title-->
-  <title>助手-醫生班表時段</title>
+  <title>助手-治療師班表時段</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -177,7 +177,7 @@ if (isset($_SESSION["帳號"])) {
                       </li>
                     </ul> -->
                 </li>
-                <li class="rd-nav-item active"><a class="rd-nav-link" href="h_doctorshift.php">醫生班表</a>
+                <li class="rd-nav-item active"><a class="rd-nav-link" href="h_doctorshift.php">治療師班表</a>
                   <!-- <ul class="rd-menu rd-navbar-dropdown">
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.html">Single course</a>
                       </li>
@@ -268,10 +268,10 @@ if (isset($_SESSION["帳號"])) {
     <!-- <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <p class="heading-1 breadcrumbs-custom-title">醫生班表時段</p>
+          <p class="heading-1 breadcrumbs-custom-title">治療師班表時段</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
-            <li class="active">醫生班表時段</li>
+            <li class="active">治療師班表時段</li>
           </ul>
         </div>
       </section>

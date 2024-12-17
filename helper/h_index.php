@@ -176,7 +176,7 @@ if (isset($_SESSION["帳號"])) {
                       </li>
                     </ul> -->
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="h_doctorshift.php">醫生班表</a>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="h_doctorshift.php">治療師班表</a>
                   <!-- <ul class="rd-menu rd-navbar-dropdown">
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.html">Single course</a>
                       </li>
@@ -273,7 +273,7 @@ if (isset($_SESSION["帳號"])) {
           ✨還原回到它自己該在的位置而達到放鬆✨</p>
         <div class="group-md button-group">
           <a class="button button-dark button-nina" href="h_numberpeople.php">當天看診人數</a>
-          <a class="button button-primary button-nina" href="h_doctorshift.html">醫生班表時段</a>
+          <a class="button button-primary button-nina" href="h_doctorshift.html">治療師班表時段</a>
         </div>
       </div>
     </section>

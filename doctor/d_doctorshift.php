@@ -173,7 +173,7 @@ if (isset($_SESSION["帳號"])) {
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a>
                 </li>
                 <li class="rd-nav-item active"><a class="rd-nav-link" href="d_doctorshift.php">班表時段</a>
-                
+
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
@@ -257,23 +257,61 @@ if (isset($_SESSION["帳號"])) {
       </section>
     </div>
 
+    <!--班表-->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div>
+
+        <?php
+        session_start(); // 啟用 Session
+        
+        // 確保用戶已登入
+        if (!isset($_SESSION['帳號'])) {
+          echo "<script>
+            alert('未登入或會話已過期，請重新登入！');
+            window.location.href = '../index.html';
+          </script>";
+          exit;
+        }
+
+        // 取得當前登入的帳號
+        $帳號 = $_SESSION['帳號'];
+
+        // 引入資料庫連接檔案
+        require '../db.php';
+
+        // SQL 查詢：根據登入帳號取得對應的醫生姓名
+        $query = "SELECT doctor_id, doctor 
+          FROM doctor 
+          WHERE user_id = (SELECT user_id FROM user WHERE account = '$帳號')";
+        $result = mysqli_query($link, $query);
+
+        if (!$result) {
+          die("查詢失敗：" . mysqli_error($link));
+        }
+
+        // 判斷是否找到對應的醫生姓名
+        if ($row = mysqli_fetch_assoc($result)) {
+          $doctor_id = $row['doctor_id'];
+          $doctor_name = htmlspecialchars($row['doctor']);
+        } else {
+          $doctor_id = '';
+          $doctor_name = '未知醫生';
+        }
+
+        // 關閉資料庫連接
+        mysqli_close($link);
+        ?>
+
+        <!-- 顯示醫生姓名 -->
+        <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px;">
+        治療師姓名：<?php echo $doctor_name; ?>
+        </div>
+
         <label for="year">選擇年份：</label>
         <select id="year"></select>
         <label for="month">選擇月份：</label>
         <select id="month"></select>
-        <label for="the">選擇治療師：</label>
-        <select id="the" name="doctor">
-          <option value="">所有</option> <!-- 修改這一行 -->
-          <?php
-          // 從資料庫中讀取資料並顯示在下拉選單中
-          while ($row = mysqli_fetch_assoc($result)) {
-            echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
-          }
-          ?>
-        </select>
-
+      
       </div>
       <table class="table-custom table-color-header table-custom-bordered">
         <thead>
@@ -375,7 +413,7 @@ if (isset($_SESSION["帳號"])) {
       </script>
     </section>
 
-    
+
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
