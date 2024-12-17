@@ -1,5 +1,30 @@
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
+<?php
+session_start();
+
+if (!isset($_SESSION["登入狀態"])) {
+  header("Location: login.html");
+  exit;
+}
+
+// 防止頁面被瀏覽器緩存
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
+header("Pragma: no-cache");
+
+// 檢查 "帳號" 和 "姓名" 是否存在於 $_SESSION 中
+if (isset($_SESSION["帳號"])) {
+  // 獲取用戶帳號和姓名
+  $帳號 = $_SESSION['帳號'];
+} else {
+  echo "<script>
+            alert('會話過期或資料遺失，請重新登入。');
+            window.location.href = '../index.html';
+          </script>";
+  exit();
+}
+?>
 
 <head>
   <!-- Site Title-->
@@ -28,6 +53,67 @@
     html.ie-10 .ie-panel,
     html.lt-ie-10 .ie-panel {
       display: block;
+    }
+  </style>
+  <style>
+    /* 登出確認視窗 - 初始隱藏 */
+    .logout-box {
+      display: none;
+      /* 預設隱藏 */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      /* 半透明背景 */
+      justify-content: center;
+      /* 水平置中 */
+      align-items: center;
+      /* 垂直置中 */
+      z-index: 1000;
+      /* 保證在最上層 */
+    }
+
+    /* 彈出視窗內容 */
+    .logout-dialog {
+      background: #fff;
+      padding: 30px 20px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      width: 280px;
+      font-family: Arial, sans-serif;
+    }
+
+    /* 彈出視窗內文字 */
+    .logout-dialog p {
+      margin-bottom: 20px;
+      font-size: 18px;
+      color: #333;
+    }
+
+    /* 按鈕樣式 */
+    .logout-dialog button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      background-color: #333;
+      color: #fff;
+      transition: background 0.3s ease;
+    }
+
+    .logout-dialog button:hover {
+      background-color: #555;
+    }
+
+    .button-shadow {
+      box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
   </style>
 </head>
@@ -121,6 +207,39 @@
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="h_patient-needs.php">病患需求</a>
                 </li>
+                <!-- 登出按鈕 -->
+                <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
+                    onclick="showLogoutBox()">登出</a>
+                </li>
+
+                <!-- 自訂登出確認視窗 -->
+                <div id="logoutBox" class="logout-box">
+                  <div class="logout-dialog">
+                    <p>你確定要登出嗎？</p>
+                    <button onclick="confirmLogout()">確定</button>
+                    <button class="button-shadow" onclick="hideLogoutBox()">取消</button>
+                  </div>
+                </div>
+
+                <script>
+                  // 顯示登出確認視窗
+                  function showLogoutBox() {
+                    document.getElementById('logoutBox').style.display = 'flex';
+                  }
+
+                  // 確認登出邏輯
+                  function confirmLogout() {
+                    // 清除登入狀態
+                    sessionStorage.removeItem('登入狀態');
+                    // 跳轉至登出處理頁面
+                    window.location.href = '../logout.php';
+                  }
+
+                  // 隱藏登出確認視窗
+                  function hideLogoutBox() {
+                    document.getElementById('logoutBox').style.display = 'none';
+                  }
+                </script>
               </ul>
             </div>
             <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span></div>
@@ -164,26 +283,26 @@
     <!--當日時段表-->
     <section class="section section-lg bg-default">
       <div class="container">
-      <h3>當日時段表</h3>
-    <table border="1" style="border-collapse: collapse; width: 100%; text-align: center;">
-        <tr>
+        <h3>當日時段表</h3>
+        <table border="1" style="border-collapse: collapse; width: 100%; text-align: center;">
+          <tr>
             <th>時間</th>
             <th>姓名</th>
             <th>狀態</th>
-        </tr>
-        <?php foreach ($time_slots as $slot): ?>
+          </tr>
+          <?php foreach ($time_slots as $slot): ?>
             <tr>
-                <td><?php echo $slot['time']; ?></td>
-                <td><?php echo $slot['name']; ?></td>
-                <td><?php echo $slot['status']; ?></td>
+              <td><?php echo $slot['time']; ?></td>
+              <td><?php echo $slot['name']; ?></td>
+              <td><?php echo $slot['status']; ?></td>
             </tr>
-        <?php endforeach; ?>
-    </table>
+          <?php endforeach; ?>
+        </table>
       </div>
     </section>
 
-   <!--頁尾-->
-   <footer class="section novi-bg novi-bg-img footer-simple">
+    <!--頁尾-->
+    <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
         <div class="row row-40">
           <div class="col-md-4">
