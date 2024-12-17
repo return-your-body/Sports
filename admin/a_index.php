@@ -184,7 +184,7 @@ if (isset($_SESSION["帳號"])) {
 								<li class="rd-nav-item"><a class="rd-nav-link" href="courses.php">病患資料</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="single-course.php">黑名單</a>
+												href="a_blacklist.php">黑名單</a>
 										</li>
 									</ul>
 								</li>

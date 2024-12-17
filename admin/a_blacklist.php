@@ -22,24 +22,14 @@ if (isset($_SESSION["帳號"])) {
           </script>";
 	exit();
 }
-
-// 引入資料庫連接檔案
-require '../db.php';
-
-// SQL 查詢
-$query = "SELECT doctor_id, doctor FROM doctor";
-$result = mysqli_query($link, $query);
-
-if (!$result) {
-	die("查詢失敗：" . mysqli_error($link));
-}
 ?>
+
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
 
 <head>
 	<!-- Site Title-->
-	<title>健康醫療網站</title>
+	<title>Single course</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -66,59 +56,6 @@ if (!$result) {
 			display: block;
 		}
 
-		body {
-			font-family: Arial, sans-serif;
-			text-align: center;
-			margin: 20px;
-		}
-
-		.calendar {
-			display: grid;
-			grid-template-columns: repeat(7, 1fr);
-			gap: 5px;
-			margin-top: 20px;
-		}
-
-		.calendar div {
-			border: 1px solid #ccc;
-			padding: 10px;
-			background: #f9f9f9;
-			cursor: pointer;
-		}
-
-		.calendar .header {
-			font-weight: bold;
-			background: #ddd;
-		}
-
-		.calendar .empty {
-			background: transparent;
-			cursor: default;
-		}
-
-		/* 日期樣式：改為柔和文字色系 */
-		.calendar .date-link {
-			display: block;
-			padding: 10px;
-			color: #00796B;
-			/* 第二張圖片的綠色系 */
-			text-decoration: none;
-			/* 移除底線 */
-			font-size: 14px;
-			font-weight: bold;
-		}
-
-		.calendar .date-link:hover {
-			text-decoration: underline;
-			/* 滑鼠懸停時加底線 */
-			color: #004D40;
-			/* 深綠色，增加互動感 */
-		}
-
-		select {
-			padding: 5px;
-			margin: 5px;
-		}
 
 		/* 登出確認視窗 - 初始隱藏 */
 		.logout-box {
@@ -235,7 +172,7 @@ if (!$result) {
 							<ul class="rd-navbar-nav">
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
 								</li>
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="a_therapist.php">治療師時間表</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="a_therapist.php">治療師時間表</a>
 								</li>
 								<li class="rd-nav-item"><a class="rd-nav-link" href="teachers.php">新增診療項目</a>
 									<ul class="rd-menu rd-navbar-dropdown">
@@ -245,7 +182,7 @@ if (!$result) {
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link" href="courses.php">病患資料</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="courses.php">病患資料</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_blacklist.php">黑名單</a>
@@ -312,132 +249,80 @@ if (!$result) {
 			<!-- Breadcrumbs-->
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
-					<p class="heading-1 breadcrumbs-custom-title">治療師時間表</p>
+					<p class="heading-1 breadcrumbs-custom-title">黑名單</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="a_index.php">首頁</a></li>
-						<li class="active">治療師時間表</li>
+						<li><a href="courses.php">病患資料</a></li>
+						<li class="active">黑名單</li>
 					</ul>
 				</div>
 			</section>
 
 		</div>
 
+		<!-- Bordered Row Table -->
+		<section class="section section-lg bg-default text-center">
+			<div class="container">
+				<div class="row justify-content-sm-center">
+					<div class="col-md-10 col-xl-8">
+						<form class="rd-mailform rd-mailform-inline rd-mailform-sm"
+							data-form-output="form-output-global" data-form-type="subscribe" method="post"
+							action="bat/rd-mailform.php">
+							<div class="rd-mailform-inline-inner">
+								<div class="form-wrap">
+									<input class="form-input" type="email" name="email"
+										data-constraints="@Email @Required" id="subscribe-form-email-1" />
+									<label class="form-label" for="subscribe-form-email-1">請輸入身分證</label>
+								</div>
+								<!-- <button class="button button-icon button-icon-left button-xs button-primary button-nina"
+									type="submit">Subscribe</button> -->
+								<div class="button button-icon button-icon-left button-xs button-primary button-nina"><span class="icon mdi mdi-magnify"></span>搜尋</div>
+							</div>
+						</form>
+						<div class="table-novi table-custom-responsive">
+							<table class="table-custom table-custom-bordered">
+								<thead>
+									<tr>
+										<th>#</th>
+										<th>帳號</th>
+										<th>姓名</th>
+										<th>身份證</th>
+										<th>選項</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>1</td>
+										<td>Benjamin</td>
+										<td>Turner</td>
+										<td>@benjaminturner</td>
+									</tr>
+									<tr>
+										<td>2</td>
+										<td>Lauren</td>
+										<td>Wood</td>
+										<td>@laurenwood</td>
+									</tr>
+									<tr>
+										<td>3</td>
+										<td>Bryan</td>
+										<td>Vargas</td>
+										<td>@benjaminturner</td>
+									</tr>
+									<tr>
+										<td>4</td>
+										<td>Arthur</td>
+										<td>Henderson</td>
+										<td>@benjaminturner</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
 
-		<div>
-			<label for="year">選擇年份：</label>
-			<select id="year"></select>
-			<label for="month">選擇月份：</label>
-			<select id="month"></select>
-			<label for="the">選擇治療師：</label>
-			<select id="the" name="doctor">
-				<option value="">所有</option> <!-- 修改這一行 -->
-				<?php
-				// 從資料庫中讀取資料並顯示在下拉選單中
-				while ($row = mysqli_fetch_assoc($result)) {
-					echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
-				}
-				?>
-			</select>
-
-		</div>
-		<table class="table-custom table-color-header table-custom-bordered">
-			<thead>
-				<tr>
-					<th>日</th>
-					<th>一</th>
-					<th>二</th>
-					<th>三</th>
-					<th>四</th>
-					<th>五</th>
-					<th>六</th>
-				</tr>
-			</thead>
-			<tbody id="calendar"></tbody>
-		</table>
-
-		<script>
-			const currentDate = new Date();
-			const currentYear = currentDate.getFullYear();
-			const currentMonth = currentDate.getMonth();
-
-			const yearSelect = document.getElementById('year');
-			const monthSelect = document.getElementById('month');
-			const calendarBody = document.getElementById('calendar');
-
-			function initYearOptions() {
-				const startYear = currentYear - 5;
-				const endYear = currentYear + 5;
-				for (let year = startYear; year <= endYear; year++) {
-					const option = document.createElement('option');
-					option.value = year;
-					option.textContent = year;
-					if (year === currentYear) option.selected = true;
-					yearSelect.appendChild(option);
-				}
-			}
-
-			function initMonthOptions() {
-				for (let month = 0; month < 12; month++) {
-					const option = document.createElement('option');
-					option.value = month;
-					option.textContent = month + 1;
-					if (month === currentMonth) option.selected = true;
-					monthSelect.appendChild(option);
-				}
-			}
-
-			function generateCalendar(year, month) {
-				calendarBody.innerHTML = ''; // 清空表格內容
-				const firstDay = new Date(year, month, 1).getDay(); // 該月第一天是星期幾
-				const lastDate = new Date(year, month + 1, 0).getDate(); // 該月最後一天是幾號
-				let row = document.createElement('tr');
-
-				// 空白單元格
-				for (let i = 0; i < firstDay; i++) {
-					const emptyCell = document.createElement('td');
-					row.appendChild(emptyCell);
-				}
-
-				// 填入日期
-				for (let date = 1; date <= lastDate; date++) {
-					if (row.children.length === 7) {
-						calendarBody.appendChild(row);
-						row = document.createElement('tr');
-					}
-
-					const dateCell = document.createElement('td');
-					const dateLink = document.createElement('a');
-					dateLink.href = "#";
-					dateLink.textContent = date;
-					dateLink.addEventListener('click', (e) => {
-						e.preventDefault();
-						alert(`您選擇的日期是：${year}-${month + 1}-${date}`);
-					});
-
-					dateCell.appendChild(dateLink);
-					row.appendChild(dateCell);
-				}
-
-				// 填補最後一行的空白單元格
-				while (row.children.length < 7) {
-					const emptyCell = document.createElement('td');
-					row.appendChild(emptyCell);
-				}
-				calendarBody.appendChild(row);
-			}
-
-			// 初始化
-			initYearOptions();
-			initMonthOptions();
-			generateCalendar(currentYear, currentMonth);
-
-			yearSelect.addEventListener('change', () => {
-				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-			});
-			monthSelect.addEventListener('change', () => {
-				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-			});
-		</script>
 
 		<!-- Global Mailform Output-->
 		<div class="snackbars" id="form-output-global"></div>
