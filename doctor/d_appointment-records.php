@@ -345,49 +345,51 @@ if (isset($_SESSION["帳號"])) {
       // 計算起始記錄
       $offset = ($page - 1) * $records_per_page;
 
-      // 查詢關聯資料
+      // 修正查詢，從 `doctorshift` 取得日期和時間段
       $sql = "SELECT 
-          a.appointment_id AS id, 
-          COALESCE(p.name, 'N/A') AS name, 
-          CASE 
-              WHEN p.gender_id = 1 THEN '男'
-              WHEN p.gender_id = 2 THEN '女'
-              ELSE 'N/A'
-          END AS gender,
-          COALESCE(p.birthday, 'N/A') AS birthday, 
-          a.appointment_date, 
-          COALESCE(st.shifttime, 'N/A') AS shifttime, 
-          COALESCE(d.doctor, 'N/A') AS doctor_name, 
-          COALESCE(a.note, 'N/A') AS note, 
-          a.created_at 
-      FROM 
-          appointment a
-      LEFT JOIN 
-          people p ON a.people_id = p.people_id
-      LEFT JOIN 
-          doctor d ON a.doctor_id = d.doctor_id
-      LEFT JOIN 
-          shifttime st ON a.shifttime_id = st.shifttime_id
-      ORDER BY 
-          a.appointment_date, st.shifttime
-      LIMIT $offset, $records_per_page";
+            a.appointment_id AS id,
+            COALESCE(p.name, 'N/A') AS name,
+            CASE 
+                WHEN p.gender_id = 1 THEN '男'
+                WHEN p.gender_id = 2 THEN '女'
+                ELSE 'N/A'
+            END AS gender,
+            COALESCE(p.birthday, 'N/A') AS birthday,
+            ds.date AS appointment_date,
+            COALESCE(st.shifttime, 'N/A') AS shifttime,
+            COALESCE(d.doctor, 'N/A') AS doctor_name,
+            COALESCE(a.note, 'N/A') AS note,
+            a.created_at
+        FROM 
+            appointment a
+        LEFT JOIN 
+            people p ON a.people_id = p.people_id
+        LEFT JOIN 
+            doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+        LEFT JOIN 
+            doctor d ON ds.doctor_id = d.doctor_id
+        LEFT JOIN 
+            shifttime st ON ds.shifttime_id = st.shifttime_id
+        ORDER BY 
+            ds.date, st.shifttime
+        LIMIT $offset, $records_per_page";
 
       $result = mysqli_query($link, $sql);
 
       // 顯示表格
       echo "<h3 style='text-align: center;'>預約紀錄</h3>";
       echo "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>
-        <tr style='background-color: #f2f2f2;'>
-            <th>編號</th>
-            <th>姓名</th>
-            <th>性別</th>
-            <th>生日</th>
-            <th>預約日期</th>
-            <th>預約時間</th>
-            <th>醫生</th>
-            <th>備註</th>
-            <th>建立時間</th>
-        </tr>";
+    <tr style='background-color: #f2f2f2;'>
+        <th>編號</th>
+        <th>姓名</th>
+        <th>性別</th>
+        <th>生日</th>
+        <th>預約日期</th>
+        <th>預約時間</th>
+        <th>醫生</th>
+        <th>備註</th>
+        <th>建立時間</th>
+    </tr>";
 
       // 判斷是否有資料
       if (mysqli_num_rows($result) > 0) {
@@ -425,6 +427,7 @@ if (isset($_SESSION["帳號"])) {
 
       mysqli_close($link);
       ?>
+
 
   </div>
   </section>
