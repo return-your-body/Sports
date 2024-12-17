@@ -174,18 +174,17 @@ if (isset($_SESSION["帳號"])) {
 								</li>
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_therapist.php">治療師時間表</a>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link" href="teachers.php">新增診療項目</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
+								</li>
+								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="single-teacher.php">Single
-												teacher</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">Single teacher</a>
 										</li>
 									</ul>
-								</li>
+								</li> -->
 								<li class="rd-nav-item active"><a class="rd-nav-link" href="a_patient.php">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="">新增治療師/助手</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">新增治療師/助手</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_blacklist.php">黑名單</a>
@@ -268,59 +267,104 @@ if (isset($_SESSION["帳號"])) {
 			<div class="container">
 				<div class="row justify-content-sm-center">
 					<div class="col-md-10 col-xl-8">
-						<form class="rd-mailform rd-mailform-inline rd-mailform-sm"
-							data-form-output="form-output-global" data-form-type="subscribe" method="post"
-							action="bat/rd-mailform.php">
-							<div class="rd-mailform-inline-inner">
-								<div class="form-wrap">
-									<input class="form-input" type="email" name="email"
-										data-constraints="@Email @Required" id="subscribe-form-email-1" />
-									<label class="form-label" for="subscribe-form-email-1">請輸入身分證</label>
-								</div>
-								<!-- <button class="button button-icon button-icon-left button-xs button-primary button-nina"
-									type="submit">Subscribe</button> -->
-								<div class="button button-icon button-icon-left button-xs button-primary button-nina"><span class="icon mdi mdi-magnify"></span>搜尋</div>
+						<!-- 搜尋框與按鈕區塊 -->
+						<form class="search-form"
+							style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; width: 100%;">
+							<!-- 搜尋框（4:1比例） -->
+							<div style="flex: 4;">
+								<input class="form-input" type="text" name="search" placeholder="請輸入身分證" style="
+					padding: 10px 15px;
+					font-size: 14px;
+					width: 100%;
+					border: 1px solid #ccc;
+					border-radius: 4px;
+					outline: none;
+					box-sizing: border-box;
+			   ">
+							</div>
+							<!-- 搜尋按鈕（4:1比例） -->
+							<div style="flex: 1;">
+								<button class="button button-primary" type="submit" style="
+					padding: 10px 15px;
+					font-size: 14px;
+					width: 100%;
+					border: none;
+					border-radius: 4px;
+					background-color: #00A896;
+					color: white;
+					cursor: pointer;
+					box-sizing: border-box;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					gap: 5px;
+			   ">
+									<span class="icon mdi mdi-magnify"></span>搜尋
+								</button>
 							</div>
 						</form>
-						<div class="table-novi table-custom-responsive">
-							<table class="table-custom table-custom-bordered">
+
+
+
+						<!-- 表格區域 -->
+						<div class="table-novi table-custom-responsive" style="font-size: 16px; overflow-x: auto;">
+							<table class="table-custom table-custom-bordered"
+								style="width: 100%; border-collapse: collapse;">
 								<thead>
 									<tr>
-										<th>#</th>
-										<th>帳號</th>
-										<th>姓名</th>
-										<th>身份證</th>
-										<th>選項</th>
+										<th style="padding: 10px; text-align: left;">#</th>
+										<th style="padding: 10px; text-align: left;">帳號</th>
+										<th style="padding: 10px; text-align: left;">姓名</th>
+										<th style="padding: 10px; text-align: left;">身份證</th>
+										<th style="padding: 10px; text-align: left;">選項</th>
 									</tr>
 								</thead>
 								<tbody>
 									<tr>
-										<td>1</td>
-										<td>Benjamin</td>
-										<td>Turner</td>
-										<td>@benjaminturner</td>
+										<td style="padding: 10px;">1</td>
+										<td style="padding: 10px;">Benjamin</td>
+										<td style="padding: 10px;">Turner</td>
+										<td style="padding: 10px;">@benjaminturner</td>
+										<td style="padding: 10px; text-align: center;">
+											<button class="button button-xs button-primary"
+												style="padding: 6px 12px; font-size: 12px;">操作</button>
+										</td>
 									</tr>
 									<tr>
-										<td>2</td>
-										<td>Lauren</td>
-										<td>Wood</td>
-										<td>@laurenwood</td>
+										<td style="padding: 10px;">2</td>
+										<td style="padding: 10px;">Lauren</td>
+										<td style="padding: 10px;">Wood</td>
+										<td style="padding: 10px;">@laurenwood</td>
+										<td style="padding: 10px; text-align: center;">
+											<button class="button button-xs button-primary"
+												style="padding: 6px 12px; font-size: 12px;">操作</button>
+										</td>
 									</tr>
 									<tr>
-										<td>3</td>
-										<td>Bryan</td>
-										<td>Vargas</td>
-										<td>@benjaminturner</td>
+										<td style="padding: 10px;">3</td>
+										<td style="padding: 10px;">Bryan</td>
+										<td style="padding: 10px;">Vargas</td>
+										<td style="padding: 10px;">@benjaminturner</td>
+										<td style="padding: 10px; text-align: center;">
+											<button class="button button-xs button-primary"
+												style="padding: 6px 12px; font-size: 12px;">操作</button>
+										</td>
 									</tr>
 									<tr>
-										<td>4</td>
-										<td>Arthur</td>
-										<td>Henderson</td>
-										<td>@benjaminturner</td>
+										<td style="padding: 10px;">4</td>
+										<td style="padding: 10px;">Arthur</td>
+										<td style="padding: 10px;">Henderson</td>
+										<td style="padding: 10px;">@benjaminturner</td>
+										<td style="padding: 10px; text-align: center;">
+											<button class="button button-xs button-primary"
+												style="padding: 6px 12px; font-size: 12px;">操作</button>
+										</td>
 									</tr>
 								</tbody>
 							</table>
 						</div>
+
+
 					</div>
 				</div>
 			</div>

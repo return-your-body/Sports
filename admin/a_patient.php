@@ -174,18 +174,17 @@ if (isset($_SESSION["帳號"])) {
 								</li>
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_therapist.php">治療師時間表</a>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link" href="teachers.php">新增診療項目</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
+								</li>
+								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="single-teacher.php">Single
-												teacher</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">Single teacher</a>
 										</li>
 									</ul>
-								</li>
+								</li> -->
 								<li class="rd-nav-item active"><a class="rd-nav-link" href="a_patient.php">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="">新增治療師/助手</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">新增治療師/助手</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_blacklist.php">黑名單</a>
@@ -278,7 +277,8 @@ if (isset($_SESSION["帳號"])) {
 								</div>
 								<!-- <button class="button button-icon button-icon-left button-xs button-primary button-nina"
 									type="submit">Subscribe</button> -->
-								<div class="button button-icon button-icon-left button-xs button-primary button-nina"><span class="icon mdi mdi-magnify"></span>搜尋</div>
+								<div class="button button-icon button-icon-left button-xs button-primary button-nina">
+									<span class="icon mdi mdi-magnify"></span>搜尋</div>
 							</div>
 						</form>
 						<div class="table-novi table-custom-responsive">
