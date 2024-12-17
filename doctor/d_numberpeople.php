@@ -4,7 +4,7 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-  header("Location: login.php");
+  header("Location: ../index.html");
   exit;
 }
 
@@ -281,120 +281,141 @@ if (isset($_SESSION["帳號"])) {
 
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div>
-        <label for="year">選擇年份：</label>
-        <select id="year"></select>
-        <label for="month">選擇月份：</label>
-        <select id="month"></select>
-        <label for="the">選擇治療師：</label>
-        <select id="the" name="doctor">
-          <option value="">所有</option> <!-- 修改這一行 -->
-          <?php
-          // 從資料庫中讀取資料並顯示在下拉選單中
-          while ($row = mysqli_fetch_assoc($result)) {
-            echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
-          }
-          ?>
-        </select>
+        <?php
+        session_start();
+        include "../db.php"; // 資料庫連線
+        
+        // 抓取時段資料
+        $shifttime_sql = "SELECT * FROM shifttime";
+        $shifttime_result = mysqli_query($link, $shifttime_sql);
 
-      </div>
-      <table class="table-custom table-color-header table-custom-bordered">
-        <thead>
-          <tr>
-            <th>日</th>
-            <th>一</th>
-            <th>二</th>
-            <th>三</th>
-            <th>四</th>
-            <th>五</th>
-            <th>六</th>
-          </tr>
-        </thead>
-        <tbody id="calendar"></tbody>
-      </table>
+        // 抓取治療師資料
+        $doctor_sql = "SELECT * FROM doctor";
+        $doctor_result = mysqli_query($link, $doctor_sql);
 
-      <script>
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth();
+        // 預設日期為今天
+        $selected_date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
+        $selected_doctor = isset($_GET['doctor']) ? $_GET['doctor'] : '';
 
-        const yearSelect = document.getElementById('year');
-        const monthSelect = document.getElementById('month');
-        const calendarBody = document.getElementById('calendar');
+        // 查詢當天有資料的時段
+        $query = "SELECT st.shifttime, ds.date, d.doctor 
+          FROM doctorshift ds
+          LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+          LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+          WHERE ds.date = '$selected_date'";
 
-        function initYearOptions() {
-          const startYear = currentYear - 5;
-          const endYear = currentYear + 5;
-          for (let year = startYear; year <= endYear; year++) {
-            const option = document.createElement('option');
-            option.value = year;
-            option.textContent = year;
-            if (year === currentYear) option.selected = true;
-            yearSelect.appendChild(option);
-          }
+        if ($selected_doctor) {
+          $query .= " AND ds.doctor_id = '$selected_doctor'";
         }
 
-        function initMonthOptions() {
-          for (let month = 0; month < 12; month++) {
-            const option = document.createElement('option');
-            option.value = month;
-            option.textContent = month + 1;
-            if (month === currentMonth) option.selected = true;
-            monthSelect.appendChild(option);
-          }
-        }
+        $result = mysqli_query($link, $query);
+        ?>
 
-        function generateCalendar(year, month) {
-          calendarBody.innerHTML = ''; // 清空表格內容
-          const firstDay = new Date(year, month, 1).getDay(); // 該月第一天是星期幾
-          const lastDate = new Date(year, month + 1, 0).getDate(); // 該月最後一天是幾號
-          let row = document.createElement('tr');
+        <!-- HTML部分 -->
+        <section class="section section-lg bg-default novi-bg novi-bg-img">
+          <div>
+            <!-- 選擇年份、月份、治療師 -->
+            <form method="GET" action="">
+              <label for="year">選擇年份：</label>
+              <select id="year" name="year" onchange="updateDate()"></select>
 
-          // 空白單元格
-          for (let i = 0; i < firstDay; i++) {
-            const emptyCell = document.createElement('td');
-            row.appendChild(emptyCell);
-          }
+              <label for="month">選擇月份：</label>
+              <select id="month" name="month" onchange="updateDate()"></select>
 
-          // 填入日期
-          for (let date = 1; date <= lastDate; date++) {
-            if (row.children.length === 7) {
-              calendarBody.appendChild(row);
-              row = document.createElement('tr');
+              <label for="day">選擇日期：</label>
+              <select id="day" name="date">
+                <?php
+                // 產生當月日期
+                $currentYear = isset($_GET['year']) ? $_GET['year'] : date('Y');
+                $currentMonth = isset($_GET['month']) ? $_GET['month'] : date('m');
+                $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $currentMonth, $currentYear);
+
+                for ($i = 1; $i <= $daysInMonth; $i++) {
+                  $formattedDate = sprintf("%04d-%02d-%02d", $currentYear, $currentMonth, $i);
+                  $selected = ($formattedDate == $selected_date) ? "selected" : "";
+                  echo "<option value='$formattedDate' $selected>$formattedDate</option>";
+                }
+                ?>
+              </select>
+
+              <label for="doctor">選擇治療師：</label>
+              <select id="doctor" name="doctor">
+                <option value="">所有</option>
+                <?php
+                while ($row = mysqli_fetch_assoc($doctor_result)) {
+                  $selected = ($selected_doctor == $row['doctor_id']) ? "selected" : "";
+                  echo "<option value='" . $row['doctor_id'] . "' $selected>" . htmlspecialchars($row['doctor']) . "</option>";
+                }
+                ?>
+              </select>
+
+              <button type="submit">查詢</button>
+            </form>
+          </div>
+
+          <!-- 顯示當天有資料的時段 -->
+          <h3 style='text-align: center;'>當天時段</h3>
+          <table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>
+            <tr style='background-color: #f2f2f2;'>
+              <th>時段</th>
+              <th>日期</th>
+              <th>治療師</th>
+            </tr>
+            <?php
+            if (mysqli_num_rows($result) > 0) {
+              while ($row = mysqli_fetch_assoc($result)) {
+                echo "<tr>
+                    <td>{$row['shifttime']}</td>
+                    <td>{$row['date']}</td>
+                    <td>{$row['doctor']}</td>
+                  </tr>";
+              }
+            } else {
+              echo "<tr><td colspan='3'>當天無時段資料</td></tr>";
+            }
+            ?>
+          </table>
+        </section>
+
+        <script>
+          // 初始化年份和月份選單
+          function initYearMonth() {
+            const yearSelect = document.getElementById('year');
+            const monthSelect = document.getElementById('month');
+            const currentYear = <?php echo date('Y'); ?>;
+            const currentMonth = <?php echo date('m') - 1; ?>;
+
+            for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+              const option = document.createElement('option');
+              option.value = year;
+              option.textContent = year;
+              if (year == "<?php echo isset($_GET['year']) ? $_GET['year'] : date('Y'); ?>") {
+                option.selected = true;
+              }
+              yearSelect.appendChild(option);
             }
 
-            const dateCell = document.createElement('td');
-            const dateLink = document.createElement('a');
-            dateLink.href = "#";
-            dateLink.textContent = date;
-            dateLink.addEventListener('click', (e) => {
-              e.preventDefault();
-              alert(`您選擇的日期是：${year}-${month + 1}-${date}`);
-            });
-
-            dateCell.appendChild(dateLink);
-            row.appendChild(dateCell);
+            for (let month = 1; month <= 12; month++) {
+              const option = document.createElement('option');
+              option.value = month.toString().padStart(2, '0');
+              option.textContent = month;
+              if (month - 1 == currentMonth) {
+                option.selected = true;
+              }
+              monthSelect.appendChild(option);
+            }
           }
 
-          // 填補最後一行的空白單元格
-          while (row.children.length < 7) {
-            const emptyCell = document.createElement('td');
-            row.appendChild(emptyCell);
+          function updateDate() {
+            const year = document.getElementById('year').value;
+            const month = document.getElementById('month').value;
+            window.location.href = `?year=${year}&month=${month}`;
           }
-          calendarBody.appendChild(row);
-        }
 
-        // 初始化
-        initYearOptions();
-        initMonthOptions();
-        generateCalendar(currentYear, currentMonth) 
+          window.onload = initYearMonth;
+        </script>
 
-        yearSelect.addEventListener('change', () => {
-          generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-        });
-        monthSelect.addEventListener('change', () => {
-          generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-        });
-      </script>
+        <?php mysqli_close($link); ?>
     </section>
 
     <!--頁尾-->
