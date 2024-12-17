@@ -183,11 +183,11 @@ if (isset($_SESSION["帳號"])) {
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_appointment-records.php">預約紀錄</a>
                     </li>
                   </ul>
-                <!-- </li>
+                  <!-- </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_body-knowledge.php">身體小知識</a>
                 </li> -->
 
-                <!-- 登出按鈕 -->
+                  <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
                 </li>
@@ -315,7 +315,8 @@ if (isset($_SESSION["帳號"])) {
               </div>
             </div>
           </div>
-          <div class="col-md-6 col-lg-5 col-xl-4 offset-xl-1 col-xxl-5 position-relative d-none d-md-block">
+          <!-- 圖片-->
+          <!-- <div class="col-md-6 col-lg-5 col-xl-4 offset-xl-1 col-xxl-5 position-relative d-none d-md-block">
             <div class="parallax-scene-js parallax-scene parallax-scene-1" data-scalar-x="5" data-scalar-y="10">
               <div class="layer-01">
                 <div class="layer" data-depth="0.25"><img src="images/home-03-515x600.jpg" alt="" width="515"
@@ -328,7 +329,7 @@ if (isset($_SESSION["帳號"])) {
                 </div>
               </div>
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
     </section>
