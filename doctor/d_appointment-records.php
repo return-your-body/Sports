@@ -145,6 +145,41 @@ if (isset($_SESSION["帳號"])) {
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_body-knowledge.php">身體小知識</a>
                 </li>
+
+<!-- 登出按鈕 -->
+<li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
+										onclick="showLogoutBox()">登出</a>
+								</li>
+
+								<!-- 自訂登出確認視窗 -->
+								<div id="logoutBox" class="logout-box">
+									<div class="logout-dialog">
+										<p>你確定要登出嗎？</p>
+										<button onclick="confirmLogout()">確定</button>
+										<button class="button-shadow" onclick="hideLogoutBox()">取消</button>
+									</div>
+								</div>
+
+								<script>
+									// 顯示登出確認視窗
+									function showLogoutBox() {
+										document.getElementById('logoutBox').style.display = 'flex';
+									}
+
+									// 確認登出邏輯
+									function confirmLogout() {
+										// 清除登入狀態
+										sessionStorage.removeItem('登入狀態');
+										// 跳轉至登出處理頁面
+										window.location.href = '../logout.php';
+									}
+
+									// 隱藏登出確認視窗
+									function hideLogoutBox() {
+										document.getElementById('logoutBox').style.display = 'none';
+									}
+								</script>
+
               </ul>
             </div>
             <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span></div>
