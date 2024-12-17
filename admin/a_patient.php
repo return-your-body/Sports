@@ -252,11 +252,10 @@ if (isset($_SESSION["帳號"])) {
 			<!-- Breadcrumbs-->
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
-					<p class="heading-1 breadcrumbs-custom-title">黑名單</p>
+					<p class="heading-1 breadcrumbs-custom-title">用戶管理</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="a_index.php">首頁</a></li>
-						<li><a href="a_patient.php">病患資料</a></li>
-						<li class="active">黑名單</li>
+						<li class="active">用戶管理</li>
 					</ul>
 				</div>
 			</section>

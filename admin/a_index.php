@@ -2,7 +2,7 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-	header("Location: login.html");
+	header("Location: ../index.html");
 	exit;
 }
 
@@ -181,8 +181,10 @@ if (isset($_SESSION["帳號"])) {
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link" href="courses.php">病患資料</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="a_patient.php">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">新增治療師/助手</a>
+										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_blacklist.php">黑名單</a>
 										</li>
@@ -285,7 +287,7 @@ if (isset($_SESSION["帳號"])) {
 					variety
 					of online courses for everyone willing to enter the world of information technologies.</p>
 				<div class="group-md button-group"><a class="button button-dark button-nina" href="contacts.php">Contact
-						us</a><a class="button button-primary button-nina" href="courses.php">Our courses</a></div>
+						us</a><a class="button button-primary button-nina" href="a_patient.php">Our courses</a></div>
 			</div>
 		</section>
 		<!-- A few words about-->
@@ -450,7 +452,7 @@ if (isset($_SESSION["帳號"])) {
 						</div>
 					</div>
 					<div class="col-12 text-center mt-2 mt-xl-4"><a class="button button-primary button-nina"
-							href="courses.php">All courses</a></div>
+							href="a_patient.php">All courses</a></div>
 				</div>
 			</div>
 		</section>
@@ -717,8 +719,8 @@ if (isset($_SESSION["帳號"])) {
 					<div class="col-md-3">
 						<h4>Quick links</h4>
 						<ul class="list-marked">
-							<li><a href="index.php">Home</a></li>
-							<li><a href="courses.php">Courses</a></li>
+							<li><a href="a_index.php">Home</a></li>
+							<li><a href="a_patient.php">Courses</a></li>
 							<li><a href="a_therapist.php">About us</a></li>
 							<li><a href="#">Blog</a></li>
 							<li><a href="contacts.php">Contacts</a></li>
