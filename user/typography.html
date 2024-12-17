@@ -90,14 +90,14 @@
       <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>表格填寫</title>
+          <title>防呆表格</title>
           <style>
               body {
                   font-family: Arial, sans-serif;
                   margin: 20px;
               }
               table {
-                  width: 50%;
+                  width: 60%;
                   border-collapse: collapse;
               }
               td {
@@ -106,17 +106,17 @@
               label {
                   margin-right: 10px;
               }
-              select, input, textarea, button {
+              input, select, textarea, button {
                   width: 100%;
-                  padding: 5px;
                   box-sizing: border-box;
+                  padding: 5px;
               }
               button {
                   background-color: #4CAF50;
                   color: white;
                   border: none;
+                  padding: 10px;
                   cursor: pointer;
-                  margin-top: 10px;
               }
               button:hover {
                   background-color: #45a049;
@@ -125,43 +125,42 @@
       </head>
       <body>
           <h2>資訊填寫表格</h2>
-          <form>
+          <form id="form" onsubmit="return validateForm()">
               <table border="1">
                   <tr>
                       <td><label for="name">姓名：</label></td>
-                      <td><input type="text" id="name" name="name" placeholder="請輸入姓名"></td>
+                      <td><input type="text" id="name" name="name" placeholder="請輸入姓名" required></td>
                   </tr>
                   <tr>
                       <td>性別：</td>
                       <td>
-                          <label><input type="radio" name="gender" value="male"> 男</label>
-                          <label><input type="radio" name="gender" value="female"> 女</label>
+                          <label><input type="radio" name="gender" value="male" required> 男</label>
+                          <label><input type="radio" name="gender" value="female" required> 女</label>
                       </td>
                   </tr>
                   <tr>
                       <td>出生年月日：</td>
                       <td>
-                          <select id="year" name="year">
+                          <select id="year" name="year" required>
                               <option value="">年</option>
-                              <!-- 自動生成 1980-2024 年 -->
                               <script>
-                                  for(let y = 1880; y <= 2024; y++) {
+                                  for (let y = 1980; y <= 2024; y++) {
                                       document.write(`<option value="${y}">${y}</option>`);
                                   }
                               </script>
                           </select>
-                          <select id="month" name="month">
+                          <select id="month" name="month" required>
                               <option value="">月</option>
                               <script>
-                                  for(let m = 1; m <= 12; m++) {
+                                  for (let m = 1; m <= 12; m++) {
                                       document.write(`<option value="${m}">${m}</option>`);
                                   }
                               </script>
                           </select>
-                          <select id="day" name="day">
+                          <select id="day" name="day" required>
                               <option value="">日</option>
                               <script>
-                                  for(let d = 1; d <= 31; d++) {
+                                  for (let d = 1; d <= 31; d++) {
                                       document.write(`<option value="${d}">${d}</option>`);
                                   }
                               </script>
@@ -170,39 +169,39 @@
                   </tr>
                   <tr>
                       <td><label for="idNumber">身分證字號：</label></td>
-                      <td><input type="text" id="idNumber" name="idNumber" placeholder="請輸入身分證字號"></td>
+                      <td><input type="text" id="idNumber" name="idNumber" placeholder="請輸入身分證字號" required></td>
                   </tr>
                   <tr>
                       <td><label for="phone">電話：</label></td>
-                      <td><input type="text" id="phone" name="phone" placeholder="請輸入電話號碼"></td>
+                      <td><input type="tel" id="phone" name="phone" placeholder="請輸入電話號碼" required></td>
                   </tr>
                   <tr>
                       <td>地址：</td>
                       <td>
-                          <select id="city" name="city">
+                          <select id="city" name="city" required>
                               <option value="">選擇市</option>
                               <option value="台北市">台北市</option>
                               <option value="新北市">新北市</option>
                               <option value="桃園市">桃園市</option>
                               <option value="台中市">台中市</option>
                           </select>
-                          <select id="district" name="district">
+                          <select id="district" name="district" required>
                               <option value="">選擇區</option>
                               <option value="中正區">中正區</option>
                               <option value="大安區">大安區</option>
                               <option value="信義區">信義區</option>
                           </select>
-                          <input type="text" id="otherAddress" name="otherAddress" placeholder="請填寫詳細地址">
+                          <input type="text" id="otherAddress" name="otherAddress" placeholder="請填寫詳細地址" required>
                       </td>
                   </tr>
                   <tr>
                       <td><label for="remark">備註：</label></td>
-                      <td><textarea id="remark" name="remark" rows="4" placeholder="請輸入備註"></textarea></td>
+                      <td><textarea id="remark" name="remark" rows="4" placeholder="請輸入備註（可選填）"></textarea></td>
                   </tr>
                   <tr>
                       <td>選擇治療師：</td>
                       <td>
-                          <select id="therapist" name="therapist">
+                          <select id="therapist" name="therapist" required>
                               <option value="">請選擇治療師</option>
                               <option value="張醫師">張醫師</option>
                               <option value="李醫師">李醫師</option>
@@ -211,10 +210,33 @@
                       </td>
                   </tr>
               </table>
-              <div class="button-container">
-                <button type="submit">完成</button>
-            </div>
+              <button type="submit">完成</button>
           </form>
+      
+          <script>
+              function validateForm() {
+                  const form = document.getElementById("form");
+                  const year = document.getElementById("year").value;
+                  const month = document.getElementById("month").value;
+                  const day = document.getElementById("day").value;
+                  const city = document.getElementById("city").value;
+                  const district = document.getElementById("district").value;
+      
+                  // 額外檢查下拉選單
+                  if (year === "" || month === "" || day === "") {
+                      alert("請完整填寫出生年月日！");
+                      return false;
+                  }
+      
+                  if (city === "" || district === "") {
+                      alert("請選擇完整的地址！");
+                      return false;
+                  }
+      
+                  // 表單內其他 required 已自動驗證
+                  return true;
+              }
+          </script>
       </body>
       </html>
       
