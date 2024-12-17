@@ -270,39 +270,44 @@ if (isset($_SESSION["帳號"])) {
 						<!-- 搜尋框與按鈕區塊 -->
 						<form class="search-form"
 							style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; width: 100%;">
-							<!-- 搜尋框（4:1比例） -->
+							<!-- 搜尋框容器（設定寬度比例 4） -->
 							<div style="flex: 4;">
+								<!-- 輸入框：用於用戶輸入身分證號 -->
 								<input class="form-input" type="text" name="search" placeholder="請輸入身分證" style="
-					padding: 10px 15px;
-					font-size: 14px;
-					width: 100%;
-					border: 1px solid #ccc;
-					border-radius: 4px;
-					outline: none;
-					box-sizing: border-box;
-			   ">
+									padding: 10px 15px;          /* 設定內邊距 */
+									font-size: 16px;             /* 字體大小 */
+									width: 100%;                 /* 寬度填滿容器 */
+									border: 1px solid #ccc;      /* 外框顏色 */
+									border-radius: 4px;          /* 圓角設定 */
+									outline: none;               /* 移除點擊時的外框線 */
+									box-sizing: border-box;      /* 使邊框和內邊距包含在寬度內 */
+								">
 							</div>
-							<!-- 搜尋按鈕（4:1比例） -->
+
+							<!-- 搜尋按鈕容器（設定寬度比例 1） -->
 							<div style="flex: 1;">
-								<button class="button button-primary" type="submit" style="
-					padding: 10px 15px;
-					font-size: 14px;
-					width: 100%;
-					border: none;
-					border-radius: 4px;
-					background-color: #00A896;
-					color: white;
-					cursor: pointer;
-					box-sizing: border-box;
-					display: flex;
-					align-items: center;
-					justify-content: center;
-					gap: 5px;
-			   ">
+								<!-- 按鈕：觸發搜尋功能 -->
+								<button class="" type="submit" style="
+									padding: 10px 15px;           /* 設定內邊距 */
+									font-size: 16px;              /* 字體大小 */
+									width: 100%;                  /* 寬度填滿容器 */
+									border: none;                 /* 移除按鈕邊框 */
+									border-radius: 4px;           /* 圓角設定 */
+									background-color: #00A896;    /* 按鈕背景顏色 */
+									color: white;                 /* 文字顏色 */
+									cursor: pointer;              /* 滑鼠懸停時顯示指針 */
+									box-sizing: border-box;       /* 使寬度包含邊框和內邊距 */
+									display: flex;                /* 使用彈性盒模型 */
+									align-items: center;          /* 內容垂直居中 */
+									justify-content: center;      /* 內容水平居中 */
+									gap: 5px;                     /* 圖示與文字之間的間距 */
+								">
+									<!-- 圖示：放大鏡 -->
 									<span class="icon mdi mdi-magnify"></span>搜尋
 								</button>
 							</div>
 						</form>
+
 
 
 
@@ -319,52 +324,108 @@ if (isset($_SESSION["帳號"])) {
 										<th style="padding: 10px; text-align: left;">選項</th>
 									</tr>
 								</thead>
-								<tbody>
-									<tr>
-										<td style="padding: 10px;">1</td>
-										<td style="padding: 10px;">Benjamin</td>
-										<td style="padding: 10px;">Turner</td>
-										<td style="padding: 10px;">@benjaminturner</td>
-										<td style="padding: 10px; text-align: center;">
-											<button class="button button-xs button-primary"
-												style="padding: 6px 12px; font-size: 12px;">操作</button>
-										</td>
-									</tr>
-									<tr>
-										<td style="padding: 10px;">2</td>
-										<td style="padding: 10px;">Lauren</td>
-										<td style="padding: 10px;">Wood</td>
-										<td style="padding: 10px;">@laurenwood</td>
-										<td style="padding: 10px; text-align: center;">
-											<button class="button button-xs button-primary"
-												style="padding: 6px 12px; font-size: 12px;">操作</button>
-										</td>
-									</tr>
-									<tr>
-										<td style="padding: 10px;">3</td>
-										<td style="padding: 10px;">Bryan</td>
-										<td style="padding: 10px;">Vargas</td>
-										<td style="padding: 10px;">@benjaminturner</td>
-										<td style="padding: 10px; text-align: center;">
-											<button class="button button-xs button-primary"
-												style="padding: 6px 12px; font-size: 12px;">操作</button>
-										</td>
-									</tr>
-									<tr>
-										<td style="padding: 10px;">4</td>
-										<td style="padding: 10px;">Arthur</td>
-										<td style="padding: 10px;">Henderson</td>
-										<td style="padding: 10px;">@benjaminturner</td>
-										<td style="padding: 10px; text-align: center;">
-											<button class="button button-xs button-primary"
-												style="padding: 6px 12px; font-size: 12px;">操作</button>
-										</td>
-									</tr>
+								<tbody id="table-body">
+									<!-- 動態插入的資料行 -->
 								</tbody>
 							</table>
 						</div>
 
+						<!-- 分頁顯示區域 -->
+						<div id="pagination"
+							style="text-align: center; margin-top: 10px; font-size: 14px; color: #333;"></div>
 
+						<!-- JavaScript -->
+						<script>
+							// 假設的資料源
+							const tableData = [];
+							for (let i = 1; i <= 47; i++) {
+								tableData.push({
+									id: i,
+									account: `User${i}`,
+									name: `Name${i}`,
+									idNumber: `@user${i}`,
+									option: "操作",
+									newOption: "詳細" // 新的按鈕名稱
+								});
+							}
+
+							const rowsPerPage = 10; // 每頁顯示 10 行
+							let currentPage = 1;
+
+							// 渲染表格內容
+							function renderTable(page) {
+								const tableBody = document.getElementById("table-body");
+								tableBody.innerHTML = "";
+
+								// 計算當前頁的資料範圍
+								const start = (page - 1) * rowsPerPage;
+								const end = start + rowsPerPage;
+								const pageData = tableData.slice(start, end);
+
+								// 插入資料行
+								pageData.forEach((row) => {
+									const tr = `
+				<tr>
+					<td style="padding: 10px;">${row.id}</td>
+					<td style="padding: 10px;">${row.account}</td>
+					<td style="padding: 10px;">${row.name}</td>
+					<td style="padding: 10px;">${row.idNumber}</td>
+					<td style="padding: 10px; text-align: center; display: flex; gap: 5px; justify-content: center;">
+						<!-- 操作按鈕 -->
+						<button style="
+							padding: 6px 12px; 
+							font-size: 12px; 
+							border: none; 
+							background-color: #00A896; 
+							color: white; 
+							cursor: pointer; 
+							border-radius: 4px;">
+							${row.option}
+						</button>
+						<!-- 新按鈕 -->
+						<button style="
+							padding: 6px 12px; 
+							font-size: 12px; 
+							border: none; 
+							background-color: #FFB900; 
+							color: white; 
+							cursor: pointer; 
+							border-radius: 4px;">
+							${row.newOption}
+						</button>
+					</td>
+				</tr>
+			`;
+									tableBody.innerHTML += tr;
+								});
+
+								renderPagination();
+							}
+
+							// 渲染分頁資訊
+							function renderPagination() {
+								const pagination = document.getElementById("pagination");
+								const totalPages = Math.ceil(tableData.length / rowsPerPage);
+								pagination.innerHTML = `共 ${totalPages} 頁`;
+
+								if (totalPages > 1) {
+									pagination.innerHTML += " | ";
+									for (let i = 1; i <= totalPages; i++) {
+										pagination.innerHTML += `<button onclick="changePage(${i})" style="margin: 0 5px; padding: 5px 10px; cursor: pointer; border: none; background-color: ${i === currentPage ? "#00A896" : "#f0f0f0"
+											}; color: ${i === currentPage ? "white" : "black"}; border-radius: 4px;">${i}</button>`;
+									}
+								}
+							}
+
+							// 換頁功能
+							function changePage(page) {
+								currentPage = page;
+								renderTable(currentPage);
+							}
+
+							// 初始化渲染表格
+							renderTable(currentPage);
+						</script>
 					</div>
 				</div>
 			</div>
