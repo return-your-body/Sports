@@ -237,14 +237,14 @@ if (!$result) {
 								</li>
 								<li class="rd-nav-item active"><a class="rd-nav-link" href="a_therapist.php">治療師時間表</a>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link" href="teachers.php">新增診療項目</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
+								</li>
+								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="single-teacher.php">Single
-												teacher</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">Single teacher</a>
 										</li>
 									</ul>
-								</li>
+								</li> -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_patient.php">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">新增治療師/助手</a>
@@ -340,6 +340,7 @@ if (!$result) {
 				}
 				?>
 			</select>
+			<a href="">數據</a>
 
 		</div>
 		<table class="table-custom table-color-header table-custom-bordered">
@@ -392,6 +393,8 @@ if (!$result) {
 				calendarBody.innerHTML = ''; // 清空表格內容
 				const firstDay = new Date(year, month, 1).getDay(); // 該月第一天是星期幾
 				const lastDate = new Date(year, month + 1, 0).getDate(); // 該月最後一天是幾號
+				const today = new Date(); // 取得今天的日期
+
 				let row = document.createElement('tr');
 
 				// 空白單元格
@@ -408,15 +411,38 @@ if (!$result) {
 					}
 
 					const dateCell = document.createElement('td');
-					const dateLink = document.createElement('a');
-					dateLink.href = "#";
-					dateLink.textContent = date;
-					dateLink.addEventListener('click', (e) => {
+
+					// 生成當前格子的日期物件
+					const cellDate = new Date(year, month, date);
+					const isToday = cellDate.toDateString() === today.toDateString();
+					const isFuture = cellDate > today;
+
+					// 創建日期文字
+					const dateText = document.createElement('div');
+					dateText.textContent = date;
+
+					// 根據日期顯示不同的訊息
+					const bookingInfo = document.createElement('div');
+					bookingInfo.classList.add('booking-info');
+
+					if (isToday) {
+						bookingInfo.textContent = "目前總人數：0"; // 今天的日期
+					} else if (isFuture) {
+						bookingInfo.textContent = "目前預約人數：0"; // 未來的日期
+					} else {
+						bookingInfo.textContent = "總人數：0"; // 過去的日期
+					}
+
+					// 點擊日期事件
+					dateText.style.cursor = "pointer";
+					dateText.addEventListener('click', (e) => {
 						e.preventDefault();
 						alert(`您選擇的日期是：${year}-${month + 1}-${date}`);
 					});
 
-					dateCell.appendChild(dateLink);
+					// 組合元素
+					dateCell.appendChild(dateText);
+					dateCell.appendChild(bookingInfo);
 					row.appendChild(dateCell);
 				}
 
@@ -428,6 +454,7 @@ if (!$result) {
 				calendarBody.appendChild(row);
 			}
 
+
 			// 初始化
 			initYearOptions();
 			initMonthOptions();
@@ -436,6 +463,7 @@ if (!$result) {
 			yearSelect.addEventListener('change', () => {
 				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
 			});
+
 			monthSelect.addEventListener('change', () => {
 				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
 			});
