@@ -1,6 +1,30 @@
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
+<?php
+session_start();
 
+if (!isset($_SESSION["登入狀態"])) {
+  header("Location: login.html");
+  exit;
+}
+
+// 防止頁面被瀏覽器緩存
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
+header("Pragma: no-cache");
+
+// 檢查 "帳號" 和 "姓名" 是否存在於 $_SESSION 中
+if (isset($_SESSION["帳號"])) {
+  // 獲取用戶帳號和姓名
+  $帳號 = $_SESSION['帳號'];
+} else {
+  echo "<script>
+            alert('會話過期或資料遺失，請重新登入。');
+            window.location.href = '../index.html';
+          </script>";
+  exit();
+}
+?>
 <head>
   <!-- Site Title-->
   <title>醫生-班表時段</title>
