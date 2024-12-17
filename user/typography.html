@@ -42,140 +42,37 @@
                   <!--Brand--><a class="brand-name" href="index.html"><img class="logo-default" src="images/logo-default-172x36.png" alt="" width="86" height="18" loading="lazy"/><img class="logo-inverse" src="images/logo-inverse-172x36.png" alt="" width="86" height="18" loading="lazy"/></a>
                 </div>
               </div>
-              <!DOCTYPE html>
-              <html lang="zh">
-              <head>
-                  <meta charset="UTF-8">
-                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                  <title>導覽列範例</title>
-                  <style>
-                      /* 基本樣式 */
-                      body {
-                          font-family: Arial, sans-serif;
-                          margin: 0;
-                          padding: 0;
-                          background-color: #f9f9f9;
-                      }
-              
-                      .rd-navbar-nav-wrap {
-                          background-color: #fff;
-                          box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-                      }
-              
-                      .rd-navbar-nav {
-                          list-style: none;
-                          padding: 0;
-                          margin: 0;
-                          display: flex;
-                          justify-content: space-around;
-                      }
-              
-                      .rd-nav-item {
-                          position: relative;
-                      }
-              
-                      .rd-nav-link {
-                          display: block;
-                          padding: 15px 20px;
-                          text-decoration: none;
-                          color: #333;
-                          font-size: 16px;
-                          font-weight: bold;
-                          transition: color 0.3s, border-bottom 0.3s;
-                      }
-              
-                      /* 滑鼠懸停效果 */
-                      .rd-nav-link:hover {
-                          color: green;
-                          border-bottom: 2px solid green;
-                      }
-              
-                      /* 下拉選單樣式 */
-                      .rd-menu {
-                          display: none;
-                          position: absolute;
-                          top: 100%;
-                          left: 0;
-                          background-color: #fff;
-                          box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-                          padding: 0;
-                          margin: 0;
-                          list-style: none;
-                          z-index: 1000;
-                      }
-              
-                      .rd-dropdown-item {
-                          width: 200px;
-                      }
-              
-                      .rd-dropdown-link {
-                          display: block;
-                          padding: 10px 15px;
-                          text-decoration: none;
-                          color: #333;
-                          transition: color 0.3s, background-color 0.3s;
-                      }
-              
-                      .rd-dropdown-link:hover {
-                          color: white;
-                          background-color: green;
-                      }
-              
-                      /* 滑鼠移動到父項目顯示下拉選單 */
-                      .rd-nav-item:hover > .rd-menu {
-                          display: block;
-                      }
-              
-                      /* 當前選中項目的效果 */
-                      .rd-nav-item.active .rd-nav-link {
-                          color: green;
-                          border-bottom: 2px solid green;
-                      }
-                  </style>
-              </head>
-              <body>
-                  <div>
-                      <div class="rd-navbar-nav-wrap">
-                          <ul class="rd-navbar-nav">
-                              <li class="rd-nav-item active">
-                                  <a class="rd-nav-link" href="index.html">主頁</a>
-                              </li>
-                              <li class="rd-nav-item">
-                                  <a class="rd-nav-link" href="about-us.html">個人資料</a>
-                              </li>
-                              <li class="rd-nav-item">
-                                  <a class="rd-nav-link" href="teachers.html">歷史紀錄</a>
-                                  <ul class="rd-menu rd-navbar-dropdown">
-                                      <li class="rd-dropdown-item">
-                                          <a class="rd-dropdown-link" href="single-teacher.html">個人資料</a>
-                                      </li>
-                                  </ul>
-                              </li>
-                              <li class="rd-nav-item">
-                                  <a class="rd-nav-link" href="courses.html">關於我們</a>
-                                  <ul class="rd-menu rd-navbar-dropdown">
-                                      <li class="rd-dropdown-item">
-                                          <a class="rd-dropdown-link" href="single-course.html">Single course</a>
-                                      </li>
-                                  </ul>
-                              </li>
-                              <li class="rd-nav-item">
-                                  <a class="rd-nav-link" href="#">預約</a>
-                                  <ul class="rd-menu rd-navbar-dropdown">
-                                      <li class="rd-dropdown-item">
-                                          <a class="rd-dropdown-link" href="typography.html">立即預約</a>
-                                      </li>
-                                  </ul>
-                              </li>
-                              <li class="rd-nav-item">
-                                  <a class="rd-nav-link" href="contacts.html">Contacts</a>
-                              </li>
-                          </ul>
-                      </div>
-                  </div>
-              </body>
-              </html>
-              
+              <div class="rd-navbar-nav-wrap">
+                <ul class="rd-navbar-nav">
+                  <li class="rd-nav-item active"><a class="rd-nav-link" href="index.html">主頁</a>
+                  </li>
+                  <li class="rd-nav-item"><a class="rd-nav-link" href="about-us.html">個人資料</a>
+                  </li>
+                  <li class="rd-nav-item"><a class="rd-nav-link" href="teachers.html">歷史紀錄</a>
+                    <ul class="rd-menu rd-navbar-dropdown">
+                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-teacher.html">個人資料</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="rd-nav-item"><a class="rd-nav-link" href="courses.html">關於我們</a>
+                    <ul class="rd-menu rd-navbar-dropdown">
+                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.html">Single course</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
+                    <ul class="rd-menu rd-navbar-dropdown">
+                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="typography.html">立即預約</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="rd-nav-item"><a class="rd-nav-link" href="contacts.html">Contacts</a>
+                  </li>
+                </ul>
+              </div>
+              <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span></div>
+              <div class="rd-navbar-aside-right rd-navbar-collapse">
+                <div class="rd-navbar-social">
                   <div class="rd-navbar-social-text">聯絡方式</div>
                   <ul class="list-inline">
                     <li><a class="icon novi-icon icon-default icon-custom-facebook" href="https://www.facebook.com/ReTurnYourBody/"></a></li>
