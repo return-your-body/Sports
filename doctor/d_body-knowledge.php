@@ -204,8 +204,8 @@ if (isset($_SESSION["帳號"])) {
                       </li> -->
                   </ul>
                 </li>
-                <li class="rd-nav-item active"><a class="rd-nav-link" href="d_body-knowledge.php">身體小知識</a>
-                </li>
+                <!-- <li class="rd-nav-item active"><a class="rd-nav-link" href="d_body-knowledge.php">身體小知識</a>
+                </li> -->
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
@@ -405,10 +405,10 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="d_doctorshift.php">班表時段</a></li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
               <li><a href="d_appointment-records.php">預約紀錄</a></li>
-              <li><a href="d_body-knowledge.php">身體小知識</a></li>
+              <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
             </ul>
           </div>
-          <div class="col-md-5">
+          <!-- <div class="col-md-5">
             <h4>聯絡我們</h4>
             <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
               courses we offer.</p>
@@ -421,7 +421,7 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <button class="form-button linearicons-paper-plane"></button>
             </form>
-          </div>
+          </div> -->
         </div>
         <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights

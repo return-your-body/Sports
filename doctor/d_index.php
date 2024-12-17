@@ -173,16 +173,8 @@ if (isset($_SESSION["帳號"])) {
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_numberpeople.php">當天人數及時段</a>
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a>
-                  <!-- <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-teacher.html"></a>
-                      </li>
-                    </ul> -->
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_doctorshift.php">班表時段</a>
-                  <!-- <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.php">123</a>
-                      </li>
-                    </ul> -->
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
@@ -190,24 +182,10 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_appointment-records.php">預約紀錄</a>
                     </li>
-                    <!-- <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="404-page.html">404 page</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="503-page.html">503 page</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="buttons.html">Buttons</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="forms.html">Forms</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="grid-system.html">Grid system</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="tables.html">Tables</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="typography.html">Typography</a>
-                      </li> -->
                   </ul>
-                </li>
+                <!-- </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_body-knowledge.php">身體小知識</a>
-                </li>
+                </li> -->
 
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
@@ -357,8 +335,9 @@ if (isset($_SESSION["帳號"])) {
     <!--醫生簡介-->
 
 
+
     <!--身體小知識-->
-    <section class="section section-lg novi-bg novi-bg-img bg-default">
+    <!-- <section class="section section-lg novi-bg novi-bg-img bg-default">
       <div class="container">
         <h3 class="text-center">身體小知識</h3>
         <div class="row row-40 row-lg-50">
@@ -369,13 +348,13 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <div class="box-project-subtitle small">Business</div>
               <h6 class="box-project-title"><a href="single-course.html">Development of your business skills</a></h6>
-              <!-- <div class="box-project-meta">
+              <div class="box-project-meta">
                 <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-clock3"></span><span
                     class="box-project-meta-text">23 hours</span></div>
                 <div class="box-project-meta-item"><span
                     class="box-project-meta-icon linearicons-credit-card"></span><span
                     class="box-project-meta-text">$165</span></div>
-              </div> -->
+              </div>
             </div>
           </div>
           <div class="col-sm-6 col-md-4 wow fadeInUp" data-wow-delay=".2s">
@@ -385,13 +364,13 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <div class="box-project-subtitle small">PROGRAMMING</div>
               <h6 class="box-project-title"><a href="single-course.html">Python programming</a></h6>
-              <!-- <div class="box-project-meta">
+              <div class="box-project-meta">
                 <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-clock3"></span><span
                     class="box-project-meta-text">46 hours</span></div>
                 <div class="box-project-meta-item"><span
                     class="box-project-meta-icon linearicons-credit-card"></span><span
                     class="box-project-meta-text">$290</span></div>
-              </div> -->
+              </div>
             </div>
           </div>
           <div class="col-sm-6 col-md-4 wow fadeInUp" data-wow-delay=".3s">
@@ -401,13 +380,13 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <div class="box-project-subtitle small">Programming</div>
               <h6 class="box-project-title"><a href="single-course.html">Data structures and algorithms</a></h6>
-              <!-- <div class="box-project-meta">
+              <div class="box-project-meta">
                 <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-clock3"></span><span
                     class="box-project-meta-text">18 hours</span></div>
                 <div class="box-project-meta-item"><span
                     class="box-project-meta-icon linearicons-credit-card"></span><span
                     class="box-project-meta-text">$120</span></div>
-              </div> -->
+              </div>
             </div>
           </div>
           <div class="col-sm-6 col-md-4 wow fadeInUp" data-wow-delay=".1s">
@@ -417,13 +396,13 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <div class="box-project-subtitle small">ARCHITECTURE, ART &amp; DESIGN</div>
               <h6 class="box-project-title"><a href="single-course.html">Global housing design</a></h6>
-              <!-- <div class="box-project-meta">
+              <div class="box-project-meta">
                 <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-clock3"></span><span
                     class="box-project-meta-text">34 hours</span></div>
                 <div class="box-project-meta-item"><span
                     class="box-project-meta-icon linearicons-credit-card"></span><span
                     class="box-project-meta-text">$195</span></div>
-              </div> -->
+              </div>
             </div>
           </div>
           <div class="col-sm-6 col-md-4 wow fadeInUp" data-wow-delay=".2s">
@@ -433,13 +412,13 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <div class="box-project-subtitle small">Business</div>
               <h6 class="box-project-title"><a href="single-course.html">IT fundamentals for business</a></h6>
-              <!-- <div class="box-project-meta">
+              <div class="box-project-meta">
                 <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-clock3"></span><span
                     class="box-project-meta-text">8 hours</span></div>
                 <div class="box-project-meta-item"><span
                     class="box-project-meta-icon linearicons-credit-card"></span><span
                     class="box-project-meta-text">$75</span></div>
-              </div> -->
+              </div>
             </div>
           </div>
           <div class="col-sm-6 col-md-4 wow fadeInUp" data-wow-delay=".3s">
@@ -449,20 +428,20 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <div class="box-project-subtitle small">Marketing</div>
               <h6 class="box-project-title"><a href="single-course.html">Online marketing: SEO and SMM</a></h6>
-              <!-- <div class="box-project-meta">
+              <div class="box-project-meta">
                 <div class="box-project-meta-item"><span class="box-project-meta-icon linearicons-clock3"></span><span
                     class="box-project-meta-text">43 hours</span></div>
                 <div class="box-project-meta-item"><span
                     class="box-project-meta-icon linearicons-credit-card"></span><span
                     class="box-project-meta-text">$145</span></div>
-              </div> -->
+              </div>
             </div>
           </div>
           <div class="col-12 text-center mt-2 mt-xl-4"><a class="button button-primary button-nina"
               href="d_body-knowledge.php">ALL小知識</a></div>
         </div>
       </div>
-    </section>
+    </section> -->
     <!--身體小知識-->
 
     <!--頁尾-->
@@ -483,7 +462,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="d_doctorshift.php">班表時段</a></li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
               <li><a href="d_appointment-records.php">預約紀錄</a></li>
-              <li><a href="d_body-knowledge.php">身體小知識</a></li>
+              <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
             </ul>
           </div>
           <!-- <div class="col-md-5">

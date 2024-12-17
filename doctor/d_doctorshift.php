@@ -171,16 +171,9 @@ if (isset($_SESSION["帳號"])) {
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_numberpeople.php">當天人數及時段</a>
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a>
-                  <!-- <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-teacher.html"></a>
-                      </li>
-                    </ul> -->
                 </li>
                 <li class="rd-nav-item active"><a class="rd-nav-link" href="d_doctorshift.php">班表時段</a>
-                  <!-- <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.html">123</a>
-                      </li>
-                    </ul> -->
+                
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
@@ -188,24 +181,10 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_appointment-records.php">預約紀錄</a>
                     </li>
-                    <!-- <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="404-page.html">404 page</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="503-page.html">503 page</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="buttons.html">Buttons</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="forms.html">Forms</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="grid-system.html">Grid system</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="tables.html">Tables</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="typography.html">Typography</a>
-                      </li> -->
                   </ul>
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="d_body-knowledge.php">身體小知識</a>
-                </li>
+                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="d_body-knowledge.php">身體小知識</a>
+                </li> -->
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
@@ -416,7 +395,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="d_doctorshift.php">班表時段</a></li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
               <li><a href="d_appointment-records.php">預約紀錄</a></li>
-              <li><a href="d_body-knowledge.php">身體小知識</a></li>
+              <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
             </ul>
           </div>
           <!-- <div class="col-md-5">
