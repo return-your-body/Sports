@@ -161,7 +161,7 @@ if (isset($_SESSION["帳號"])) {
 								data-rd-navbar-toggle=".rd-navbar-nav-wrap"><span></span></button>
 							<!-- RD Navbar Brand-->
 							<div class="rd-navbar-brand">
-								<!--Brand--><a class="brand-name" href="index.html"><img class="logo-default"
+								<!--Brand--><a class="brand-name" href="index.php"><img class="logo-default"
 										src="images/logo-default-172x36.png" alt="" width="86" height="18"
 										loading="lazy" /><img class="logo-inverse" src="images/logo-inverse-172x36.png"
 										alt="" width="86" height="18" loading="lazy" /></a>
@@ -169,33 +169,46 @@ if (isset($_SESSION["帳號"])) {
 						</div>
 						<div class="rd-navbar-nav-wrap">
 							<ul class="rd-navbar-nav">
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="u_index.html">主頁</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="u_index.php">主頁</a>
 								</li>
 								
-								<li class="rd-nav-item"><a class="rd-nav-link" href="courses.html">關於我們</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="">關於我們</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="single-course.html">Single course</a>
+												href="">醫生介紹</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="">個案分享</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="">日常小知識</a>
 										</li>
 									</ul>
 								</li>
 								<li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="typography.html">立即預約</a>
+												href="u_reserve.php">立即預約</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="">查看預約資料</a> <!-- 修改預約 -->
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="">查看預約時段</a>
 										</li>
 									</ul>
 								</li>
-
-								<li class="rd-nav-item"><a class="rd-nav-link" href="teachers.html">歷史紀錄</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
+								</li>
+								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="single-teacher.html">個人資料</a>
 										</li>
 									</ul>
-								</li>
+								</li> -->
 
-								<li class="rd-nav-item"><a class="rd-nav-link" href="about-us.html">個人資料</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="">個人資料</a>
 								</li>
 
 								<!-- 登出按鈕 -->
