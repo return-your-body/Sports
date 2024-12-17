@@ -391,11 +391,11 @@ if (isset($_SESSION["帳號"])) {
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
         <div class="row row-40">
-          <div class="col-md-4">
+          <!-- <div class="col-md-4">
             <h4>關於我們</h4>
             <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
               professional knowledge using innovative approach.</p>
-          </div>
+          </div> -->
           <div class="col-md-3">
             <h4>快速連結</h4>
             <ul class="list-marked">
