@@ -283,16 +283,18 @@ if (isset($_SESSION["帳號"])) {
 
     <!--列印預約單-->
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        margin: 0;
-        padding: 0;
-      }
+      /* 通用樣式 */
+      /* body {
+                    margin: 0;
+                    padding: 0;
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                   } */
 
       #print-area {
         width: 350px;
         margin: 50px auto;
+        /* 區塊垂直居中 */
         border: 2px solid black;
         padding: 20px;
         text-align: left;
@@ -301,15 +303,22 @@ if (isset($_SESSION["帳號"])) {
 
       #print-area h1 {
         text-align: center;
-        margin-bottom: 20px;
+        margin: 0 0 20px;
         font-size: 24px;
       }
 
       #print-area p {
         margin: 10px 0;
+        line-height: 1.6;
         font-size: 16px;
       }
 
+      .doctor-sign {
+        margin-top: 20px;
+        font-weight: bold;
+      }
+
+      /* 列印樣式 */
       @media print {
         body * {
           visibility: hidden;
@@ -322,26 +331,32 @@ if (isset($_SESSION["帳號"])) {
 
         #print-area {
           margin: 0 auto;
+          page-break-inside: avoid;
+        }
+
+        html,
+        body {
+          height: 100%;
+        }
+
+        button {
+          display: none;
+          /* 隱藏按鈕 */
         }
       }
 
+      /* 按鈕樣式 */
       button {
-        margin-top: 20px;
+        margin: 20px auto 0;
+        /* 距離表格的間距 */
+        display: block;
+        /* 讓按鈕居中 */
         padding: 10px 20px;
         font-size: 16px;
         cursor: pointer;
-        background-color: #28a745;
-        color: white;
-        border: none;
-        border-radius: 5px;
-      }
-
-      button:hover {
-        background-color: #218838;
       }
     </style>
 
-  
     <div id="print-area">
       <h1>預約單</h1>
       <p>姓名：<?php echo $people_name; ?></p>
@@ -355,7 +370,7 @@ if (isset($_SESSION["帳號"])) {
 
     <!-- 列印按鈕 -->
     <button onclick="window.print()">列印預約單</button>
-
+    <br />
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
