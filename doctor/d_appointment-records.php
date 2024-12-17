@@ -285,58 +285,42 @@ if (isset($_SESSION["帳號"])) {
 
     <!--預約紀錄-->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
+
       <div class="container">
-        <dl class="list-terms">
-          <!-- <style>
-                /* 搜尋 查看/填寫資料 */
-                .btn {
-                    display: inline-block;
-                    padding: 10px 20px;
-                    font-size: 16px;
-                    text-align: center;
-                    text-decoration: none;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                }
-
-                .btn-primary {
-                    background-color: #007bff;
-                    /* 藍色背景 */
-                    color: white;
-                    /* 白色文字 */
-                }
-
-                .btn-primary:hover {
-                    background-color: #0056b3;
-                    /* 深藍色背景，懸停時 */
-                }
-            </style>
-          <form method="POST" action="d_recordsfind.php" class="d-flex w-100">
-            <input type="text" name="search" class="form-control p-3" placeholder="搜尋">
-            <button class="btn btn-primary px-3" type="submit"><i class="fa fa-search"></i></button>
-          </form> -->
-          <div style="display: flex; justify-content: flex-end; align-items: center;">
-            <input type="text" placeholder="請輸入搜尋姓名"
-              style="height: 36px; width: 200px; margin-right: 8px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
-            <div class="button button-icon button-icon-left button-xs button-primary button-nina"><span
-                class="icon mdi mdi-magnify"></span>搜尋</div>
-          </div>
+        <!-- 搜尋框 -->
+        <form method="GET" action=""
+          style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px;">
+          <input type="text" name="search_name" placeholder="請輸入搜尋姓名"
+            value="<?php echo isset($_GET['search_name']) ? htmlspecialchars($_GET['search_name']) : ''; ?>"
+            style="height: 36px; width: 200px; margin-right: 8px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+          <button type="submit"
+            style="height: 36px; padding: 5px 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            <span class="icon mdi mdi-magnify"></span> 搜尋
+          </button>
+        </form>
       </div>
-
 
       <?php
       session_start();
       include "../db.php"; // 引入資料庫連線
       
+      // 搜尋條件
+      $search_name = '';
+      if (isset($_GET['search_name']) && trim($_GET['search_name']) != '') {
+        $search_name = mysqli_real_escape_string($link, trim($_GET['search_name']));
+      }
+
       // 分頁設定
       $records_per_page = 10;
       $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
       if ($page < 1)
         $page = 1;
 
-      // 計算總記錄數
-      $count_sql = "SELECT COUNT(*) AS total FROM appointment";
+      // 計算總記錄數（含搜尋條件）
+      $count_sql = "SELECT COUNT(*) AS total 
+              FROM appointment a
+              LEFT JOIN people p ON a.people_id = p.people_id
+              WHERE p.name LIKE '%$search_name%'";
       $count_result = mysqli_query($link, $count_sql);
       $count_row = mysqli_fetch_assoc($count_result);
       $total_records = $count_row['total'];
@@ -345,7 +329,7 @@ if (isset($_SESSION["帳號"])) {
       // 計算起始記錄
       $offset = ($page - 1) * $records_per_page;
 
-      // 修正查詢，從 `doctorshift` 取得日期和時間段
+      // 查詢資料，加入搜尋條件
       $sql = "SELECT 
             a.appointment_id AS id,
             COALESCE(p.name, 'N/A') AS name,
@@ -370,6 +354,8 @@ if (isset($_SESSION["帳號"])) {
             doctor d ON ds.doctor_id = d.doctor_id
         LEFT JOIN 
             shifttime st ON ds.shifttime_id = st.shifttime_id
+        WHERE 
+            p.name LIKE '%$search_name%'
         ORDER BY 
             ds.date, st.shifttime
         LIMIT $offset, $records_per_page";
@@ -407,7 +393,6 @@ if (isset($_SESSION["帳號"])) {
             </tr>";
         }
       } else {
-        // 如果沒有資料，顯示「目前無資料」
         echo "<tr><td colspan='9' style='text-align: center;'>目前無資料</td></tr>";
       }
       echo "</table>";
@@ -417,17 +402,16 @@ if (isset($_SESSION["帳號"])) {
       echo "<p>第 $page 頁，共 $total_pages 頁</p>";
 
       if ($page > 1)
-        echo "<a href='?page=" . ($page - 1) . "'>上一頁</a> ";
+        echo "<a href='?page=" . ($page - 1) . "&search_name=$search_name'>上一頁</a> ";
       for ($i = 1; $i <= $total_pages; $i++) {
-        echo ($i == $page) ? "<strong>$i</strong> " : "<a href='?page=$i'>$i</a> ";
+        echo ($i == $page) ? "<strong>$i</strong> " : "<a href='?page=$i&search_name=$search_name'>$i</a> ";
       }
       if ($page < $total_pages)
-        echo "<a href='?page=" . ($page + 1) . "'>下一頁</a>";
+        echo "<a href='?page=" . ($page + 1) . "&search_name=$search_name'>下一頁</a>";
       echo "</div>";
 
       mysqli_close($link);
       ?>
-
 
   </div>
   </section>
