@@ -177,7 +177,7 @@ if (isset($_SESSION["帳號"])) {
                       </li>
                     </ul> -->
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="h_doctorshift.php">醫生班表</a>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="h_doctorshift.php">治療師班表</a>
                   <!-- <ul class="rd-menu rd-navbar-dropdown">
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.html">Single course</a>
                       </li>
