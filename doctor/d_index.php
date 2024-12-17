@@ -279,7 +279,7 @@ if (isset($_SESSION["帳號"])) {
           ✨還原回到它自己該在的位置而達到放鬆✨</p>
         <div class="group-md button-group">
           <a class="button button-dark button-nina" href="d_numberpeople.php">當天看診人數</a>
-          <a class="button button-primary button-nina" href="d_doctorshift.html">班表時段</a>
+          <a class="button button-primary button-nina" href="d_doctorshift.php">班表時段</a>
         </div>
       </div>
     </section>
