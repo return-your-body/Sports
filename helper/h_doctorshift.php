@@ -265,11 +265,9 @@ if (isset($_SESSION["帳號"])) {
 
 
     <!--標題-->
-    <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-      <!-- Breadcrumbs-->
+    <!-- <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <!-- <p class="breadcrumbs-custom-subtitle">Get in Touch with Us</p> -->
           <p class="heading-1 breadcrumbs-custom-title">醫生班表時段</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
@@ -277,11 +275,11 @@ if (isset($_SESSION["帳號"])) {
           </ul>
         </div>
       </section>
-    </div>
+    </div> -->
     <!--標題-->
 
     <!--當日時段表-->
-    <section class="section section-lg bg-default">
+    <!-- <section class="section section-lg bg-default">
       <div class="container">
         <h3>當日時段表</h3>
         <table border="1" style="border-collapse: collapse; width: 100%; text-align: center;">
@@ -299,17 +297,30 @@ if (isset($_SESSION["帳號"])) {
           <?php endforeach; ?>
         </table>
       </div>
+    </section> -->
+
+    <!--503錯誤-->
+    <section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
+      <div class="fullwidth-page-inner">
+        <div class="section-md text-center">
+          <div class="container">
+            <p class="breadcrumbs-custom-subtitle">您所點選的頁面正在製作中，暫時關閉</p>
+            <p class="heading-1 breadcrumbs-custom-title">Error 503</p>
+            <p>Sorry, we are working overtime to make our website better, so stay tuned!</p>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
         <div class="row row-40">
-          <div class="col-md-4">
+          <!-- <div class="col-md-4">
             <h4>關於我們</h4>
             <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
               professional knowledge using innovative approach.</p>
-          </div>
+          </div> -->
           <div class="col-md-3">
             <h4>快速連結</h4>
             <ul class="list-marked">
@@ -322,7 +333,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="h_patient-needs.php">患者需求</a></li>
             </ul>
           </div>
-          <div class="col-md-5">
+          <!-- <div class="col-md-5">
             <h4>聯絡我們</h4>
             <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
               courses we offer.</p>
@@ -335,7 +346,7 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <button class="form-button linearicons-paper-plane"></button>
             </form>
-          </div>
+          </div> -->
         </div>
         <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
