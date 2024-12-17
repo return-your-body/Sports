@@ -285,7 +285,7 @@ if (isset($_SESSION["帳號"])) {
 
     <!--預約紀錄-->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
-
+      <h3 style='text-align: center;'>預約紀錄</h3>
       <div class="container">
         <!-- 搜尋框 -->
         <form method="GET" action=""
@@ -363,39 +363,39 @@ if (isset($_SESSION["帳號"])) {
       $result = mysqli_query($link, $sql);
 
       // 顯示表格
-      echo "<h3 style='text-align: center;'>預約紀錄</h3>";
-      echo "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>
-    <tr style='background-color: #f2f2f2;'>
-        <th>編號</th>
-        <th>姓名</th>
-        <th>性別</th>
-        <th>生日</th>
-        <th>預約日期</th>
-        <th>預約時間</th>
-        <th>醫生</th>
-        <th>備註</th>
-        <th>建立時間</th>
-    </tr>";
+      echo "<table border='1' style='border-collapse: collapse; width: 100%; table-layout: auto; text-align: center;'>
+<tr style='background-color: #f2f2f2;'>
+    <th style='padding: 8px;'>編號</th>
+    <th style='padding: 8px;'>姓名</th>
+    <th style='padding: 8px;'>性別</th>
+    <th style='padding: 8px;'>生日</th>
+    <th style='padding: 8px;'>預約日期</th>
+    <th style='padding: 8px;'>預約時間</th>
+    <th style='padding: 8px;'>醫生</th>
+    <th style='padding: 8px;'>備註</th>
+    <th style='padding: 8px;'>建立時間</th>
+</tr>";
 
       // 判斷是否有資料
       if (mysqli_num_rows($result) > 0) {
         while ($row = mysqli_fetch_assoc($result)) {
           echo "<tr>
-                <td>{$row['id']}</td>
-                <td>{$row['name']}</td>
-                <td>{$row['gender']}</td>
-                <td>{$row['birthday']}</td>
-                <td>{$row['appointment_date']}</td>
-                <td>{$row['shifttime']}</td>
-                <td>{$row['doctor_name']}</td>
-                <td>{$row['note']}</td>
-                <td>{$row['created_at']}</td>
-            </tr>";
+            <td style='padding: 8px;'>{$row['id']}</td>
+            <td style='padding: 8px;'>{$row['name']}</td>
+            <td style='padding: 8px;'>{$row['gender']}</td>
+            <td style='padding: 8px;'>{$row['birthday']}</td>
+            <td style='padding: 8px;'>{$row['appointment_date']}</td>
+            <td style='padding: 8px;'>{$row['shifttime']}</td>
+            <td style='padding: 8px;'>{$row['doctor_name']}</td>
+            <td style='padding: 8px; word-wrap: break-word;'>{$row['note']}</td>
+            <td style='padding: 8px;'>{$row['created_at']}</td>
+        </tr>";
         }
       } else {
-        echo "<tr><td colspan='9' style='text-align: center;'>目前無資料</td></tr>";
+        echo "<tr><td colspan='9' style='text-align: center; padding: 8px;'>目前無資料</td></tr>";
       }
       echo "</table>";
+
 
       // 頁碼控制
       echo "<div style='text-align: center; margin-top: 20px;'>";
