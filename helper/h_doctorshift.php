@@ -265,11 +265,9 @@ if (isset($_SESSION["帳號"])) {
 
 
     <!--標題-->
-    <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-      <!-- Breadcrumbs-->
+    <!-- <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <!-- <p class="breadcrumbs-custom-subtitle">Get in Touch with Us</p> -->
           <p class="heading-1 breadcrumbs-custom-title">醫生班表時段</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
@@ -277,11 +275,11 @@ if (isset($_SESSION["帳號"])) {
           </ul>
         </div>
       </section>
-    </div>
+    </div> -->
     <!--標題-->
 
     <!--當日時段表-->
-    <section class="section section-lg bg-default">
+    <!-- <section class="section section-lg bg-default">
       <div class="container">
         <h3>當日時段表</h3>
         <table border="1" style="border-collapse: collapse; width: 100%; text-align: center;">
@@ -298,6 +296,19 @@ if (isset($_SESSION["帳號"])) {
             </tr>
           <?php endforeach; ?>
         </table>
+      </div>
+    </section> -->
+
+    <!--503錯誤-->
+    <section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
+      <div class="fullwidth-page-inner">
+        <div class="section-md text-center">
+          <div class="container">
+            <p class="breadcrumbs-custom-subtitle">您所點選的頁面正在製作中，暫時關閉</p>
+            <p class="heading-1 breadcrumbs-custom-title">Error 503</p>
+            <p>Sorry, we are working overtime to make our website better, so stay tuned!</p>
+          </div>
+        </div>
       </div>
     </section>
 

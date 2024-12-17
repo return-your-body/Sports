@@ -264,11 +264,10 @@ if (isset($_SESSION["帳號"])) {
 
 
     <!--標題-->
-    <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-      <!-- Breadcrumbs-->
+    <!-- <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <!-- <p class="breadcrumbs-custom-subtitle">Get in Touch with Us</p> -->
+          <p class="breadcrumbs-custom-subtitle">Get in Touch with Us</p>
           <p class="heading-1 breadcrumbs-custom-title">患者需求</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
@@ -276,101 +275,30 @@ if (isset($_SESSION["帳號"])) {
           </ul>
         </div>
       </section>
-    </div>
+    </div> -->
     <!--標題-->
 
 
-    <!-- a few words about us-->
-    <section class="section section-lg text-center text-md-start bg-default">
+    <!-- 患者需求整理-->
+    <!-- <section class="section section-lg text-center text-md-start bg-default">
       <div class="container">
-        <div class="row row-50 justify-content-md-center justify-content-xl-end justify-content-xxl-end">
-          <div class="col-md-9 col-lg-8 col-xl-6 col-xxl-5">
-            <div class="box-range-content">
-              <h3>A Variety of Courses</h3>
-              <p class="text-spacing-sm">Nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit
-                in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-                proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p><a
-                class="button button-primary button-nina" href="about-us.html">learn more</a>
-            </div>
-          </div>
-          <div class="col-md-9 col-lg-8 col-xl-6 col-xxl-6 jp-video-init">
-            <div class="build-video">
-              <div class="build-video-inner"><img class="image-wrap" src="images/block-video-870x500.png" alt=""
-                  width="870" height="500" />
-              </div>
-              <div class="build-video-element">
-                <div class="jp-video jp-video-single">
-                  <div class="jp-type-playlist">
-                    <!-- Hidden playlist for script-->
-                    <ul class="jp-player-list">
-                      <li class="jp-player-list-item" data-jp-m4v="video/video-bg.mp4" data-jp-title="local video"
-                        data-jp-poster="video/video-bg.jpg"></li>
-                    </ul>
-                    <!-- container in which our video will be played-->
-                    <div class="jp-jplayer"></div>
-                    <!-- main containers for our controls-->
-                    <div class="jp-gui">
-                      <div class="jp-interface">
-                        <div class="jp-controls-holder">
-                          <!-- play and pause buttons--><a class="jp-play" href="javascript:;" tabindex="1">play</a><a
-                            class="jp-pause" href="javascript:;" tabindex="1">pause</a><span
-                            class="separator sep-1"></span>
-                          <!-- progress bar-->
-                          <div class="jp-progress">
-                            <div class="jp-seek-bar">
-                              <div class="jp-play-bar"><span></span></div>
-                            </div>
-                          </div>
-                          <div class="jp-time-wrapper">
-                            <!-- time notifications-->
-                            <div class="jp-current-time"></div><span class="time-sep">/</span>
-                            <div class="jp-duration"></div>
-                          </div><span class="separator sep-2"></span>
-                          <!-- mute / unmute toggle--><a class="jp-mute" href="javascript:;" tabindex="1"
-                            title="mute">mute</a><a class="jp-unmute" href="javascript:;" tabindex="1"
-                            title="unmute">unmute</a>
-                          <!-- volume bar-->
-                          <div class="jp-volume-bar">
-                            <div class="jp-volume-bar-value"><span class="handle"></span></div>
-                          </div><span class="separator sep-2"></span>
-                          <!-- full screen toggle--><a class="jp-full-screen" href="javascript:;" tabindex="1"
-                            title="full screen">full screen</a><a class="jp-restore-screen" href="javascript:;"
-                            tabindex="1" title="restore screen">restore screen</a>
-                        </div>
-                        <!-- end jp-controls-holder-->
-                      </div>
-                      <!-- end jp-interface-->
-                    </div>
-                    <!-- end jp-gui-->
-                    <!-- unsupported message-->
-                    <div class="jp-playlist">
-                      <ul>
-                        <li></li>
-                      </ul>
-                    </div>
-                    <div class="jp-no-solution"><span>Update Required</span>Here's a message which will appear if the
-                      video isn't supported. A Flash alternative can be used here if you fancy it.</div>
-                    <!-- end jp_container_1-->
-                  </div>
-                </div>
-              </div>
-            </div>
+       
+      </div>
+    </section> -->
+
+    <!--503錯誤-->
+    <section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
+      <div class="fullwidth-page-inner">
+        <div class="section-md text-center">
+          <div class="container">
+            <p class="breadcrumbs-custom-subtitle">您所點選的頁面正在製作中，暫時關閉</p>
+            <p class="heading-1 breadcrumbs-custom-title">Error 503</p>
+            <p>Sorry, we are working overtime to make our website better, so stay tuned!</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section section-lg text-center bg-gray-100">
-      <div class="container-wide">
-       
-       
-      </div>
-    </section>
-
-    <section class="section section-wrap section-wrap-equal">
-      <div class="section-wrap-inner">
-        <div class="container container-bigger">
-        
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
