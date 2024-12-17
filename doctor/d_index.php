@@ -4,7 +4,7 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-  header("Location: login.html");
+  header("Location: login.php");
   exit;
 }
 

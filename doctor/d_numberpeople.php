@@ -4,7 +4,7 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-  header("Location: login.html");
+  header("Location: login.php");
   exit;
 }
 
@@ -279,7 +279,123 @@ if (isset($_SESSION["帳號"])) {
     </div>
     <!--標題-->
 
-   
+    <section class="section section-lg bg-default novi-bg novi-bg-img">
+      <div>
+        <label for="year">選擇年份：</label>
+        <select id="year"></select>
+        <label for="month">選擇月份：</label>
+        <select id="month"></select>
+        <label for="the">選擇治療師：</label>
+        <select id="the" name="doctor">
+          <option value="">所有</option> <!-- 修改這一行 -->
+          <?php
+          // 從資料庫中讀取資料並顯示在下拉選單中
+          while ($row = mysqli_fetch_assoc($result)) {
+            echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
+          }
+          ?>
+        </select>
+
+      </div>
+      <table class="table-custom table-color-header table-custom-bordered">
+        <thead>
+          <tr>
+            <th>日</th>
+            <th>一</th>
+            <th>二</th>
+            <th>三</th>
+            <th>四</th>
+            <th>五</th>
+            <th>六</th>
+          </tr>
+        </thead>
+        <tbody id="calendar"></tbody>
+      </table>
+
+      <script>
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth();
+
+        const yearSelect = document.getElementById('year');
+        const monthSelect = document.getElementById('month');
+        const calendarBody = document.getElementById('calendar');
+
+        function initYearOptions() {
+          const startYear = currentYear - 5;
+          const endYear = currentYear + 5;
+          for (let year = startYear; year <= endYear; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            if (year === currentYear) option.selected = true;
+            yearSelect.appendChild(option);
+          }
+        }
+
+        function initMonthOptions() {
+          for (let month = 0; month < 12; month++) {
+            const option = document.createElement('option');
+            option.value = month;
+            option.textContent = month + 1;
+            if (month === currentMonth) option.selected = true;
+            monthSelect.appendChild(option);
+          }
+        }
+
+        function generateCalendar(year, month) {
+          calendarBody.innerHTML = ''; // 清空表格內容
+          const firstDay = new Date(year, month, 1).getDay(); // 該月第一天是星期幾
+          const lastDate = new Date(year, month + 1, 0).getDate(); // 該月最後一天是幾號
+          let row = document.createElement('tr');
+
+          // 空白單元格
+          for (let i = 0; i < firstDay; i++) {
+            const emptyCell = document.createElement('td');
+            row.appendChild(emptyCell);
+          }
+
+          // 填入日期
+          for (let date = 1; date <= lastDate; date++) {
+            if (row.children.length === 7) {
+              calendarBody.appendChild(row);
+              row = document.createElement('tr');
+            }
+
+            const dateCell = document.createElement('td');
+            const dateLink = document.createElement('a');
+            dateLink.href = "#";
+            dateLink.textContent = date;
+            dateLink.addEventListener('click', (e) => {
+              e.preventDefault();
+              alert(`您選擇的日期是：${year}-${month + 1}-${date}`);
+            });
+
+            dateCell.appendChild(dateLink);
+            row.appendChild(dateCell);
+          }
+
+          // 填補最後一行的空白單元格
+          while (row.children.length < 7) {
+            const emptyCell = document.createElement('td');
+            row.appendChild(emptyCell);
+          }
+          calendarBody.appendChild(row);
+        }
+
+        // 初始化
+        initYearOptions();
+        initMonthOptions();
+        generateCalendar(currentYear, currentMonth) 
+
+        yearSelect.addEventListener('change', () => {
+          generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+        });
+        monthSelect.addEventListener('change', () => {
+          generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+        });
+      </script>
+    </section>
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
