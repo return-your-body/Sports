@@ -287,31 +287,66 @@ if (isset($_SESSION["帳號"])) {
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
         <dl class="list-terms">
+          <!-- <style>
+                /* 搜尋 查看/填寫資料 */
+                .btn {
+                    display: inline-block;
+                    padding: 10px 20px;
+                    font-size: 16px;
+                    text-align: center;
+                    text-decoration: none;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                }
 
-          <div class="button button-icon button-icon-left button-xs button-primary button-nina"><span
-              class="icon mdi mdi-magnify"></span>搜尋</div>
-          <?php
-          session_start();
-          include "../db.php"; // 引入資料庫連線
-          
-          // 分頁設定
-          $records_per_page = 10;
-          $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-          if ($page < 1)
-            $page = 1;
+                .btn-primary {
+                    background-color: #007bff;
+                    /* 藍色背景 */
+                    color: white;
+                    /* 白色文字 */
+                }
 
-          // 計算總記錄數
-          $count_sql = "SELECT COUNT(*) AS total FROM appointment";
-          $count_result = mysqli_query($link, $count_sql);
-          $count_row = mysqli_fetch_assoc($count_result);
-          $total_records = $count_row['total'];
-          $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
+                .btn-primary:hover {
+                    background-color: #0056b3;
+                    /* 深藍色背景，懸停時 */
+                }
+            </style>
+          <form method="POST" action="d_recordsfind.php" class="d-flex w-100">
+            <input type="text" name="search" class="form-control p-3" placeholder="搜尋">
+            <button class="btn btn-primary px-3" type="submit"><i class="fa fa-search"></i></button>
+          </form> -->
+          <div style="display: flex; justify-content: flex-end; align-items: center;">
+            <input type="text" placeholder="請輸入搜尋姓名"
+              style="height: 36px; width: 200px; margin-right: 8px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+            <div class="button button-icon button-icon-left button-xs button-primary button-nina"><span
+                class="icon mdi mdi-magnify"></span>搜尋</div>
+          </div>
+      </div>
 
-          // 計算起始記錄
-          $offset = ($page - 1) * $records_per_page;
 
-          // 查詢關聯資料
-          $sql = "SELECT 
+      <?php
+      session_start();
+      include "../db.php"; // 引入資料庫連線
+      
+      // 分頁設定
+      $records_per_page = 10;
+      $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+      if ($page < 1)
+        $page = 1;
+
+      // 計算總記錄數
+      $count_sql = "SELECT COUNT(*) AS total FROM appointment";
+      $count_result = mysqli_query($link, $count_sql);
+      $count_row = mysqli_fetch_assoc($count_result);
+      $total_records = $count_row['total'];
+      $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
+
+      // 計算起始記錄
+      $offset = ($page - 1) * $records_per_page;
+
+      // 查詢關聯資料
+      $sql = "SELECT 
           a.appointment_id AS id, 
           COALESCE(p.name, 'N/A') AS name, 
           CASE 
@@ -337,11 +372,11 @@ if (isset($_SESSION["帳號"])) {
           a.appointment_date, st.shifttime
       LIMIT $offset, $records_per_page";
 
-          $result = mysqli_query($link, $sql);
+      $result = mysqli_query($link, $sql);
 
-          // 顯示表格
-          echo "<h3 style='text-align: center;'>預約紀錄</h3>";
-          echo "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>
+      // 顯示表格
+      echo "<h3 style='text-align: center;'>預約紀錄</h3>";
+      echo "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>
         <tr style='background-color: #f2f2f2;'>
             <th>編號</th>
             <th>姓名</th>
@@ -354,10 +389,10 @@ if (isset($_SESSION["帳號"])) {
             <th>建立時間</th>
         </tr>";
 
-          // 判斷是否有資料
-          if (mysqli_num_rows($result) > 0) {
-            while ($row = mysqli_fetch_assoc($result)) {
-              echo "<tr>
+      // 判斷是否有資料
+      if (mysqli_num_rows($result) > 0) {
+        while ($row = mysqli_fetch_assoc($result)) {
+          echo "<tr>
                 <td>{$row['id']}</td>
                 <td>{$row['name']}</td>
                 <td>{$row['gender']}</td>
@@ -368,75 +403,74 @@ if (isset($_SESSION["帳號"])) {
                 <td>{$row['note']}</td>
                 <td>{$row['created_at']}</td>
             </tr>";
-            }
-          } else {
-            // 如果沒有資料，顯示「目前無資料」
-            echo "<tr><td colspan='9' style='text-align: center;'>目前無資料</td></tr>";
-          }
-          echo "</table>";
+        }
+      } else {
+        // 如果沒有資料，顯示「目前無資料」
+        echo "<tr><td colspan='9' style='text-align: center;'>目前無資料</td></tr>";
+      }
+      echo "</table>";
 
-          // 頁碼控制
-          echo "<div style='text-align: center; margin-top: 20px;'>";
-          echo "<p>第 $page 頁，共 $total_pages 頁</p>";
+      // 頁碼控制
+      echo "<div style='text-align: center; margin-top: 20px;'>";
+      echo "<p>第 $page 頁，共 $total_pages 頁</p>";
 
-          if ($page > 1)
-            echo "<a href='?page=" . ($page - 1) . "'>上一頁</a> ";
-          for ($i = 1; $i <= $total_pages; $i++) {
-            echo ($i == $page) ? "<strong>$i</strong> " : "<a href='?page=$i'>$i</a> ";
-          }
-          if ($page < $total_pages)
-            echo "<a href='?page=" . ($page + 1) . "'>下一頁</a>";
-          echo "</div>";
+      if ($page > 1)
+        echo "<a href='?page=" . ($page - 1) . "'>上一頁</a> ";
+      for ($i = 1; $i <= $total_pages; $i++) {
+        echo ($i == $page) ? "<strong>$i</strong> " : "<a href='?page=$i'>$i</a> ";
+      }
+      if ($page < $total_pages)
+        echo "<a href='?page=" . ($page + 1) . "'>下一頁</a>";
+      echo "</div>";
 
-          mysqli_close($link);
-          ?>
+      mysqli_close($link);
+      ?>
 
-      </div>
-    </section>
-    <!--預約紀錄-->
+  </div>
+  </section>
+  <!--預約紀錄-->
 
-    <!--頁尾-->
-    <footer class="section novi-bg novi-bg-img footer-simple">
-      <div class="container">
-        <div class="row row-40">
-          <div class="col-md-4">
-            <h4>關於我們</h4>
-            <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
-              professional knowledge using innovative approach.</p>
-          </div>
-          <div class="col-md-3">
-            <h4>快速連結</h4>
-            <ul class="list-marked">
-              <li><a href="d_index.php">首頁</a></li>
-              <li><a href="d_appointment.php">預約</a></li>
-              <li><a href="d_numberpeople.php">當天人數及時段</a></li>
-              <li><a href="d_doctorshift.php">班表時段</a></li>
-              <li><a href="d_medical-record.php">看診紀錄</a></li>
-              <li> <a href="d_appointment-records.php">預約紀錄</a></li>
-              </a></li>
-            </ul>
-          </div>
-          <div class="col-md-5">
-            <h4>聯絡我們</h4>
-            <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
-              courses we offer.</p>
-            <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global" data-form-type="subscribe"
-              method="post" action="bat/rd-mailform.php">
-              <div class="form-wrap">
-                <input class="form-input" type="email" name="email" data-constraints="@Email @Required"
-                  id="footer-mail">
-                <label class="form-label" for="footer-mail">Enter your e-mail</label>
-              </div>
-              <button class="form-button linearicons-paper-plane"></button>
-            </form>
-          </div>
+  <!--頁尾-->
+  <footer class="section novi-bg novi-bg-img footer-simple">
+    <div class="container">
+      <div class="row row-40">
+        <div class="col-md-4">
+          <h4>關於我們</h4>
+          <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
+            professional knowledge using innovative approach.</p>
         </div>
-        <!-- <p class="rights"><span>&copy;&nbsp;</span><span
+        <div class="col-md-3">
+          <h4>快速連結</h4>
+          <ul class="list-marked">
+            <li><a href="d_index.php">首頁</a></li>
+            <li><a href="d_appointment.php">預約</a></li>
+            <li><a href="d_numberpeople.php">當天人數及時段</a></li>
+            <li><a href="d_doctorshift.php">班表時段</a></li>
+            <li><a href="d_medical-record.php">看診紀錄</a></li>
+            <li> <a href="d_appointment-records.php">預約紀錄</a></li>
+            </a></li>
+          </ul>
+        </div>
+        <div class="col-md-5">
+          <h4>聯絡我們</h4>
+          <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
+            courses we offer.</p>
+          <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global" data-form-type="subscribe"
+            method="post" action="bat/rd-mailform.php">
+            <div class="form-wrap">
+              <input class="form-input" type="email" name="email" data-constraints="@Email @Required" id="footer-mail">
+              <label class="form-label" for="footer-mail">Enter your e-mail</label>
+            </div>
+            <button class="form-button linearicons-paper-plane"></button>
+          </form>
+        </div>
+      </div>
+      <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
             Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank"
             href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p> -->
-      </div>
-    </footer>
+    </div>
+  </footer>
   </div>
   <!--頁尾-->
 
