@@ -301,9 +301,19 @@ if (isset($_SESSION["帳號"])) {
       </div>
 
       <?php
-      session_start();
-      include "../db.php"; // 引入資料庫連線
-      
+   
+      // 確認用戶是否已登入，否則跳轉回登入頁面
+      if (!isset($_SESSION['user_id']) || !isset($_SESSION['account'])) {
+        echo "<script>
+            alert('未登入，請重新登入！');
+            window.location.href = 'login.php';
+          </script>";
+        exit;
+      }
+
+      // 獲取登入的醫生帳號
+      $logged_in_account = $_SESSION['account'];
+
       // 搜尋條件
       $search_name = '';
       if (isset($_GET['search_name']) && trim($_GET['search_name']) != '') {
@@ -316,11 +326,14 @@ if (isset($_SESSION["帳號"])) {
       if ($page < 1)
         $page = 1;
 
-      // 計算總記錄數（含搜尋條件）
+      // 計算總記錄數，包含登入醫生條件
       $count_sql = "SELECT COUNT(*) AS total 
               FROM appointment a
               LEFT JOIN people p ON a.people_id = p.people_id
-              WHERE p.name LIKE '%$search_name%'";
+              LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+              LEFT JOIN user u ON ds.doctor_id = u.user_id
+              WHERE u.account = '$logged_in_account'
+              AND p.name LIKE '%$search_name%'";
       $count_result = mysqli_query($link, $count_sql);
       $count_row = mysqli_fetch_assoc($count_result);
       $total_records = $count_row['total'];
@@ -329,7 +342,7 @@ if (isset($_SESSION["帳號"])) {
       // 計算起始記錄
       $offset = ($page - 1) * $records_per_page;
 
-      // 查詢資料，加入搜尋條件
+      // 查詢資料，僅顯示當前登入醫生的資料
       $sql = "SELECT 
             a.appointment_id AS id,
             COALESCE(p.name, 'N/A') AS name,
@@ -341,7 +354,6 @@ if (isset($_SESSION["帳號"])) {
             COALESCE(p.birthday, 'N/A') AS birthday,
             ds.date AS appointment_date,
             COALESCE(st.shifttime, 'N/A') AS shifttime,
-            COALESCE(d.doctor, 'N/A') AS doctor_name,
             COALESCE(a.note, 'N/A') AS note,
             a.created_at
         FROM 
@@ -351,16 +363,29 @@ if (isset($_SESSION["帳號"])) {
         LEFT JOIN 
             doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
         LEFT JOIN 
-            doctor d ON ds.doctor_id = d.doctor_id
-        LEFT JOIN 
             shifttime st ON ds.shifttime_id = st.shifttime_id
+        LEFT JOIN 
+            user u ON ds.doctor_id = u.user_id
         WHERE 
-            p.name LIKE '%$search_name%'
+            u.account = '$logged_in_account'
+            AND p.name LIKE '%$search_name%'
         ORDER BY 
             ds.date, st.shifttime
         LIMIT $offset, $records_per_page";
 
       $result = mysqli_query($link, $sql);
+
+      // 顯示搜尋框
+      echo "<div>
+        <form method='GET' action='' style='display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px;'>
+          <input type='text' name='search_name' placeholder='請輸入搜尋姓名'
+                 value='" . htmlspecialchars($search_name) . "' 
+                 style='height: 36px; width: 200px; margin-right: 8px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;'>
+          <button type='submit' style='height: 36px; padding: 5px 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;'>
+            <span class='icon mdi mdi-magnify'></span> 搜尋
+          </button>
+        </form>
+      </div>";
 
       // 顯示表格
       echo "<table border='1' style='border-collapse: collapse; width: 100%; table-layout: auto; text-align: center;'>
@@ -371,7 +396,6 @@ if (isset($_SESSION["帳號"])) {
     <th style='padding: 8px;'>生日</th>
     <th style='padding: 8px;'>預約日期</th>
     <th style='padding: 8px;'>預約時間</th>
-    <th style='padding: 8px;'>醫生</th>
     <th style='padding: 8px;'>備註</th>
     <th style='padding: 8px;'>建立時間</th>
 </tr>";
@@ -386,16 +410,16 @@ if (isset($_SESSION["帳號"])) {
             <td style='padding: 8px;'>{$row['birthday']}</td>
             <td style='padding: 8px;'>{$row['appointment_date']}</td>
             <td style='padding: 8px;'>{$row['shifttime']}</td>
-            <td style='padding: 8px;'>{$row['doctor_name']}</td>
-            <td style='padding: 8px; word-wrap: break-word;'>{$row['note']}</td>
+            <td style='padding: 8px;'>{$row['note']}</td>
             <td style='padding: 8px;'>{$row['created_at']}</td>
         </tr>";
         }
       } else {
-        echo "<tr><td colspan='9' style='text-align: center; padding: 8px;'>目前無資料</td></tr>";
+        echo "<tr><td colspan='8' style='text-align: center; padding: 8px;'>目前無資料</td></tr>";
       }
       echo "</table>";
 
+      mysqli_close($link);
 
       // 頁碼控制
       echo "<div style='text-align: center; margin-top: 20px;'>";
@@ -404,14 +428,14 @@ if (isset($_SESSION["帳號"])) {
       if ($page > 1)
         echo "<a href='?page=" . ($page - 1) . "&search_name=$search_name'>上一頁</a> ";
       for ($i = 1; $i <= $total_pages; $i++) {
-        echo ($i == $page) ? "<strong>$i</strong> " : "<a href='?page=$i&search_name=$search_name'>$i</a> ";
+        echo ($i == $page) ? "<strong>$i</strong> "
+          : "<a href='?page=$i&search_name=$search_name'>$i</a> ";
       }
       if ($page < $total_pages)
-        echo "<a href='?page=" . ($page + 1) . "&search_name=$search_name'>下一頁</a>";
+        echo "<a href='?page=" .
+          ($page + 1) . "&search_name=$search_name'>下一頁</a>";
       echo "</div>";
-
-      mysqli_close($link);
-      ?>
+      mysqli_close($link); ?>
 
   </div>
   </section>
