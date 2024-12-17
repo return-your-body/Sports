@@ -86,139 +86,140 @@
         </div>
       </header>
       <!DOCTYPE html>
-      <html lang="zh-Hant">
-      <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>表格填寫</title>
-          <style>
-              body {
-                  font-family: Arial, sans-serif;
-                  margin: 20px;
-              }
-              table {
-                  width: 50%;
-                  border-collapse: collapse;
-              }
-              td {
-                  padding: 8px;
-              }
-              label {
-                  margin-right: 10px;
-              }
-              select, input, textarea, button {
-                  width: 100%;
-                  padding: 5px;
-                  box-sizing: border-box;
-              }
-              button {
-                  background-color: #4CAF50;
-                  color: white;
-                  border: none;
-                  cursor: pointer;
-                  margin-top: 10px;
-              }
-              button:hover {
-                  background-color: #45a049;
-              }
-          </style>
-      </head>
-      <body>
-          <h2>資訊填寫表格</h2>
-          <form>
-              <table border="1">
-                  <tr>
-                      <td><label for="name">姓名：</label></td>
-                      <td><input type="text" id="name" name="name" placeholder="請輸入姓名"></td>
-                  </tr>
-                  <tr>
-                      <td>性別：</td>
-                      <td>
-                          <label><input type="radio" name="gender" value="male"> 男</label>
-                          <label><input type="radio" name="gender" value="female"> 女</label>
-                      </td>
-                  </tr>
-                  <tr>
-                      <td>出生年月日：</td>
-                      <td>
-                          <select id="year" name="year">
-                              <option value="">年</option>
-                              <!-- 自動生成 1980-2024 年 -->
-                              <script>
-                                  for(let y = 1880; y <= 2024; y++) {
-                                      document.write(`<option value="${y}">${y}</option>`);
-                                  }
-                              </script>
-                          </select>
-                          <select id="month" name="month">
-                              <option value="">月</option>
-                              <script>
-                                  for(let m = 1; m <= 12; m++) {
-                                      document.write(`<option value="${m}">${m}</option>`);
-                                  }
-                              </script>
-                          </select>
-                          <select id="day" name="day">
-                              <option value="">日</option>
-                              <script>
-                                  for(let d = 1; d <= 31; d++) {
-                                      document.write(`<option value="${d}">${d}</option>`);
-                                  }
-                              </script>
-                          </select>
-                      </td>
-                  </tr>
-                  <tr>
-                      <td><label for="idNumber">身分證字號：</label></td>
-                      <td><input type="text" id="idNumber" name="idNumber" placeholder="請輸入身分證字號"></td>
-                  </tr>
-                  <tr>
-                      <td><label for="phone">電話：</label></td>
-                      <td><input type="text" id="phone" name="phone" placeholder="請輸入電話號碼"></td>
-                  </tr>
-                  <tr>
-                      <td>地址：</td>
-                      <td>
-                          <select id="city" name="city">
-                              <option value="">選擇市</option>
-                              <option value="台北市">台北市</option>
-                              <option value="新北市">新北市</option>
-                              <option value="桃園市">桃園市</option>
-                              <option value="台中市">台中市</option>
-                          </select>
-                          <input type="text" id="otherAddress" name="otherAddress" placeholder="請填寫詳細地址">
-                      </td>
-                  </tr>
-                  <tr>
-                      <td><label for="remark">備註：</label></td>
-                      <td><textarea id="remark" name="remark" rows="4" placeholder="請輸入備註"></textarea></td>
-                  </tr>
-                  <tr>
-                      <td>選擇治療師：</td>
-                      <td>
-                          <select id="therapist" name="therapist">
-                              <option value="">請選擇治療師</option>
-                              <option value="張醫師">張醫師</option>
-                              <option value="李醫師">李醫師</option>
-                              <option value="王治療師">王治療師</option>
-                          </select>
-                      </td>
-                  </tr>
-              </table>
-              <button type="submit">完成</button>
-          </form>
-      </body>
-      </html>
-      
-
-
-
-
-
-    <!-- Global Mailform Output-->
-    <div class="snackbars" id="form-output-global"></div>
-    <!-- Javascript-->
-    <script src="js/core.min.js"></script>
-    <script src="js/script.js"></script>
-  </body>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>表格填寫</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 50%;
+            border-collapse: collapse;
+        }
+        td {
+            padding: 8px;
+        }
+        label {
+            margin-right: 10px;
+        }
+        select, input, textarea {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 8px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h2>資訊填寫表格</h2>
+    <form>
+        <table border="1">
+            <tr>
+                <td><label for="name">姓名：</label></td>
+                <td><input type="text" id="name" name="name" placeholder="請輸入姓名"></td>
+            </tr>
+            <tr>
+                <td>性別：</td>
+                <td>
+                    <label><input type="radio" name="gender" value="male"> 男</label>
+                    <label><input type="radio" name="gender" value="female"> 女</label>
+                </td>
+            </tr>
+            <tr>
+                <td>出生年月日：</td>
+                <td>
+                    <select id="year" name="year">
+                        <option value="">年</option>
+                        <!-- 自動生成 1980-2024 年 -->
+                        <script>
+                            for(let y = 1980; y <= 2024; y++) {
+                                document.write(`<option value="${y}">${y}</option>`);
+                            }
+                        </script>
+                    </select>
+                    <select id="month" name="month">
+                        <option value="">月</option>
+                        <script>
+                            for(let m = 1; m <= 12; m++) {
+                                document.write(`<option value="${m}">${m}</option>`);
+                            }
+                        </script>
+                    </select>
+                    <select id="day" name="day">
+                        <option value="">日</option>
+                        <script>
+                            for(let d = 1; d <= 31; d++) {
+                                document.write(`<option value="${d}">${d}</option>`);
+                            }
+                        </script>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="idNumber">身分證字號：</label></td>
+                <td><input type="text" id="idNumber" name="idNumber" placeholder="請輸入身分證字號"></td>
+            </tr>
+            <tr>
+                <td><label for="phone">電話：</label></td>
+                <td><input type="text" id="phone" name="phone" placeholder="請輸入電話號碼"></td>
+            </tr>
+            <tr>
+                <td>地址：</td>
+                <td>
+                    <select id="city" name="city">
+                        <option value="">選擇市</option>
+                        <option value="台北市">台北市</option>
+                        <option value="新北市">新北市</option>
+                        <option value="桃園市">桃園市</option>
+                        <option value="台中市">台中市</option>
+                    </select>
+                    <select id="district" name="district">
+                        <option value="">選擇區</option>
+                        <option value="中正區">中正區</option>
+                        <option value="大安區">大安區</option>
+                        <option value="信義區">信義區</option>
+                    </select>
+                    <input type="text" id="otherAddress" name="otherAddress" placeholder="請填寫詳細地址">
+                </td>
+            </tr>
+            <tr>
+                <td><label for="remark">備註：</label></td>
+                <td><textarea id="remark" name="remark" rows="4" placeholder="請輸入備註"></textarea></td>
+            </tr>
+            <tr>
+                <td>選擇治療師：</td>
+                <td>
+                    <select id="therapist" name="therapist">
+                        <option value="">請選擇治療師</option>
+                        <option value="張醫師">張醫師</option>
+                        <option value="李醫師">李醫師</option>
+                        <option value="王治療師">王治療師</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+        <div class="button-container">
+            <button type="submit">完成</button>
+        </div>
+    </form>
+</body>
 </html>
