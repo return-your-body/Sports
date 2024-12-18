@@ -280,7 +280,7 @@ if (isset($_SESSION["帳號"])) {
 		</head>
 
 		<body>
-			<marquee>我不知道為甚麼要做這個跑馬燈</marquee>
+			<marquee>跑馬燈</marquee>
 		</body>
 
 		</html>
