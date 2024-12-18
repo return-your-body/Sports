@@ -23,15 +23,48 @@ if (isset($_SESSION["帳號"])) {
 	exit();
 }
 
-// 引入資料庫連接檔案
 require '../db.php';
 
-// SQL 查詢
-$query = "SELECT doctor_id, doctor FROM doctor";
+// 取得醫生資料 (保留原有邏輯)
+$query = "
+    SELECT d.doctor_id, d.doctor
+    FROM doctor d
+    INNER JOIN user u ON d.user_id = u.user_id
+    INNER JOIN grade g ON u.grade_id = g.grade_id
+    WHERE g.grade = '醫生'
+";
 $result = mysqli_query($link, $query);
 
-if (!$result) {
-	die("查詢失敗：" . mysqli_error($link));
+// 處理 AJAX 請求，返回排班數量
+if (isset($_GET['fetch'])) {
+	$year = $_GET['year'] ?? date('Y');
+	$month = $_GET['month'] ?? date('m');
+	$doctor_id = $_GET['doctor_id'] ?? '';
+
+	// 查詢指定年份、月份和醫生的排班數量
+	$sql = "SELECT DATE(date) as shift_date, COUNT(*) as total
+            FROM doctorshift
+            WHERE YEAR(date) = ? AND MONTH(date) = ?";
+	$params = [$year, $month];
+
+	if ($doctor_id !== '') {
+		$sql .= " AND doctor_id = ?";
+		$params[] = $doctor_id;
+	}
+	$sql .= " GROUP BY DATE(date)";
+
+	// 執行查詢
+	$stmt = mysqli_prepare($link, $sql);
+	mysqli_stmt_bind_param($stmt, str_repeat("s", count($params)), ...$params);
+	mysqli_stmt_execute($stmt);
+	$result = mysqli_stmt_get_result($stmt);
+
+	$data = [];
+	while ($row = mysqli_fetch_assoc($result)) {
+		$data[$row['shift_date']] = $row['total'];
+	}
+	echo json_encode($data);
+	exit;
 }
 ?>
 <!DOCTYPE html>
@@ -247,7 +280,8 @@ if (!$result) {
 								</li> -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_patient.php">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">新增治療師/助手</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_addhd.php">新增治療師/助手</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_blacklist.php">黑名單</a>
@@ -365,12 +399,11 @@ if (!$result) {
 
 			const yearSelect = document.getElementById('year');
 			const monthSelect = document.getElementById('month');
+			const doctorSelect = document.getElementById('the');
 			const calendarBody = document.getElementById('calendar');
 
 			function initYearOptions() {
-				const startYear = currentYear - 5;
-				const endYear = currentYear + 5;
-				for (let year = startYear; year <= endYear; year++) {
+				for (let year = currentYear - 5; year <= currentYear + 5; year++) {
 					const option = document.createElement('option');
 					option.value = year;
 					option.textContent = year;
@@ -389,11 +422,18 @@ if (!$result) {
 				}
 			}
 
-			function generateCalendar(year, month) {
-				calendarBody.innerHTML = ''; // 清空表格內容
-				const firstDay = new Date(year, month, 1).getDay(); // 該月第一天是星期幾
-				const lastDate = new Date(year, month + 1, 0).getDate(); // 該月最後一天是幾號
-				const today = new Date(); // 取得今天的日期
+			async function fetchAppointments(year, month, doctorId) {
+				const response = await fetch(`?fetch=1&year=${year}&month=${month}&doctor_id=${doctorId}`);
+				return response.json();
+			}
+
+			async function generateCalendar(year, month) {
+				const appointments = await fetchAppointments(year, month + 1, doctorSelect.value);
+
+				calendarBody.innerHTML = '';
+				const firstDay = new Date(year, month, 1).getDay();
+				const lastDate = new Date(year, month + 1, 0).getDate();
+				const today = new Date();
 
 				let row = document.createElement('tr');
 
@@ -403,63 +443,44 @@ if (!$result) {
 					row.appendChild(emptyCell);
 				}
 
-				// 填入日期
 				for (let date = 1; date <= lastDate; date++) {
 					if (row.children.length === 7) {
 						calendarBody.appendChild(row);
 						row = document.createElement('tr');
 					}
 
+					const cellDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+					const isToday = new Date(cellDate).toDateString() === today.toDateString();
+					const isFuture = new Date(cellDate) > today;
+
 					const dateCell = document.createElement('td');
-
-					// 生成當前格子的日期物件
-					const cellDate = new Date(year, month, date);
-					const isToday = cellDate.toDateString() === today.toDateString();
-					const isFuture = cellDate > today;
-
-					// 創建日期文字
 					const dateText = document.createElement('div');
 					dateText.textContent = date;
 
-					// 根據日期顯示不同的訊息
 					const bookingInfo = document.createElement('div');
 					bookingInfo.classList.add('booking-info');
 
+					// 保留你的判斷邏輯，並填入預約人數
 					if (isToday) {
-						bookingInfo.textContent = "目前總人數：0"; // 今天的日期
+						bookingInfo.textContent = `目前總人數：${appointments[cellDate] || 0}`;
 					} else if (isFuture) {
-						bookingInfo.textContent = "目前預約人數：0"; // 未來的日期
+						bookingInfo.textContent = `目前預約人數：${appointments[cellDate] || 0}`;
 					} else {
-						bookingInfo.textContent = "總人數：0"; // 過去的日期
+						bookingInfo.textContent = `總人數：${appointments[cellDate] || 0}`;
 					}
 
-					// 點擊日期事件
-					dateText.style.cursor = "pointer";
-					dateText.addEventListener('click', (e) => {
-						e.preventDefault();
-						alert(`您選擇的日期是：${year}-${month + 1}-${date}`);
-					});
-
-					// 組合元素
 					dateCell.appendChild(dateText);
 					dateCell.appendChild(bookingInfo);
 					row.appendChild(dateCell);
 				}
 
-				// 填補最後一行的空白單元格
 				while (row.children.length < 7) {
-					const emptyCell = document.createElement('td');
-					row.appendChild(emptyCell);
+					row.appendChild(document.createElement('td'));
 				}
 				calendarBody.appendChild(row);
 			}
 
-
-			// 初始化
-			initYearOptions();
-			initMonthOptions();
-			generateCalendar(currentYear, currentMonth);
-
+			// 綁定事件
 			yearSelect.addEventListener('change', () => {
 				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
 			});
@@ -467,6 +488,16 @@ if (!$result) {
 			monthSelect.addEventListener('change', () => {
 				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
 			});
+
+			doctorSelect.addEventListener('change', () => {
+				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+			});
+
+			// 初始化
+			initYearOptions();
+			initMonthOptions();
+			generateCalendar(currentYear, currentMonth);
+
 		</script>
 
 		<!-- Global Mailform Output-->

@@ -270,27 +270,8 @@ if (isset($_SESSION["帳號"])) {
 			</div>
 		</header>
 
-		<!DOCTYPE html>
-		<html lang="zh-Hant">
-
-		<head>
-			<meta charset="UTF-8">
-			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title>跑馬燈效果</title>
-		</head>
-
-		<body>
 			<marquee>跑馬燈</marquee>
-		</body>
-
-		</html>
-		<!DOCTYPE html>
-		<html lang="zh-Hant">
-
-		<head>
-			<meta charset="UTF-8">
-			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title>班表</title>
+		
 			<style>
 				body {
 					font-family: Arial, sans-serif;
@@ -327,9 +308,7 @@ if (isset($_SESSION["帳號"])) {
 					font-weight: bold;
 				}
 			</style>
-		</head>
-
-		<body>
+		
 			<h1>班表</h1>
 			<table>
 				<caption>每週班表</caption>
@@ -378,9 +357,7 @@ if (isset($_SESSION["帳號"])) {
 					</tr>
 				</tbody>
 			</table>
-		</body>
 
-		</html>
 
 
 		<!-- A few words about-->
