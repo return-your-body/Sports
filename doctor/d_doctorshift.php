@@ -171,16 +171,9 @@ if (isset($_SESSION["帳號"])) {
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_numberpeople.php">當天人數及時段</a>
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a>
-                  <!-- <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-teacher.html"></a>
-                      </li>
-                    </ul> -->
                 </li>
                 <li class="rd-nav-item active"><a class="rd-nav-link" href="d_doctorshift.php">班表時段</a>
-                  <!-- <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.html">123</a>
-                      </li>
-                    </ul> -->
+
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
@@ -188,24 +181,10 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_appointment-records.php">預約紀錄</a>
                     </li>
-                    <!-- <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="404-page.html">404 page</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="503-page.html">503 page</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="buttons.html">Buttons</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="forms.html">Forms</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="grid-system.html">Grid system</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="tables.html">Tables</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="typography.html">Typography</a>
-                      </li> -->
                   </ul>
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="d_body-knowledge.php">身體小知識</a>
-                </li>
+                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="d_body-knowledge.php">身體小知識</a>
+                </li> -->
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
@@ -278,23 +257,61 @@ if (isset($_SESSION["帳號"])) {
       </section>
     </div>
 
+    <!--班表-->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div>
+
+        <?php
+        session_start(); // 啟用 Session
+        
+        // 確保用戶已登入
+        if (!isset($_SESSION['帳號'])) {
+          echo "<script>
+            alert('未登入或會話已過期，請重新登入！');
+            window.location.href = '../index.html';
+          </script>";
+          exit;
+        }
+
+        // 取得當前登入的帳號
+        $帳號 = $_SESSION['帳號'];
+
+        // 引入資料庫連接檔案
+        require '../db.php';
+
+        // SQL 查詢：根據登入帳號取得對應的醫生姓名
+        $query = "SELECT doctor_id, doctor 
+          FROM doctor 
+          WHERE user_id = (SELECT user_id FROM user WHERE account = '$帳號')";
+        $result = mysqli_query($link, $query);
+
+        if (!$result) {
+          die("查詢失敗：" . mysqli_error($link));
+        }
+
+        // 判斷是否找到對應的醫生姓名
+        if ($row = mysqli_fetch_assoc($result)) {
+          $doctor_id = $row['doctor_id'];
+          $doctor_name = htmlspecialchars($row['doctor']);
+        } else {
+          $doctor_id = '';
+          $doctor_name = '未知醫生';
+        }
+
+        // 關閉資料庫連接
+        mysqli_close($link);
+        ?>
+
+        <!-- 顯示醫生姓名 -->
+        <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px;">
+        治療師姓名：<?php echo $doctor_name; ?>
+        </div>
+
         <label for="year">選擇年份：</label>
         <select id="year"></select>
         <label for="month">選擇月份：</label>
         <select id="month"></select>
-        <label for="the">選擇治療師：</label>
-        <select id="the" name="doctor">
-          <option value="">所有</option> <!-- 修改這一行 -->
-          <?php
-          // 從資料庫中讀取資料並顯示在下拉選單中
-          while ($row = mysqli_fetch_assoc($result)) {
-            echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
-          }
-          ?>
-        </select>
-
+      
       </div>
       <table class="table-custom table-color-header table-custom-bordered">
         <thead>
@@ -396,17 +413,17 @@ if (isset($_SESSION["帳號"])) {
       </script>
     </section>
 
-    
+
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
         <div class="row row-40">
-          <div class="col-md-4">
+          <!-- <div class="col-md-4">
             <h4>關於我們</h4>
             <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
               professional knowledge using innovative approach.</p>
-          </div>
+          </div> -->
           <div class="col-md-3">
             <h4>快速連結</h4>
             <ul class="list-marked">
@@ -416,10 +433,10 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="d_doctorshift.php">班表時段</a></li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
               <li><a href="d_appointment-records.php">預約紀錄</a></li>
-              <li><a href="d_body-knowledge.php">身體小知識</a></li>
+              <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
             </ul>
           </div>
-          <div class="col-md-5">
+          <!-- <div class="col-md-5">
             <h4>聯絡我們</h4>
             <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
               courses we offer.</p>
@@ -432,7 +449,7 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <button class="form-button linearicons-paper-plane"></button>
             </form>
-          </div>
+          </div> -->
         </div>
         <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights

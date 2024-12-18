@@ -22,24 +22,16 @@ if (isset($_SESSION["帳號"])) {
           </script>";
 	exit();
 }
-
-// 引入資料庫連接檔案
-require '../db.php';
-
-// SQL 查詢
-$query = "SELECT doctor_id, doctor FROM doctor";
-$result = mysqli_query($link, $query);
-
-if (!$result) {
-	die("查詢失敗：" . mysqli_error($link));
-}
 ?>
+
+
+
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
 
 <head>
 	<!-- Site Title-->
-	<title>健康醫療網站</title>
+	<title>運動筋膜放鬆</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -64,60 +56,6 @@ if (!$result) {
 		html.ie-10 .ie-panel,
 		html.lt-ie-10 .ie-panel {
 			display: block;
-		}
-
-		body {
-			font-family: Arial, sans-serif;
-			text-align: center;
-			margin: 20px;
-		}
-
-		.calendar {
-			display: grid;
-			grid-template-columns: repeat(7, 1fr);
-			gap: 5px;
-			margin-top: 20px;
-		}
-
-		.calendar div {
-			border: 1px solid #ccc;
-			padding: 10px;
-			background: #f9f9f9;
-			cursor: pointer;
-		}
-
-		.calendar .header {
-			font-weight: bold;
-			background: #ddd;
-		}
-
-		.calendar .empty {
-			background: transparent;
-			cursor: default;
-		}
-
-		/* 日期樣式：改為柔和文字色系 */
-		.calendar .date-link {
-			display: block;
-			padding: 10px;
-			color: #00796B;
-			/* 第二張圖片的綠色系 */
-			text-decoration: none;
-			/* 移除底線 */
-			font-size: 14px;
-			font-weight: bold;
-		}
-
-		.calendar .date-link:hover {
-			text-decoration: underline;
-			/* 滑鼠懸停時加底線 */
-			color: #004D40;
-			/* 深綠色，增加互動感 */
-		}
-
-		select {
-			padding: 5px;
-			margin: 5px;
 		}
 
 		/* 登出確認視窗 - 初始隱藏 */
@@ -196,11 +134,9 @@ if (!$result) {
 				<polyline class="line-cornered stroke-still" points="0,0 0,100 100,100" stroke-width="10" fill="none">
 				</polyline>
 				<polyline class="line-cornered stroke-animation" points="0,0 100,0 100,100" stroke-width="10"
-					fill="none">
-				</polyline>
+					fill="none"></polyline>
 				<polyline class="line-cornered stroke-animation" points="0,0 0,100 100,100" stroke-width="10"
-					fill="none">
-				</polyline>
+					fill="none"></polyline>
 			</svg>
 		</div>
 	</div>
@@ -225,7 +161,7 @@ if (!$result) {
 								data-rd-navbar-toggle=".rd-navbar-nav-wrap"><span></span></button>
 							<!-- RD Navbar Brand-->
 							<div class="rd-navbar-brand">
-								<!--Brand--><a class="brand-name" href="index.php"><img class="logo-default"
+								<!--Brand--><a class="brand-name" href="index.html"><img class="logo-default"
 										src="images/logo-default-172x36.png" alt="" width="86" height="18"
 										loading="lazy" /><img class="logo-inverse" src="images/logo-inverse-172x36.png"
 										alt="" width="86" height="18" loading="lazy" /></a>
@@ -233,28 +169,43 @@ if (!$result) {
 						</div>
 						<div class="rd-navbar-nav-wrap">
 							<ul class="rd-navbar-nav">
-								<li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="u_index.php">主頁</a>
 								</li>
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="a_therapist.php">治療師時間表</a>
-								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
-								</li>
-								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
+
+								<li class="rd-nav-item"><a class="rd-nav-link" href="">關於我們</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">Single teacher</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">醫生介紹</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">個案分享</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">日常小知識</a>
+										</li>
+									</ul>
+								</li>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">預約</a>
+									<ul class="rd-menu rd-navbar-dropdown">
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_reserve.php">立即預約</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約資料</a>
+											<!-- 修改預約 -->
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約時段</a>
+										</li>
+									</ul>
+								</li>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
+								</li>
+								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
+									<ul class="rd-menu rd-navbar-dropdown">
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="single-teacher.html">個人資料</a>
 										</li>
 									</ul>
 								</li> -->
-								<li class="rd-nav-item"><a class="rd-nav-link" href="a_patient.php">用戶管理</a>
-									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">新增治療師/助手</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_blacklist.php">黑名單</a>
-										</li>
-									</ul>
-								</li>
 
+								<li class="rd-nav-item"><a class="rd-nav-link" href="">個人資料</a>
+								</li>
 
 								<!-- 登出按鈕 -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
@@ -289,16 +240,20 @@ if (!$result) {
 										document.getElementById('logoutBox').style.display = 'none';
 									}
 								</script>
+								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="contacts.html">Contacts</a>
+								  </li> -->
 							</ul>
 						</div>
 						<div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span>
 						</div>
 						<div class="rd-navbar-aside-right rd-navbar-collapse">
 							<div class="rd-navbar-social">
-								<div class="rd-navbar-social-text">Follow us</div>
+								<div class="rd-navbar-social-text">聯絡方式</div>
 								<ul class="list-inline">
 									<li><a class="icon novi-icon icon-default icon-custom-facebook"
 											href="https://www.facebook.com/ReTurnYourBody/"></a></li>
+									<li><a class="icon novi-icon icon-default icon-custom-linkedin"
+											href="https://lin.ee/sUaUVMq"></a></li>
 									<li><a class="icon novi-icon icon-default icon-custom-instagram"
 											href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"></a>
 									</li>
@@ -309,166 +264,160 @@ if (!$result) {
 				</nav>
 			</div>
 		</header>
-		<!-- Page Header-->
-		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-			<!-- Breadcrumbs-->
-			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
-				<div class="container">
-					<p class="heading-1 breadcrumbs-custom-title">治療師時間表</p>
-					<ul class="breadcrumbs-custom-path">
-						<li><a href="a_index.php">首頁</a></li>
-						<li class="active">治療師時間表</li>
-					</ul>
-				</div>
-			</section>
 
-		</div>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				margin: 20px;
+			}
 
+			table {
+				width: 60%;
+				border-collapse: collapse;
+			}
 
-		<div>
-			<label for="year">選擇年份：</label>
-			<select id="year"></select>
-			<label for="month">選擇月份：</label>
-			<select id="month"></select>
-			<label for="the">選擇治療師：</label>
-			<select id="the" name="doctor">
-				<option value="">所有</option> <!-- 修改這一行 -->
-				<?php
-				// 從資料庫中讀取資料並顯示在下拉選單中
-				while ($row = mysqli_fetch_assoc($result)) {
-					echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
-				}
-				?>
-			</select>
-			<a href="">數據</a>
+			td {
+				padding: 8px;
+			}
 
-		</div>
-		<table class="table-custom table-color-header table-custom-bordered">
-			<thead>
+			label {
+				margin-right: 10px;
+			}
+
+			input,
+			select,
+			textarea,
+			button {
+				width: 100%;
+				box-sizing: border-box;
+				padding: 5px;
+			}
+
+			button {
+				background-color: #4CAF50;
+				color: white;
+				border: none;
+				padding: 10px;
+				cursor: pointer;
+			}
+
+			button:hover {
+				background-color: #45a049;
+			}
+		</style>
+		<h2>資訊填寫表格</h2>
+		<form id="form" onsubmit="return validateForm()">
+			<table border="1">
 				<tr>
-					<th>日</th>
-					<th>一</th>
-					<th>二</th>
-					<th>三</th>
-					<th>四</th>
-					<th>五</th>
-					<th>六</th>
+					<td><label for="name">姓名：</label></td>
+					<td><input type="text" id="name" name="name" placeholder="請輸入姓名" required></td>
 				</tr>
-			</thead>
-			<tbody id="calendar"></tbody>
-		</table>
+				<tr>
+					<td>性別：</td>
+					<td>
+						<label><input type="radio" name="gender" value="male" required> 男</label>
+						<label><input type="radio" name="gender" value="female" required> 女</label>
+					</td>
+				</tr>
+				<tr>
+					<td>出生年月日：</td>
+					<td>
+						<select id="year" name="year" required>
+							<option value="">年</option>
+							<script>
+								for (let y = 1980; y <= 2024; y++) {
+									document.write(`<option value="${y}">${y}</option>`);
+								}
+							</script>
+						</select>
+						<select id="month" name="month" required>
+							<option value="">月</option>
+							<script>
+								for (let m = 1; m <= 12; m++) {
+									document.write(`<option value="${m}">${m}</option>`);
+								}
+							</script>
+						</select>
+						<select id="day" name="day" required>
+							<option value="">日</option>
+							<script>
+								for (let d = 1; d <= 31; d++) {
+									document.write(`<option value="${d}">${d}</option>`);
+								}
+							</script>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td><label for="idNumber">身分證字號：</label></td>
+					<td><input type="text" id="idNumber" name="idNumber" placeholder="請輸入身分證字號" required></td>
+				</tr>
+				<tr>
+					<td><label for="phone">電話：</label></td>
+					<td><input type="tel" id="phone" name="phone" placeholder="請輸入電話號碼" required></td>
+				</tr>
+				<tr>
+					<td>地址：</td>
+					<td>
+						<select id="city" name="city" required>
+							<option value="">選擇市</option>
+							<option value="台北市">台北市</option>
+							<option value="新北市">新北市</option>
+							<option value="桃園市">桃園市</option>
+							<option value="台中市">台中市</option>
+						</select>
+						<select id="district" name="district" required>
+							<option value="">選擇區</option>
+							<option value="中正區">中正區</option>
+							<option value="大安區">大安區</option>
+							<option value="信義區">信義區</option>
+						</select>
+						<input type="text" id="otherAddress" name="otherAddress" placeholder="請填寫詳細地址" required>
+					</td>
+				</tr>
+				<tr>
+					<td><label for="remark">備註：</label></td>
+					<td><textarea id="remark" name="remark" rows="4" placeholder="請輸入備註（可選填）"></textarea></td>
+				</tr>
+				<tr>
+					<td>選擇治療師：</td>
+					<td>
+						<select id="therapist" name="therapist" required>
+							<option value="">請選擇治療師</option>
+							<option value="張醫師">張醫師</option>
+							<option value="李醫師">李醫師</option>
+							<option value="王治療師">王治療師</option>
+						</select>
+					</td>
+				</tr>
+			</table>
+			<button type="submit">完成</button>
+		</form>
 
 		<script>
-			const currentDate = new Date();
-			const currentYear = currentDate.getFullYear();
-			const currentMonth = currentDate.getMonth();
+			function validateForm() {
+				const form = document.getElementById("form");
+				const year = document.getElementById("year").value;
+				const month = document.getElementById("month").value;
+				const day = document.getElementById("day").value;
+				const city = document.getElementById("city").value;
+				const district = document.getElementById("district").value;
 
-			const yearSelect = document.getElementById('year');
-			const monthSelect = document.getElementById('month');
-			const calendarBody = document.getElementById('calendar');
-
-			function initYearOptions() {
-				const startYear = currentYear - 5;
-				const endYear = currentYear + 5;
-				for (let year = startYear; year <= endYear; year++) {
-					const option = document.createElement('option');
-					option.value = year;
-					option.textContent = year;
-					if (year === currentYear) option.selected = true;
-					yearSelect.appendChild(option);
+				// 額外檢查下拉選單
+				if (year === "" || month === "" || day === "") {
+					alert("請完整填寫出生年月日！");
+					return false;
 				}
+
+				if (city === "" || district === "") {
+					alert("請選擇完整的地址！");
+					return false;
+				}
+
+				// 表單內其他 required 已自動驗證
+				return true;
 			}
-
-			function initMonthOptions() {
-				for (let month = 0; month < 12; month++) {
-					const option = document.createElement('option');
-					option.value = month;
-					option.textContent = month + 1;
-					if (month === currentMonth) option.selected = true;
-					monthSelect.appendChild(option);
-				}
-			}
-
-			function generateCalendar(year, month) {
-				calendarBody.innerHTML = ''; // 清空表格內容
-				const firstDay = new Date(year, month, 1).getDay(); // 該月第一天是星期幾
-				const lastDate = new Date(year, month + 1, 0).getDate(); // 該月最後一天是幾號
-				const today = new Date(); // 取得今天的日期
-
-				let row = document.createElement('tr');
-
-				// 空白單元格
-				for (let i = 0; i < firstDay; i++) {
-					const emptyCell = document.createElement('td');
-					row.appendChild(emptyCell);
-				}
-
-				// 填入日期
-				for (let date = 1; date <= lastDate; date++) {
-					if (row.children.length === 7) {
-						calendarBody.appendChild(row);
-						row = document.createElement('tr');
-					}
-
-					const dateCell = document.createElement('td');
-
-					// 生成當前格子的日期物件
-					const cellDate = new Date(year, month, date);
-					const isToday = cellDate.toDateString() === today.toDateString();
-					const isFuture = cellDate > today;
-
-					// 創建日期文字
-					const dateText = document.createElement('div');
-					dateText.textContent = date;
-
-					// 根據日期顯示不同的訊息
-					const bookingInfo = document.createElement('div');
-					bookingInfo.classList.add('booking-info');
-
-					if (isToday) {
-						bookingInfo.textContent = "目前總人數：0"; // 今天的日期
-					} else if (isFuture) {
-						bookingInfo.textContent = "目前預約人數：0"; // 未來的日期
-					} else {
-						bookingInfo.textContent = "總人數：0"; // 過去的日期
-					}
-
-					// 點擊日期事件
-					dateText.style.cursor = "pointer";
-					dateText.addEventListener('click', (e) => {
-						e.preventDefault();
-						alert(`您選擇的日期是：${year}-${month + 1}-${date}`);
-					});
-
-					// 組合元素
-					dateCell.appendChild(dateText);
-					dateCell.appendChild(bookingInfo);
-					row.appendChild(dateCell);
-				}
-
-				// 填補最後一行的空白單元格
-				while (row.children.length < 7) {
-					const emptyCell = document.createElement('td');
-					row.appendChild(emptyCell);
-				}
-				calendarBody.appendChild(row);
-			}
-
-
-			// 初始化
-			initYearOptions();
-			initMonthOptions();
-			generateCalendar(currentYear, currentMonth);
-
-			yearSelect.addEventListener('change', () => {
-				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-			});
-
-			monthSelect.addEventListener('change', () => {
-				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-			});
 		</script>
-
 		<!-- Global Mailform Output-->
 		<div class="snackbars" id="form-output-global"></div>
 		<!-- Javascript-->

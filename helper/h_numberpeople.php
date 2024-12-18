@@ -176,7 +176,7 @@ if (isset($_SESSION["帳號"])) {
                       </li>
                     </ul> -->
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="h_doctorshift.php">醫生班表</a>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="h_doctorshift.php">治療師班表</a>
                   <!-- <ul class="rd-menu rd-navbar-dropdown">
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.html">Single course</a>
                       </li>
@@ -265,11 +265,10 @@ if (isset($_SESSION["帳號"])) {
 
 
     <!--標題-->
-    <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-      <!-- Breadcrumbs-->
+    <!-- <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <!-- <p class="breadcrumbs-custom-subtitle">Who We Are</p> -->
+          <p class="breadcrumbs-custom-subtitle">Who We Are</p>
           <p class="heading-1 breadcrumbs-custom-title">當天人數及時段</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
@@ -277,11 +276,11 @@ if (isset($_SESSION["帳號"])) {
           </ul>
         </div>
       </section>
-    </div>
+    </div> -->
     <!--標題-->
 
     <!-- 每日預約總人數-->
-    <section class="section section-lg bg-default novi-bg novi-bg-img">
+    <!-- <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
         <h3>每日預約總人數</h3>
         <table border="1" style="border-collapse: collapse; text-align: center;">
@@ -313,20 +312,19 @@ if (isset($_SESSION["帳號"])) {
           echo "</tr>";
           ?>
         </table>
-        <!-- <div
-          class="row row-ten row-50 justify-content-md-center align-items-lg-center justify-content-xl-between flex-lg-row-reverse">
-          <div class="col-md-8 col-lg-5 col-xl-4">
-            <h3>Who we are</h3>
-            <p class="heading-5">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-              incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostru.</p>
-            <p class="text-spacing-sm">Exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
-              irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur
-              sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit.</p><a
-              class="button button-primary button-nina" href="#">Learn more</a>
+      </div>
+    </section> -->
+
+    <!--503錯誤-->
+    <section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
+      <div class="fullwidth-page-inner">
+        <div class="section-md text-center">
+          <div class="container">
+            <p class="breadcrumbs-custom-subtitle">您所點選的頁面正在製作中，暫時關閉</p>
+            <p class="heading-1 breadcrumbs-custom-title">Error 503</p>
+            <p>Sorry, we are working overtime to make our website better, so stay tuned!</p>
           </div>
-          <div class="col-md-8 col-lg-5"><img src="images/about-us-01-570x535.jpg" alt="" width="570" height="535" />
-          </div>
-        </div> -->
+        </div>
       </div>
     </section>
 
@@ -334,11 +332,11 @@ if (isset($_SESSION["帳號"])) {
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
         <div class="row row-40">
-          <div class="col-md-4">
+          <!-- <div class="col-md-4">
             <h4>關於我們</h4>
             <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
               professional knowledge using innovative approach.</p>
-          </div>
+          </div> -->
           <div class="col-md-3">
             <h4>快速連結</h4>
             <ul class="list-marked">
@@ -351,7 +349,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="h_patient-needs.php">患者需求</a></li>
             </ul>
           </div>
-          <div class="col-md-5">
+          <!-- <div class="col-md-5">
             <h4>聯絡我們</h4>
             <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
               courses we offer.</p>
@@ -364,7 +362,7 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <button class="form-button linearicons-paper-plane"></button>
             </form>
-          </div>
+          </div> -->
         </div>
         <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights

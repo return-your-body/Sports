@@ -251,11 +251,10 @@ if (isset($_SESSION["帳號"])) {
 			<!-- Breadcrumbs-->
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
-					<p class="heading-1 breadcrumbs-custom-title">黑名單</p>
+					<p class="heading-1 breadcrumbs-custom-title">用戶管理</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="a_index.php">首頁</a></li>
-						<li><a href="a_patient.php">病患資料</a></li>
-						<li class="active">黑名單</li>
+						<li class="active">用戶管理</li>
 					</ul>
 				</div>
 			</section>
@@ -308,9 +307,6 @@ if (isset($_SESSION["帳號"])) {
 							</div>
 						</form>
 
-
-
-
 						<!-- 表格區域 -->
 						<div class="table-novi table-custom-responsive" style="font-size: 16px; overflow-x: auto;">
 							<table class="table-custom table-custom-bordered"
@@ -336,26 +332,25 @@ if (isset($_SESSION["帳號"])) {
 
 						<!-- JavaScript -->
 						<script>
-							// 假設的資料源
+							// 假設的資料源：這裡是模擬的表格資料
 							const tableData = [];
-							for (let i = 1; i <= 47; i++) {
+							for (let i = 1; i <= 47; i++) { // 模擬 47 筆資料
 								tableData.push({
 									id: i,
 									account: `User${i}`,
 									name: `Name${i}`,
 									idNumber: `@user${i}`,
-									option: "操作",
-									newOption: "詳細" // 新的按鈕名稱
+									option: "操作"
 								});
 							}
 
 							const rowsPerPage = 10; // 每頁顯示 10 行
-							let currentPage = 1;
+							let currentPage = 1;    // 當前頁碼
 
 							// 渲染表格內容
 							function renderTable(page) {
 								const tableBody = document.getElementById("table-body");
-								tableBody.innerHTML = "";
+								tableBody.innerHTML = ""; // 清空現有的內容
 
 								// 計算當前頁的資料範圍
 								const start = (page - 1) * rowsPerPage;
@@ -370,28 +365,9 @@ if (isset($_SESSION["帳號"])) {
 					<td style="padding: 10px;">${row.account}</td>
 					<td style="padding: 10px;">${row.name}</td>
 					<td style="padding: 10px;">${row.idNumber}</td>
-					<td style="padding: 10px; text-align: center; display: flex; gap: 5px; justify-content: center;">
-						<!-- 操作按鈕 -->
-						<button style="
-							padding: 6px 12px; 
-							font-size: 12px; 
-							border: none; 
-							background-color: #00A896; 
-							color: white; 
-							cursor: pointer; 
-							border-radius: 4px;">
+					<td style="padding: 10px; text-align: center;">
+						<button style="padding: 6px 12px; font-size: 12px; border: none; background-color: #00A896; color: white; cursor: pointer; border-radius: 4px;">
 							${row.option}
-						</button>
-						<!-- 新按鈕 -->
-						<button style="
-							padding: 6px 12px; 
-							font-size: 12px; 
-							border: none; 
-							background-color: #FFB900; 
-							color: white; 
-							cursor: pointer; 
-							border-radius: 4px;">
-							${row.newOption}
 						</button>
 					</td>
 				</tr>
@@ -399,22 +375,22 @@ if (isset($_SESSION["帳號"])) {
 									tableBody.innerHTML += tr;
 								});
 
-								renderPagination();
+								renderPagination(); // 更新分頁顯示
 							}
 
 							// 渲染分頁資訊
 							function renderPagination() {
 								const pagination = document.getElementById("pagination");
-								const totalPages = Math.ceil(tableData.length / rowsPerPage);
-								pagination.innerHTML = `共 ${totalPages} 頁`;
+								const totalPages = Math.ceil(tableData.length / rowsPerPage); // 計算總頁數
+								
 
 								if (totalPages > 1) {
-									pagination.innerHTML += " | ";
 									for (let i = 1; i <= totalPages; i++) {
 										pagination.innerHTML += `<button onclick="changePage(${i})" style="margin: 0 5px; padding: 5px 10px; cursor: pointer; border: none; background-color: ${i === currentPage ? "#00A896" : "#f0f0f0"
 											}; color: ${i === currentPage ? "white" : "black"}; border-radius: 4px;">${i}</button>`;
 									}
 								}
+								pagination.innerHTML += ` | 共 ${totalPages} 頁`;
 							}
 
 							// 換頁功能
@@ -426,6 +402,9 @@ if (isset($_SESSION["帳號"])) {
 							// 初始化渲染表格
 							renderTable(currentPage);
 						</script>
+
+
+
 					</div>
 				</div>
 			</div>

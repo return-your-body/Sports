@@ -52,7 +52,7 @@ if ($row = mysqli_fetch_assoc($ret)) {
     // 根據使用者等級跳轉到不同頁面
     switch ($row["grade_id"]) {
         case "1":
-            header("Location: user/u_index.html?帳號=$帳號"); // 使用者頁面
+            header("Location: user/u_index.php?帳號=$帳號"); // 使用者頁面
             break;
         case "2":
             header("Location: doctor/d_index.php?帳號=$帳號"); // 醫生頁面
@@ -61,7 +61,7 @@ if ($row = mysqli_fetch_assoc($ret)) {
             header("Location: helper/h_index.php?帳號=$帳號"); // 助手頁面
             break;
         case "4":
-            header("Location: admin/a_index.php?帳號=$帳號"); // 管理者頁面
+            header("Location: admin/a_therapist.php?帳號=$帳號"); // 管理者頁面
             break;
         default:
             echo "<script>

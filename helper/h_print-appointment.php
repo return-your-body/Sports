@@ -177,7 +177,7 @@ if (isset($_SESSION["帳號"])) {
                       </li>
                     </ul> -->
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="h_doctorshift.php">醫生班表</a>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="h_doctorshift.php">治療師班表</a>
                   <!-- <ul class="rd-menu rd-navbar-dropdown">
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.html">Single course</a>
                       </li>
@@ -281,208 +281,106 @@ if (isset($_SESSION["帳號"])) {
     </div>
     <!--標題-->
 
-
     <!--列印預約單-->
-    <section class="section section-lg bg-default novi-bg novi-bg-img">
-      <div class="container">
-        <dl class="list-terms">
-          <title>預約單</title>
-          <style>
-            /* 通用樣式 */
-            /* body {
-              margin: 0;
-              padding: 0;
-              font-family: Arial, sans-serif;
-              text-align: center;
-            } */
+    <style>
+      /* 通用樣式 */
+      /* body {
+                    margin: 0;
+                    padding: 0;
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                   } */
 
-            #print-area {
-              width: 350px;
-              margin: 50px auto;
-              /* 區塊垂直居中 */
-              border: 2px solid black;
-              padding: 20px;
-              text-align: left;
-              box-sizing: border-box;
-            }
+      #print-area {
+        width: 350px;
+        margin: 50px auto;
+        /* 區塊垂直居中 */
+        border: 2px solid black;
+        padding: 20px;
+        text-align: left;
+        box-sizing: border-box;
+      }
 
-            #print-area h1 {
-              text-align: center;
-              margin: 0 0 20px;
-              font-size: 24px;
-            }
+      #print-area h1 {
+        text-align: center;
+        margin: 0 0 20px;
+        font-size: 24px;
+      }
 
-            #print-area p {
-              margin: 10px 0;
-              line-height: 1.6;
-              font-size: 16px;
-            }
+      #print-area p {
+        margin: 10px 0;
+        line-height: 1.6;
+        font-size: 16px;
+      }
 
-            .doctor-sign {
-              margin-top: 20px;
-              font-weight: bold;
-            }
+      .doctor-sign {
+        margin-top: 20px;
+        font-weight: bold;
+      }
 
-            /* 列印樣式 */
-            @media print {
-              body * {
-                visibility: hidden;
-              }
+      /* 列印樣式 */
+      @media print {
+        body * {
+          visibility: hidden;
+        }
 
-              #print-area,
-              #print-area * {
-                visibility: visible;
-              }
+        #print-area,
+        #print-area * {
+          visibility: visible;
+        }
 
-              #print-area {
-                margin: 0 auto;
-                page-break-inside: avoid;
-              }
+        #print-area {
+          margin: 0 auto;
+          page-break-inside: avoid;
+        }
 
-              html,
-              body {
-                height: 100%;
-              }
+        html,
+        body {
+          height: 100%;
+        }
 
-              button {
-                display: none;
-                /* 隱藏按鈕 */
-              }
-            }
+        button {
+          display: none;
+          /* 隱藏按鈕 */
+        }
+      }
 
-            /* 按鈕樣式 */
-            button {
-              margin: 20px auto 0;
-              /* 距離表格的間距 */
-              display: block;
-              /* 讓按鈕居中 */
-              padding: 10px 20px;
-              font-size: 16px;
-              cursor: pointer;
-            }
-          </style>
+      /* 按鈕樣式 */
+      button {
+        margin: 20px auto 0;
+        /* 距離表格的間距 */
+        display: block;
+        /* 讓按鈕居中 */
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+    </style>
 
-          <?php
-          session_start();
-          include "../db.php"; // 引入資料庫連線
-          
-          // 確認 appointment_id 是否存在
-          if (!isset($_GET['appointment_id']) || empty($_GET['appointment_id'])) {
-            die("<p>無效的預約單 ID，請返回重試。</p>");
-          }
+    <div id="print-area">
+      <h1>預約單</h1>
+      <p>姓名：<?php echo $people_name; ?></p>
+      <p>性別：<?php echo $people_gender; ?></p>
+      <p>生日：<?php echo $people_birthday; ?></p>
+      <p>預約日期：<?php echo $appointment_date; ?></p>
+      <p>預約時間：<?php echo $appointment_time; ?></p>
+      <p>治療師：<?php echo $doctor_name; ?></p>
+      <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
+    </div>
 
-          // 取得預約單 ID
-          $appointment_id = mysqli_real_escape_string($link, $_GET['appointment_id']);
-
-          // 查詢關聯資料
-          $sql = "SELECT 
-            p.name AS people_name, 
-            CASE 
-                WHEN p.gender_id = 1 THEN '男'
-                WHEN p.gender_id = 2 THEN '女'
-                ELSE '其他'
-            END AS people_gender,
-            p.birthday AS people_birthday,
-            a.appointment_date AS appointment_date,
-            st.shifttime AS appointment_time,
-            d.doctor AS doctor_name
-        FROM 
-            appointment a
-        LEFT JOIN 
-            people p ON a.people_id = p.people_id
-        LEFT JOIN 
-            shifttime st ON a.shifttime_id = st.shifttime_id
-        LEFT JOIN 
-            doctor d ON a.doctor_id = d.doctor_id
-        WHERE 
-            a.appointment_id = '$appointment_id'";
-
-          $result = mysqli_query($link, $sql);
-
-          if (!$result) {
-            die("<p>SQL 執行失敗：" . mysqli_error($link) . "</p>");
-          }
-
-          if (mysqli_num_rows($result) == 0) {
-            die("<p>找不到對應的預約資料，請返回重試。</p>");
-          }
-
-          // 提取資料
-          $row = mysqli_fetch_assoc($result);
-          $people_name = $row['people_name'];
-          $people_gender = $row['people_gender'];
-          $people_birthday = $row['people_birthday'];
-          $appointment_date = $row['appointment_date'];
-          $appointment_time = $row['appointment_time'];
-          $doctor_name = $row['doctor_name'];
-
-          mysqli_close($link); // 關閉資料庫連接
-          ?>
-          <!DOCTYPE html>
-          <html lang="zh-Hant">
-
-          <head>
-            <meta charset="UTF-8">
-            <title>預約單</title>
-          </head>
-
-          <body>
-            <!-- 預約單內容 -->
-            <h1>預約單</h1>
-            <p>姓名：<?php echo htmlspecialchars($people_name); ?></p>
-            <p>性別：<?php echo htmlspecialchars($people_gender); ?></p>
-            <p>生日：<?php echo htmlspecialchars($people_birthday); ?></p>
-            <p>預約日期：<?php echo htmlspecialchars($appointment_date); ?></p>
-            <p>預約時間：<?php echo htmlspecialchars($appointment_time); ?></p>
-            <p>治療師：<?php echo htmlspecialchars($doctor_name); ?></p>
-            <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
-          </body>
-
-          </html>
-
-
-          <!-- 預約單內容 -->
-          <div id="print-area">
-            <h1 style="text-align: center;">預約單</h1>
-            <p>姓名：<?php echo htmlspecialchars($people_name); ?></p>
-            <p>性別：<?php echo htmlspecialchars($people_gender); ?></p>
-            <p>生日：<?php echo htmlspecialchars($people_birthday); ?></p>
-            <p>預約日期：<?php echo htmlspecialchars($appointment_date); ?></p>
-            <p>預約時間：<?php echo htmlspecialchars($appointment_time); ?></p>
-            <p>治療師：<?php echo htmlspecialchars($doctor_name); ?></p>
-            <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
-          </div>
-
-          <!-- 列印按鈕 -->
-          <button onclick="window.print()">列印預約單</button>
-
-          <!-- <dt class="heading-6">General information</dt>
-          <dd>
-            Welcome to our Privacy Policy page! When you use our web site services, you trust us with your
-            information. This Privacy Policy is meant to help you understand what data we collect, why we
-            collect it, and what we do with it. When you share information with us, we can make our services
-            even better for you. For instance, we can show you more relevant search results and ads, help
-            you connect with people or to make sharing with others quicker and easier. As you use our
-            services, we want you to be clear how we’re using information and the ways in which you can
-            protect your privacy. This is important; we hope you will take time to read it carefully.
-            Remember, you can find controls to manage your information and protect your privacy and
-            security. We’ve tried
-            to keep it as simple as possible.
-          </dd> -->
-        </dl>
-      </div>
-    </section>
-    <!--列印預約單-->
+    <!-- 列印按鈕 -->
+    <button onclick="window.print()">列印預約單</button>
+    <br />
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
         <div class="row row-40">
-          <div class="col-md-4">
+          <!-- <div class="col-md-4">
             <h4>關於我們</h4>
             <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
               professional knowledge using innovative approach.</p>
-          </div>
+          </div> -->
           <div class="col-md-3">
             <h4>快速連結</h4>
             <ul class="list-marked">
@@ -495,7 +393,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="h_patient-needs.php">患者需求</a></li>
             </ul>
           </div>
-          <div class="col-md-5">
+          <!-- <div class="col-md-5">
             <h4>聯絡我們</h4>
             <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
               courses we offer.</p>
@@ -508,7 +406,7 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <button class="form-button linearicons-paper-plane"></button>
             </form>
-          </div>
+          </div> -->
         </div>
         <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights

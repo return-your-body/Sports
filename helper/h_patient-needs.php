@@ -176,7 +176,7 @@ if (isset($_SESSION["帳號"])) {
                       </li>
                     </ul> -->
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="h_doctorshift.php">醫生班表</a>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="h_doctorshift.php">治療師班表</a>
                   <!-- <ul class="rd-menu rd-navbar-dropdown">
                       <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.html">Single course</a>
                       </li>
@@ -264,11 +264,10 @@ if (isset($_SESSION["帳號"])) {
 
 
     <!--標題-->
-    <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-      <!-- Breadcrumbs-->
+    <!-- <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <!-- <p class="breadcrumbs-custom-subtitle">Get in Touch with Us</p> -->
+          <p class="breadcrumbs-custom-subtitle">Get in Touch with Us</p>
           <p class="heading-1 breadcrumbs-custom-title">患者需求</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
@@ -276,243 +275,40 @@ if (isset($_SESSION["帳號"])) {
           </ul>
         </div>
       </section>
-    </div>
+    </div> -->
     <!--標題-->
 
 
-    <!-- a few words about us-->
-    <section class="section section-lg text-center text-md-start bg-default">
+    <!-- 患者需求整理-->
+    <!-- <section class="section section-lg text-center text-md-start bg-default">
       <div class="container">
-        <div class="row row-50 justify-content-md-center justify-content-xl-end justify-content-xxl-end">
-          <div class="col-md-9 col-lg-8 col-xl-6 col-xxl-5">
-            <div class="box-range-content">
-              <h3>A Variety of Courses</h3>
-              <p class="text-spacing-sm">Nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit
-                in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-                proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p><a
-                class="button button-primary button-nina" href="about-us.html">learn more</a>
-            </div>
-          </div>
-          <div class="col-md-9 col-lg-8 col-xl-6 col-xxl-6 jp-video-init">
-            <div class="build-video">
-              <div class="build-video-inner"><img class="image-wrap" src="images/block-video-870x500.png" alt=""
-                  width="870" height="500" />
-              </div>
-              <div class="build-video-element">
-                <div class="jp-video jp-video-single">
-                  <div class="jp-type-playlist">
-                    <!-- Hidden playlist for script-->
-                    <ul class="jp-player-list">
-                      <li class="jp-player-list-item" data-jp-m4v="video/video-bg.mp4" data-jp-title="local video"
-                        data-jp-poster="video/video-bg.jpg"></li>
-                    </ul>
-                    <!-- container in which our video will be played-->
-                    <div class="jp-jplayer"></div>
-                    <!-- main containers for our controls-->
-                    <div class="jp-gui">
-                      <div class="jp-interface">
-                        <div class="jp-controls-holder">
-                          <!-- play and pause buttons--><a class="jp-play" href="javascript:;" tabindex="1">play</a><a
-                            class="jp-pause" href="javascript:;" tabindex="1">pause</a><span
-                            class="separator sep-1"></span>
-                          <!-- progress bar-->
-                          <div class="jp-progress">
-                            <div class="jp-seek-bar">
-                              <div class="jp-play-bar"><span></span></div>
-                            </div>
-                          </div>
-                          <div class="jp-time-wrapper">
-                            <!-- time notifications-->
-                            <div class="jp-current-time"></div><span class="time-sep">/</span>
-                            <div class="jp-duration"></div>
-                          </div><span class="separator sep-2"></span>
-                          <!-- mute / unmute toggle--><a class="jp-mute" href="javascript:;" tabindex="1"
-                            title="mute">mute</a><a class="jp-unmute" href="javascript:;" tabindex="1"
-                            title="unmute">unmute</a>
-                          <!-- volume bar-->
-                          <div class="jp-volume-bar">
-                            <div class="jp-volume-bar-value"><span class="handle"></span></div>
-                          </div><span class="separator sep-2"></span>
-                          <!-- full screen toggle--><a class="jp-full-screen" href="javascript:;" tabindex="1"
-                            title="full screen">full screen</a><a class="jp-restore-screen" href="javascript:;"
-                            tabindex="1" title="restore screen">restore screen</a>
-                        </div>
-                        <!-- end jp-controls-holder-->
-                      </div>
-                      <!-- end jp-interface-->
-                    </div>
-                    <!-- end jp-gui-->
-                    <!-- unsupported message-->
-                    <div class="jp-playlist">
-                      <ul>
-                        <li></li>
-                      </ul>
-                    </div>
-                    <div class="jp-no-solution"><span>Update Required</span>Here's a message which will appear if the
-                      video isn't supported. A Flash alternative can be used here if you fancy it.</div>
-                    <!-- end jp_container_1-->
-                  </div>
-                </div>
-              </div>
-            </div>
+       
+      </div>
+    </section> -->
+
+    <!--503錯誤-->
+    <section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
+      <div class="fullwidth-page-inner">
+        <div class="section-md text-center">
+          <div class="container">
+            <p class="breadcrumbs-custom-subtitle">您所點選的頁面正在製作中，暫時關閉</p>
+            <p class="heading-1 breadcrumbs-custom-title">Error 503</p>
+            <p>Sorry, we are working overtime to make our website better, so stay tuned!</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section section-lg text-center bg-gray-100">
-      <div class="container-wide">
-        <h3>Our advantages</h3>
-        <div class="row row-50 justify-content-sm-center text-start">
-          <div class="col-sm-10 col-md-6 col-xl-3">
-            <article class="box-minimal box-minimal-border">
-              <div class="box-minimal-icon novi-icon mdi mdi-thumb-up-outline"></div>
-              <p class="big box-minimal-title">Individual Approach</p>
-              <hr>
-              <div class="box-minimal-text">Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit,
-                sed quia consequuntur magni dolores eos qui ratione.</div>
-            </article>
-          </div>
-          <div class="col-sm-10 col-md-6 col-xl-3">
-            <article class="box-minimal box-minimal-border">
-              <div class="box-minimal-icon novi-icon mdi mdi-account-multiple"></div>
-              <p class="big box-minimal-title">Qualified Employees</p>
-              <hr>
-              <div class="box-minimal-text">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
-                doloremque laudantium, totam rem aperiam, eaque ipsa.</div>
-            </article>
-          </div>
-          <div class="col-sm-10 col-md-6 col-xl-3">
-            <article class="box-minimal box-minimal-border">
-              <div class="box-minimal-icon novi-icon mdi mdi-headset"></div>
-              <p class="big box-minimal-title">24/7 Online Support</p>
-              <hr>
-              <div class="box-minimal-text">Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet,
-                consectetur, adipisci velit, sed quia non numquam eius modi.</div>
-            </article>
-          </div>
-          <div class="col-sm-10 col-md-6 col-xl-3">
-            <article class="box-minimal box-minimal-border">
-              <div class="box-minimal-icon novi-icon mdi mdi-credit-card"></div>
-              <p class="big box-minimal-title">Various Payment Methods</p>
-              <hr>
-              <div class="box-minimal-text">Dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis
-                nostrum exercitationem ullam corporis suscipit labori.</div>
-            </article>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section-wrap section-wrap-equal">
-      <div class="section-wrap-inner">
-        <div class="container container-bigger">
-          <div
-            class="row row-fix row-ten justify-content-md-center justify-content-lg-start justify-content-xl-between">
-            <div class="col-md-8 col-lg-4">
-              <div class="section-lg">
-                <h3>Development of your business skills</h3>
-                <div class="divider divider-default"></div>
-                <p>Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae
-                  consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur fugiat quo.</p><a
-                  class="button button-primary button-nina" href="single-course.html">Learn more</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-wrap-aside section-wrap-image"><img src="images/services-1-960x660.jpg" alt="" width="960"
-            height="660" />
-        </div>
-      </div>
-    </section>
-    <section class="section section-wrap section-wrap-equal section-lg-reverse">
-      <div class="section-wrap-inner">
-        <div class="container container-bigger">
-          <div class="row row-fix row-ten justify-content-md-center justify-content-lg-start justify-content-lg-end">
-            <div class="col-md-8 col-lg-4">
-              <div class="section-lg">
-                <h3>Python programming</h3>
-                <div class="divider divider-default"></div>
-                <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum
-                  deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati.</p><a
-                  class="button button-primary button-nina" href="single-course.html">Learn more</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-wrap-aside section-wrap-image"><img src="images/services-2-960x660.jpg" alt="" width="960"
-            height="660" />
-        </div>
-      </div>
-    </section>
-    <section class="section section-wrap section-wrap-equal">
-      <div class="section-wrap-inner">
-        <div class="container container-bigger">
-          <div
-            class="row row-fix row-ten justify-content-md-center justify-content-lg-start justify-content-xl-between">
-            <div class="col-md-8 col-lg-4">
-              <div class="section-lg">
-                <h3>Data structures and algorithms</h3>
-                <div class="divider divider-default"></div>
-                <p>Non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum
-                  fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero.</p><a
-                  class="button button-primary button-nina" href="single-course.html">Learn more</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-wrap-aside section-wrap-image"><img src="images/services-3-960x660.jpg" alt="" width="960"
-            height="660" />
-        </div>
-      </div>
-    </section>
-    <section class="section section-wrap section-wrap-equal section-lg-reverse">
-      <div class="section-wrap-inner">
-        <div class="container container-bigger">
-          <div class="row row-ten justify-content-md-center justify-content-lg-start justify-content-lg-end">
-            <div class="col-md-8 col-lg-4">
-              <div class="section-lg">
-                <h3>Global housing design</h3>
-                <div class="divider divider-default"></div>
-                <p>Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et
-                  voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic.</p><a
-                  class="button button-primary button-nina" href="single-course.html">Learn more</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="section-wrap-aside section-wrap-image"><img src="images/services-4-960x660.jpg" alt="" width="960"
-            height="660" />
-        </div>
-      </div>
-    </section>
-    <section class="section section-md bg-accent text-center text-md-start">
-      <div class="container">
-        <div class="row">
-          <div class="col-xl-11">
-            <div class="box-cta box-cta-inline">
-              <div class="box-cta-inner">
-                <h3 class="box-cta-title"><span class="box-cta-icon icon-custom-briefcase"></span><span>Free
-                    courses</span></h3>
-                <p>Free courses contain industry-relevant content and practical tasks and projects.</p>
-              </div>
-              <div class="box-cta-inner"><a class="button button-dark button-nina" href="contacts.html">Contact us</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
         <div class="row row-40">
-          <div class="col-md-4">
+          <!-- <div class="col-md-4">
             <h4>關於我們</h4>
             <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
               professional knowledge using innovative approach.</p>
-          </div>
+          </div> -->
           <div class="col-md-3">
             <h4>快速連結</h4>
             <ul class="list-marked">
@@ -525,7 +321,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="h_patient-needs.php">患者需求</a></li>
             </ul>
           </div>
-          <div class="col-md-5">
+          <!-- <div class="col-md-5">
             <h4>聯絡我們</h4>
             <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
               courses we offer.</p>
@@ -538,7 +334,7 @@ if (isset($_SESSION["帳號"])) {
               </div>
               <button class="form-button linearicons-paper-plane"></button>
             </form>
-          </div>
+          </div> -->
         </div>
         <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
