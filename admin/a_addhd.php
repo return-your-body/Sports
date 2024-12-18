@@ -177,14 +177,15 @@ if (isset($_SESSION["帳號"])) {
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
 								</li>
 								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
-									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">Single teacher</a>
-										</li>
-									</ul>
-								</li> -->
+				  <ul class="rd-menu rd-navbar-dropdown">
+					<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">Single teacher</a>
+					</li>
+				  </ul>
+				</li> -->
 								<li class="rd-nav-item active"><a class="rd-nav-link" href="a_patient.php">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="a_addhd.php">新增治療師/助手</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_addhd.php">新增治療師/助手</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_blacklist.php">黑名單</a>
@@ -251,186 +252,94 @@ if (isset($_SESSION["帳號"])) {
 			<!-- Breadcrumbs-->
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
-					<p class="heading-1 breadcrumbs-custom-title">黑名單</p>
+					<p class="heading-1 breadcrumbs-custom-title">新增治療師/助手</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="a_index.php">首頁</a></li>
 						<li><a href="a_patient.php">病患資料</a></li>
-						<li class="active">黑名單</li>
+						<li class="active">新增治療師/助手</li>
 					</ul>
 				</div>
 			</section>
 
 		</div>
 
-		<!-- Bordered Row Table -->
+		<!-- 表單樣式 -->
 		<section class="section section-lg bg-default text-center">
 			<div class="container">
 				<div class="row justify-content-sm-center">
 					<div class="col-md-10 col-xl-8">
-						<!-- 搜尋框與按鈕區塊 -->
-						<form class="search-form"
-							style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; width: 100%;">
-							<!-- 搜尋框容器（設定寬度比例 4） -->
-							<div style="flex: 4;">
-								<!-- 輸入框：用於用戶輸入身分證號 -->
-								<input class="form-input" type="text" name="search" placeholder="請輸入身分證" style="
-									padding: 10px 15px;          /* 設定內邊距 */
-									font-size: 16px;             /* 字體大小 */
-									width: 100%;                 /* 寬度填滿容器 */
-									border: 1px solid #ccc;      /* 外框顏色 */
-									border-radius: 4px;          /* 圓角設定 */
-									outline: none;               /* 移除點擊時的外框線 */
-									box-sizing: border-box;      /* 使邊框和內邊距包含在寬度內 */
-								">
-							</div>
+						<form class="rd-mailform" method="post" action="新增治療師助手.php">
+							<div class="row row-20 row-fix">
+								<!-- 帳號 -->
+								<div class="col-md-6">
+									<div class="form-wrap form-wrap-validation">
+										<label class="form-label-outside" for="account">帳號</label>
+										<input class="form-input" id="account" type="text" name="account"
+											placeholder="請輸入帳號" required />
+									</div>
+								</div>
 
-							<!-- 搜尋按鈕容器（設定寬度比例 1） -->
-							<div style="flex: 1;">
-								<!-- 按鈕：觸發搜尋功能 -->
-								<button class="" type="submit" style="
-									padding: 10px 15px;           /* 設定內邊距 */
-									font-size: 16px;              /* 字體大小 */
-									width: 100%;                  /* 寬度填滿容器 */
-									border: none;                 /* 移除按鈕邊框 */
-									border-radius: 4px;           /* 圓角設定 */
-									background-color: #00A896;    /* 按鈕背景顏色 */
-									color: white;                 /* 文字顏色 */
-									cursor: pointer;              /* 滑鼠懸停時顯示指針 */
-									box-sizing: border-box;       /* 使寬度包含邊框和內邊距 */
-									display: flex;                /* 使用彈性盒模型 */
-									align-items: center;          /* 內容垂直居中 */
-									justify-content: center;      /* 內容水平居中 */
-									gap: 5px;                     /* 圖示與文字之間的間距 */
-								">
-									<!-- 圖示：放大鏡 -->
-									<span class="icon mdi mdi-magnify"></span>搜尋
-								</button>
+								<!-- 姓名 -->
+								<div class="col-md-6">
+									<div class="form-wrap form-wrap-validation">
+										<label class="form-label-outside" for="name">姓名</label>
+										<input class="form-input" id="name" type="text" name="name" placeholder="請輸入姓名"
+											required />
+									</div>
+								</div>
+
+								<!-- 密碼 -->
+								<div class="col-md-6">
+									<div class="form-wrap form-wrap-validation">
+										<label class="form-label-outside" for="password">密碼</label>
+										<input class="form-input" id="password" type="password" name="pwd"
+											placeholder="請輸入密碼" required />
+									</div>
+								</div>
+
+								<!-- 確認密碼 -->
+								<div class="col-md-6">
+									<div class="form-wrap form-wrap-validation">
+										<label class="form-label-outside" for="confirm-password">確認密碼</label>
+										<input class="form-input" id="confirm-password" type="password" name="apwd"
+											placeholder="請再次輸入密碼" required />
+									</div>
+								</div>
+
+								<!-- 等級選擇 -->
+								<div class="col-md-12">
+									<label for="grade">選擇等級</label>
+									<select id="grade" name="grade" required>
+										<option value="">-- 請選擇等級 --</option>
+										<option value="doctor">醫生</option>
+										<option value="assistant">助手</option>
+									</select>
+								</div>
+
+								<!-- 送出按鈕 -->
+								<div class="col-md-12 text-center">
+									<button class="button button-primary" type="submit">送出</button>
+								</div>
 							</div>
 						</form>
 
-
-
-
-						<!-- 表格區域 -->
-						<div class="table-novi table-custom-responsive" style="font-size: 16px; overflow-x: auto;">
-							<table class="table-custom table-custom-bordered"
-								style="width: 100%; border-collapse: collapse;">
-								<thead>
-									<tr>
-										<th style="padding: 10px; text-align: left;">#</th>
-										<th style="padding: 10px; text-align: left;">帳號</th>
-										<th style="padding: 10px; text-align: left;">姓名</th>
-										<th style="padding: 10px; text-align: left;">身份證</th>
-										<th style="padding: 10px; text-align: left;">選項</th>
-									</tr>
-								</thead>
-								<tbody id="table-body">
-									<!-- 動態插入的資料行 -->
-								</tbody>
-							</table>
-						</div>
-
-						<!-- 分頁顯示區域 -->
-						<div id="pagination"
-							style="text-align: center; margin-top: 10px; font-size: 14px; color: #333;"></div>
-
-						<!-- JavaScript -->
+						<!-- 密碼比對防呆 -->
 						<script>
-							// 假設的資料源
-							const tableData = [];
-							for (let i = 1; i <= 47; i++) {
-								tableData.push({
-									id: i,
-									account: `User${i}`,
-									name: `Name${i}`,
-									idNumber: `@user${i}`,
-									option: "操作",
-									newOption: "詳細" // 新的按鈕名稱
-								});
-							}
+							const form = document.querySelector('.rd-mailform');
+							const password = document.getElementById('password');
+							const confirmPassword = document.getElementById('confirm-password');
 
-							const rowsPerPage = 10; // 每頁顯示 10 行
-							let currentPage = 1;
-
-							// 渲染表格內容
-							function renderTable(page) {
-								const tableBody = document.getElementById("table-body");
-								tableBody.innerHTML = "";
-
-								// 計算當前頁的資料範圍
-								const start = (page - 1) * rowsPerPage;
-								const end = start + rowsPerPage;
-								const pageData = tableData.slice(start, end);
-
-								// 插入資料行
-								pageData.forEach((row) => {
-									const tr = `
-				<tr>
-					<td style="padding: 10px;">${row.id}</td>
-					<td style="padding: 10px;">${row.account}</td>
-					<td style="padding: 10px;">${row.name}</td>
-					<td style="padding: 10px;">${row.idNumber}</td>
-					<td style="padding: 10px; text-align: center; display: flex; gap: 5px; justify-content: center;">
-						<!-- 操作按鈕 -->
-						<button style="
-							padding: 6px 12px; 
-							font-size: 12px; 
-							border: none; 
-							background-color: #00A896; 
-							color: white; 
-							cursor: pointer; 
-							border-radius: 4px;">
-							${row.option}
-						</button>
-						<!-- 新按鈕 -->
-						<button style="
-							padding: 6px 12px; 
-							font-size: 12px; 
-							border: none; 
-							background-color: #FFB900; 
-							color: white; 
-							cursor: pointer; 
-							border-radius: 4px;">
-							${row.newOption}
-						</button>
-					</td>
-				</tr>
-			`;
-									tableBody.innerHTML += tr;
-								});
-
-								renderPagination();
-							}
-
-							// 渲染分頁資訊
-							function renderPagination() {
-								const pagination = document.getElementById("pagination");
-								const totalPages = Math.ceil(tableData.length / rowsPerPage);
-								pagination.innerHTML = `共 ${totalPages} 頁`;
-
-								if (totalPages > 1) {
-									pagination.innerHTML += " | ";
-									for (let i = 1; i <= totalPages; i++) {
-										pagination.innerHTML += `<button onclick="changePage(${i})" style="margin: 0 5px; padding: 5px 10px; cursor: pointer; border: none; background-color: ${i === currentPage ? "#00A896" : "#f0f0f0"
-											}; color: ${i === currentPage ? "white" : "black"}; border-radius: 4px;">${i}</button>`;
-									}
+							form.addEventListener('submit', function (e) {
+								if (password.value !== confirmPassword.value) {
+									alert('密碼與確認密碼不一致，請重新輸入');
+									e.preventDefault();
 								}
-							}
-
-							// 換頁功能
-							function changePage(page) {
-								currentPage = page;
-								renderTable(currentPage);
-							}
-
-							// 初始化渲染表格
-							renderTable(currentPage);
+							});
 						</script>
 					</div>
 				</div>
 			</div>
 		</section>
-
 
 		<!-- Global Mailform Output-->
 		<div class="snackbars" id="form-output-global"></div>
