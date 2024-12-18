@@ -71,7 +71,7 @@ $insert_sql = "
 if (mysqli_query($link, $insert_sql)) {
     echo "<script>
             alert('預約成功！');
-            window.location.href = 'd_appointment.php';
+            window.location.href = 'h_appointment.php';
           </script>";
 } else {
     echo "<script>
