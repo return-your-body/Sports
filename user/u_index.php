@@ -161,7 +161,7 @@ if (isset($_SESSION["帳號"])) {
 								data-rd-navbar-toggle=".rd-navbar-nav-wrap"><span></span></button>
 							<!-- RD Navbar Brand-->
 							<div class="rd-navbar-brand">
-								<!--Brand--><a class="brand-name" href="index.php"><img class="logo-default"
+								<!--Brand--><a class="brand-name" href="u_index.php"><img class="logo-default"
 										src="images/logo-default-172x36.png" alt="" width="86" height="18"
 										loading="lazy" /><img class="logo-inverse" src="images/logo-inverse-172x36.png"
 										alt="" width="86" height="18" loading="lazy" /></a>
