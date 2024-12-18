@@ -304,113 +304,131 @@ if (isset($_SESSION["帳號"])) {
 
         <!-- 顯示醫生姓名 -->
         <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px;">
-        治療師姓名：<?php echo $doctor_name; ?>
+          治療師姓名：<?php echo $doctor_name; ?>
         </div>
 
         <label for="year">選擇年份：</label>
         <select id="year"></select>
         <label for="month">選擇月份：</label>
         <select id="month"></select>
-      
-      </div>
-      <table class="table-custom table-color-header table-custom-bordered">
-        <thead>
-          <tr>
-            <th>日</th>
-            <th>一</th>
-            <th>二</th>
-            <th>三</th>
-            <th>四</th>
-            <th>五</th>
-            <th>六</th>
-          </tr>
-        </thead>
-        <tbody id="calendar"></tbody>
-      </table>
 
-      <script>
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth();
+        <table class="table-custom table-color-header table-custom-bordered">
+          <thead>
+            <tr>
+              <th>日</th>
+              <th>一</th>
+              <th>二</th>
+              <th>三</th>
+              <th>四</th>
+              <th>五</th>
+              <th>六</th>
+            </tr>
+          </thead>
+          <tbody id="calendar"></tbody>
+        </table>
 
-        const yearSelect = document.getElementById('year');
-        const monthSelect = document.getElementById('month');
-        const calendarBody = document.getElementById('calendar');
+        <script>
+          const currentDate = new Date();
+          const currentYear = currentDate.getFullYear();
+          const currentMonth = currentDate.getMonth();
 
-        function initYearOptions() {
-          const startYear = currentYear - 5;
-          const endYear = currentYear + 5;
-          for (let year = startYear; year <= endYear; year++) {
-            const option = document.createElement('option');
-            option.value = year;
-            option.textContent = year;
-            if (year === currentYear) option.selected = true;
-            yearSelect.appendChild(option);
-          }
-        }
+          const yearSelect = document.getElementById('year');
+          const monthSelect = document.getElementById('month');
+          const calendarBody = document.getElementById('calendar');
 
-        function initMonthOptions() {
-          for (let month = 0; month < 12; month++) {
-            const option = document.createElement('option');
-            option.value = month;
-            option.textContent = month + 1;
-            if (month === currentMonth) option.selected = true;
-            monthSelect.appendChild(option);
-          }
-        }
+          // Example reservation data
+          // const reservations = {
+          //   '2024-12-20': 5,
+          //   '2024-12-25': 2,
+          //   '2024-12-31': 10,
+          // };
 
-        function generateCalendar(year, month) {
-          calendarBody.innerHTML = ''; // 清空表格內容
-          const firstDay = new Date(year, month, 1).getDay(); // 該月第一天是星期幾
-          const lastDate = new Date(year, month + 1, 0).getDate(); // 該月最後一天是幾號
-          let row = document.createElement('tr');
-
-          // 空白單元格
-          for (let i = 0; i < firstDay; i++) {
-            const emptyCell = document.createElement('td');
-            row.appendChild(emptyCell);
+          function initYearOptions() {
+            const startYear = currentYear - 5;
+            const endYear = currentYear + 5;
+            for (let year = startYear; year <= endYear; year++) {
+              const option = document.createElement('option');
+              option.value = year;
+              option.textContent = year;
+              if (year === currentYear) option.selected = true;
+              yearSelect.appendChild(option);
+            }
           }
 
-          // 填入日期
-          for (let date = 1; date <= lastDate; date++) {
-            if (row.children.length === 7) {
-              calendarBody.appendChild(row);
-              row = document.createElement('tr');
+          function initMonthOptions() {
+            for (let month = 0; month < 12; month++) {
+              const option = document.createElement('option');
+              option.value = month;
+              option.textContent = month + 1;
+              if (month === currentMonth) option.selected = true;
+              monthSelect.appendChild(option);
+            }
+          }
+
+          function generateCalendar(year, month) {
+            calendarBody.innerHTML = ''; // Clear table content
+            const firstDay = new Date(year, month, 1).getDay(); // First day of the month
+            const lastDate = new Date(year, month + 1, 0).getDate(); // Last date of the month
+            let row = document.createElement('tr');
+
+            // Empty cells at the start
+            for (let i = 0; i < firstDay; i++) {
+              const emptyCell = document.createElement('td');
+              row.appendChild(emptyCell);
             }
 
-            const dateCell = document.createElement('td');
-            const dateLink = document.createElement('a');
-            dateLink.href = "#";
-            dateLink.textContent = date;
-            dateLink.addEventListener('click', (e) => {
-              e.preventDefault();
-              alert(`您選擇的日期是：${year}-${month + 1}-${date}`);
-            });
+            // Fill in dates
+            for (let date = 1; date <= lastDate; date++) {
+              if (row.children.length === 7) {
+                calendarBody.appendChild(row);
+                row = document.createElement('tr');
+              }
 
-            dateCell.appendChild(dateLink);
-            row.appendChild(dateCell);
+              const dateCell = document.createElement('td');
+              const dateLink = document.createElement('a');
+              const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+
+              dateLink.href = "#";
+              dateLink.textContent = date;
+
+              // Check if the date has a reservation
+              // if (reservations[fullDate]) {
+              //   const reservationInfo = document.createElement('div');
+              //   reservationInfo.textContent = `預約：${reservations[fullDate]} 人`;
+              //   reservationInfo.style.color = 'red'; // Highlight reservation info
+              //   dateCell.appendChild(reservationInfo);
+              // }
+
+              dateLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                alert(`您選擇的日期是：${year}-${month + 1}-${date}`);
+              });
+
+              dateCell.appendChild(dateLink);
+              row.appendChild(dateCell);
+            }
+
+            // Fill empty cells at the end
+            while (row.children.length < 7) {
+              const emptyCell = document.createElement('td');
+              row.appendChild(emptyCell);
+            }
+            calendarBody.appendChild(row);
           }
 
-          // 填補最後一行的空白單元格
-          while (row.children.length < 7) {
-            const emptyCell = document.createElement('td');
-            row.appendChild(emptyCell);
-          }
-          calendarBody.appendChild(row);
-        }
+          // Initialize
+          initYearOptions();
+          initMonthOptions();
+          generateCalendar(currentYear, currentMonth);
 
-        // 初始化
-        initYearOptions();
-        initMonthOptions();
-        generateCalendar(currentYear, currentMonth)
+          yearSelect.addEventListener('change', () => {
+            generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+          });
+          monthSelect.addEventListener('change', () => {
+            generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+          });
+        </script>
 
-        yearSelect.addEventListener('change', () => {
-          generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-        });
-        monthSelect.addEventListener('change', () => {
-          generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-        });
-      </script>
     </section>
 
 
