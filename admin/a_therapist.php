@@ -83,6 +83,11 @@ if (isset($_GET['fetch'])) {
 	<link rel="stylesheet" href="css/fonts.css">
 	<link rel="stylesheet" href="css/style.css">
 	<style>
+		.highlight-red {
+			color: red;
+			font-weight: bold;
+		}
+
 		.ie-panel {
 			display: none;
 			background: #212121;
@@ -462,8 +467,10 @@ if (isset($_GET['fetch'])) {
 
 					// 保留你的判斷邏輯，並填入預約人數
 					if (isToday) {
-						bookingInfo.textContent = `目前總人數：${appointments[cellDate] || 0}`;
+						// bookingInfo.textContent = `目前總人數：${appointments[cellDate] || 0}`;
+						bookingInfo.innerHTML = `<span class="highlight-red">目前總人數：${appointments[cellDate] || 0}</span>`;
 					} else if (isFuture) {
+						// bookingInfo.innerHTML = `<span class="highlight-red">目前預約人數：${appointments[cellDate] || 0}</span>`;
 						bookingInfo.textContent = `目前預約人數：${appointments[cellDate] || 0}`;
 					} else {
 						bookingInfo.textContent = `總人數：${appointments[cellDate] || 0}`;
