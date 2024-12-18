@@ -265,10 +265,9 @@ if (isset($_SESSION["帳號"])) {
 
 
     <!--標題-->
-    <!-- <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+    <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <p class="breadcrumbs-custom-subtitle">Who We Are</p>
           <p class="heading-1 breadcrumbs-custom-title">當天人數及時段</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
@@ -276,47 +275,147 @@ if (isset($_SESSION["帳號"])) {
           </ul>
         </div>
       </section>
-    </div> -->
+    </div>
     <!--標題-->
 
     <!-- 每日預約總人數-->
-    <!-- <section class="section section-lg bg-default novi-bg novi-bg-img">
+    <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
-        <h3>每日預約總人數</h3>
-        <table border="1" style="border-collapse: collapse; text-align: center;">
-          <tr>
-            <th>日</th>
-            <th>一</th>
-            <th>二</th>
-            <th>三</th>
-            <th>四</th>
-            <th>五</th>
-            <th>六</th>
-          </tr>
-          <?php
-          $day_of_week = date("w", strtotime("$year-$month-01"));
-          echo "<tr>";
-          for ($i = 0; $i < $day_of_week; $i++) {
-            echo "<td></td>";
-          }
+      <?php
+session_start();
+require '../db.php';
 
-          for ($day = 1; $day <= $days_in_month; $day++) {
-            $date = sprintf("%04d-%02d-%02d", $year, $month, $day);
-            $count = $daily_counts[$date] ?? 0;
+// 確保用戶已登入
+if (!isset($_SESSION['帳號'])) {
+    echo "<script>
+        alert('未登入或會話已過期，請重新登入！');
+        window.location.href = '../index.html';
+    </script>";
+    exit;
+}
 
-            echo "<td>$day<br>($count 人)</td>";
-            if (($day + $day_of_week) % 7 == 0) {
-              echo "</tr><tr>";
-            }
-          }
-          echo "</tr>";
-          ?>
-        </table>
+// 取得當前登入的帳號
+$帳號 = $_SESSION['帳號'];
+
+// 查詢登入醫生的資料 (姓名和ID)
+$query_doctor = "
+    SELECT d.doctor_id, d.doctor 
+    FROM doctor d
+    LEFT JOIN user u ON d.user_id = u.user_id
+    WHERE u.account = '$帳號'";
+$result_doctor = mysqli_query($link, $query_doctor);
+
+if (!$doctor = mysqli_fetch_assoc($result_doctor)) {
+    die("找不到醫生資料");
+}
+
+$doctor_id = $doctor['doctor_id'];
+$doctor_name = htmlspecialchars($doctor['doctor']);
+
+// 查詢所有醫生資料 (排除助理)
+$query_all_doctors = "
+    SELECT doctor_id, doctor 
+    FROM doctor
+    WHERE doctor NOT LIKE '%助理%'"; // 排除名字含「助理」的記錄
+$result_all_doctors = mysqli_query($link, $query_all_doctors);
+
+// 接收 GET 參數：查詢特定日期的預約紀錄
+$current_year = date('Y');
+$current_month = date('m');
+$current_day = date('d');
+
+$selected_year = isset($_GET['year']) ? $_GET['year'] : $current_year;
+$selected_month = isset($_GET['month']) ? $_GET['month'] : $current_month;
+$selected_day = isset($_GET['day']) ? $_GET['day'] : $current_day;
+
+$selected_date = "$selected_year-$selected_month-$selected_day";
+
+// 查詢當天時段與預約資料
+$query_appointments = "
+    SELECT st.shifttime, p.name, a.appointment_id
+    FROM doctorshift ds
+    LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+    LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
+    LEFT JOIN people p ON a.people_id = p.people_id
+    WHERE ds.doctor_id = '$doctor_id' AND ds.date = '$selected_date'
+    ORDER BY st.shifttime";
+$result_appointments = mysqli_query($link, $query_appointments);
+
+mysqli_close($link);
+?>
+
+
+    <meta charset="UTF-8">
+    <title>醫生預約紀錄</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        form {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <h2 style="text-align: center;">醫生預約紀錄</h2>
+    <p style="text-align: center;">治療師姓名：<?php echo $doctor_name; ?></p>
+
+    <!-- 下拉選單 -->
+    <form method="GET" action="">
+        <label for="doctor">選擇治療師：</label>
+        <select name="doctor_id" id="doctor" onchange="this.form.submit()">
+            <option value="0">-- 請選擇 --</option>
+            <?php while ($row = mysqli_fetch_assoc($result_all_doctors)): ?>
+                <option value="<?php echo $row['doctor_id']; ?>" <?php if ($row['doctor_id'] == $doctor_id) echo 'selected'; ?>>
+                    <?php echo htmlspecialchars($row['doctor']); ?>
+                </option>
+            <?php endwhile; ?>
+        </select>
+    </form>
+
+    <!-- 預約紀錄表格 -->
+    <table>
+        <tr>
+            <th>時段</th>
+            <th>姓名</th>
+        </tr>
+        <?php if (mysqli_num_rows($result_appointments) > 0): ?>
+            <?php while ($row = mysqli_fetch_assoc($result_appointments)): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
+                    <td>
+                        <?php if ($row['appointment_id']): ?>
+                            <a href="?year=<?php echo $selected_year; ?>&month=<?php echo $selected_month; ?>&day=<?php echo $selected_day; ?>&id=<?php echo $row['appointment_id']; ?>">
+                                <?php echo htmlspecialchars($row['name'] ?? '未預約'); ?>
+                            </a>
+                        <?php else: ?>
+                            未預約
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <tr>
+                <td colspan="2">當天無時段資料</td>
+            </tr>
+        <?php endif; ?>
+    </table>
+
       </div>
-    </section> -->
+    </section>
 
     <!--503錯誤-->
-    <section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
+    <!-- <section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
       <div class="fullwidth-page-inner">
         <div class="section-md text-center">
           <div class="container">
@@ -326,7 +425,7 @@ if (isset($_SESSION["帳號"])) {
           </div>
         </div>
       </div>
-    </section>
+    </section> -->
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">

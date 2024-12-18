@@ -257,177 +257,185 @@ if (isset($_SESSION["帳號"])) {
       </section>
     </div>
 
-    <!--班表-->
+    <!--治療師班表-->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
-      <div>
 
-        <?php
-        session_start(); // 啟用 Session
-        
-        // 確保用戶已登入
-        if (!isset($_SESSION['帳號'])) {
-          echo "<script>
-            alert('未登入或會話已過期，請重新登入！');
-            window.location.href = '../index.html';
-          </script>";
-          exit;
+      <?php
+      session_start(); // 啟用 Session
+      
+      // 確保用戶已登入
+      if (!isset($_SESSION['帳號'])) {
+        echo "<script>
+        alert('未登入或會話已過期，請重新登入！');
+        window.location.href = '../index.html';
+    </script>";
+        exit;
+      }
+
+      // 取得當前登入的帳號
+      $帳號 = $_SESSION['帳號'];
+
+      // 引入資料庫連接檔案
+      require '../db.php';
+
+      // SQL 查詢：根據登入帳號取得對應的醫生姓名
+      $query = "
+    SELECT d.doctor_id, d.doctor 
+    FROM doctor d 
+    INNER JOIN user u ON d.user_id = u.user_id 
+    WHERE u.account = ?
+";
+
+      $stmt = mysqli_prepare($link, $query);
+      mysqli_stmt_bind_param($stmt, "s", $帳號);
+      mysqli_stmt_execute($stmt);
+      $result = mysqli_stmt_get_result($stmt);
+
+      if ($row = mysqli_fetch_assoc($result)) {
+        $doctor_id = $row['doctor_id'];
+        $doctor_name = htmlspecialchars($row['doctor']);
+      } else {
+        $doctor_id = '';
+        $doctor_name = '未知醫生';
+        error_log("未找到醫生資料，帳號: $帳號");
+      }
+
+      // 查詢排班與預約資料
+      $reservation_query = "
+    SELECT ds.date, COUNT(a.appointment_id) AS people_count
+    FROM doctorshift ds
+    LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
+    WHERE ds.doctor_id = ?
+    GROUP BY ds.date
+";
+
+      $reservations = [];
+      if (!empty($doctor_id)) {
+        $stmt = mysqli_prepare($link, $reservation_query);
+        mysqli_stmt_bind_param($stmt, "i", $doctor_id);
+        mysqli_stmt_execute($stmt);
+        $res_result = mysqli_stmt_get_result($stmt);
+
+        while ($res_row = mysqli_fetch_assoc($res_result)) {
+          $reservations[$res_row['date']] = $res_row['people_count'];
         }
+      }
 
-        // 取得當前登入的帳號
-        $帳號 = $_SESSION['帳號'];
+      mysqli_stmt_close($stmt);
+      mysqli_close($link);
+      ?>
 
-        // 引入資料庫連接檔案
-        require '../db.php';
-
-        // SQL 查詢：根據登入帳號取得對應的醫生姓名
-        $query = "SELECT doctor_id, doctor 
-          FROM doctor 
-          WHERE user_id = (SELECT user_id FROM user WHERE account = '$帳號')";
-        $result = mysqli_query($link, $query);
-
-        if (!$result) {
-          die("查詢失敗：" . mysqli_error($link));
-        }
-
-        // 判斷是否找到對應的醫生姓名
-        if ($row = mysqli_fetch_assoc($result)) {
-          $doctor_id = $row['doctor_id'];
-          $doctor_name = htmlspecialchars($row['doctor']);
-        } else {
-          $doctor_id = '';
-          $doctor_name = '未知醫生';
-        }
-
-        // 關閉資料庫連接
-        mysqli_close($link);
-        ?>
-
-        <!-- 顯示醫生姓名 -->
-        <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px;">
-          治療師姓名：<?php echo $doctor_name; ?>
-        </div>
-
+       <h3 style="text-align: center;">治療師班表</h3>
+    
+      <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
+        治療師姓名：<?php echo $doctor_name; ?> <br/>  <!-- 顯示醫生姓名 -->
         <label for="year">選擇年份：</label>
         <select id="year"></select>
         <label for="month">選擇月份：</label>
         <select id="month"></select>
+      </div>
 
-        <table class="table-custom table-color-header table-custom-bordered">
-          <thead>
-            <tr>
-              <th>日</th>
-              <th>一</th>
-              <th>二</th>
-              <th>三</th>
-              <th>四</th>
-              <th>五</th>
-              <th>六</th>
-            </tr>
-          </thead>
-          <tbody id="calendar"></tbody>
-        </table>
+      <table class="table-custom table-color-header table-custom-bordered">
+        <thead>
+          <tr>
+            <th>日</th>
+            <th>一</th>
+            <th>二</th>
+            <th>三</th>
+            <th>四</th>
+            <th>五</th>
+            <th>六</th>
+          </tr>
+        </thead>
+        <tbody id="calendar"></tbody>
+      </table>
 
-        <script>
-          const currentDate = new Date();
-          const currentYear = currentDate.getFullYear();
-          const currentMonth = currentDate.getMonth();
+      <script>
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth();
 
-          const yearSelect = document.getElementById('year');
-          const monthSelect = document.getElementById('month');
-          const calendarBody = document.getElementById('calendar');
+        const yearSelect = document.getElementById('year');
+        const monthSelect = document.getElementById('month');
+        const calendarBody = document.getElementById('calendar');
 
-          // Example reservation data
-          // const reservations = {
-          //   '2024-12-20': 5,
-          //   '2024-12-25': 2,
-          //   '2024-12-31': 10,
-          // };
+        // 從 PHP 獲取預約資料
+        const reservations = <?php echo json_encode($reservations); ?>;
 
-          function initYearOptions() {
-            const startYear = currentYear - 5;
-            const endYear = currentYear + 5;
-            for (let year = startYear; year <= endYear; year++) {
-              const option = document.createElement('option');
-              option.value = year;
-              option.textContent = year;
-              if (year === currentYear) option.selected = true;
-              yearSelect.appendChild(option);
+        function initYearOptions() {
+          const startYear = currentYear - 5;
+          const endYear = currentYear + 5;
+          for (let year = startYear; year <= endYear; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            if (year === currentYear) option.selected = true;
+            yearSelect.appendChild(option);
+          }
+        }
+
+        function initMonthOptions() {
+          for (let month = 0; month < 12; month++) {
+            const option = document.createElement('option');
+            option.value = month;
+            option.textContent = month + 1;
+            if (month === currentMonth) option.selected = true;
+            monthSelect.appendChild(option);
+          }
+        }
+
+        function generateCalendar(year, month) {
+          calendarBody.innerHTML = ''; // 清空日曆內容
+          const firstDay = new Date(year, month, 1).getDay();
+          const lastDate = new Date(year, month + 1, 0).getDate();
+          let row = document.createElement('tr');
+
+          // 補足第一行空白單元格
+          for (let i = 0; i < firstDay; i++) {
+            row.appendChild(document.createElement('td'));
+          }
+
+          // 填入日期和預約人數
+          for (let date = 1; date <= lastDate; date++) {
+            const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+            const cell = document.createElement('td');
+            cell.textContent = date;
+
+            if (reservations[fullDate]) {
+              const reservationInfo = document.createElement('div');
+              reservationInfo.textContent = `預約: ${reservations[fullDate]} 人`;
+              reservationInfo.style.color = 'red';
+              cell.appendChild(reservationInfo);
+            }
+
+            row.appendChild(cell);
+
+            if (row.children.length === 7) {
+              calendarBody.appendChild(row);
+              row = document.createElement('tr');
             }
           }
 
-          function initMonthOptions() {
-            for (let month = 0; month < 12; month++) {
-              const option = document.createElement('option');
-              option.value = month;
-              option.textContent = month + 1;
-              if (month === currentMonth) option.selected = true;
-              monthSelect.appendChild(option);
-            }
+          // 補足最後一行空白單元格
+          while (row.children.length < 7) {
+            row.appendChild(document.createElement('td'));
           }
+          calendarBody.appendChild(row);
+        }
 
-          function generateCalendar(year, month) {
-            calendarBody.innerHTML = ''; // Clear table content
-            const firstDay = new Date(year, month, 1).getDay(); // First day of the month
-            const lastDate = new Date(year, month + 1, 0).getDate(); // Last date of the month
-            let row = document.createElement('tr');
+        // 初始化日曆
+        initYearOptions();
+        initMonthOptions();
+        generateCalendar(currentYear, currentMonth);
 
-            // Empty cells at the start
-            for (let i = 0; i < firstDay; i++) {
-              const emptyCell = document.createElement('td');
-              row.appendChild(emptyCell);
-            }
+        yearSelect.addEventListener('change', () => {
+          generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+        });
+        monthSelect.addEventListener('change', () => {
+          generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+        });
+      </script>
 
-            // Fill in dates
-            for (let date = 1; date <= lastDate; date++) {
-              if (row.children.length === 7) {
-                calendarBody.appendChild(row);
-                row = document.createElement('tr');
-              }
-
-              const dateCell = document.createElement('td');
-              const dateLink = document.createElement('a');
-              const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-
-              dateLink.href = "#";
-              dateLink.textContent = date;
-
-              // Check if the date has a reservation
-              // if (reservations[fullDate]) {
-              //   const reservationInfo = document.createElement('div');
-              //   reservationInfo.textContent = `預約：${reservations[fullDate]} 人`;
-              //   reservationInfo.style.color = 'red'; // Highlight reservation info
-              //   dateCell.appendChild(reservationInfo);
-              // }
-
-              dateLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                alert(`您選擇的日期是：${year}-${month + 1}-${date}`);
-              });
-
-              dateCell.appendChild(dateLink);
-              row.appendChild(dateCell);
-            }
-
-            // Fill empty cells at the end
-            while (row.children.length < 7) {
-              const emptyCell = document.createElement('td');
-              row.appendChild(emptyCell);
-            }
-            calendarBody.appendChild(row);
-          }
-
-          // Initialize
-          initYearOptions();
-          initMonthOptions();
-          generateCalendar(currentYear, currentMonth);
-
-          yearSelect.addEventListener('change', () => {
-            generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-          });
-          monthSelect.addEventListener('change', () => {
-            generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-          });
-        </script>
 
     </section>
 
