@@ -183,7 +183,7 @@ if (isset($_SESSION["帳號"])) {
 								</li> -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_patient.php">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">新增治療師/助手</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="a_addhd.php">新增治療師/助手</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_blacklist.php">黑名單</a>

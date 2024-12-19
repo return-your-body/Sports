@@ -265,7 +265,7 @@ if (isset($_SESSION["帳號"])) {
 
 
     <!--標題-->
-    <!-- <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+    <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
           <p class="heading-1 breadcrumbs-custom-title">治療師班表時段</p>
@@ -275,41 +275,202 @@ if (isset($_SESSION["帳號"])) {
           </ul>
         </div>
       </section>
-    </div> -->
+    </div>
     <!--標題-->
 
     <!--當日時段表-->
-    <!-- <section class="section section-lg bg-default">
-      <div class="container">
-        <h3>當日時段表</h3>
-        <table border="1" style="border-collapse: collapse; width: 100%; text-align: center;">
-          <tr>
-            <th>時間</th>
-            <th>姓名</th>
-            <th>狀態</th>
-          </tr>
-          <?php foreach ($time_slots as $slot): ?>
-            <tr>
-              <td><?php echo $slot['time']; ?></td>
-              <td><?php echo $slot['name']; ?></td>
-              <td><?php echo $slot['status']; ?></td>
-            </tr>
+    <section class="section section-lg bg-default">
+      <?php
+      session_start(); // 啟用 Session
+      
+      // 確保用戶已登入
+      if (!isset($_SESSION['帳號'])) {
+        echo "<script>
+        alert('未登入或會話已過期，請重新登入！');
+        window.location.href = '../index.html';
+    </script>";
+        exit;
+      }
+
+      require '../db.php';
+
+      // 查詢所有醫生的資料供下拉選單使用
+      $doctor_list_query = "SELECT doctor_id, doctor FROM doctor";
+      $doctor_list_result = mysqli_query($link, $doctor_list_query);
+      $doctor_list = [];
+      while ($row = mysqli_fetch_assoc($doctor_list_result)) {
+        $doctor_list[] = $row;
+      }
+
+      // 取得 GET 參數
+      $doctor_id = isset($_GET['doctor_id']) ? (int) $_GET['doctor_id'] : 0;
+      $year = isset($_GET['year']) ? (int) $_GET['year'] : date('Y');
+      $month = isset($_GET['month']) ? (int) $_GET['month'] : date('m');
+
+      // 查詢該醫生的班表和預約數量
+      $reservations = [];
+      if ($doctor_id > 0) {
+        $reservation_query = "
+        SELECT ds.date, COUNT(a.appointment_id) AS people_count
+        FROM doctorshift ds
+        LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
+        WHERE ds.doctor_id = ? AND YEAR(ds.date) = ? AND MONTH(ds.date) = ?
+        GROUP BY ds.date
+    ";
+        $stmt = mysqli_prepare($link, $reservation_query);
+        mysqli_stmt_bind_param($stmt, "iii", $doctor_id, $year, $month);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+
+        while ($row = mysqli_fetch_assoc($result)) {
+          $reservations[$row['date']] = $row['people_count'];
+        }
+        mysqli_stmt_close($stmt);
+      }
+
+      mysqli_close($link);
+      ?>
+
+      <style>
+        .table-custom {
+          width: 100%;
+          border-collapse: collapse;
+          table-layout: fixed;
+        }
+
+        .table-custom th,
+        .table-custom td {
+          border: 1px solid #ddd;
+          text-align: left;
+          /* 文字靠左對齊 */
+          padding: 8px;
+          white-space: nowrap;
+        }
+
+        .table-custom th {
+          background-color: #00a79d;
+          color: white;
+          text-align: center;
+        }
+
+        .reservation-info {
+          color: red;
+          margin-top: 5px;
+        }
+      </style>
+
+      <h3 style="text-align: center;">治療師班表</h3>
+
+      <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
+        <!-- 醫生選單 -->
+        <label for="doctor">選擇治療師：</label>
+        <select id="doctor" onchange="fetchSchedule()">
+          <option value="0" selected>-- 請選擇 --</option>
+          <?php foreach ($doctor_list as $doctor): ?>
+            <option value="<?php echo $doctor['doctor_id']; ?>" <?php if ($doctor_id == $doctor['doctor_id'])
+                 echo 'selected'; ?>>
+              <?php echo htmlspecialchars($doctor['doctor']); ?>
+            </option>
           <?php endforeach; ?>
+        </select>
+
+        <!-- 年份與月份選單 -->
+        <label for="year">選擇年份：</label>
+        <select id="year" onchange="fetchSchedule()"></select>
+        <label for="month">選擇月份：</label>
+        <select id="month" onchange="fetchSchedule()"></select>
+
+        <!-- 日曆表格 -->
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>日</th>
+              <th>一</th>
+              <th>二</th>
+              <th>三</th>
+              <th>四</th>
+              <th>五</th>
+              <th>六</th>
+            </tr>
+          </thead>
+          <tbody id="calendar"></tbody>
         </table>
       </div>
-    </section> -->
+      <script>
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth();
+        const yearSelect = document.getElementById('year');
+        const monthSelect = document.getElementById('month');
+        const doctorSelect = document.getElementById('doctor');
+        const calendarBody = document.getElementById('calendar');
 
-    <!--503錯誤-->
-    <section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
-      <div class="fullwidth-page-inner">
-        <div class="section-md text-center">
-          <div class="container">
-            <p class="breadcrumbs-custom-subtitle">您所點選的頁面正在製作中，暫時關閉</p>
-            <p class="heading-1 breadcrumbs-custom-title">Error 503</p>
-            <p>Sorry, we are working overtime to make our website better, so stay tuned!</p>
-          </div>
-        </div>
-      </div>
+        const reservations = <?php echo json_encode($reservations); ?>;
+
+        function initSelectOptions() {
+          yearSelect.innerHTML = '';
+          monthSelect.innerHTML = '';
+
+          for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+            yearSelect.innerHTML += `<option value="${year}" ${year == <?php echo $year; ?> ? 'selected' : ''}>${year}</option>`;
+          }
+          for (let month = 1; month <= 12; month++) {
+            monthSelect.innerHTML += `<option value="${month}" ${month == <?php echo $month; ?> ? 'selected' : ''}>${month}</option>`;
+          }
+
+          // 當重整後，若 doctor_id 為 0，設回「請選擇」
+          if (doctorSelect.value == "0") doctorSelect.selectedIndex = 0;
+        }
+
+        function generateCalendar() {
+          const year = yearSelect.value;
+          const month = monthSelect.value - 1;
+          calendarBody.innerHTML = '';
+          const firstDay = new Date(year, month, 1).getDay();
+          const lastDate = new Date(year, month + 1, 0).getDate();
+
+          let row = document.createElement('tr');
+          for (let i = 0; i < firstDay; i++) row.appendChild(document.createElement('td'));
+
+          for (let date = 1; date <= lastDate; date++) {
+            const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+            const cell = document.createElement('td');
+            cell.textContent = date;
+
+            if (reservations[fullDate]) {
+              const info = document.createElement('div');
+              info.textContent = `預約: ${reservations[fullDate]} 人`;
+              info.className = 'reservation-info';
+              cell.appendChild(info);
+            }
+
+            row.appendChild(cell);
+            if (row.children.length === 7) {
+              calendarBody.appendChild(row);
+              row = document.createElement('tr');
+            }
+          }
+          while (row.children.length < 7) row.appendChild(document.createElement('td'));
+          calendarBody.appendChild(row);
+        }
+
+        function fetchSchedule() {
+          const doctorId = doctorSelect.value;
+          const year = yearSelect.value;
+          const month = monthSelect.value;
+
+          // 回到「請選擇」狀態
+          if (doctorId === "0") {
+            window.location.href = window.location.pathname;
+          } else {
+            window.location.href = `?doctor_id=${doctorId}&year=${year}&month=${month}`;
+          }
+        }
+
+        initSelectOptions();
+        generateCalendar();
+      </script>
+
+
     </section>
 
     <!--頁尾-->
