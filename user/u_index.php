@@ -282,11 +282,134 @@ if (isset($_SESSION["帳號"])) {
 		<body>
 			<marquee>跑馬燈</marquee>
 		</body>
+		<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>吳孟軒 - 成人物理治療師</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header img {
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+        }
+        .header h1 {
+            margin: 10px 0;
+            font-size: 24px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            font-size: 20px;
+            border-bottom: 2px solid #007BFF;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .list {
+            list-style: none;
+            padding: 0;
+        }
+        .list li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+        }
+        .list li::before {
+            content: '\2022';
+            color: #007BFF;
+            font-weight: bold;
+            display: inline-block;
+            width: 20px;
+            margin-right: 10px;
+        }
+        .footer {
+            font-size: 14px;
+            color: #555;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="" alt="吳孟軒">
+            <h1>吳孟軒</h1>
+            <p>大重仁復健科診所 - 成人物理治療師</p>
+        </div>
+
+        <div class="section">
+            <h2>專長</h2>
+            <ul class="list">
+                <li>徒手治療：筋肌膜疼痛、軟組織放鬆</li>
+                <li>動作分析與訓練指導</li>
+                <li>肌肉骨骼問題</li>
+                <li>慢性下背痛</li>
+                <li>環狀軟骨關節疼痛、落枕、五十肩等關節活動問題</li>
+                <li>術後復健</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>學歷</h2>
+            <ul class="list">
+                <li>長庚大學 物理治療學系 學士</li>
+                <li>長庚大學 生物醫學學系 學士</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>經歷</h2>
+            <ul class="list">
+                <li>大重仁復健科診所 成人物理治療師</li>
+                <li>明台大學物理治療所 實習物理治療師</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>專業認證與進修課程</h2>
+            <ul class="list">
+                <li>中華民國物理治療學會徒手治療專科學員</li>
+                <li>McConnell Institute 肩部與膝部疼痛處理認證課程</li>
+                <li>Anatomy Trains in Motion: Myofascial Body Map for Movement 認證</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>治療理念</h2>
+            <p>透過專業物理治療技術，分析每位患者的需求，提供量身訂製的治療計畫。希望透過一對一的專業治療，幫助患者減輕疼痛、恢復日常功能，達到最佳生活品質。</p>
+        </div>
+    </div>
+    <div class="footer">
+        <p>&copy; 2024 吳孟軒 - 成人物理治療師</p>
+    </div>
+</body>
+</html>
 
 		</html>
 		<!DOCTYPE html>
 		<html lang="zh-Hant">
-
 		<head>
 			<meta charset="UTF-8">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
