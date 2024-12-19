@@ -331,68 +331,6 @@ if (isset($_SESSION["帳號"])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>吳孟軒 - 成人物理治療師</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 800px;
-            margin: 20px auto;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .header img {
-            border-radius: 50%;
-            width: 120px;
-            height: 120px;
-        }
-        .header h1 {
-            margin: 10px 0;
-            font-size: 24px;
-        }
-        .section {
-            margin-bottom: 20px;
-        }
-        .section h2 {
-            font-size: 20px;
-            border-bottom: 2px solid #007BFF;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
-        }
-        .list {
-            list-style: none;
-            padding: 0;
-        }
-        .list li {
-            margin-bottom: 10px;
-            display: flex;
-            align-items: flex-start;
-        }
-        .list li::before {
-            content: '\2022';
-            color: #007BFF;
-            font-weight: bold;
-            display: inline-block;
-            width: 20px;
-            margin-right: 10px;
-        }
-        .footer {
-            font-size: 14px;
-            color: #555;
-            text-align: center;
-            margin-top: 20px;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
