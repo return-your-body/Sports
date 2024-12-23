@@ -175,7 +175,7 @@ if (isset($_SESSION["帳號"])) {
 								<li class="rd-nav-item"><a class="rd-nav-link" href="">關於我們</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="">醫生介紹</a>
+												href="u_link.php">醫生介紹</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="">個案分享</a>
