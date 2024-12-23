@@ -305,7 +305,8 @@ if (isset($_SESSION["帳號"])) {
 				background-color: #45a049;
 			}
 		</style>
-		require '../db.php';		
+		<?php
+		require '../db.php';?>		
 		<h2>資訊填寫表格</h2>
 		<form id="form" onsubmit="return validateForm()">
 			<table border="1">
