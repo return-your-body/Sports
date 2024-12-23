@@ -305,77 +305,130 @@ if (isset($_SESSION["帳號"])) {
 				background-color: #45a049;
 			}
 		</style>
-		<?php
-require '../db.php';
+		require '../db.php';		
+		<h2>資訊填寫表格</h2>
+		<form id="form" onsubmit="return validateForm()">
+			<table border="1">
+				<tr>
+					<td><label for="name">姓名：</label></td>
+					<td><input type="text" id="name" name="name" placeholder="請輸入姓名" required></td>
+				</tr>
+				<tr>
+					<td>性別：</td>
+					<td>
+						<label><input type="radio" name="gender" value="male" required> 男</label>
+						<label><input type="radio" name="gender" value="female" required> 女</label>
+					</td>
+				</tr>
+				<tr>
+					<td>出生年月日：</td>
+					<td>
+						<select id="year" name="year" required>
+							<option value="">年</option>
+							<script>
+								for (let y = 1980; y <= 2024; y++) {
+									document.write(`<option value="${y}">${y}</option>`);
+								}
+							</script>
+						</select>
+						<select id="month" name="month" required>
+							<option value="">月</option>
+							<script>
+								for (let m = 1; m <= 12; m++) {
+									document.write(`<option value="${m}">${m}</option>`);
+								}
+							</script>
+						</select>
+						<select id="day" name="day" required>
+							<option value="">日</option>
+							<script>
+								for (let d = 1; d <= 31; d++) {
+									document.write(`<option value="${d}">${d}</option>`);
+								}
+							</script>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td><label for="idNumber">身分證字號：</label></td>
+					<td><input type="text" id="idNumber" name="idNumber" placeholder="請輸入身分證字號" required></td>
+				</tr>
+				<tr>
+					<td><label for="phone">電話：</label></td>
+					<td><input type="tel" id="phone" name="phone" placeholder="請輸入電話號碼" required></td>
+				</tr>
+				<tr>
+					<td>地址：</td>
+					<td>
+						<select id="city" name="city" required>
+							<option value="">選擇市</option>
+							<option value="台北市">台北市</option>
+							<option value="新北市">新北市</option>
+							<option value="桃園市">桃園市</option>
+							<option value="台中市">台中市</option>
+						</select>
+						<select id="district" name="district" required>
+							<option value="">選擇區</option>
+							<option value="中正區">中正區</option>
+							<option value="大安區">大安區</option>
+							<option value="信義區">信義區</option>
+						</select>
+						<input type="text" id="otherAddress" name="otherAddress" placeholder="請填寫詳細地址" required>
+					</td>
+				</tr>
+				<tr>
+	<td><label for="appointmentDate">預約日期：</label></td>
+	<td><input type="date" id="appointmentDate" name="appointmentDate" required></td>
+</tr>
+<tr>
+	<td><label for="appointmentTime">預約時間：</label></td>
+	<td><input type="time" id="appointmentTime" name="appointmentTime" required></td>
+</tr>
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $name = $_POST['name'];
-    $gender = $_POST['gender'];
-    $year = $_POST['year'];
-    $month = $_POST['month'];
-    $day = $_POST['day'];
-    $idNumber = $_POST['idNumber'];
-    $phone = $_POST['phone'];
-    $city = $_POST['city'];
-    $district = $_POST['district'];
-    $otherAddress = $_POST['otherAddress'];
-    $appointmentDate = $_POST['appointmentDate'];
-    $appointmentTime = $_POST['appointmentTime'];
-    $therapist = $_POST['therapist'];
+				<tr>
+					<td>選擇治療師：</td>
+					<td>
+						<select id="therapist" name="therapist" required>
+							<option value="">請選擇治療師</option>
+							<option value="張醫師">張醫師</option>
+							<option value="李醫師">李醫師</option>
+							<option value="王治療師">王治療師</option>
+						</select>
+					</td>
+				</tr>
+			</table>
+			<button type="submit">完成</button>
+		</form>
 
-    $birthdate = "$year-$month-$day";
-    $address = "$city $district $otherAddress";
+		<script>
+			function validateForm() {
+				const form = document.getElementById("form");
+				const year = document.getElementById("year").value;
+				const month = document.getElementById("month").value;
+				const day = document.getElementById("day").value;
+				const city = document.getElementById("city").value;
+				const district = document.getElementById("district").value;
 
-    // 插入資料到資料庫
-    $sql = "INSERT INTO appointments (name, gender, birthdate, idNumber, phone, address, appointment_date, appointment_time, therapist)
-            VALUES ('$name', '$gender', '$birthdate', '$idNumber', '$phone', '$address', '$appointmentDate', '$appointmentTime', '$therapist')";
+				// 額外檢查下拉選單
+				if (year === "" || month === "" || day === "") {
+					alert("請完整填寫出生年月日！");
+					return false;
+				}
 
-    if ($conn->query($sql) === TRUE) {
-        echo "預約成功！";
-    } else {
-        echo "Error: " . $sql . "<br>" . $conn->error;
-    }
+				if (city === "" || district === "") {
+					alert("請選擇完整的地址！");
+					return false;
+				}
 
-    $conn->close();
-}
-?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>資訊填寫表格</title>
-</head>
-<body>
-    <h2>資訊填寫表格</h2>
-    <form id="form" method="POST" onsubmit="return validateForm()">
-        <!-- 原始 HTML 表單內容 -->
-        <!-- 你的表單內容保持不變 -->
-    </form>
-
-    <script>
-        function validateForm() {
-            const form = document.getElementById("form");
-            const year = document.getElementById("year").value;
-            const month = document.getElementById("month").value;
-            const day = document.getElementById("day").value;
-            const city = document.getElementById("city").value;
-            const district = document.getElementById("district").value;
-
-            // 額外檢查下拉選單
-            if (year === "" || month === "" || day === "") {
-                alert("請完整填寫出生年月日！");
-                return false;
-            }
-
-            if (city === "" || district === "") {
-                alert("請選擇完整的地址！");
-                return false;
-            }
-
-            return true;
-        }
-    </script>
+				// 表單內其他 required 已自動驗證
+				return true;
+			}
+		</script>
+		<!-- Global Mailform Output-->
+		<div class="snackbars" id="form-output-global"></div>
+		<!-- Javascript-->
+		<script src="js/core.min.js"></script>
+		<script src="js/script.js"></script>
 </body>
+
 </html>
