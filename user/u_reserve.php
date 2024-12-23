@@ -376,9 +376,14 @@ if (isset($_SESSION["帳號"])) {
 					</td>
 				</tr>
 				<tr>
-					<td><label for="remark">備註：</label></td>
-					<td><textarea id="remark" name="remark" rows="4" placeholder="請輸入備註（可選填）"></textarea></td>
-				</tr>
+	<td><label for="appointmentDate">預約日期：</label></td>
+	<td><input type="date" id="appointmentDate" name="appointmentDate" required></td>
+</tr>
+<tr>
+	<td><label for="appointmentTime">預約時間：</label></td>
+	<td><input type="time" id="appointmentTime" name="appointmentTime" required></td>
+</tr>
+
 				<tr>
 					<td>選擇治療師：</td>
 					<td>
