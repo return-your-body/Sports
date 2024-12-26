@@ -13,10 +13,48 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
-// 檢查 "帳號" 和 "姓名" 是否存在於 $_SESSION 中
+// 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-  // 獲取用戶帳號和姓名
+  // 獲取用戶帳號
   $帳號 = $_SESSION['帳號'];
+
+  // 資料庫連接
+  require '../db.php';
+
+  // 查詢該帳號的詳細資料
+  $sql = "SELECT user.account, doctor.doctor AS name 
+            FROM user 
+            JOIN doctor ON user.user_id = doctor.user_id 
+            WHERE user.account = ?";
+  $stmt = mysqli_prepare($link, $sql);
+  mysqli_stmt_bind_param($stmt, "s", $帳號);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
+
+  if (mysqli_num_rows($result) > 0) {
+    // 抓取對應姓名
+    $row = mysqli_fetch_assoc($result);
+    $姓名 = $row['name'];
+    $帳號名稱 = $row['account'];
+
+    // 顯示帳號和姓名
+    // echo "歡迎您！<br>";
+    // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
+    // echo "姓名：" . htmlspecialchars($姓名);
+    // echo "<script>
+    //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
+    // </script>";
+  } else {
+    // 如果資料不存在，提示用戶重新登入
+    echo "<script>
+                alert('找不到對應的帳號資料，請重新登入。');
+                window.location.href = '../index.html';
+              </script>";
+    exit();
+  }
+
+  // 關閉資料庫連接
+  mysqli_close($link);
 } else {
   echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
@@ -243,7 +281,7 @@ if (isset($_SESSION["帳號"])) {
               </ul>
             </div>
             <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span></div>
-            <div class="rd-navbar-aside-right rd-navbar-collapse">
+            <!-- <div class="rd-navbar-aside-right rd-navbar-collapse">
               <div class="rd-navbar-social">
                 <div class="rd-navbar-social-text">Follow us</div>
                 <ul class="list-inline">
@@ -257,7 +295,12 @@ if (isset($_SESSION["帳號"])) {
                       href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"></a></li>
                 </ul>
               </div>
-            </div>
+            </div> -->
+            <?php
+            echo "歡迎 ~ ";
+            // 顯示姓名
+            echo $姓名;
+            ?>
           </div>
         </nav>
       </div>
@@ -280,57 +323,6 @@ if (isset($_SESSION["帳號"])) {
 
     <!--當日時段表-->
     <section class="section section-lg bg-default">
-      <?php
-      session_start(); // 啟用 Session
-      
-      // 確保用戶已登入
-      if (!isset($_SESSION['帳號'])) {
-        echo "<script>
-        alert('未登入或會話已過期，請重新登入！');
-        window.location.href = '../index.html';
-    </script>";
-        exit;
-      }
-
-      require '../db.php';
-
-      // 查詢所有醫生的資料供下拉選單使用
-      $doctor_list_query = "SELECT doctor_id, doctor FROM doctor";
-      $doctor_list_result = mysqli_query($link, $doctor_list_query);
-      $doctor_list = [];
-      while ($row = mysqli_fetch_assoc($doctor_list_result)) {
-        $doctor_list[] = $row;
-      }
-
-      // 取得 GET 參數
-      $doctor_id = isset($_GET['doctor_id']) ? (int) $_GET['doctor_id'] : 0;
-      $year = isset($_GET['year']) ? (int) $_GET['year'] : date('Y');
-      $month = isset($_GET['month']) ? (int) $_GET['month'] : date('m');
-
-      // 查詢該醫生的班表和預約數量
-      $reservations = [];
-      if ($doctor_id > 0) {
-        $reservation_query = "
-        SELECT ds.date, COUNT(a.appointment_id) AS people_count
-        FROM doctorshift ds
-        LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
-        WHERE ds.doctor_id = ? AND YEAR(ds.date) = ? AND MONTH(ds.date) = ?
-        GROUP BY ds.date
-    ";
-        $stmt = mysqli_prepare($link, $reservation_query);
-        mysqli_stmt_bind_param($stmt, "iii", $doctor_id, $year, $month);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-
-        while ($row = mysqli_fetch_assoc($result)) {
-          $reservations[$row['date']] = $row['people_count'];
-        }
-        mysqli_stmt_close($stmt);
-      }
-
-      mysqli_close($link);
-      ?>
-
       <style>
         .table-custom {
           width: 100%;
@@ -358,6 +350,62 @@ if (isset($_SESSION["帳號"])) {
           margin-top: 5px;
         }
       </style>
+
+      <?php
+      session_start(); // 啟用 Session
+      
+      // 確保用戶已登入
+      if (!isset($_SESSION['帳號'])) {
+        echo "<script>
+        alert('未登入或會話已過期，請重新登入！');
+        window.location.href = '../index.html';
+    </script>";
+        exit;
+      }
+
+      require '../db.php';
+
+      // 查詢所有醫生的資料供下拉選單使用
+      $doctor_list_query = "
+SELECT d.doctor_id, d.doctor
+FROM doctor d
+INNER JOIN user u ON d.user_id = u.user_id
+WHERE u.grade_id = 2
+";
+      $doctor_list_result = mysqli_query($link, $doctor_list_query);
+      $doctor_list = [];
+      while ($row = mysqli_fetch_assoc($doctor_list_result)) {
+        $doctor_list[] = $row;
+      }
+
+      // 取得 GET 參數
+      $doctor_id = isset($_GET['doctor_id']) ? (int) $_GET['doctor_id'] : 0;
+      $year = isset($_GET['year']) ? (int) $_GET['year'] : date('Y');
+      $month = isset($_GET['month']) ? (int) $_GET['month'] : date('m');
+
+      // 查詢該醫生的班表和預約數量
+      $reservations = [];
+      if ($doctor_id > 0) {
+        $reservation_query = "
+    SELECT ds.date, COUNT(a.appointment_id) AS people_count
+    FROM doctorshift ds
+    LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
+    WHERE ds.doctor_id = ? AND YEAR(ds.date) = ? AND MONTH(ds.date) = ?
+    GROUP BY ds.date
+    ";
+        $stmt = mysqli_prepare($link, $reservation_query);
+        mysqli_stmt_bind_param($stmt, "iii", $doctor_id, $year, $month);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+
+        while ($row = mysqli_fetch_assoc($result)) {
+          $reservations[$row['date']] = $row['people_count'];
+        }
+        mysqli_stmt_close($stmt);
+      }
+
+      mysqli_close($link);
+      ?>
 
       <h3 style="text-align: center;">治療師班表</h3>
 
@@ -396,6 +444,7 @@ if (isset($_SESSION["帳號"])) {
           <tbody id="calendar"></tbody>
         </table>
       </div>
+
       <script>
         const currentYear = new Date().getFullYear();
         const currentMonth = new Date().getMonth();
@@ -413,6 +462,7 @@ if (isset($_SESSION["帳號"])) {
           for (let year = currentYear - 5; year <= currentYear + 5; year++) {
             yearSelect.innerHTML += `<option value="${year}" ${year == <?php echo $year; ?> ? 'selected' : ''}>${year}</option>`;
           }
+
           for (let month = 1; month <= 12; month++) {
             monthSelect.innerHTML += `<option value="${month}" ${month == <?php echo $month; ?> ? 'selected' : ''}>${month}</option>`;
           }
@@ -425,6 +475,7 @@ if (isset($_SESSION["帳號"])) {
           const year = yearSelect.value;
           const month = monthSelect.value - 1;
           calendarBody.innerHTML = '';
+
           const firstDay = new Date(year, month, 1).getDay();
           const lastDate = new Date(year, month + 1, 0).getDate();
 
@@ -458,7 +509,6 @@ if (isset($_SESSION["帳號"])) {
           const year = yearSelect.value;
           const month = monthSelect.value;
 
-          // 回到「請選擇」狀態
           if (doctorId === "0") {
             window.location.href = window.location.pathname;
           } else {
@@ -469,7 +519,6 @@ if (isset($_SESSION["帳號"])) {
         initSelectOptions();
         generateCalendar();
       </script>
-
 
     </section>
 

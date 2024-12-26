@@ -13,10 +13,48 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
-// 檢查 "帳號" 和 "姓名" 是否存在於 $_SESSION 中
+// 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-  // 獲取用戶帳號和姓名
+  // 獲取用戶帳號
   $帳號 = $_SESSION['帳號'];
+
+  // 資料庫連接
+  require '../db.php';
+
+  // 查詢該帳號的詳細資料
+  $sql = "SELECT user.account, doctor.doctor AS name 
+            FROM user 
+            JOIN doctor ON user.user_id = doctor.user_id 
+            WHERE user.account = ?";
+  $stmt = mysqli_prepare($link, $sql);
+  mysqli_stmt_bind_param($stmt, "s", $帳號);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
+
+  if (mysqli_num_rows($result) > 0) {
+    // 抓取對應姓名
+    $row = mysqli_fetch_assoc($result);
+    $姓名 = $row['name'];
+    $帳號名稱 = $row['account'];
+
+    // 顯示帳號和姓名
+    // echo "歡迎您！<br>";
+    // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
+    // echo "姓名：" . htmlspecialchars($姓名);
+    // echo "<script>
+    //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
+    // </script>";
+  } else {
+    // 如果資料不存在，提示用戶重新登入
+    echo "<script>
+                alert('找不到對應的帳號資料，請重新登入。');
+                window.location.href = '../index.html';
+              </script>";
+    exit();
+  }
+
+  // 關閉資料庫連接
+  mysqli_close($link);
 } else {
   echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
@@ -242,7 +280,7 @@ if (isset($_SESSION["帳號"])) {
               </ul>
             </div>
             <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span></div>
-            <div class="rd-navbar-aside-right rd-navbar-collapse">
+            <!-- <div class="rd-navbar-aside-right rd-navbar-collapse">
               <div class="rd-navbar-social">
                 <div class="rd-navbar-social-text">Follow us</div>
                 <ul class="list-inline">
@@ -256,7 +294,12 @@ if (isset($_SESSION["帳號"])) {
                       href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"></a></li>
                 </ul>
               </div>
-            </div>
+            </div> -->
+            <?php
+            echo "歡迎 ~ ";
+            // 顯示姓名
+            echo $姓名;
+            ?>
           </div>
         </nav>
       </div>
@@ -281,61 +324,6 @@ if (isset($_SESSION["帳號"])) {
     <!-- 每日預約總人數-->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
-        <?php
-        session_start();
-        require '../db.php';
-
-        // 確保用戶已登入
-        if (!isset($_SESSION['帳號'])) {
-          echo "<script>
-        alert('未登入或會話已過期，請重新登入！');
-        window.location.href = '../index.html';
-    </script>";
-          exit;
-        }
-
-        // 取得當前登入帳號
-        $帳號 = $_SESSION['帳號'];
-
-        // 查詢所有治療師資料
-        $query_doctors = "SELECT doctor_id, doctor FROM doctor";
-        $result_doctors = mysqli_query($link, $query_doctors);
-        $doctors = [];
-        while ($row = mysqli_fetch_assoc($result_doctors)) {
-          $doctors[] = $row;
-        }
-
-        // 設定下拉選單的預設值
-        $current_year = date('Y');
-        $current_month = date('m');
-        $current_day = date('d');
-
-        // 接收 GET 參數
-        $selected_doctor = isset($_GET['doctor_id']) ? $_GET['doctor_id'] : 0;
-        $selected_year = isset($_GET['year']) ? $_GET['year'] : $current_year;
-        $selected_month = isset($_GET['month']) ? $_GET['month'] : $current_month;
-        $selected_day = isset($_GET['day']) ? $_GET['day'] : $current_day;
-
-        $selected_date = "$selected_year-$selected_month-$selected_day";
-
-        // 查詢選中治療師的預約資料
-        $appointments = [];
-        if ($selected_doctor) {
-          $query_appointments = "
-        SELECT st.shifttime, p.name, a.appointment_id
-        FROM doctorshift ds
-        JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
-        LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
-        LEFT JOIN people p ON a.people_id = p.people_id
-        WHERE ds.date = '$selected_date' AND ds.doctor_id = '$selected_doctor'
-    ";
-          $result_appointments = mysqli_query($link, $query_appointments);
-          while ($row = mysqli_fetch_assoc($result_appointments)) {
-            $appointments[] = $row;
-          }
-        }
-        mysqli_close($link);
-        ?>
         <style>
           table {
             width: 100%;
@@ -359,18 +347,107 @@ if (isset($_SESSION["帳號"])) {
             margin-bottom: 20px;
           }
         </style>
+        <?php
+        session_start(); // 啟用 Session
+        require '../db.php'; // 引入資料庫連線檔案
+        
+        // 驗證用戶是否已登入
+        if (!isset($_SESSION['帳號'])) {
+          echo "<script>
+        alert('未登入或會話已過期，請重新登入！');
+        window.location.href = '../index.html';
+    </script>";
+          exit;
+        }
 
+        // 查詢所有醫生資料
+        $query = "
+SELECT d.doctor_id, d.doctor
+FROM doctor d
+INNER JOIN user u ON d.user_id = u.user_id
+WHERE u.grade_id = 2
+";
+        $result_doctors = mysqli_query($link, $query);
 
-        <h3 style="text-align: center;">當天時段</h3>
+        // 若查詢失敗，結束程序
+        if (!$result_doctors) {
+          die("查詢失敗：" . mysqli_error($link));
+        }
 
-        <!-- 下拉選單 -->
+        // 將醫生資料存入陣列
+        $doctors = [];
+        while ($row = mysqli_fetch_assoc($result_doctors)) {
+          $doctors[] = $row;
+        }
+
+        // 設定下拉選單的預設值
+        $current_year = date('Y');
+        $current_month = date('m');
+        $current_day = date('d');
+
+        // 接收 GET 參數
+        $selected_doctor = isset($_GET['doctor_id']) ? (int) $_GET['doctor_id'] : 0;
+        $selected_year = isset($_GET['year']) ? (int) $_GET['year'] : $current_year;
+        $selected_month = isset($_GET['month']) ? str_pad((int) $_GET['month'], 2, '0', STR_PAD_LEFT) : $current_month;
+        $selected_day = isset($_GET['day']) ? str_pad((int) $_GET['day'], 2, '0', STR_PAD_LEFT) : $current_day;
+
+        $selected_date = "$selected_year-$selected_month-$selected_day";
+
+        // 查詢當天的時段與預約資料
+        $appointments = [];
+        if ($selected_doctor > 0) {
+          $query_appointments = "
+    SELECT st.shifttime, p.name, a.appointment_id
+    FROM doctorshift ds
+    JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+    LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
+    LEFT JOIN people p ON a.people_id = p.people_id
+    WHERE ds.doctor_id = ? AND ds.date = ?
+    ";
+          $stmt = mysqli_prepare($link, $query_appointments);
+          mysqli_stmt_bind_param($stmt, "is", $selected_doctor, $selected_date);
+          mysqli_stmt_execute($stmt);
+          $result = mysqli_stmt_get_result($stmt);
+
+          while ($row = mysqli_fetch_assoc($result)) {
+            $appointments[] = $row;
+          }
+          mysqli_stmt_close($stmt);
+        }
+
+        // 查詢特定預約詳細資料
+        $appointment_details = [];
+        if (isset($_GET['id']) && (int) $_GET['id'] > 0) {
+          $appointment_id = (int) $_GET['id'];
+          $query_details = "
+    SELECT a.appointment_id, p.name, p.contact, a.note, ds.date, st.shifttime
+    FROM appointment a
+    JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+    JOIN people p ON a.people_id = p.people_id
+    WHERE a.appointment_id = ?
+    ";
+          $stmt = mysqli_prepare($link, $query_details);
+          mysqli_stmt_bind_param($stmt, "i", $appointment_id);
+          mysqli_stmt_execute($stmt);
+          $result = mysqli_stmt_get_result($stmt);
+
+          if ($row = mysqli_fetch_assoc($result)) {
+            $appointment_details = $row;
+          }
+          mysqli_stmt_close($stmt);
+        }
+
+        mysqli_close($link);
+        ?>
+
+        <!-- HTML 表單 -->
         <form method="GET" action="">
           <label for="doctor">選擇治療師：</label>
           <select name="doctor_id" id="doctor" onchange="this.form.submit()">
             <option value="0">-- 請選擇 --</option>
             <?php foreach ($doctors as $doctor): ?>
-              <option value="<?php echo $doctor['doctor_id']; ?>" <?php if ($doctor['doctor_id'] == $selected_doctor)
-                   echo 'selected'; ?>>
+              <option value="<?php echo $doctor['doctor_id']; ?>" <?php echo $selected_doctor == $doctor['doctor_id'] ? 'selected' : ''; ?>>
                 <?php echo htmlspecialchars($doctor['doctor']); ?>
               </option>
             <?php endforeach; ?>
@@ -379,8 +456,7 @@ if (isset($_SESSION["帳號"])) {
           <label for="year">選擇年份：</label>
           <select name="year" id="year">
             <?php for ($year = $current_year - 5; $year <= $current_year + 5; $year++): ?>
-              <option value="<?php echo $year; ?>" <?php if ($year == $selected_year)
-                   echo 'selected'; ?>>
+              <option value="<?php echo $year; ?>" <?php echo $year == $selected_year ? 'selected' : ''; ?>>
                 <?php echo $year; ?>
               </option>
             <?php endfor; ?>
@@ -389,8 +465,7 @@ if (isset($_SESSION["帳號"])) {
           <label for="month">選擇月份：</label>
           <select name="month" id="month">
             <?php for ($month = 1; $month <= 12; $month++): ?>
-              <option value="<?php echo str_pad($month, 2, '0', STR_PAD_LEFT); ?>" <?php if ($month == $selected_month)
-                      echo 'selected'; ?>>
+              <option value="<?php echo str_pad($month, 2, '0', STR_PAD_LEFT); ?>" <?php echo $month == $selected_month ? 'selected' : ''; ?>>
                 <?php echo $month; ?>
               </option>
             <?php endfor; ?>
@@ -399,8 +474,7 @@ if (isset($_SESSION["帳號"])) {
           <label for="day">選擇日期：</label>
           <select name="day" id="day">
             <?php for ($day = 1; $day <= 31; $day++): ?>
-              <option value="<?php echo str_pad($day, 2, '0', STR_PAD_LEFT); ?>" <?php if ($day == $selected_day)
-                      echo 'selected'; ?>>
+              <option value="<?php echo str_pad($day, 2, '0', STR_PAD_LEFT); ?>" <?php echo $day == $selected_day ? 'selected' : ''; ?>>
                 <?php echo $day; ?>
               </option>
             <?php endfor; ?>
@@ -409,7 +483,9 @@ if (isset($_SESSION["帳號"])) {
           <button type="submit">查詢</button>
         </form>
 
-        <!-- 顯示預約時段和姓名 -->
+        <h3 style="text-align: center;">當天時段</h3>
+
+        <!-- 時段與預約資料 -->
         <table>
           <tr>
             <th>時段</th>
@@ -437,6 +513,40 @@ if (isset($_SESSION["帳號"])) {
             </tr>
           <?php endif; ?>
         </table>
+
+        <!-- 顯示選定的預約詳細資料 -->
+        <?php if (!empty($appointment_details)): ?>
+          <h3 style="text-align: center;">預約詳細資料</h3>
+          <table>
+            <tr>
+              <th>預約編號</th>
+              <td><?php echo htmlspecialchars($appointment_details['appointment_id']); ?></td>
+            </tr>
+            <tr>
+              <th>預約者姓名</th>
+              <td><?php echo htmlspecialchars($appointment_details['name']); ?></td>
+            </tr>
+            <tr>
+              <th>聯絡方式</th>
+              <td><?php echo htmlspecialchars($appointment_details['contact']); ?></td>
+            </tr>
+            <tr>
+              <th>預約日期</th>
+              <td><?php echo htmlspecialchars($appointment_details['date']); ?></td>
+            </tr>
+            <tr>
+              <th>時段</th>
+              <td><?php echo htmlspecialchars($appointment_details['shifttime']); ?></td>
+            </tr>
+            <tr>
+              <th>備註</th>
+              <td><?php echo htmlspecialchars($appointment_details['note'] ?? '無'); ?></td>
+            </tr>
+          </table>
+        <?php endif; ?>
+
+
+
       </div>
     </section>
 
