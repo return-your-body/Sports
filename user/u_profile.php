@@ -370,9 +370,9 @@ if ($result && mysqli_num_rows($result) > 0) {
                                     <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_link.php">醫生介紹</a>
                                         </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">個案分享</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
                                         </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">日常小知識</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
                                         </li>
                                     </ul>
                                 </li>

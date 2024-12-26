@@ -211,14 +211,14 @@ if (isset($_SESSION["帳號"])) {
 								<li class="rd-nav-item "><a class="rd-nav-link" href="u_index.php">主頁</a>
 								</li>
 
-								<li class="rd-nav-item"><a class="rd-nav-link" href="#">關於我們</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">關於我們</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_link.php">醫生介紹</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">個案分享</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
+										<li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
 										</li>
 									</ul>
 								</li>
@@ -236,7 +236,7 @@ if (isset($_SESSION["帳號"])) {
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
+								<li class="rd-nav-item "><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
 								</li>
 								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
 									<ul class="rd-menu rd-navbar-dropdown">
@@ -322,20 +322,172 @@ if (isset($_SESSION["帳號"])) {
 					<p class="heading-1 breadcrumbs-custom-title">歷史紀錄</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="u_index.php">首頁</a></li>
-						<li class="active">歷史紀錄</li>
+						<li class="active">日常小知識</li>
 					</ul>
 				</div>
 			</section>
 		</div>
 
+    <!-- Contact information-->
+    <section class="section section-lg bg-default">
+      <div class="container">
+        <div class="row row-ten row-50 justify-content-md-center justify-content-xl-between">
+          <div class="col-md-9 col-lg-6">
+            <h3>Contact us</h3>
+            <hr class="divider divider-left divider-default">
+            <p class="big">You can contact us any way that is convenient for you. We are available 24/7 via fax or
+              email. You can also use a quick contact form below or visit our office personally.</p>
+            <!-- RD Mailform-->
+            <form class="rd-mailform" data-form-output="form-output-global" data-form-type="contact" method="post"
+              action="bat/rd-mailform.php">
+              <div class="row row-20 row-fix">
+                <div class="col-md-6">
+                  <div class="form-wrap form-wrap-validation">
+                    <label class="form-label-outside" for="form-1-name">First name</label>
+                    <input class="form-input" id="form-1-name" type="text" name="name" data-constraints="@Required" />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-wrap form-wrap-validation">
+                    <label class="form-label-outside" for="form-1-last-name">Last name</label>
+                    <input class="form-input" id="form-1-last-name" type="text" name="last-name"
+                      data-constraints="@Required" />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-wrap form-wrap-validation">
+                    <label class="form-label-outside" for="form-1-email">E-mail</label>
+                    <input class="form-input" id="form-1-email" type="email" name="email"
+                      data-constraints="@Email @Required" />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-wrap form-wrap-validation">
+                    <label class="form-label-outside" for="form-1-phone">Phone</label>
+                    <input class="form-input" id="form-1-phone" type="text" name="phone"
+                      data-constraints="@Numeric @Required" />
+                  </div>
+                </div>
+                <div class="col-sm-12">
+                  <div class="form-wrap form-wrap-validation">
+                    <label class="form-label-outside" for="form-1-message">Message</label>
+                    <textarea class="form-input" id="form-1-message" name="message"
+                      data-constraints="@Required"></textarea>
+                  </div>
+                </div>
+                <div class="col-sm-12 offset-custom-4">
+                  <div class="form-button">
+                    <button class="button button-primary button-nina" type="submit">Send message</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="col-md-9 col-lg-4 col-xl-3">
+            <div class="column-aside">
+              <div class="row">
+                <div class="col-sm-10 col-md-6 col-lg-12">
+                  <h6>Address</h6>
+                  <hr class="divider-thin">
+                  <article class="box-inline"><span
+                      class="icon novi-icon icon-md-smaller icon-primary mdi mdi-map-marker"></span><span><a
+                        href="#">2130 Fulton Street, Chicago, IL <br class="d-none d-xl-block"> 94117-1080
+                        USA</a></span></article>
+                </div>
+                <div class="col-sm-10 col-md-6 col-lg-12">
+                  <h6>Phone</h6>
+                  <hr class="divider-thin">
+                  <article class="box-inline"><span
+                      class="icon novi-icon icon-md-smaller icon-primary mdi mdi-phone"></span>
+                    <ul class="list-comma">
+                      <li><a href="tel:#">1-800-6543-765</a></li>
+                      <li><a href="tel:#">1-800-3434-876</a></li>
+                    </ul>
+                  </article>
+                </div>
+                <div class="col-sm-10 col-md-6 col-lg-12">
+                  <h6>E-mail</h6>
+                  <hr class="divider-thin">
+                  <article class="box-inline"><span
+                      class="icon novi-icon icon-md-smaller icon-primary mdi mdi-email-open"></span><span><a
+                        href="mailto:#">mail@demolink.org</a></span></article>
+                </div>
+                <div class="col-sm-10 col-md-6 col-lg-12">
+                  <h6>Opening hours</h6>
+                  <hr class="divider-thin">
+                  <article class="box-inline"><span
+                      class="icon novi-icon icon-md-smaller icon-primary mdi mdi-calendar-clock"></span>
+                    <ul class="list-0">
+                      <li>Mon–Fri: 9:00 am–6:00 pm</li>
+                      <li>Sat–Sun: 11:00 am–4:00 pm</li>
+                    </ul>
+                  </article>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
+    <section class="section"
+      data-preset='{"title":"Map fullwidth","category":"maps","reload":true,"id":"map-fullwidth"}'>
+      <!-- Google Map-->
+      <div class="google-map-container google-map-with-icon google-map-default google-map-sm"><iframe
+          src="https://www.amap.com/" width="100%" height="100%" frameborder="0" style="border:0" sandbox=""></iframe>
+      </div>
+    </section>
 
-	</div>
-	<!-- Global Mailform Output-->
-	<div class="snackbars" id="form-output-global"></div>
-	<!-- Javascript-->
-	<script src="js/core.min.js"></script>
-	<script src="js/script.js"></script>
+    <!--頁尾-->
+    <footer class="section novi-bg novi-bg-img footer-simple">
+      <div class="container">
+        <div class="row row-40">
+          <!-- <div class="col-md-4">
+            <h4>關於我們</h4>
+            <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
+              professional knowledge using innovative approach.</p>
+          </div> -->
+          <div class="col-md-3">
+            <h4>快速連結</h4>
+            <ul class="list-marked">
+              <li><a href="d_index.php">首頁</a></li>
+              <li><a href="d_appointment.php">預約</a></li>
+              <li><a href="d_numberpeople.php">當天人數及時段</a></li>
+              <li><a href="d_doctorshift.php">班表時段</a></li>
+              <li><a href="d_medical-record.php">看診紀錄</a></li>
+              <li><a href="d_appointment-records.php">預約紀錄</a></li>
+              <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
+            </ul>
+          </div>
+          <!-- <div class="col-md-5">
+            <h4>聯絡我們</h4>
+            <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
+              courses we offer.</p>
+            <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global" data-form-type="subscribe"
+              method="post" action="bat/rd-mailform.php">
+              <div class="form-wrap">
+                <input class="form-input" type="email" name="email" data-constraints="@Email @Required"
+                  id="footer-mail">
+                <label class="form-label" for="footer-mail">Enter your e-mail</label>
+              </div>
+              <button class="form-button linearicons-paper-plane"></button>
+            </form>
+          </div> -->
+        </div>
+        <!-- <p class="rights"><span>&copy;&nbsp;</span><span
+            class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
+            Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank"
+            href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p> -->
+      </div>
+    </footer>
+  </div>
+  <!--頁尾-->
+
+  <!-- Global Mailform Output-->
+  <div class="snackbars" id="form-output-global"></div>
+  <!-- Javascript-->
+  <script src="js/core.min.js"></script>
+  <script src="js/script.js"></script>
 </body>
 
 </html>

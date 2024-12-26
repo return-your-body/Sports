@@ -211,32 +211,32 @@ if (isset($_SESSION["帳號"])) {
 								<li class="rd-nav-item "><a class="rd-nav-link" href="u_index.php">主頁</a>
 								</li>
 
-								<li class="rd-nav-item"><a class="rd-nav-link" href="#">關於我們</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">關於我們</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_link.php">醫生介紹</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
+										<li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
+								<li class="rd-nav-item "><a class="rd-nav-link active" href="#">預約</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_reserve.php">立即預約</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+										<li class="rd-dropdown-item "><a class="rd-dropdown-link"
 												href="u_reserve-record.php">查看預約資料</a>
 											<!-- 修改預約 -->
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+										<li class="rd-dropdown-item "><a class="rd-dropdown-link"
 												href="u_reserve-time.php">查看預約時段</a>
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
 								</li>
 								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
 									<ul class="rd-menu rd-navbar-dropdown">
@@ -319,10 +319,10 @@ if (isset($_SESSION["帳號"])) {
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
 					<!-- <p class="breadcrumbs-custom-subtitle">What We Offer</p> -->
-					<p class="heading-1 breadcrumbs-custom-title">歷史紀錄</p>
+					<p class="heading-1 breadcrumbs-custom-title">查看預約時段</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="u_index.php">首頁</a></li>
-						<li class="active">歷史紀錄</li>
+						<li class="active">查看預約時段</li>
 					</ul>
 				</div>
 			</section>
