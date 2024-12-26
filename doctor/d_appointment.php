@@ -422,19 +422,6 @@ if (isset($_SESSION["帳號"])) {
             <?php mysqli_close($link); // 關閉資料庫連線 ?>
 
           </div>
-
-          <!-- <div class="col-sm-6 col-lg-3">
-            <div class="team-default box-width-3">
-              <div class="team-default-media"><img class="team-default-img" src="images/team-08-260x345.jpg" alt=""
-                  width="260" height="345" loading="lazy" />
-              </div>
-              <h6 class="team-default-title"><a href="single-teacher.html">Jane Lee</a></h6>
-              <div class="team-default-meta small">Art Instructor</div>
-              <div class="team-default-social"><a class="team-default-icon icon-custom-facebook" href="#"></a><a
-                  class="team-default-icon icon-custom-linkedin" href="#"></a><a
-                  class="team-default-icon icon-custom-instagram" href="#"></a></div>
-            </div>
-          </div> -->
         </div>
       </div>
     </section>

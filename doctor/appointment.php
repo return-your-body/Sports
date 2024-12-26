@@ -27,7 +27,7 @@ $note = mysqli_real_escape_string($link, $note);
 
 // 檢查醫生排班是否存在
 $check_schedule_sql = "
-    SELECT 1 FROM doctorshift 
+    SELECT doctorshift_id FROM doctorshift 
     WHERE doctor_id = '$doctor_id' 
       AND date = '$date' 
       AND shifttime_id = '$shifttime_id'
@@ -41,7 +41,11 @@ if (mysqli_num_rows($result_schedule) == 0) {
     exit;
 }
 
-// 檢查是否有重複預約
+// 獲取 doctorshift_id
+$row = mysqli_fetch_assoc($result_schedule);
+$doctorshift_id = $row['doctorshift_id'];
+
+// 檢查是否有重複預約（針對相同病人、醫生、時間段）
 $check_appointment_sql = "
     SELECT 1 FROM appointment a
     JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
@@ -59,14 +63,24 @@ if (mysqli_num_rows($result_appointment) > 0) {
     exit;
 }
 
+// 檢查該時段是否已有其他預約者
+$check_shift_appointment_sql = "
+    SELECT 1 FROM appointment 
+    WHERE doctorshift_id = '$doctorshift_id'
+";
+$result_shift_appointment = mysqli_query($link, $check_shift_appointment_sql) or die(mysqli_error($link));
+if (mysqli_num_rows($result_shift_appointment) > 0) {
+    echo "<script>
+            alert('本時段已有預約，請重新選擇其他時段！');
+            window.history.back();
+          </script>";
+    exit;
+}
+
 // 插入預約資料
 $insert_sql = "
     INSERT INTO appointment (people_id, doctorshift_id, note)
-    SELECT '$people_id', ds.doctorshift_id, '$note'
-    FROM doctorshift ds
-    WHERE ds.doctor_id = '$doctor_id' 
-      AND ds.date = '$date' 
-      AND ds.shifttime_id = '$shifttime_id'
+    VALUES ('$people_id', '$doctorshift_id', '$note')
 ";
 if (mysqli_query($link, $insert_sql)) {
     echo "<script>
@@ -75,7 +89,7 @@ if (mysqli_query($link, $insert_sql)) {
           </script>";
 } else {
     echo "<script>
-            alert('發生錯誤：" . mysqli_error($link) . "');
+            alert('發生錯誤：" . mysqli_error($link) . "'');
             window.history.back();
           </script>";
 }
