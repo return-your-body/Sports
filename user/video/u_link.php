@@ -24,8 +24,6 @@ if (isset($_SESSION["帳號"])) {
 }
 ?>
 
-
-
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
 
@@ -134,9 +132,11 @@ if (isset($_SESSION["帳號"])) {
 				<polyline class="line-cornered stroke-still" points="0,0 0,100 100,100" stroke-width="10" fill="none">
 				</polyline>
 				<polyline class="line-cornered stroke-animation" points="0,0 100,0 100,100" stroke-width="10"
-					fill="none"></polyline>
+					fill="none">
+				</polyline>
 				<polyline class="line-cornered stroke-animation" points="0,0 0,100 100,100" stroke-width="10"
-					fill="none"></polyline>
+					fill="none">
+				</polyline>
 			</svg>
 		</div>
 	</div>
@@ -161,7 +161,7 @@ if (isset($_SESSION["帳號"])) {
 								data-rd-navbar-toggle=".rd-navbar-nav-wrap"><span></span></button>
 							<!-- RD Navbar Brand-->
 							<div class="rd-navbar-brand">
-								<!--Brand--><a class="brand-name" href="u_index.html"><img class="logo-default"
+								<!--Brand--><a class="brand-name" href="u_index.php"><img class="logo-default"
 										src="images/logo-default-172x36.png" alt="" width="86" height="18"
 										loading="lazy" /><img class="logo-inverse" src="images/logo-inverse-172x36.png"
 										alt="" width="86" height="18" loading="lazy" /></a>
@@ -169,28 +169,32 @@ if (isset($_SESSION["帳號"])) {
 						</div>
 						<div class="rd-navbar-nav-wrap">
 							<ul class="rd-navbar-nav">
-								<li class="rd-nav-item"><a class="rd-nav-link" href="u_index.php">主頁</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="u_index.php">主頁</a>
 								</li>
-
+								
 								<li class="rd-nav-item"><a class="rd-nav-link" href="">關於我們</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">醫生介紹</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_link.php">醫生介紹</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">個案分享</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="">個案分享</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">日常小知識</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="">日常小知識</a>
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">預約</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_reserve.php">立即預約</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約資料</a>
-											<!-- 修改預約 -->
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="">查看預約資料</a> <!-- 修改預約 -->
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約時段</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="">查看預約時段</a>
 										</li>
 									</ul>
 								</li>
@@ -241,7 +245,7 @@ if (isset($_SESSION["帳號"])) {
 									}
 								</script>
 								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="contacts.html">Contacts</a>
-								  </li> -->
+                  				</li> -->								
 							</ul>
 						</div>
 						<div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span>
@@ -253,7 +257,8 @@ if (isset($_SESSION["帳號"])) {
 									<li><a class="icon novi-icon icon-default icon-custom-facebook"
 											href="https://www.facebook.com/ReTurnYourBody/"></a></li>
 									<li><a class="icon novi-icon icon-default icon-custom-linkedin"
-											href="https://lin.ee/sUaUVMq"></a></li>
+											href="https://lin.ee/sUaUVMq"></a>
+									</li>
 									<li><a class="icon novi-icon icon-default icon-custom-instagram"
 											href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"></a>
 									</li>
@@ -264,172 +269,3 @@ if (isset($_SESSION["帳號"])) {
 				</nav>
 			</div>
 		</header>
-
-		<style>
-			body {
-				font-family: Arial, sans-serif;
-				margin: 20px;
-			}
-
-			table {
-				width: 60%;
-				border-collapse: collapse;
-			}
-
-			td {
-				padding: 8px;
-			}
-
-			label {
-				margin-right: 10px;
-			}
-
-			input,
-			select,
-			textarea,
-			button {
-				width: 100%;
-				box-sizing: border-box;
-				padding: 5px;
-			}
-
-			button {
-				background-color: #4CAF50;
-				color: white;
-				border: none;
-				padding: 10px;
-				cursor: pointer;
-			}
-
-			button:hover {
-				background-color: #45a049;
-			}
-		</style>
-		<?php
-		require '../db.php';?>		
-		<h2>資訊填寫表格</h2>
-		<form id="form" onsubmit="return validateForm()">
-			<table border="1">
-				<tr>
-					<td><label for="name">姓名：</label></td>
-					<td><input type="text" id="name" name="name" placeholder="請輸入姓名" required></td>
-				</tr>
-				<tr>
-					<td>性別：</td>
-					<td>
-						<label><input type="radio" name="gender" value="male" required> 男</label>
-						<label><input type="radio" name="gender" value="female" required> 女</label>
-					</td>
-				</tr>
-				<tr>
-					<td>出生年月日：</td>
-					<td>
-						<select id="year" name="year" required>
-							<option value="">年</option>
-							<script>
-								for (let y = 1980; y <= 2024; y++) {
-									document.write(`<option value="${y}">${y}</option>`);
-								}
-							</script>
-						</select>
-						<select id="month" name="month" required>
-							<option value="">月</option>
-							<script>
-								for (let m = 1; m <= 12; m++) {
-									document.write(`<option value="${m}">${m}</option>`);
-								}
-							</script>
-						</select>
-						<select id="day" name="day" required>
-							<option value="">日</option>
-							<script>
-								for (let d = 1; d <= 31; d++) {
-									document.write(`<option value="${d}">${d}</option>`);
-								}
-							</script>
-						</select>
-					</td>
-				</tr>
-				<tr>
-					<td><label for="idNumber">身分證字號：</label></td>
-					<td><input type="text" id="idNumber" name="idNumber" placeholder="請輸入身分證字號" required></td>
-				</tr>
-				<tr>
-					<td><label for="phone">電話：</label></td>
-					<td><input type="tel" id="phone" name="phone" placeholder="請輸入電話號碼" required></td>
-				</tr>
-				<tr>
-					<td>地址：</td>
-					<td>
-						<select id="city" name="city" required>
-							<option value="">選擇市</option>
-							<option value="台北市">台北市</option>
-							<option value="新北市">新北市</option>
-							<option value="桃園市">桃園市</option>
-							<option value="台中市">台中市</option>
-						</select>
-						<select id="district" name="district" required>
-							<option value="">選擇區</option>
-							<option value="中正區">中正區</option>
-							<option value="大安區">大安區</option>
-							<option value="信義區">信義區</option>
-						</select>
-						<input type="text" id="otherAddress" name="otherAddress" placeholder="請填寫詳細地址" required>
-					</td>
-				</tr>
-				<tr>
-	<td><label for="appointmentDate">預約日期：</label></td>
-	<td><input type="date" id="appointmentDate" name="appointmentDate" required></td>
-</tr>
-<tr>
-	<td><label for="appointmentTime">預約時間：</label></td>
-	<td><input type="time" id="appointmentTime" name="appointmentTime" required></td>
-</tr>
-
-				<tr>
-					<td>選擇治療師：</td>
-					<td>
-						<select id="therapist" name="therapist" required>
-							<option value="">請選擇治療師</option>
-							<option value="張醫師">張醫師</option>
-							<option value="李醫師">李醫師</option>
-							<option value="王治療師">王治療師</option>
-						</select>
-					</td>
-				</tr>
-			</table>
-			<button type="submit">完成</button>
-		</form>
-
-		<script>
-			function validateForm() {
-				const form = document.getElementById("form");
-				const year = document.getElementById("year").value;
-				const month = document.getElementById("month").value;
-				const day = document.getElementById("day").value;
-				const city = document.getElementById("city").value;
-				const district = document.getElementById("district").value;
-
-				// 額外檢查下拉選單
-				if (year === "" || month === "" || day === "") {
-					alert("請完整填寫出生年月日！");
-					return false;
-				}
-
-				if (city === "" || district === "") {
-					alert("請選擇完整的地址！");
-					return false;
-				}
-
-				// 表單內其他 required 已自動驗證
-				return true;
-			}
-		</script>
-		<!-- Global Mailform Output-->
-		<div class="snackbars" id="form-output-global"></div>
-		<!-- Javascript-->
-		<script src="js/core.min.js"></script>
-		<script src="js/script.js"></script>
-</body>
-
-</html>
