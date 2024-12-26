@@ -42,9 +42,9 @@ if (isset($_SESSION["帳號"])) {
 		// echo "歡迎您！<br>";
 		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
 		// echo "姓名：" . htmlspecialchars($姓名);
-		echo "<script>
-		  alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-		</script>";
+		// echo "<script>
+		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
+		// </script>";
 	} else {
 		// 如果資料不存在，提示用戶重新登入
 		echo "<script>
@@ -286,7 +286,7 @@ if (isset($_SESSION["帳號"])) {
 						</div>
 						<div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span>
 						</div>
-						<div class="rd-navbar-aside-right rd-navbar-collapse">
+						<!-- <div class="rd-navbar-aside-right rd-navbar-collapse">
 							<div class="rd-navbar-social">
 								<div class="rd-navbar-social-text">聯絡方式</div>
 								<ul class="list-inline">
@@ -300,28 +300,24 @@ if (isset($_SESSION["帳號"])) {
 									</li>
 								</ul>
 							</div>
-						</div>
-						<br/>
-						<div>
-							<?php
-							// 顯示帳號和姓名
-							echo htmlspecialchars($姓名);
-							?>
-						</div>
+						</div>-->
+						<?php 
+						echo"歡迎 ~ ";
+						// 顯示姓名
+						echo $姓名;
+						?>
 					</div>
 				</nav>
 			</div>
 		</header>
 
-		<marquee>跑馬燈</marquee>
+		<!-- <marquee>跑馬燈</marquee> -->
 
 		<!--Welcome back user-->
 		<section class="section section-xl bg-image bg-image-9 text-center novi-bg novi-bg-img">
 			<div class="container">
-				<h1>Welcome back user</h1>
-				<p></p>
-
-				<h3 class="fw-light text-uppercase">運動筋膜放鬆</h3>
+				<!-- <h1>Welcome back user-<?php echo $姓名;?></h1> -->
+				<h1 class="fw-light text-uppercase">運動筋膜放鬆</h1>
 				<p class="big">
 					''運動筋膜放鬆在做什麼？''<br />
 					✨運動筋膜放鬆是透過治療師的牽引將您的身體姿勢擺到適當的位置✨<br />
