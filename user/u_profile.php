@@ -1,4 +1,5 @@
 <?php
+include "../db.php";
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
@@ -22,6 +23,33 @@ if (isset($_SESSION["帳號"])) {
           </script>";
     exit();
 }
+// 查詢資料庫，獲取用戶詳細資料
+$query = "
+    SELECT 
+        p.name, 
+        p.gender_id, 
+        p.birthday, 
+        p.idcard, 
+        p.phone, 
+        p.address, 
+        p.email 
+    FROM 
+        people AS p
+    JOIN 
+        user AS u 
+    ON 
+        p.user_id = u.user_id
+    WHERE 
+        u.account = '$帳號'";
+
+$result = mysqli_query($link, $query);
+
+// 確保資料存在
+if ($result && mysqli_num_rows($result) > 0) {
+    $userData = mysqli_fetch_assoc($result);
+} else {
+    die('未找到用戶資料，請確認帳號是否正確！');
+}
 ?>
 
 
@@ -44,7 +72,7 @@ if (isset($_SESSION["帳號"])) {
     <style>
         /* 背景配圖與漸變顏色 */
         body {
-            background: linear-gradient(to right, #e0f7fa, #b2ebf2);
+            background: linear-gradient(to right, #e0f7fa, rgb(178, 242, 208));
             background-size: cover;
             font-family: 'Roboto', sans-serif;
         }
@@ -399,7 +427,7 @@ if (isset($_SESSION["帳號"])) {
                         <label for="fileInput">
                             <!-- 如果 $profilePicture 为空，则使用預設圖 img/300.jpg -->
                             <div class="profile-picture" id="profilePicturePreview"
-                                style="background-image: url('<?php echo $profilePicture ? $profilePicture : 'img/300.jpg'; ?>');">
+                                style="background-image: url('<?php echo $profilePicture ? $profilePicture : 'images/300.jpg'; ?>');">
                             </div>
                             <button type="button" class="delete-avatar-button" onclick="deleteAvatar()">刪除頭像</button>
                         </label>
@@ -410,39 +438,44 @@ if (isset($_SESSION["帳號"])) {
                     <!-- 表單欄位 -->
                     <div class="form-row">
                         <label for="username">姓名 :</label>
-                        <input id="username" type="text" name="username" value="<?php echo $姓名; ?>" disabled>
+                        <input id="username" type="text" name="username"
+                            value="<?php echo htmlspecialchars($userData['name']); ?>" disabled>
                     </div>
 
                     <div class="form-row">
                         <label for="gender">性別 :</label>
-                        <input id="gender" type="text" name="gender" value="<?php echo $性別 === 1 ? '男' : '女'; ?>"
-                            disabled>
+                        <input id="gender" type="text" name="gender"
+                            value="<?php echo $userData['gender_id'] == 1 ? '男' : '女'; ?>" disabled>
                     </div>
 
                     <div class="form-row">
                         <label for="userdate">出生年月日 :</label>
-                        <input id="userdate" type="date" name="userdate" value="<?php echo $出生年月日; ?>"
+                        <input id="userdate" type="date" name="userdate" value="<?php echo $userData['birthday']; ?>"
                             max="<?php echo date('Y-m-d'); ?>" disabled>
                     </div>
 
                     <div class="form-row">
                         <label for="useridcard">身分證字號 :</label>
-                        <input id="useridcard" type="text" name="useridcard" value="<?php echo $身分證字號; ?>" disabled>
+                        <input id="useridcard" type="text" name="useridcard"
+                            value="<?php echo htmlspecialchars($userData['idcard']); ?>" disabled>
                     </div>
 
                     <div class="form-row">
                         <label for="userphone">聯絡電話 :</label>
-                        <input id="userphone" type="tel" name="userphone" value="<?php echo $電話; ?>" disabled>
+                        <input id="userphone" type="tel" name="userphone"
+                            value="<?php echo htmlspecialchars($userData['phone']); ?>" disabled>
                     </div>
 
                     <div class="form-row">
                         <label for="useremail">電子郵件 :</label>
-                        <input id="useremail" type="email" name="useremail" value="<?php echo $電子郵件; ?>" disabled>
+                        <input id="useremail" type="email" name="useremail"
+                            value="<?php echo htmlspecialchars($userData['email']); ?>" disabled>
                     </div>
 
                     <div class="form-row">
                         <label for="address">地址 :</label>
-                        <input id="address" type="text" name="address" value="<?php echo $地址; ?>" disabled>
+                        <input id="address" type="text" name="address"
+                            value="<?php echo htmlspecialchars($userData['address']); ?>" disabled>
                     </div>
 
                     <!-- 操作按鈕 -->
