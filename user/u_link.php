@@ -2,8 +2,8 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-    header("Location: ../index.html");
-    exit;
+	header("Location: ../index.html");
+	exit;
 }
 
 // 防止頁面被瀏覽器緩存
@@ -11,16 +11,54 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
-// 檢查 "帳號" 和 "姓名" 是否存在於 $_SESSION 中
+// 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-    // 獲取用戶帳號和姓名
-    $帳號 = $_SESSION['帳號'];
+	// 獲取用戶帳號
+	$帳號 = $_SESSION['帳號'];
+
+	// 資料庫連接
+	require '../db.php';
+
+	// 查詢該帳號的詳細資料
+	$sql = "SELECT user.account, people.name 
+            FROM user 
+            JOIN people ON user.user_id = people.user_id 
+            WHERE user.account = ?";
+	$stmt = mysqli_prepare($link, $sql);
+	mysqli_stmt_bind_param($stmt, "s", $帳號);
+	mysqli_stmt_execute($stmt);
+	$result = mysqli_stmt_get_result($stmt);
+
+	if (mysqli_num_rows($result) > 0) {
+		// 抓取對應姓名
+		$row = mysqli_fetch_assoc($result);
+		$姓名 = $row['name'];
+		$帳號名稱 = $row['account'];
+
+		// 顯示帳號和姓名
+		// echo "歡迎您！<br>";
+		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
+		// echo "姓名：" . htmlspecialchars($姓名);
+		// echo "<script>
+		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
+		// </script>";
+	} else {
+		// 如果資料不存在，提示用戶重新登入
+		echo "<script>
+                alert('找不到對應的帳號資料，請重新登入。');
+                window.location.href = '../index.html';
+              </script>";
+		exit();
+	}
+
+	// 關閉資料庫連接
+	mysqli_close($link);
 } else {
-    echo "<script>
+	echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
             window.location.href = '../index.html';
           </script>";
-    exit();
+	exit();
 }
 ?>
 
@@ -246,7 +284,7 @@ if (isset($_SESSION["帳號"])) {
                         </div>
                         <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span>
                         </div>
-                        <div class="rd-navbar-aside-right rd-navbar-collapse">
+                        <!-- <div class="rd-navbar-aside-right rd-navbar-collapse">
                             <div class="rd-navbar-social">
                                 <div class="rd-navbar-social-text">聯絡方式</div>
                                 <ul class="list-inline">
@@ -259,7 +297,12 @@ if (isset($_SESSION["帳號"])) {
                                     </li>
                                 </ul>
                             </div>
-                        </div>
+                        </div> -->
+                        <?php 
+						echo"歡迎 ~ ";
+						// 顯示姓名
+						echo $姓名;
+						?>
                     </div>
                 </nav>
             </div>
