@@ -208,10 +208,10 @@ if (isset($_SESSION["帳號"])) {
 						</div>
 						<div class="rd-navbar-nav-wrap">
 							<ul class="rd-navbar-nav">
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="u_index.php">主頁</a>
+								<li class="rd-nav-item "><a class="rd-nav-link" href="u_index.php">主頁</a>
 								</li>
 
-								<li class="rd-nav-item"><a class="rd-nav-link" href="">關於我們</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="#">關於我們</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_link.php">醫生介紹</a>
@@ -222,7 +222,7 @@ if (isset($_SESSION["帳號"])) {
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
+								<li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_reserve.php">立即預約</a>
@@ -230,7 +230,7 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-record.php">查看預約資料</a>
 											<!-- 修改預約 -->
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約時段</a>
+										<li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="">查看預約時段</a>
 										</li>
 									</ul>
 								</li>
@@ -329,170 +329,6 @@ if (isset($_SESSION["帳號"])) {
 			</div>
 		</section>
 		<!--Welcome back doctor-->
-
-
-		<!--醫生簡介-->
-		<section class="section section-lg bg-default novi-bg novi-bg-img">
-			<div class="container">
-				<div class="row row-30 align-items-center justify-content-xxl-between">
-					<div class="col-md-6">
-						<h2 class="box-small-title">醫生簡介</h2>
-						<p class="big">
-							🏋🏻吳孟軒</br>
-							🏋🏻長庚大學 物理治療學系-學士、生物醫學系-學士</br>
-							🏋🏻現任 大重仁復健科診所--成人物理治療師</p>
-						<div class="row row-30 row-offset-1">
-							<div class="col-md-10 offset-xxl-2">
-								<div class="box-small">
-									<h4 class="box-small-title">專長</h4>
-									<div class="box-small-text">
-										<p class="big">
-											💪🏻徒手治撩：筋肌膜疼縮、軟組織放鬆</br>
-											💪🏻動作分析與控制訓練</br>
-											💪🏻肌肉骨骼疼痛</br>
-											💪🏻慢性下背痛</br>
-											💪🏻肩頸功能障礙：頸因性頭痛、落枕、五十肩、旋轉肌群拉傷</br>
-											💪🏻術後復健</p>
-									</div>
-								</div>
-								<div class="box-small">
-									<h4 class="box-small-title">專業認證與進修課程</h4>
-									<div class="box-small-text">
-										<p class="big">
-											🏅 中華民國高考合格物理治療師</br>
-											🏅 McConnell Institute 實證下肢生物力學</br>
-											🏅 McConnell Institute 起始位置與肌肉骨骼問題之關係</br>
-											🏅 台灣陽明學苑骨科肌肉系統全方位處置策略</br>
-											🏅 解剖列車 Anatomy Trains in Motion: Myofascial</br>
-											🏅 Body Map for Movement</br>
-											🏅 結構治療
-										</p>
-									</div>
-								</div>
-								<div class="box-small">
-									<h4 class="box-small-title">治療理念</h4>
-									<div class="box-small-text">
-										<p class="big">
-											治療是一個控制疼痛的過程,如何控制好疼痛不再出現是重要的課題。</br>
-											透過評估尋找真正造成問題的來源,進而改變原因達到控制疼痛。</br>
-											在一對一治療中使得身體使用模式回歸到中軸,讓身體活動更輕鬆、更能享受生活。
-										</p>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-					<!-- 圖片-->
-					<!-- <div class="col-md-6 col-lg-5 col-xl-4 offset-xl-1 col-xxl-5 position-relative d-none d-md-block">
-			<div class="parallax-scene-js parallax-scene parallax-scene-1" data-scalar-x="5" data-scalar-y="10">
-			  <div class="layer-01">
-				<div class="layer" data-depth="0.25"><img src="images/home-03-515x600.jpg" alt="" width="515"
-					height="600" loading="lazy" />
-				</div>
-			  </div>
-			  <div class="layer-02">
-				<div class="layer" data-depth=".55"><img src="images/home-02-340x445.jpg" alt="" width="340"
-					height="445" loading="lazy" />
-				</div>
-			  </div>
-			</div>
-		  </div> -->
-				</div>
-			</div>
-		</section>
-		<!--醫生簡介-->
-
-
-		<!--班表-->
-		<title>班表</title>
-		<style>
-			body {
-				font-family: Arial, sans-serif;
-				margin: 20px;
-				background-color: #f9f9f9;
-			}
-
-			table {
-				width: 100%;
-				border-collapse: collapse;
-				margin: 20px 0;
-				background-color: #fff;
-			}
-
-			th,
-			td {
-				border: 1px solid #ccc;
-				text-align: center;
-				padding: 10px;
-			}
-
-			th {
-				background-color: #4CAF50;
-				color: white;
-			}
-
-			tr:nth-child(even) {
-				background-color: #f2f2f2;
-			}
-
-			caption {
-				font-size: 1.5em;
-				margin: 10px;
-				font-weight: bold;
-			}
-		</style>
-
-		<h1>班表</h1>
-		<table>
-			<caption>每週班表</caption>
-			<thead>
-				<tr>
-					<th>時段/星期</th>
-					<th>星期一</th>
-					<th>星期二</th>
-					<th>星期三</th>
-					<th>星期四</th>
-					<th>星期五</th>
-					<th>星期六</th>
-					<th>星期日</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>早班 (8:00 - 12:00)</td>
-					<td>王小明</td>
-					<td>李大華</td>
-					<td>張小美</td>
-					<td>王小明</td>
-					<td>李大華</td>
-					<td>休息</td>
-					<td>休息</td>
-				</tr>
-				<tr>
-					<td>午班 (12:00 - 16:00)</td>
-					<td>李大華</td>
-					<td>張小美</td>
-					<td>王小明</td>
-					<td>張小美</td>
-					<td>王小明</td>
-					<td>休息</td>
-					<td>休息</td>
-				</tr>
-				<tr>
-					<td>晚班 (16:00 - 20:00)</td>
-					<td>張小美</td>
-					<td>王小明</td>
-					<td>李大華</td>
-					<td>李大華</td>
-					<td>張小美</td>
-					<td>休息</td>
-					<td>休息</td>
-				</tr>
-			</tbody>
-		</table>
-
-		<!--班表-->
-
 
 		<!-- Page Footer-->
 		<footer class="section novi-bg novi-bg-img footer-simple">

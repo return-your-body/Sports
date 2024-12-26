@@ -223,7 +223,7 @@ if (isset($_SESSION["帳號"])) {
 								</li>
 								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">預約</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+										<li class="rd-dropdown-item active"><a class="rd-dropdown-link"
 												href="u_reserve.php">立即預約</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約資料</a>

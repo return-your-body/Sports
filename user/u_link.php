@@ -210,9 +210,9 @@ if (isset($_SESSION["帳號"])) {
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="u_index.php">主頁</a>
                                 </li>
 
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="">關於我們</a>
+                                <li class="rd-nav-item active"><a class="rd-nav-link" href="">關於我們</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">醫生介紹</a>
+                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="">醫生介紹</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">個案分享</a>
                                         </li>
@@ -220,12 +220,12 @@ if (isset($_SESSION["帳號"])) {
                                         </li>
                                     </ul>
                                 </li>
-                                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">預約</a>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="u_reserve.php">立即預約</a>
                                         </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約資料</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-record.php">查看預約資料</a>
                                             <!-- 修改預約 -->
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約時段</a>
