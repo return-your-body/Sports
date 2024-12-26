@@ -226,7 +226,7 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item active"><a class="rd-dropdown-link"
 												href="u_reserve.php">立即預約</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約資料</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-record.php">查看預約資料</a>
 											<!-- 修改預約 -->
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約時段</a>

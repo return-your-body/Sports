@@ -222,15 +222,17 @@ if (isset($_SESSION["帳號"])) {
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link active" href="#">預約</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_reserve.php">立即預約</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-record.php">查看預約資料</a>
+										<li class="rd-dropdown-item active"><a class="rd-dropdown-link"
+												href="u_reserve-record.php">查看預約資料</a>
 											<!-- 修改預約 -->
 										</li>
-										<li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="">查看預約時段</a>
+										<li class="rd-dropdown-item active"><a class="rd-dropdown-link"
+												href="">查看預約時段</a>
 										</li>
 									</ul>
 								</li>
@@ -301,8 +303,8 @@ if (isset($_SESSION["帳號"])) {
 								</ul>
 							</div>
 						</div>-->
-						<?php 
-						echo"歡迎 ~ ";
+						<?php
+						echo "歡迎 ~ ";
 						// 顯示姓名
 						echo $姓名;
 						?>
@@ -311,68 +313,23 @@ if (isset($_SESSION["帳號"])) {
 			</div>
 		</header>
 
-		<!-- <marquee>跑馬燈</marquee> -->
-
-		<!--Welcome back user-->
-		<section class="section section-xl bg-image bg-image-9 text-center novi-bg novi-bg-img">
-			<div class="container">
-				<!-- <h1>Welcome back user-<?php echo $姓名;?></h1> -->
-				<h1 class="fw-light text-uppercase">運動筋膜放鬆</h1>
-				<p class="big">
-					''運動筋膜放鬆在做什麼？''<br />
-					✨運動筋膜放鬆是透過治療師的牽引將您的身體姿勢擺到適當的位置✨<br />
-					✨還原回到它自己該在的位置而達到放鬆✨</p>
-				<div class="group-md button-group">
-					<a class="button button-dark button-nina" href="u_reserve.php">立即預約</a>
-					<a class="button button-dark button-nina" href="u_link.php">醫生介紹</a>
+		<!--標題-->
+		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+			<!-- Breadcrumbs-->
+			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
+				<div class="container">
+					<!-- <p class="breadcrumbs-custom-subtitle">What We Offer</p> -->
+					<p class="heading-1 breadcrumbs-custom-title">查看預約資料</p>
+					<ul class="breadcrumbs-custom-path">
+						<li><a href="u_index.php">首頁</a></li>
+						<li class="active">查看預約資料</li>
+					</ul>
 				</div>
-			</div>
-		</section>
-		<!--Welcome back doctor-->
+			</section>
+		</div>
 
-		<!-- Page Footer-->
-		<footer class="section novi-bg novi-bg-img footer-simple">
-			<div class="container">
-				<div class="row row-40">
-					<div class="col-md-4">
-						<h4>About us</h4>
-						<p class="me-xl-5">Pract is a learning platform for education and skills training. We provide
-							you
-							professional knowledge using innovative approach.</p>
-					</div>
-					<div class="col-md-3">
-						<h4>Quick links</h4>
-						<ul class="list-marked">
-							<li><a href="index.html">Home</a></li>
-							<li><a href="courses.html">Courses</a></li>
-							<li><a href="about-us.html">About us</a></li>
-							<li><a href="#">Blog</a></li>
-							<li><a href="contacts.html">Contacts</a></li>
-							<li><a href="#">Become a teacher</a></li>
-						</ul>
-					</div>
-					<div class="col-md-5">
-						<h4>Newsletter</h4>
-						<p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team
-							on the
-							courses we offer.</p>
-						<form class="rd-mailform rd-form-boxed" data-form-output="form-output-global"
-							data-form-type="subscribe" method="post" action="bat/rd-mailform.php">
-							<div class="form-wrap">
-								<input class="form-input" type="email" name="email" data-constraints="@Email @Required"
-									id="footer-mail">
-								<label class="form-label" for="footer-mail">Enter your e-mail</label>
-							</div>
-							<button class="form-button linearicons-paper-plane"></button>
-						</form>
-					</div>
-				</div>
-				<p class="rights"><span>&copy;&nbsp;</span><span
-						class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
-						Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank"
-						href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p>
-			</div>
-		</footer>
+
+
 	</div>
 	<!-- Global Mailform Output-->
 	<div class="snackbars" id="form-output-global"></div>

@@ -210,9 +210,9 @@ if (isset($_SESSION["帳號"])) {
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="u_index.php">主頁</a>
                                 </li>
 
-                                <li class="rd-nav-item active"><a class="rd-nav-link" href="">關於我們</a>
+                                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">關於我們</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="">醫生介紹</a>
+                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="u_link.php">醫生介紹</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">個案分享</a>
                                         </li>
@@ -308,6 +308,23 @@ if (isset($_SESSION["帳號"])) {
             </div>
         </header>
 
+
+	<!--標題-->
+    <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+			<!-- Breadcrumbs-->
+			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
+				<div class="container">
+					<!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
+					<p class="heading-1 breadcrumbs-custom-title">醫生介紹</p>
+					<ul class="breadcrumbs-custom-path">
+						<li><a href="u_index.php">首頁</a></li>
+						<li class="active">醫生介紹</li>
+					</ul>
+				</div>
+			</section>
+		</div>
+		<!--標題-->
+        
         <!-- Team-->
         <section class="section section-lg novi-bg novi-bg-img bg-default">
             <div class="container">
