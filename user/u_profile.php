@@ -182,7 +182,7 @@ if (isset($_SESSION["帳號"])) {
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">預約</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_reserve.php">立即預約</a>
@@ -204,7 +204,7 @@ if (isset($_SESSION["帳號"])) {
 									</ul>
 								</li> -->
 
-								<li class="rd-nav-item"><a class="rd-nav-link" href="u_profile.php">個人資料</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="u_profile.php">個人資料</a>
 								</li>
 
 								<!-- 登出按鈕 -->
@@ -264,164 +264,6 @@ if (isset($_SESSION["帳號"])) {
 				</nav>
 			</div>
 		</header>
-
-		<style>
-			body {
-				font-family: Arial, sans-serif;
-				margin: 20px;
-			}
-
-			table {
-				width: 60%;
-				border-collapse: collapse;
-			}
-
-			td {
-				padding: 8px;
-			}
-
-			label {
-				margin-right: 10px;
-			}
-
-			input,
-			select,
-			textarea,
-			button {
-				width: 100%;
-				box-sizing: border-box;
-				padding: 5px;
-			}
-
-			button {
-				background-color: #4CAF50;
-				color: white;
-				border: none;
-				padding: 10px;
-				cursor: pointer;
-			}
-
-			button:hover {
-				background-color: #45a049;
-			}
-		</style>
-		<?php
-		require '../db.php';
-		?>
-		<!-- <h2>資訊填寫表格</h2> -->
-		<form id="form" onsubmit="return validateForm()">
-			<table border="1">
-				<!-- 姓名輸入 -->
-				<tr>
-					<td><label for="name">姓名：</label></td>
-					<!-- 輸入框，限制為必填 -->
-					<td><input type="text" id="name" name="name" placeholder="請輸入姓名" required></td>
-				</tr>
-				<!-- 性別選擇 -->
-				<tr>
-					<td>性別：</td>
-					<td>
-						<!-- 單選按鈕，限制為必選 -->
-						<label><input type="radio" name="gender" value="male" required>男</label>
-						<label><input type="radio" name="gender" value="female" required>女</label>
-					</td>
-				</tr>
-				<!-- 出生年月日輸入 -->
-				<tr>
-					<td><label for="birthDate">出生年月日：</label></td>
-					<!-- 日期選擇器，限制只能選今天以前的日期 -->
-					<td><input type="date" id="birthDate" name="birthDate" max="" required></td>
-				</tr>
-				<!-- 身分證字號輸入 -->
-				<tr>
-					<td><label for="idNumber">身分證字號：</label></td>
-					<!-- 輸入框，限制為必填 -->
-					<td><input type="text" id="idNumber" name="idNumber" placeholder="請輸入身分證字號" required></td>
-				</tr>
-				<!-- 電話號碼輸入 -->
-				<tr>
-					<td><label for="phone">電話：</label></td>
-					<!-- 輸入框，限制為必填 -->
-					<td><input type="tel" id="phone" name="phone" placeholder="請輸入電話號碼" required></td>
-				</tr>
-				<!-- 地址輸入 -->
-				<tr>
-					<td>地址：</td>
-					<!-- 單一輸入框，方便填寫完整地址 -->
-					<td><input type="text" id="address" name="address" placeholder="請填寫完整地址" required></td>
-				</tr>
-				<!-- 預約日期選擇 -->
-				<tr>
-					<td><label for="appointmentDate">預約日期：</label></td>
-					<!-- 日期選擇器，限制為必填 -->
-					<td><input type="date" id="appointmentDate" name="appointmentDate" required></td>
-				</tr>
-				<!-- 預約時間選擇 -->
-				<tr>
-					<td><label for="appointmentTime">預約時間：</label></td>
-					<!-- 下拉選單，自動生成每 20 分鐘的時間區間 -->
-					<td>
-						<select id="appointmentTime" name="appointmentTime" required>
-							<option value="">請選擇時間</option>
-						</select>
-					</td>
-				</tr>
-				<!-- 選擇治療師 -->
-				<tr>
-					<td>選擇治療師：</td>
-					<!-- 下拉選單，選項暫時留空，限制為必選 -->
-					<td>
-						<select id="therapist" name="therapist" required>
-							<option value="">請選擇治療師</option>
-						</select>
-					</td>
-				</tr>
-			</table>
-			<!-- 提交按鈕 -->
-			<button type="submit">完成</button>
-		</form>
-
-		<script>
-			// 設定出生年月日限制為今天以前
-			const birthDateInput = document.getElementById("birthDate");
-			// 獲取當天日期，格式為 yyyy-mm-dd
-			const today = new Date().toISOString().split("T")[0];
-			// 設定日期選擇器的最大日期為今天
-			birthDateInput.max = today;
-
-			// 預約時間選項生成
-			const appointmentTimeSelect = document.getElementById("appointmentTime");
-			// 設定時間區間起始和結束小時數
-			const startHour = 7; // 早上 7 點
-			const endHour = 19; // 晚上 7 點，可根據需求調整
-			const interval = 20; // 每 20 分鐘一個區間
-
-			// 迴圈生成每 20 分鐘的時間選項
-			for (let hour = startHour; hour < endHour; hour++) {
-				for (let minute = 0; minute < 60; minute += interval) {
-					// 格式化時間，確保是兩位數（例如 07:00）
-					const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-					// 創建選項元素
-					const option = document.createElement("option");
-					option.value = time; // 設定選項的值
-					option.textContent = time; // 設定選項的顯示文字
-					// 添加到下拉選單中
-					appointmentTimeSelect.appendChild(option);
-				}
-			}
-
-			// 表單驗證函數
-			function validateForm() {
-				// 獲取表單元素
-				const form = document.getElementById("form");
-				// 驗證表單是否完整填寫
-				if (!form.checkValidity()) {
-					alert("請完整填寫表單！");
-					return false;
-				}
-				return true; // 驗證通過
-			}
-		</script>
 
 		<!-- Global Mailform Output-->
 		<div class="snackbars" id="form-output-global"></div>

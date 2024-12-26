@@ -208,7 +208,7 @@ if (isset($_SESSION["帳號"])) {
 									</ul>
 								</li> -->
 
-								<li class="rd-nav-item"><a class="rd-nav-link" href="">個人資料</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="u_profile.php">個人資料</a>
 								</li>
 
 								<!-- 登出按鈕 -->
