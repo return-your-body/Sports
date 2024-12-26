@@ -347,12 +347,11 @@ if (isset($_SESSION["帳號"])) {
             margin-bottom: 20px;
           }
         </style>
-
         <?php
-        session_start();
-        require '../db.php';
-
-        // 確保用戶已登入
+        session_start(); // 啟用 Session
+        require '../db.php'; // 引入資料庫連線檔案
+        
+        // 驗證用戶是否已登入
         if (!isset($_SESSION['帳號'])) {
           echo "<script>
         alert('未登入或會話已過期，請重新登入！');
@@ -370,7 +369,7 @@ WHERE u.grade_id = 2
 ";
         $result_doctors = mysqli_query($link, $query);
 
-        // 檢查查詢結果
+        // 若查詢失敗，結束程序
         if (!$result_doctors) {
           die("查詢失敗：" . mysqli_error($link));
         }
@@ -387,35 +386,62 @@ WHERE u.grade_id = 2
         $current_day = date('d');
 
         // 接收 GET 參數
-        $selected_doctor = isset($_GET['doctor_id']) ? $_GET['doctor_id'] : 0;
-        $selected_year = isset($_GET['year']) ? $_GET['year'] : $current_year;
-        $selected_month = isset($_GET['month']) ? $_GET['month'] : $current_month;
-        $selected_day = isset($_GET['day']) ? $_GET['day'] : $current_day;
+        $selected_doctor = isset($_GET['doctor_id']) ? (int) $_GET['doctor_id'] : 0;
+        $selected_year = isset($_GET['year']) ? (int) $_GET['year'] : $current_year;
+        $selected_month = isset($_GET['month']) ? str_pad((int) $_GET['month'], 2, '0', STR_PAD_LEFT) : $current_month;
+        $selected_day = isset($_GET['day']) ? str_pad((int) $_GET['day'], 2, '0', STR_PAD_LEFT) : $current_day;
 
         $selected_date = "$selected_year-$selected_month-$selected_day";
 
-        // 查詢選中治療師的預約資料
+        // 查詢當天的時段與預約資料
         $appointments = [];
-        if ($selected_doctor) {
+        if ($selected_doctor > 0) {
           $query_appointments = "
     SELECT st.shifttime, p.name, a.appointment_id
     FROM doctorshift ds
     JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
     LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
     LEFT JOIN people p ON a.people_id = p.people_id
-    WHERE ds.date = '$selected_date' AND ds.doctor_id = '$selected_doctor'
+    WHERE ds.doctor_id = ? AND ds.date = ?
     ";
-          $result_appointments = mysqli_query($link, $query_appointments);
-          while ($row = mysqli_fetch_assoc($result_appointments)) {
+          $stmt = mysqli_prepare($link, $query_appointments);
+          mysqli_stmt_bind_param($stmt, "is", $selected_doctor, $selected_date);
+          mysqli_stmt_execute($stmt);
+          $result = mysqli_stmt_get_result($stmt);
+
+          while ($row = mysqli_fetch_assoc($result)) {
             $appointments[] = $row;
           }
+          mysqli_stmt_close($stmt);
         }
+
+        // 查詢特定預約詳細資料
+        $appointment_details = [];
+        if (isset($_GET['id']) && (int) $_GET['id'] > 0) {
+          $appointment_id = (int) $_GET['id'];
+          $query_details = "
+    SELECT a.appointment_id, p.name, p.contact, a.note, ds.date, st.shifttime
+    FROM appointment a
+    JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+    JOIN people p ON a.people_id = p.people_id
+    WHERE a.appointment_id = ?
+    ";
+          $stmt = mysqli_prepare($link, $query_details);
+          mysqli_stmt_bind_param($stmt, "i", $appointment_id);
+          mysqli_stmt_execute($stmt);
+          $result = mysqli_stmt_get_result($stmt);
+
+          if ($row = mysqli_fetch_assoc($result)) {
+            $appointment_details = $row;
+          }
+          mysqli_stmt_close($stmt);
+        }
+
         mysqli_close($link);
         ?>
 
-        <h3 style="text-align: center;">當天時段</h3>
-
-        <!-- 下拉選單 -->
+        <!-- HTML 表單 -->
         <form method="GET" action="">
           <label for="doctor">選擇治療師：</label>
           <select name="doctor_id" id="doctor" onchange="this.form.submit()">
@@ -457,8 +483,9 @@ WHERE u.grade_id = 2
           <button type="submit">查詢</button>
         </form>
 
+        <h3 style="text-align: center;">當天時段</h3>
 
-        <!-- 顯示預約時段和姓名 -->
+        <!-- 時段與預約資料 -->
         <table>
           <tr>
             <th>時段</th>
@@ -486,6 +513,40 @@ WHERE u.grade_id = 2
             </tr>
           <?php endif; ?>
         </table>
+
+        <!-- 顯示選定的預約詳細資料 -->
+        <?php if (!empty($appointment_details)): ?>
+          <h3 style="text-align: center;">預約詳細資料</h3>
+          <table>
+            <tr>
+              <th>預約編號</th>
+              <td><?php echo htmlspecialchars($appointment_details['appointment_id']); ?></td>
+            </tr>
+            <tr>
+              <th>預約者姓名</th>
+              <td><?php echo htmlspecialchars($appointment_details['name']); ?></td>
+            </tr>
+            <tr>
+              <th>聯絡方式</th>
+              <td><?php echo htmlspecialchars($appointment_details['contact']); ?></td>
+            </tr>
+            <tr>
+              <th>預約日期</th>
+              <td><?php echo htmlspecialchars($appointment_details['date']); ?></td>
+            </tr>
+            <tr>
+              <th>時段</th>
+              <td><?php echo htmlspecialchars($appointment_details['shifttime']); ?></td>
+            </tr>
+            <tr>
+              <th>備註</th>
+              <td><?php echo htmlspecialchars($appointment_details['note'] ?? '無'); ?></td>
+            </tr>
+          </table>
+        <?php endif; ?>
+
+
+
       </div>
     </section>
 
