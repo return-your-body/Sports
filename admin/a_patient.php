@@ -2,8 +2,9 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-	header("Location: ../index.html");
-	exit;
+    // 如果未登入或會話過期，跳轉至登入頁面
+    header("Location: ../index.html");
+    exit;
 }
 
 // 防止頁面被瀏覽器緩存
@@ -11,16 +12,33 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
-// 檢查 "帳號" 和 "姓名" 是否存在於 $_SESSION 中
+// 檢查是否有 "帳號" 在 Session 中
 if (isset($_SESSION["帳號"])) {
-	// 獲取用戶帳號和姓名
-	$帳號 = $_SESSION['帳號'];
-} else {
-	echo "<script>
-            alert('會話過期或資料遺失，請重新登入。');
-            window.location.href = '../index.html';
-          </script>";
-	exit();
+    // 獲取用戶帳號
+    $帳號 = $_SESSION['帳號'];
+
+    // 引入資料庫連接檔案
+    require '../db.php';
+
+    // 查詢用戶詳細資料（從資料庫中獲取對應資料）
+    $sql = "SELECT account, grade_id FROM user WHERE account = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "s", $帳號);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    if ($result && mysqli_num_rows($result) > 0) {
+        $row = mysqli_fetch_assoc($result);
+        $帳號名稱 = $row['account']; // 使用者帳號
+        $等級 = $row['grade_id']; // 等級（例如 1: 醫生, 2: 護士, 等等）
+    } else {
+        // 如果查詢不到對應的資料
+        echo "<script>
+                alert('找不到對應的帳號資料，請重新登入。');
+                window.location.href = '../index.html';
+              </script>";
+        exit();
+    }
 }
 ?>
 
@@ -230,7 +248,7 @@ if (isset($_SESSION["帳號"])) {
 						</div>
 						<div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span>
 						</div>
-						<div class="rd-navbar-aside-right rd-navbar-collapse">
+						<!-- <div class="rd-navbar-aside-right rd-navbar-collapse">
 							<div class="rd-navbar-social">
 								<div class="rd-navbar-social-text">Follow us</div>
 								<ul class="list-inline">
@@ -241,7 +259,12 @@ if (isset($_SESSION["帳號"])) {
 									</li>
 								</ul>
 							</div>
-						</div>
+						</div> -->
+						<?php 
+						echo"歡迎 ~ ";
+						// 顯示姓名
+						echo $帳號名稱;
+						?>
 					</div>
 				</nav>
 			</div>
