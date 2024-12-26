@@ -11,10 +11,48 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
-// 檢查 "帳號" 和 "姓名" 是否存在於 $_SESSION 中
+// 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-	// 獲取用戶帳號和姓名
+	// 獲取用戶帳號
 	$帳號 = $_SESSION['帳號'];
+
+	// 資料庫連接
+	require '../db.php';
+
+	// 查詢該帳號的詳細資料
+	$sql = "SELECT user.account, people.name 
+            FROM user 
+            JOIN people ON user.user_id = people.user_id 
+            WHERE user.account = ?";
+	$stmt = mysqli_prepare($link, $sql);
+	mysqli_stmt_bind_param($stmt, "s", $帳號);
+	mysqli_stmt_execute($stmt);
+	$result = mysqli_stmt_get_result($stmt);
+
+	if (mysqli_num_rows($result) > 0) {
+		// 抓取對應姓名
+		$row = mysqli_fetch_assoc($result);
+		$姓名 = $row['name'];
+		$帳號名稱 = $row['account'];
+
+		// 顯示帳號和姓名
+		// echo "歡迎您！<br>";
+		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
+		// echo "姓名：" . htmlspecialchars($姓名);
+		// echo "<script>
+		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
+		// </script>";
+	} else {
+		// 如果資料不存在，提示用戶重新登入
+		echo "<script>
+                alert('找不到對應的帳號資料，請重新登入。');
+                window.location.href = '../index.html';
+              </script>";
+		exit();
+	}
+
+	// 關閉資料庫連接
+	mysqli_close($link);
 } else {
 	echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
@@ -172,9 +210,10 @@ if (isset($_SESSION["帳號"])) {
 								<li class="rd-nav-item"><a class="rd-nav-link" href="u_index.php">主頁</a>
 								</li>
 
-								<li class="rd-nav-item"><a class="rd-nav-link" href="">關於我們</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="#">關於我們</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">醫生介紹</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_link.php">醫生介紹</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">個案分享</a>
 										</li>
@@ -246,7 +285,7 @@ if (isset($_SESSION["帳號"])) {
 						</div>
 						<div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span>
 						</div>
-						<div class="rd-navbar-aside-right rd-navbar-collapse">
+						<!-- <div class="rd-navbar-aside-right rd-navbar-collapse">
 							<div class="rd-navbar-social">
 								<div class="rd-navbar-social-text">聯絡方式</div>
 								<ul class="list-inline">
@@ -259,169 +298,176 @@ if (isset($_SESSION["帳號"])) {
 									</li>
 								</ul>
 							</div>
-						</div>
+						</div> -->
+						<?php
+						echo "歡迎 ~ ";
+						// 顯示姓名
+						echo $姓名;
+						?>
 					</div>
 				</nav>
 			</div>
 		</header>
 
-		<style>
-			body {
-				font-family: Arial, sans-serif;
-				margin: 20px;
-			}
 
-			table {
-				width: 60%;
-				border-collapse: collapse;
-			}
+  <!--標題-->
+  <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+      <!-- Breadcrumbs-->
+      <section class="breadcrumbs-custom breadcrumbs-custom-svg">
+        <div class="container">
+          <!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
+          <p class="heading-1 breadcrumbs-custom-title">立即預約</p>
+          <ul class="breadcrumbs-custom-path">
+            <li><a href="u_index.php">首頁</a></li>
+            <li class="active">立即預約</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+    <!--標題-->
 
-			td {
-				padding: 8px;
-			}
 
-			label {
-				margin-right: 10px;
-			}
+		<!--預約-->
+		<section class="section section-lg novi-bg novi-bg-img bg-default">
+      <div class="container">
+        <div class="row row-40 row-lg-50">
+          <style>
+            /* 通用樣式 */
+            /* body {
+              margin: 0; 
+              padding: 0;
+              font-family: Arial, sans-serif;
+              text-align: center;
+            } */
 
-			input,
-			select,
-			textarea,
-			button {
-				width: 100%;
-				box-sizing: border-box;
-				padding: 5px;
-			}
+            h1 {
+              margin-bottom: 20px;
+            }
 
-			button {
-				background-color: #4CAF50;
-				color: white;
-				border: none;
-				padding: 10px;
-				cursor: pointer;
-			}
+            /* 表單容器框線樣式 */
+            .form-container {
+              width: 400px;
+              margin: 30px auto;
+              padding: 20px;
+              border: 2px solid black;
+              border-radius: 10px;
+              text-align: left;
+              background-color: #f9f9f9;
+            }
 
-			button:hover {
-				background-color: #45a049;
-			}
-		</style>
-		<?php
-		require '../db.php';
-		?>
-		<!-- <h2>資訊填寫表格</h2> -->
-		<form id="form" onsubmit="return validateForm()">
-			<table border="1">
-				<!-- 姓名輸入 -->
-				<tr>
-					<td><label for="name">姓名：</label></td>
-					<!-- 輸入框，限制為必填 -->
-					<td><input type="text" id="name" name="name" placeholder="請輸入姓名" required></td>
-				</tr>
-				<!-- 性別選擇 -->
-				<tr>
-					<td>性別：</td>
-					<td>
-						<!-- 單選按鈕，限制為必選 -->
-						<label><input type="radio" name="gender" value="male" required>男</label>
-						<label><input type="radio" name="gender" value="female" required>女</label>
-					</td>
-				</tr>
-				<!-- 出生年月日輸入 -->
-				<tr>
-					<td><label for="birthDate">出生年月日：</label></td>
-					<!-- 日期選擇器，限制只能選今天以前的日期 -->
-					<td><input type="date" id="birthDate" name="birthDate" max="" required></td>
-				</tr>
-				<!-- 身分證字號輸入 -->
-				<tr>
-					<td><label for="idNumber">身分證字號：</label></td>
-					<!-- 輸入框，限制為必填 -->
-					<td><input type="text" id="idNumber" name="idNumber" placeholder="請輸入身分證字號" required></td>
-				</tr>
-				<!-- 電話號碼輸入 -->
-				<tr>
-					<td><label for="phone">電話：</label></td>
-					<!-- 輸入框，限制為必填 -->
-					<td><input type="tel" id="phone" name="phone" placeholder="請輸入電話號碼" required></td>
-				</tr>
-				<!-- 地址輸入 -->
-				<tr>
-					<td>地址：</td>
-					<!-- 單一輸入框，方便填寫完整地址 -->
-					<td><input type="text" id="address" name="address" placeholder="請填寫完整地址" required></td>
-				</tr>
-				<!-- 預約日期選擇 -->
-				<tr>
-					<td><label for="appointmentDate">預約日期：</label></td>
-					<!-- 日期選擇器，限制為必填 -->
-					<td><input type="date" id="appointmentDate" name="appointmentDate" required></td>
-				</tr>
-				<!-- 預約時間選擇 -->
-				<tr>
-					<td><label for="appointmentTime">預約時間：</label></td>
-					<!-- 下拉選單，自動生成每 20 分鐘的時間區間 -->
-					<td>
-						<select id="appointmentTime" name="appointmentTime" required>
-							<option value="">請選擇時間</option>
-						</select>
-					</td>
-				</tr>
-				<!-- 選擇治療師 -->
-				<tr>
-					<td>選擇治療師：</td>
-					<!-- 下拉選單，選項暫時留空，限制為必選 -->
-					<td>
-						<select id="therapist" name="therapist" required>
-							<option value="">請選擇治療師</option>
-						</select>
-					</td>
-				</tr>
-			</table>
-			<!-- 提交按鈕 -->
-			<button type="submit">完成</button>
-		</form>
+            label {
+              display: block;
+              margin: 10px 0 5px;
+              font-weight: bold;
+            }
 
-		<script>
-			// 設定出生年月日限制為今天以前
-			const birthDateInput = document.getElementById("birthDate");
-			// 獲取當天日期，格式為 yyyy-mm-dd
-			const today = new Date().toISOString().split("T")[0];
-			// 設定日期選擇器的最大日期為今天
-			birthDateInput.max = today;
+            input,
+            select,
+            textarea {
+              width: 100%;
+              padding: 8px;
+              margin-bottom: 15px;
+              border: 1px solid #ccc;
+              border-radius: 5px;
+              font-size: 14px;
+              text-align: left;
+              /* 輸入框內文字靠左 */
+            }
 
-			// 預約時間選項生成
-			const appointmentTimeSelect = document.getElementById("appointmentTime");
-			// 設定時間區間起始和結束小時數
-			const startHour = 7; // 早上 7 點
-			const endHour = 19; // 晚上 7 點，可根據需求調整
-			const interval = 20; // 每 20 分鐘一個區間
+            textarea {
+              resize: none;
+            }
 
-			// 迴圈生成每 20 分鐘的時間選項
-			for (let hour = startHour; hour < endHour; hour++) {
-				for (let minute = 0; minute < 60; minute += interval) {
-					// 格式化時間，確保是兩位數（例如 07:00）
-					const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-					// 創建選項元素
-					const option = document.createElement("option");
-					option.value = time; // 設定選項的值
-					option.textContent = time; // 設定選項的顯示文字
-					// 添加到下拉選單中
-					appointmentTimeSelect.appendChild(option);
-				}
-			}
+            /* 按鈕樣式 */
+            button {
+              margin: 20px auto 0;
+              /* 距離表格的間距 */
+              display: block;
+              /* 讓按鈕居中 */
+              padding: 10px 20px;
+              font-size: 16px;
+              cursor: pointer;
+            }
 
-			// 表單驗證函數
-			function validateForm() {
-				// 獲取表單元素
-				const form = document.getElementById("form");
-				// 驗證表單是否完整填寫
-				if (!form.checkValidity()) {
-					alert("請完整填寫表單！");
-					return false;
-				}
-				return true; // 驗證通過
-			}
-		</script>
+            /* 備註標籤位置調整 */
+            #note-label {
+              vertical-align: top;
+            }
+          </style>
+
+          <div class="form-container">
+            <h3 style="text-align: center;">預約表單</h3>
+            <?php
+            session_start();
+            include "../db.php"; // 引入資料庫連線
+            
+            // 查詢姓名 (people)
+            // $query_people = "SELECT people_id, name FROM people";
+            // $result_people = mysqli_query($link, $query_people);
+            // if (!$result_people) {
+            //   die("查詢姓名失敗: " . mysqli_error($link));
+            // }
+
+            // 查詢預約時間 (shifttime)
+            $query_shifttime = "SELECT shifttime_id, shifttime FROM shifttime";
+            $result_shifttime = mysqli_query($link, $query_shifttime);
+            if (!$result_shifttime) {
+              die("查詢時間失敗: " . mysqli_error($link));
+            }
+
+            // 查詢醫生姓名 (doctor)
+            $query_doctor = "SELECT doctor.doctor_id, doctor.doctor 
+                 FROM doctor
+                 INNER JOIN user ON doctor.user_id = user.user_id
+                 WHERE user.grade_id = 2";
+            $result_doctor = mysqli_query($link, $query_doctor);
+            if (!$result_doctor) {
+              die("查詢醫生失敗: " . mysqli_error($link));
+            }
+            ?>
+
+            <!-- 表單 -->
+            <form action="appointment.php" method="post">
+              <label for="people_id">姓名：</label>
+			  <input type="text" id="text" name="people_id" value="<?php echo $姓名;?>"readonly>
+
+              <label for="date">預約日期：</label>
+              <input type="date" id="date" name="date" required min="<?= date('Y-m-d'); ?>">
+
+              <label for="time">預約時間：</label>
+              <select id="time" name="time" required>
+                <option value="">請選擇時間</option>
+                <?php while ($row = mysqli_fetch_assoc($result_shifttime)): ?>
+                  <option value="<?= htmlspecialchars($row['shifttime_id']); ?>">
+                    <?= htmlspecialchars($row['shifttime']); ?>
+                  </option>
+                <?php endwhile; ?>
+              </select>
+
+              <label for="doctor">醫生姓名：</label>
+              <select id="doctor" name="doctor" required>
+                <option value="">請選擇醫生</option>
+                <?php while ($row = mysqli_fetch_assoc($result_doctor)): ?>
+                  <option value="<?= htmlspecialchars($row['doctor_id']); ?>">
+                    <?= htmlspecialchars($row['doctor']); ?>
+                  </option>
+                <?php endwhile; ?>
+              </select>
+
+              <label for="note">備註：</label>
+              <textarea id="note" name="note" rows="4" maxlength="200" placeholder="請輸入備註，最多200字"></textarea>
+
+              <button type="submit">提交預約</button>
+            </form>
+
+            <?php mysqli_close($link); // 關閉資料庫連線 ?>
+
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- 預約-->
+	
 
 		<!-- Global Mailform Output-->
 		<div class="snackbars" id="form-output-global"></div>
