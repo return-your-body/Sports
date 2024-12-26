@@ -208,10 +208,10 @@ if (isset($_SESSION["帳號"])) {
 						</div>
 						<div class="rd-navbar-nav-wrap">
 							<ul class="rd-navbar-nav">
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="u_index.php">主頁</a>
+								<li class="rd-nav-item "><a class="rd-nav-link" href="u_index.php">主頁</a>
 								</li>
 
-								<li class="rd-nav-item"><a class="rd-nav-link" href="">關於我們</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="#">關於我們</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_link.php">醫生介紹</a>
@@ -222,19 +222,21 @@ if (isset($_SESSION["帳號"])) {
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
+								<li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_reserve.php">立即預約</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-record.php">查看預約資料</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_reserve-record.php">查看預約資料</a>
 											<!-- 修改預約 -->
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-time.php">查看預約時段</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_reserve-time.php">查看預約時段</a>
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
 								</li>
 								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
 									<ul class="rd-menu rd-navbar-dropdown">
@@ -301,8 +303,8 @@ if (isset($_SESSION["帳號"])) {
 								</ul>
 							</div>
 						</div>-->
-						<?php 
-						echo"歡迎 ~ ";
+						<?php
+						echo "歡迎 ~ ";
 						// 顯示姓名
 						echo $姓名;
 						?>
@@ -311,232 +313,23 @@ if (isset($_SESSION["帳號"])) {
 			</div>
 		</header>
 
-		<!-- <marquee>跑馬燈</marquee> -->
-
-		<!--Welcome back user-->
-		<section class="section section-xl bg-image bg-image-9 text-center novi-bg novi-bg-img">
-			<div class="container">
-				<!-- <h1>Welcome back user-<?php echo $姓名;?></h1> -->
-				<h1 class="fw-light text-uppercase">運動筋膜放鬆</h1>
-				<p class="big">
-					''運動筋膜放鬆在做什麼？''<br />
-					✨運動筋膜放鬆是透過治療師的牽引將您的身體姿勢擺到適當的位置✨<br />
-					✨還原回到它自己該在的位置而達到放鬆✨</p>
-				<div class="group-md button-group">
-					<a class="button button-dark button-nina" href="u_reserve.php">立即預約</a>
-					<a class="button button-dark button-nina" href="u_link.php">醫生介紹</a>
+		<!--標題-->
+		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+			<!-- Breadcrumbs-->
+			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
+				<div class="container">
+					<!-- <p class="breadcrumbs-custom-subtitle">What We Offer</p> -->
+					<p class="heading-1 breadcrumbs-custom-title">歷史紀錄</p>
+					<ul class="breadcrumbs-custom-path">
+						<li><a href="u_index.php">首頁</a></li>
+						<li class="active">歷史紀錄</li>
+					</ul>
 				</div>
-			</div>
-		</section>
-		<!--Welcome back doctor-->
+			</section>
+		</div>
 
 
-		<!--醫生簡介-->
-		<section class="section section-lg bg-default novi-bg novi-bg-img">
-			<div class="container">
-				<div class="row row-30 align-items-center justify-content-xxl-between">
-					<div class="col-md-6">
-						<h2 class="box-small-title">醫生簡介</h2>
-						<p class="big">
-							🏋🏻吳孟軒</br>
-							🏋🏻長庚大學 物理治療學系-學士、生物醫學系-學士</br>
-							🏋🏻現任 大重仁復健科診所--成人物理治療師</p>
-						<div class="row row-30 row-offset-1">
-							<div class="col-md-10 offset-xxl-2">
-								<div class="box-small">
-									<h4 class="box-small-title">專長</h4>
-									<div class="box-small-text">
-										<p class="big">
-											💪🏻徒手治撩：筋肌膜疼縮、軟組織放鬆</br>
-											💪🏻動作分析與控制訓練</br>
-											💪🏻肌肉骨骼疼痛</br>
-											💪🏻慢性下背痛</br>
-											💪🏻肩頸功能障礙：頸因性頭痛、落枕、五十肩、旋轉肌群拉傷</br>
-											💪🏻術後復健</p>
-									</div>
-								</div>
-								<div class="box-small">
-									<h4 class="box-small-title">專業認證與進修課程</h4>
-									<div class="box-small-text">
-										<p class="big">
-											🏅 中華民國高考合格物理治療師</br>
-											🏅 McConnell Institute 實證下肢生物力學</br>
-											🏅 McConnell Institute 起始位置與肌肉骨骼問題之關係</br>
-											🏅 台灣陽明學苑骨科肌肉系統全方位處置策略</br>
-											🏅 解剖列車 Anatomy Trains in Motion: Myofascial</br>
-											🏅 Body Map for Movement</br>
-											🏅 結構治療
-										</p>
-									</div>
-								</div>
-								<div class="box-small">
-									<h4 class="box-small-title">治療理念</h4>
-									<div class="box-small-text">
-										<p class="big">
-											治療是一個控制疼痛的過程,如何控制好疼痛不再出現是重要的課題。</br>
-											透過評估尋找真正造成問題的來源,進而改變原因達到控制疼痛。</br>
-											在一對一治療中使得身體使用模式回歸到中軸,讓身體活動更輕鬆、更能享受生活。
-										</p>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-					<!-- 圖片-->
-					<!-- <div class="col-md-6 col-lg-5 col-xl-4 offset-xl-1 col-xxl-5 position-relative d-none d-md-block">
-			<div class="parallax-scene-js parallax-scene parallax-scene-1" data-scalar-x="5" data-scalar-y="10">
-			  <div class="layer-01">
-				<div class="layer" data-depth="0.25"><img src="images/home-03-515x600.jpg" alt="" width="515"
-					height="600" loading="lazy" />
-				</div>
-			  </div>
-			  <div class="layer-02">
-				<div class="layer" data-depth=".55"><img src="images/home-02-340x445.jpg" alt="" width="340"
-					height="445" loading="lazy" />
-				</div>
-			  </div>
-			</div>
-		  </div> -->
-				</div>
-			</div>
-		</section>
-		<!--醫生簡介-->
 
-
-		<!--班表-->
-		<title>班表</title>
-		<style>
-			body {
-				font-family: Arial, sans-serif;
-				margin: 20px;
-				background-color: #f9f9f9;
-			}
-
-			table {
-				width: 100%;
-				border-collapse: collapse;
-				margin: 20px 0;
-				background-color: #fff;
-			}
-
-			th,
-			td {
-				border: 1px solid #ccc;
-				text-align: center;
-				padding: 10px;
-			}
-
-			th {
-				background-color: #4CAF50;
-				color: white;
-			}
-
-			tr:nth-child(even) {
-				background-color: #f2f2f2;
-			}
-
-			caption {
-				font-size: 1.5em;
-				margin: 10px;
-				font-weight: bold;
-			}
-		</style>
-
-		<h1>班表</h1>
-		<table>
-			<caption>每週班表</caption>
-			<thead>
-				<tr>
-					<th>時段/星期</th>
-					<th>星期一</th>
-					<th>星期二</th>
-					<th>星期三</th>
-					<th>星期四</th>
-					<th>星期五</th>
-					<th>星期六</th>
-					<th>星期日</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>早班 (8:00 - 12:00)</td>
-					<td>王小明</td>
-					<td>李大華</td>
-					<td>張小美</td>
-					<td>王小明</td>
-					<td>李大華</td>
-					<td>休息</td>
-					<td>休息</td>
-				</tr>
-				<tr>
-					<td>午班 (12:00 - 16:00)</td>
-					<td>李大華</td>
-					<td>張小美</td>
-					<td>王小明</td>
-					<td>張小美</td>
-					<td>王小明</td>
-					<td>休息</td>
-					<td>休息</td>
-				</tr>
-				<tr>
-					<td>晚班 (16:00 - 20:00)</td>
-					<td>張小美</td>
-					<td>王小明</td>
-					<td>李大華</td>
-					<td>李大華</td>
-					<td>張小美</td>
-					<td>休息</td>
-					<td>休息</td>
-				</tr>
-			</tbody>
-		</table>
-
-		<!--班表-->
-
-
-		<!-- Page Footer-->
-		<footer class="section novi-bg novi-bg-img footer-simple">
-			<div class="container">
-				<div class="row row-40">
-					<div class="col-md-4">
-						<h4>About us</h4>
-						<p class="me-xl-5">Pract is a learning platform for education and skills training. We provide
-							you
-							professional knowledge using innovative approach.</p>
-					</div>
-					<div class="col-md-3">
-						<h4>Quick links</h4>
-						<ul class="list-marked">
-							<li><a href="index.html">Home</a></li>
-							<li><a href="courses.html">Courses</a></li>
-							<li><a href="about-us.html">About us</a></li>
-							<li><a href="#">Blog</a></li>
-							<li><a href="contacts.html">Contacts</a></li>
-							<li><a href="#">Become a teacher</a></li>
-						</ul>
-					</div>
-					<div class="col-md-5">
-						<h4>Newsletter</h4>
-						<p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team
-							on the
-							courses we offer.</p>
-						<form class="rd-mailform rd-form-boxed" data-form-output="form-output-global"
-							data-form-type="subscribe" method="post" action="bat/rd-mailform.php">
-							<div class="form-wrap">
-								<input class="form-input" type="email" name="email" data-constraints="@Email @Required"
-									id="footer-mail">
-								<label class="form-label" for="footer-mail">Enter your e-mail</label>
-							</div>
-							<button class="form-button linearicons-paper-plane"></button>
-						</form>
-					</div>
-				</div>
-				<p class="rights"><span>&copy;&nbsp;</span><span
-						class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
-						Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank"
-						href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p>
-			</div>
-		</footer>
 	</div>
 	<!-- Global Mailform Output-->
 	<div class="snackbars" id="form-output-global"></div>
