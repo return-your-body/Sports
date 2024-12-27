@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../db.php'; // 引入資料庫連線設定檔
+
 
 // 確保用戶已登入
 if (!isset($_SESSION['帳號'])) {
@@ -19,6 +19,8 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
           </script>";
     exit;
 }
+
+require '../db.php'; // 引入資料庫連線設定檔
 
 $appointment_id = intval($_GET['id']);
 

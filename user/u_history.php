@@ -1,70 +1,65 @@
-<!DOCTYPE html>
-<html class="wide wow-animation" lang="en">
-
 <?php
 session_start();
+include "../db.php"; // 引入資料庫連線設定檔
 
-if (!isset($_SESSION["登入狀態"])) {
-	header("Location: ../index.html");
+// 確認用戶是否登入
+if (!isset($_SESSION["帳號"])) {
+	echo "<script>
+            alert('請先登入！');
+            window.location.href = '../index.html';
+          </script>";
 	exit;
 }
 
-// 防止頁面被瀏覽器緩存
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
-header("Pragma: no-cache");
+// 從 Session 中獲取用戶帳號
+$帳號 = $_SESSION['帳號'];
 
-// 檢查 "帳號" 是否存在於 $_SESSION 中
-if (isset($_SESSION["帳號"])) {
-	// 獲取用戶帳號
-	$帳號 = $_SESSION['帳號'];
+// 查詢該用戶的所有預約歷史資料
+$query_history = "
+SELECT 
+    a.appointment_id,
+    p.name AS patient_name,
+    g.gender AS gender,
+    p.birthday AS birthday,
+    ds.date AS appointment_date,
+    st.shifttime AS shifttime,
+    a.note AS note
+FROM appointment a
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN gender g ON p.gender_id = g.gender_id
+LEFT JOIN user u ON p.user_id = u.user_id
+WHERE u.account = ?
+ORDER BY ds.date DESC, st.shifttime ASC
+";
 
-	// 資料庫連接
-	require '../db.php';
+$stmt = mysqli_prepare($link, $query_history);
+mysqli_stmt_bind_param($stmt, "s", $帳號);
+mysqli_stmt_execute($stmt);
+$result_history = mysqli_stmt_get_result($stmt);
 
-	// 查詢該帳號的詳細資料
-	$sql = "SELECT user.account, people.name 
-            FROM user 
-            JOIN people ON user.user_id = people.user_id 
-            WHERE user.account = ?";
-	$stmt = mysqli_prepare($link, $sql);
-	mysqli_stmt_bind_param($stmt, "s", $帳號);
-	mysqli_stmt_execute($stmt);
-	$result = mysqli_stmt_get_result($stmt);
-
-	if (mysqli_num_rows($result) > 0) {
-		// 抓取對應姓名
-		$row = mysqli_fetch_assoc($result);
-		$姓名 = $row['name'];
-		$帳號名稱 = $row['account'];
-
-		// 顯示帳號和姓名
-		// echo "歡迎您！<br>";
-		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-		// echo "姓名：" . htmlspecialchars($姓名);
-		// echo "<script>
-		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-		// </script>";
-	} else {
-		// 如果資料不存在，提示用戶重新登入
-		echo "<script>
-                alert('找不到對應的帳號資料，請重新登入。');
-                window.location.href = '../index.html';
-              </script>";
-		exit();
-	}
-
-	// 關閉資料庫連接
-	mysqli_close($link);
-} else {
+// 如果查詢失敗
+if (!$result_history) {
 	echo "<script>
-            alert('會話過期或資料遺失，請重新登入。');
-            window.location.href = '../index.html';
+            alert('發生錯誤：" . mysqli_error($link) . "');
+            window.history.back();
           </script>";
-	exit();
+	exit;
 }
+
+// 準備資料陣列
+$appointments = [];
+while ($row = mysqli_fetch_assoc($result_history)) {
+	$appointments[] = $row;
+}
+
+mysqli_close($link);
 ?>
 
+
+<!DOCTYPE html>
+<html lang="zh-TW">
 
 <head>
 	<!-- Site Title-->
@@ -216,9 +211,11 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_link.php">醫生介紹</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_caseshare.php">個案分享</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_body-knowledge.php">日常小知識</a>
 										</li>
 									</ul>
 								</li>
@@ -314,11 +311,11 @@ if (isset($_SESSION["帳號"])) {
 		</header>
 
 		<!--標題-->
-		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-			<!-- Breadcrumbs-->
+		<!-- <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+		
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
-					<!-- <p class="breadcrumbs-custom-subtitle">What We Offer</p> -->
+				
 					<p class="heading-1 breadcrumbs-custom-title">歷史紀錄</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="u_index.php">首頁</a></li>
@@ -326,9 +323,39 @@ if (isset($_SESSION["帳號"])) {
 					</ul>
 				</div>
 			</section>
-		</div>
-
-
+		</div> -->
+		<?php if (count($appointments) > 0): ?>
+			<table>
+				<thead>
+					<tr>
+						<th>姓名</th>
+						<th>性別</th>
+						<th>生日</th>
+						<th>預約日期</th>
+						<th>預約時段</th>
+						<th>備註</th>
+						<th>詳細資料</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($appointments as $appointment): ?>
+						<tr>
+							<td><?php echo htmlspecialchars($appointment['patient_name']); ?></td>
+							<td><?php echo htmlspecialchars($appointment['gender']); ?></td>
+							<td><?php echo htmlspecialchars($appointment['birthday']); ?></td>
+							<td><?php echo htmlspecialchars($appointment['appointment_date']); ?></td>
+							<td><?php echo htmlspecialchars($appointment['shifttime']); ?></td>
+							<td><?php echo htmlspecialchars($appointment['note']); ?></td>
+							<td>
+								<a href="u_detail.php?id=<?php echo $appointment['appointment_id']; ?>">查看</a>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php else: ?>
+			<p style="text-align: center; margin-top: 20px;">目前沒有預約歷史資料。</p>
+		<?php endif; ?>
 
 	</div>
 	<!-- Global Mailform Output-->
