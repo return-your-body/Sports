@@ -1,4 +1,5 @@
 <?php
+include "../db.php";
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
@@ -13,46 +14,7 @@ header("Pragma: no-cache");
 
 // 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-    // 獲取用戶帳號
     $帳號 = $_SESSION['帳號'];
-
-    // 資料庫連接
-    require '../db.php';
-
-    // 查詢該帳號的詳細資料
-    $sql = "SELECT user.account, people.name 
-            FROM user 
-            JOIN people ON user.user_id = people.user_id 
-            WHERE user.account = ?";
-    $stmt = mysqli_prepare($link, $sql);
-    mysqli_stmt_bind_param($stmt, "s", $帳號);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-
-    if (mysqli_num_rows($result) > 0) {
-        // 抓取對應姓名
-        $row = mysqli_fetch_assoc($result);
-        $姓名 = $row['name'];
-        $帳號名稱 = $row['account'];
-
-        // 顯示帳號和姓名
-        // echo "歡迎您！<br>";
-        // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-        // echo "姓名：" . htmlspecialchars($姓名);
-        // echo "<script>
-        //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-        // </script>";
-    } else {
-        // 如果資料不存在，提示用戶重新登入
-        echo "<script>
-                alert('找不到對應的帳號資料，請重新登入。');
-                window.location.href = '../index.html';
-              </script>";
-        exit();
-    }
-
-    // 關閉資料庫連接
-    mysqli_close($link);
 } else {
     echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
@@ -60,9 +22,6 @@ if (isset($_SESSION["帳號"])) {
           </script>";
     exit();
 }
-
-
-include "../db.php";
 
 // 查詢資料庫，獲取用戶詳細資料
 $query = "
@@ -73,7 +32,8 @@ $query = "
         p.idcard, 
         p.phone, 
         p.address, 
-        p.email 
+        p.email, 
+        p.images
     FROM 
         people AS p
     JOIN 
@@ -88,12 +48,14 @@ $result = mysqli_query($link, $query);
 // 確保資料存在
 if ($result && mysqli_num_rows($result) > 0) {
     $userData = mysqli_fetch_assoc($result);
+    // 如果資料庫有圖片，使用圖片；否則使用預設圖片
+    $profilePicture = !empty($userData['images'])
+        ? "data:image/jpeg;base64," . base64_encode($userData['images'])
+        : "images/300.jpg";
 } else {
-    die('未找到用戶資料，請確認帳號是否正確！');
+    $profilePicture = "images/300.jpg"; // 預設圖片
 }
 ?>
-
-
 
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
@@ -366,13 +328,13 @@ if ($result && mysqli_num_rows($result) > 0) {
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="u_index.php">主頁</a>
                                 </li>
 
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">關於我們</a>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="">關於我們</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_link.php">醫生介紹</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">醫生介紹</a>
                                         </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">個案分享</a>
                                         </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">日常小知識</a>
                                         </li>
                                     </ul>
                                 </li>
@@ -381,14 +343,14 @@ if ($result && mysqli_num_rows($result) > 0) {
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="u_reserve.php">立即預約</a>
                                         </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-record.php">查看預約資料</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約資料</a>
                                             <!-- 修改預約 -->
                                         </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-time.php">查看預約時段</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約時段</a>
                                         </li>
                                     </ul>
                                 </li>
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
                                 </li>
                                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
@@ -440,7 +402,7 @@ if ($result && mysqli_num_rows($result) > 0) {
                         </div>
                         <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span>
                         </div>
-                        <!-- <div class="rd-navbar-aside-right rd-navbar-collapse">
+                        <div class="rd-navbar-aside-right rd-navbar-collapse">
                             <div class="rd-navbar-social">
                                 <div class="rd-navbar-social-text">聯絡方式</div>
                                 <ul class="list-inline">
@@ -453,12 +415,7 @@ if ($result && mysqli_num_rows($result) > 0) {
                                     </li>
                                 </ul>
                             </div>
-                        </div> -->
-                        <?php 
-						echo"歡迎 ~ ";
-						// 顯示姓名
-						echo $姓名;
-						?>
+                        </div>
                     </div>
                 </nav>
             </div>
@@ -467,77 +424,20 @@ if ($result && mysqli_num_rows($result) > 0) {
         <!-- 個人檔案表單 Start -->
         <div class="container-fluid">
             <div class="form-container">
-                <form id="userForm" action="個人資料.php" method="post" enctype="multipart/form-data"
-                    onsubmit="return confirmData()">
+                <form action="個人資料.php" method="post" enctype="multipart/form-data">
 
                     <!-- 大頭貼上傳 -->
                     <div class="form-row text-center">
-                        <form id="uploadAvatarForm" action="頭像上傳.php" method="post" enctype="multipart/form-data">
-                            <label for="fileInput">
-                                <div class="profile-picture" id="profilePicturePreview" style="background-image: url('<?php
-                                echo isset($profilePicture) && $profilePicture
-                                    ? "data:image/jpeg;base64," . base64_encode($profilePicture)
-                                    : 'images/300.jpg';
-                                ?>');">
-                                </div>
-                            </label>
-                            <input id="fileInput" type="file" name="profilePicture" accept="image/*"
-                                onchange="uploadImage(event)">
-                            <button type="button" class="delete-avatar-button" onclick="deleteAvatar()">刪除頭像</button>
-                        </form>
+                        <label for="fileInput">
+                            <!-- 頭像圖片預覽 -->
+                            <div class="profile-picture" id="profilePicturePreview"
+                                style="background-image: url('<?php echo $profilePicture; ?>');">
+                            </div>
+                        </label>
+                        <input id="fileInput" type="file" name="profilePicture" accept="image/*"
+                            onchange="uploadImage(event)">
+                        <button type="button" class="delete-avatar-button" onclick="deleteAvatar()">刪除頭像</button>
                     </div>
-
-                    <script>
-                        // 頭像上傳並預覽圖片
-                        function uploadImage(event) {
-                            const file = event.target.files[0];
-                            if (!file) return;
-
-                            const reader = new FileReader();
-                            reader.onload = function (e) {
-                                document.getElementById('profilePicturePreview').style.backgroundImage = `url(${e.target.result})`;
-                            };
-                            reader.readAsDataURL(file);
-
-                            // 自動提交表單
-                            const form = document.getElementById('uploadAvatarForm');
-                            const formData = new FormData(form);
-
-                            fetch('頭像上傳.php', {
-                                method: 'POST',
-                                body: formData
-                            })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        alert('頭像上傳成功！');
-                                    } else {
-                                        alert('頭像上傳失敗，請重試！');
-                                    }
-                                })
-                                .catch(error => console.error('上傳錯誤:', error));
-                        }
-
-                        // 刪除頭像功能
-                        function deleteAvatar() {
-                            if (!confirm('確定要刪除頭像嗎？')) return;
-
-                            fetch('刪除頭像.php', {
-                                method: 'POST'
-                            })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        document.getElementById('profilePicturePreview').style.backgroundImage = 'url(images/300.jpg)';
-                                        alert('頭像已成功刪除！');
-                                    } else {
-                                        alert('刪除頭像失敗，請重試！');
-                                    }
-                                })
-                                .catch(error => console.error('刪除錯誤:', error));
-                        }
-
-                    </script>
 
                     <!-- 表單欄位 -->
                     <div class="form-row">
@@ -582,120 +482,223 @@ if ($result && mysqli_num_rows($result) > 0) {
                             value="<?php echo htmlspecialchars($userData['address']); ?>" disabled>
                     </div>
 
-                    <!-- 按鈕 -->
+                    <!-- 操作按鈕 -->
                     <div class="form-buttons">
                         <button type="button" id="editButton">修改資料</button>
-                        <button type="submit" id="confirmButton" style="display:none;">確認資料</button>
+                        <button type="button" id="confirmButton" style="display:none;"
+                            onclick="confirmData()">確認資料</button>
                     </div>
                 </form>
             </div>
         </div>
 
         <script>
-
-            // 啟用編輯功能
+            // 開啟欄位編輯功能
             document.getElementById('editButton').addEventListener('click', function () {
-                // 使所有欄位可編輯
-                document.querySelectorAll('input').forEach(input => input.disabled = false);
-                // 隱藏修改資料按鈕，顯示確認資料按鈕
-                document.getElementById('editButton').style.display = 'none';
-                document.getElementById('confirmButton').style.display = 'inline';
+                document.querySelectorAll('input').forEach(function (input) {
+                    input.disabled = false;
+                });
+                document.getElementById('editButton').style.display = 'none'; // 隱藏“修改資料”按鈕
+                document.getElementById('confirmButton').style.display = 'inline'; // 顯示“確認資料”按鈕
             });
 
-            function validateTaiwanID(identityNumber) {
-                const idRegex = /^[A-Z][1-2]\d{8}$/;
-                if (!idRegex.test(identityNumber)) {
-                    return false;
-                }
-                const letterToNumberMap = {
-                    "A": 10, "B": 11, "C": 12, "D": 13, "E": 14, "F": 15, "G": 16,
-                    "H": 17, "J": 18, "K": 19, "L": 20, "M": 21, "N": 22, "P": 23,
-                    "Q": 24, "R": 25, "S": 26, "T": 27, "U": 28, "V": 29, "X": 30,
-                    "W": 31, "Y": 32, "Z": 33, "I": 34, "O": 35
+            // 上傳並預覽圖片
+            function uploadImage(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('profilePicturePreview').style.backgroundImage = `url(${e.target.result})`;
                 };
-                const firstLetter = identityNumber[0];
-                const digits = identityNumber.slice(1).split("").map(Number);
-                const firstTwoDigits = [Math.floor(letterToNumberMap[firstLetter] / 10), letterToNumberMap[firstLetter] % 10];
-                const fullDigits = firstTwoDigits.concat(digits);
-                const weights = [1, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-                const checksum = fullDigits.reduce((sum, digit, idx) => sum + digit * weights[idx], 0);
-                return checksum % 10 === 0;
+                reader.readAsDataURL(file);
+
+                // 使用 AJAX 上传头像
+                const formData = new FormData();
+                formData.append('profilePicture', file);
+
+                fetch('頭像上傳.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // 上传成功后更新页面上的头像
+                            document.getElementById('profilePicturePreview').src = data.imageUrl;
+                        } else {
+                            alert('頭像上傳失敗，請重試！');
+                        }
+                    })
+                    .catch(error => console.error('上傳錯誤:', error));
             }
 
-            // 確認資料按鈕的功能
-            document.getElementById('userForm').addEventListener('submit', function (event) {
-                // 取得各欄位的值
-                const username = document.getElementById('username').value.trim();
-                const gender = document.getElementById('gender').value.trim();
-                const userdate = document.getElementById('userdate').value.trim();
-                const useridcard = document.getElementById('useridcard').value.trim();
-                const userphone = document.getElementById('userphone').value.trim();
-                const useremail = document.getElementById('useremail').value.trim();
-                const address = document.getElementById('address').value.trim();
+            // 確認資料並顯示 alert
+            function confirmData() {
+                const username = document.getElementById('username').value;
+                const userdate = document.getElementById('userdate').value;
+                const useridcard = document.getElementById('useridcard').value;
+                const userphone = document.getElementById('userphone').value;
+                const useremail = document.getElementById('useremail').value;
+                const address = document.getElementById('address').value;
 
-                // 驗證姓名格式（僅允許中文、英文與空格）
-                if (!username || !/^[\u4E00-\u9FA5a-zA-Z\s]+$/.test(username)) {
-                    alert('姓名格式錯誤，僅限中文、英文、空格！');
-                    event.preventDefault(); // 阻止表單提交
+                // 驗證欄位格式
+
+                // 姓名驗證: 空白檢查與格式檢查（只允許中文、英文和數字）
+                if (!username) {
+                    alert('姓名欄位不能為空');
+                    return;
+                } else if (!/^[\u4E00-\u9FA5a-zA-Z0-9]+$/.test(username)) {
+                    alert('姓名格式錯誤，只能包含中文、英文和數字，不能包含特殊符號');
                     return;
                 }
-
-                // 驗證性別格式（只能填寫男或女）
-                if (gender !== '男' && gender !== '女') {
-                    alert('性別只能填寫「男」或「女」！');
-                    event.preventDefault();
-                    return;
-                }
-
-                // 驗證出生日期是否為空
-                if (!userdate) {
-                    alert('請選擇出生年月日！');
-                    event.preventDefault();
-                    return;
-                }
-
-                // 驗證身分證字號格式
-                if (!/^[A-Z][1-2]\d{8}$/.test(useridcard)) {
-                    alert('身分證字號格式錯誤！');
-                    event.preventDefault();
-                    return;
-                }
-
-                // 驗證電話號碼格式
-                if (!/^09\d{8}$/.test(userphone)) {
-                    alert('聯絡電話格式錯誤，需符合台灣手機號碼規範！');
-                    event.preventDefault();
-                    return;
-                }
-
-                // 驗證電子郵件格式
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(useremail)) {
-                    alert('電子郵件格式錯誤！');
-                    event.preventDefault();
-                    return;
-                }
-
-                // 驗證地址不可為空
+                // 電話驗證: 空白檢查與格式檢查（只允許中文、英文和數字）
                 if (!address) {
-                    alert('地址不可為空！');
-                    event.preventDefault();
+                    alert('地址欄位不能為空');
+                    return;
+                } else if (!/^[\u4E00-\u9FA5a-zA-Z0-9]+$/.test(address)) {
+                    alert('地址格式錯誤，只能包含中文、英文和數字，不能包含特殊符號');
                     return;
                 }
 
-                // 顯示彈跳視窗確認資料
-                if (!confirm(`
-            請確認以下資料：
-            姓名：${username}
-            性別：${gender}
-            出生年月日：${userdate}
-            身分證字號：${useridcard}
-            聯絡電話：${userphone}
-            電子郵件：${useremail}
-            地址：${address}
-        `)) {
-                    event.preventDefault(); // 阻止表單提交
+                // 出生年月日驗證: 空白檢查
+                if (!userdate) {
+                    alert('出生年月日欄位不能為空');
+                    return;
                 }
-            });
+
+                // 台灣身分證字號驗證函數
+                function validateTaiwanID(identityNumber) {
+                    // 檢查身分證字號是否符合正則格式
+                    const identityFormat = /^[A-Z][1-2]\d{8}$/;
+                    if (!identityFormat.test(identityNumber)) {
+                        alert("身分證字號格式錯誤，請確認格式是否正確！");
+                        return false;
+                    }
+
+                    // 首字母對應的數字範圍
+                    const letterToNumberMap = {
+                        "A": 10, "B": 11, "C": 12, "D": 13, "E": 14, "F": 15, "G": 16,
+                        "H": 17, "J": 18, "K": 19, "L": 20, "M": 21, "N": 22, "P": 23,
+                        "Q": 24, "R": 25, "S": 26, "T": 27, "U": 28, "V": 29, "X": 30,
+                        "W": 31, "Y": 32, "Z": 33, "I": 34, "O": 35
+                    };
+
+                    // 取得字母部分
+                    const firstLetter = identityNumber[0];
+
+                    // 檢查字母是否合法
+                    if (!letterToNumberMap.hasOwnProperty(firstLetter)) {
+                        alert("身分證字號的首字母無效！");
+                        return false;
+                    }
+
+                    // 轉換字母為數字
+                    const firstLetterNumber = letterToNumberMap[firstLetter];
+
+                    // 拆解身分證字號，取得每個數字
+                    const digits = identityNumber.slice(1).split("").map(Number);
+
+                    // 以身分證字號的第一個字母轉換成兩位數，並與後續數字結合
+                    const firstDigit = Math.floor(firstLetterNumber / 10); // 取得字母數字的十位數
+                    const secondDigit = firstLetterNumber % 10;           // 取得字母數字的個位數
+
+                    // 將所有數字組成一個陣列
+                    const fullDigits = [firstDigit, secondDigit, ...digits];
+
+                    // 計算加權總和：每一位數字與對應的權重值相乘，然後求和
+                    const weights = [1, 9, 8, 7, 6, 5, 4, 3, 2, 1, 1];  // 權重值
+                    let weightedSum = 0;
+                    for (let i = 0; i < fullDigits.length; i++) {
+                        // console.log(fullDigits[i]);
+
+                        // // 顯示在提示框中
+                        // alert(fullDigits[i]);
+                        weightedSum += fullDigits[i] * weights[i];
+                    }
+                    // console.log(weightedSum);
+
+                    // // 顯示在提示框中
+                    // alert(weightedSum);
+
+                    // 檢查加權總和是否能被 10 整除
+                    if (weightedSum % 10 !== 0) {
+                        alert("身分證字號無效，請確認輸入的字號！");
+                        return false;
+                    }
+
+                    // 如果檢查通過，返回 true
+                    return true;
+                }
+
+                // 用法範例
+                const identityNumber = document.getElementById("useridcard").value;  // 假設身分證欄位的ID是 useridcard
+                if (!validateTaiwanID(identityNumber)) {
+                    return; // 若驗證失敗，則不繼續提交表單
+                }
+
+
+                // 聯絡電話驗證: 台灣手機號碼格式（09開頭，後面8位數字，且不允許後8位數出現6位或以上的重複數字）
+                const phonePattern = /^09\d{8}$/;
+                const repeatedPattern = /(\d)\1{5,}/; // 檢查是否有6個或更多相同的數字連續出現
+
+                if (!userphone) {
+                    alert('聯絡電話欄位不能為空');
+                    return;
+                } else if (!phonePattern.test(userphone)) {
+                    alert('聯絡電話格式錯誤，台灣手機號碼需為09開頭並有8位數字');
+                    return;
+                } else if (repeatedPattern.test(userphone.slice(2))) {
+                    alert('聯絡電話格式錯誤，後面8位數字不可出現6位或以上重複的數字');
+                    return;
+                }
+
+                // 電子郵件驗證: 空白檢查與格式檢查
+                if (!useremail) {
+                    alert('電子郵件欄位不能為空');
+                    return;
+                } else if (!/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(useremail)) {
+                    alert('電子郵件格式錯誤，請輸入有效的電子郵件');
+                    return;
+                }
+
+                // 組合要顯示在 alert 的訊息
+                const confirmMessage =
+                    `請確認您的資料:\n` +
+                    `姓名: ${username}\n` +
+                    `出生年月日: ${userdate}\n` +
+                    `身分證字號: ${useridcard}\n` +
+                    `聯絡電話: ${userphone}\n` +
+                    `電子郵件: ${useremail}\n` +
+                    `地址: ${address}\n` +
+                    `確定要提交資料嗎？`;
+
+                // 顯示確認 alert
+                if (confirm(confirmMessage)) {
+                    document.querySelector('form').submit(); // 確認後提交表單
+                }
+            }
+
+            // 刪除頭像並顯示預設圖片
+            function deleteAvatar() {
+                if (confirm("確定要刪除頭像嗎？")) {
+                    fetch('刪除頭像.php', {
+                        method: 'POST'
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // 更新為預設圖片
+                                document.getElementById('profilePicturePreview').style.backgroundImage = "url('images/300.jpg')";
+                                alert("頭像已成功刪除！");
+                            } else {
+                                alert("刪除頭像失敗，請重試！");
+                            }
+                        })
+                        .catch(error => console.error("刪除錯誤:", error));
+                }
+            }
+
         </script>
         <!-- 個人檔案表單 End -->
 

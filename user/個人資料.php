@@ -1,61 +1,103 @@
 <?php
-session_start();
+session_start(); // 啟用 Session
+
+// 從 Session 中取得用戶帳號
+$帳號 = $_SESSION["帳號"];
+
+// 引入資料庫連接配置檔
 include "../db.php";
 
-// 獲取 POST 資料
-$帳號 = $_SESSION["帳號"];
-$姓名 = $_POST["username"];
-$出生年月日 = $_POST["userdate"];
-$身分證字號 = $_POST["useridcard"];
-$電話 = $_POST["userphone"];
-$電子郵件 = $_POST["useremail"];
-$緊急聯絡人 = $_POST["useremergencycontact"];
-$緊急聯絡人電話 = $_POST["useremergencycontactphone"];
-$profilePicture = $_FILES['profilePicture'];
+// 處理表單提交
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    // 從表單中獲取提交的資料
+    $name = trim($_POST['username']);        // 用戶姓名
+    $gender = trim($_POST['gender']);        // 性別（男/女）
+    $birthday = trim($_POST['userdate']);    // 出生日期
+    $idcard = trim($_POST['useridcard']);    // 身分證字號（可選）
+    $phone = trim($_POST['userphone']);      // 聯絡電話
+    $address = trim($_POST['address']);      // 地址（可選）
+    $email = trim($_POST['useremail']);      // 電子郵件
 
-// 資料驗證
-if (empty($出生年月日) || empty($身分證字號) || empty($電話) || empty($緊急聯絡人) || empty($緊急聯絡人電話)) {
-    echo "<script>alert('必要資料為空，請填寫所有欄位！'); window.location.href = 'u_profile.php';</script>";
-    exit;
-}
+    // 將性別轉換為數字（1: 男, 2: 女）
+    $gender_id = ($gender === "男") ? 1 : (($gender === "女") ? 2 : null);
 
-
-// 檢查資料庫中是否已有該使用者的資料
-$SQL檢查 = "SELECT * FROM people WHERE name = '$帳號'";
-$result = mysqli_query($link, $SQL檢查);
-$userData = mysqli_fetch_assoc($result);
-
-if ($userData) {
-    // 如果資料已存在，則執行更新
-    $SQL指令 = "UPDATE people SET username='$姓名', birthday='$出生年月日', idcard='$身分證字號', 
-                phone='$電話', email='$電子郵件', ecname='$緊急聯絡人', ecphone='$緊急聯絡人電話'";
-
-    // 如果有上傳新圖片，更新 image 欄位
-    if (!empty($profilePicture['tmp_name']) && $profilePicture['error'] == 0) {
-        $imageData = addslashes(file_get_contents($profilePicture['tmp_name']));
-        $SQL指令 .= ", image='$imageData'";
+    // 驗證性別是否正確
+    if ($gender_id === null) {
+        echo "<script>
+                alert('性別選擇無效，請重新選擇！');
+                window.history.back();
+              </script>";
+        exit;
     }
 
-    $SQL指令 .= " WHERE name='$帳號'";
-} else {
-    // 如果資料不存在，則插入新資料
-    $SQL指令 = "INSERT INTO people (name, username, birthday, idcard, phone, email, ecname, ecphone";
+    // 驗證必填欄位是否已填寫
+    if (empty($name) || empty($gender_id) || empty($birthday) || empty($phone) || empty($email)) {
+        echo "<script>
+                alert('請填寫所有必填欄位！');
+                window.history.back();
+              </script>";
+        exit;
+    }
 
-    if (!empty($profilePicture['tmp_name']) && $profilePicture['error'] == 0) {
-        $imageData = addslashes(file_get_contents($profilePicture['tmp_name']));
-        $SQL指令 .= ", image) VALUES ('$帳號', '$姓名', '$出生年月日', '$身分證字號', '$電話', '$電子郵件', '$緊急聯絡人', '$緊急聯絡人電話', '$imageData')";
+    // 查詢該帳號對應的 user_id
+    $sql = "SELECT user_id FROM user WHERE account = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "s", $帳號);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    if ($result && mysqli_num_rows($result) > 0) {
+        // 如果查詢結果存在，獲取對應的 user_id
+        $user = mysqli_fetch_assoc($result);
+        $user_id = $user['user_id'];
+
+        // 更新資料到 people 表
+        $updateSql = "UPDATE people SET 
+                        name = ?, 
+                        gender_id = ?, 
+                        birthday = ?, 
+                        idcard = ?, 
+                        phone = ?, 
+                        address = ?, 
+                        email = ? 
+                      WHERE user_id = ?";
+        $updateStmt = mysqli_prepare($link, $updateSql);
+        mysqli_stmt_bind_param(
+            $updateStmt,
+            "sisssssi", // i 表示整數，s 表示字串
+            $name,      // 用戶姓名
+            $gender_id, // 性別 ID
+            $birthday,  // 出生日期
+            $idcard,    // 身分證字號
+            $phone,     // 聯絡電話
+            $address,   // 地址
+            $email,     // 電子郵件
+            $user_id    // 關聯的 user_id
+        );
+
+        // 執行更新語句並檢查是否成功
+        if (mysqli_stmt_execute($updateStmt)) {
+            // 如果更新成功，顯示成功訊息並跳轉回 u_profile.php
+            echo "<script>
+                    alert('個人資料更新成功！');
+                    window.location.href = 'u_profile.php'; // 跳轉到 u_profile.php 頁面
+                  </script>";
+        } else {
+            // 如果更新失敗，顯示錯誤訊息並返回上一頁
+            echo "<script>
+                    alert('資料更新失敗，請稍後再試！');
+                    window.history.back();
+                  </script>";
+        }
     } else {
-        $SQL指令 .= ") VALUES ('$帳號', '$姓名', '$出生年月日', '$身分證字號', '$電話', '$電子郵件', '$緊急聯絡人', '$緊急聯絡人電話')";
+        // 如果帳號找不到對應的 user_id，提示重新登入
+        echo "<script>
+                alert('找不到對應的帳號資料，請重新登入。');
+                window.location.href = '../index.html';
+              </script>";
     }
 }
 
-// 執行資料庫操作
-if (mysqli_query($link, $SQL指令)) {
-    header("Location: u_profile.php?帳號=$帳號&success=資料已成功修改");
-} else {
-    error_log("SQL Error: " . mysqli_error($link));
-    header("Location: u_profile.php?帳號=$帳號&error=修改失敗，請稍後再試");
-}
-
+// 關閉資料庫連接
 mysqli_close($link);
 ?>
