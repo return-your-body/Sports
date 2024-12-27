@@ -2,9 +2,9 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-    // 如果未登入或會話過期，跳轉至登入頁面
-    header("Location: ../index.html");
-    exit;
+	// 如果未登入或會話過期，跳轉至登入頁面
+	header("Location: ../index.html");
+	exit;
 }
 
 // 防止頁面被瀏覽器緩存
@@ -12,34 +12,54 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
-// 檢查是否有 "帳號" 在 Session 中
-if (isset($_SESSION["帳號"])) {
-    // 獲取用戶帳號
-    $帳號 = $_SESSION['帳號'];
+// 引入資料庫連接檔案
+require '../db.php';
 
-    // 引入資料庫連接檔案
-    require '../db.php';
+// 分頁參數
+$rowsPerPage = 3; // 每頁顯示筆數
+$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+$offset = ($page - 1) * $rowsPerPage;
 
-    // 查詢用戶詳細資料（從資料庫中獲取對應資料）
-    $sql = "SELECT account, grade_id FROM user WHERE account = ?";
-    $stmt = mysqli_prepare($link, $sql);
-    mysqli_stmt_bind_param($stmt, "s", $帳號);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
+// 搜尋參數
+$search = isset($_GET['search']) ? $_GET['search'] : '';
 
-    if ($result && mysqli_num_rows($result) > 0) {
-        $row = mysqli_fetch_assoc($result);
-        $帳號名稱 = $row['account']; // 使用者帳號
-        $等級 = $row['grade_id']; // 等級（例如 1: 醫生, 2: 護士, 等等）
-    } else {
-        // 如果查詢不到對應的資料
-        echo "<script>
-                alert('找不到對應的帳號資料，請重新登入。');
-                window.location.href = '../index.html';
-              </script>";
-        exit();
-    }
+// SQL 查詢：根據搜尋條件獲取用戶列表
+$query = "
+    SELECT u.user_id AS id, u.account, p.name, p.idcard
+    FROM user u
+    LEFT JOIN people p ON u.user_id = p.user_id
+    WHERE u.grade_id = 1 AND (p.idcard LIKE ? OR p.name LIKE ? OR u.account LIKE ?)
+    LIMIT ? OFFSET ?";
+$stmt = mysqli_prepare($link, $query);
+$searchWildcard = '%' . $search . '%';
+mysqli_stmt_bind_param($stmt, "sssii", $searchWildcard, $searchWildcard, $searchWildcard, $rowsPerPage, $offset);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+
+// 將查詢結果存入陣列
+$users = [];
+while ($row = mysqli_fetch_assoc($result)) {
+	$users[] = $row;
 }
+
+// 獲取總筆數
+$countQuery = "
+    SELECT COUNT(*) AS total
+    FROM user u
+    LEFT JOIN people p ON u.user_id = p.user_id
+    WHERE u.grade_id = 1 AND (p.idcard LIKE ? OR p.name LIKE ? OR u.account LIKE ?)";
+$countStmt = mysqli_prepare($link, $countQuery);
+mysqli_stmt_bind_param($countStmt, "sss", $searchWildcard, $searchWildcard, $searchWildcard);
+mysqli_stmt_execute($countStmt);
+$countResult = mysqli_stmt_get_result($countStmt);
+$countRow = mysqli_fetch_assoc($countResult);
+$totalRows = $countRow['total'];
+$totalPages = ceil($totalRows / $rowsPerPage);
+
+// 釋放資源
+mysqli_free_result($result);
+mysqli_free_result($countResult);
+mysqli_close($link);
 ?>
 
 <!DOCTYPE html>
@@ -202,7 +222,8 @@ if (isset($_SESSION["帳號"])) {
 								</li> -->
 								<li class="rd-nav-item active"><a class="rd-nav-link" href="a_patient.php">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="a_addhd.php">新增治療師/助手</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_addhd.php">新增治療師/助手</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_blacklist.php">黑名單</a>
@@ -260,8 +281,8 @@ if (isset($_SESSION["帳號"])) {
 								</ul>
 							</div>
 						</div> -->
-						<?php 
-						echo"歡迎 ~ ";
+						<?php
+						echo "歡迎 ~ ";
 						// 顯示姓名
 						echo $帳號名稱;
 						?>
@@ -290,41 +311,36 @@ if (isset($_SESSION["帳號"])) {
 				<div class="row justify-content-sm-center">
 					<div class="col-md-10 col-xl-8">
 						<!-- 搜尋框與按鈕區塊 -->
-						<form class="search-form"
+						<form class="search-form" method="GET" action="a_patient.php"
 							style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; width: 100%;">
-							<!-- 搜尋框容器（設定寬度比例 4） -->
 							<div style="flex: 4;">
-								<!-- 輸入框：用於用戶輸入身分證號 -->
-								<input class="form-input" type="text" name="search" placeholder="請輸入身分證" style="
-									padding: 10px 15px;          /* 設定內邊距 */
-									font-size: 16px;             /* 字體大小 */
-									width: 100%;                 /* 寬度填滿容器 */
-									border: 1px solid #ccc;      /* 外框顏色 */
-									border-radius: 4px;          /* 圓角設定 */
-									outline: none;               /* 移除點擊時的外框線 */
-									box-sizing: border-box;      /* 使邊框和內邊距包含在寬度內 */
-								">
+								<input class="form-input" type="text" name="search"
+									value="<?php echo htmlspecialchars($search); ?>" placeholder="請輸入身分證" style="
+											padding: 10px 15px;          
+											font-size: 16px;             
+											width: 100%;                 
+											border: 1px solid #ccc;      
+											border-radius: 4px;          
+											outline: none;               
+											box-sizing: border-box;      
+										">
 							</div>
-
-							<!-- 搜尋按鈕容器（設定寬度比例 1） -->
 							<div style="flex: 1;">
-								<!-- 按鈕：觸發搜尋功能 -->
 								<button class="" type="submit" style="
-									padding: 10px 15px;           /* 設定內邊距 */
-									font-size: 16px;              /* 字體大小 */
-									width: 100%;                  /* 寬度填滿容器 */
-									border: none;                 /* 移除按鈕邊框 */
-									border-radius: 4px;           /* 圓角設定 */
-									background-color: #00A896;    /* 按鈕背景顏色 */
-									color: white;                 /* 文字顏色 */
-									cursor: pointer;              /* 滑鼠懸停時顯示指針 */
-									box-sizing: border-box;       /* 使寬度包含邊框和內邊距 */
-									display: flex;                /* 使用彈性盒模型 */
-									align-items: center;          /* 內容垂直居中 */
-									justify-content: center;      /* 內容水平居中 */
-									gap: 5px;                     /* 圖示與文字之間的間距 */
-								">
-									<!-- 圖示：放大鏡 -->
+											padding: 10px 15px;           
+											font-size: 16px;              
+											width: 100%;                  
+											border: none;                 
+											border-radius: 4px;           
+											background-color: #00A896;    
+											color: white;                 
+											cursor: pointer;              
+											box-sizing: border-box;       
+											display: flex;                
+											align-items: center;          
+											justify-content: center;      
+											gap: 5px;                     
+										">
 									<span class="icon mdi mdi-magnify"></span>搜尋
 								</button>
 							</div>
@@ -343,90 +359,49 @@ if (isset($_SESSION["帳號"])) {
 										<th style="padding: 10px; text-align: left;">選項</th>
 									</tr>
 								</thead>
-								<tbody id="table-body">
-									<!-- 動態插入的資料行 -->
+								<tbody>
+									<?php if (!empty($users)): ?>
+										<?php foreach ($users as $index => $user): ?>
+											<tr>
+												<td style="padding: 10px;"><?php echo htmlspecialchars($offset + $index + 1); ?>
+												</td>
+												<td style="padding: 10px;"><?php echo htmlspecialchars($user['account']); ?>
+												</td>
+												<td style="padding: 10px;">
+													<?php echo htmlspecialchars($user['name'] ?? '無資料'); ?>
+												</td>
+												<td style="padding: 10px;">
+													<?php echo htmlspecialchars($user['idcard'] ?? '無資料'); ?>
+												</td>
+												<td style="padding: 10px; text-align: center;">
+													<button
+														style="padding: 6px 12px; font-size: 12px; border: none; background-color: #00A896; color: white; cursor: pointer; border-radius: 4px;">操作</button>
+												</td>
+											</tr>
+										<?php endforeach; ?>
+									<?php else: ?>
+										<tr>
+											<td colspan="5" style="padding: 10px; text-align: center;">沒有找到符合條件的資料</td>
+										</tr>
+									<?php endif; ?>
 								</tbody>
 							</table>
 						</div>
-
 						<!-- 分頁顯示區域 -->
 						<div id="pagination"
-							style="text-align: center; margin-top: 10px; font-size: 14px; color: #333;"></div>
-
-						<!-- JavaScript -->
-						<script>
-							// 假設的資料源：這裡是模擬的表格資料
-							const tableData = [];
-							for (let i = 1; i <= 47; i++) { // 模擬 47 筆資料
-								tableData.push({
-									id: i,
-									account: `User${i}`,
-									name: `Name${i}`,
-									idNumber: `@user${i}`,
-									option: "操作"
-								});
-							}
-
-							const rowsPerPage = 3; // 每頁顯示 10 行
-							let currentPage = 1;    // 當前頁碼
-
-							// 渲染表格內容
-							function renderTable(page) {
-								const tableBody = document.getElementById("table-body");
-								tableBody.innerHTML = ""; // 清空現有的內容
-
-								// 計算當前頁的資料範圍
-								const start = (page - 1) * rowsPerPage;
-								const end = start + rowsPerPage;
-								const pageData = tableData.slice(start, end);
-
-								// 插入資料行
-								pageData.forEach((row) => {
-									const tr = `
-				<tr>
-					<td style="padding: 10px;">${row.id}</td>
-					<td style="padding: 10px;">${row.account}</td>
-					<td style="padding: 10px;">${row.name}</td>
-					<td style="padding: 10px;">${row.idNumber}</td>
-					<td style="padding: 10px; text-align: center;">
-						<button style="padding: 6px 12px; font-size: 12px; border: none; background-color: #00A896; color: white; cursor: pointer; border-radius: 4px;">
-							${row.option}
-						</button>
-					</td>
-				</tr>
-			`;
-									tableBody.innerHTML += tr;
-								});
-
-								renderPagination(); // 更新分頁顯示
-							}
-
-							// 渲染分頁資訊
-							function renderPagination() {
-								const pagination = document.getElementById("pagination");
-								const totalPages = Math.ceil(tableData.length / rowsPerPage); // 計算總頁數
-								
-
-								if (totalPages > 1) {
-									for (let i = 1; i <= totalPages; i++) {
-										pagination.innerHTML += `<button onclick="changePage(${i})" style="margin: 0 5px; padding: 5px 10px; cursor: pointer; border: none; background-color: ${i === currentPage ? "#00A896" : "#f0f0f0"
-											}; color: ${i === currentPage ? "white" : "black"}; border-radius: 4px;">${i}</button>`;
-									}
-								}
-								pagination.innerHTML += ` | 共 ${totalPages} 頁`;
-							}
-
-							// 換頁功能
-							function changePage(page) {
-								currentPage = page;
-								renderTable(currentPage);
-							}
-
-							// 初始化渲染表格
-							renderTable(currentPage);
-						</script>
-
-
+							style="text-align: center; margin-top: 10px; font-size: 14px; color: #333;">
+							<?php if ($totalPages > 1): ?>
+								<?php for ($i = 1; $i <= $totalPages; $i++): ?>
+									<button
+										onclick="location.href='?page=<?php echo $i; ?>&search=<?php echo htmlspecialchars($search); ?>'"
+										style="
+								margin: 0 5px; padding: 5px 10px; border: none; background-color: <?php echo $i == $page ? '#00A896' : '#f0f0f0'; ?>; color: <?php echo $i == $page ? 'white' : 'black'; ?>; border-radius: 4px; cursor: pointer;">
+										<?php echo $i; ?>
+									</button>
+								<?php endfor; ?>
+								<span>| 共 <?php echo $totalPages; ?> 頁</span>
+							<?php endif; ?>
+						</div>
 
 					</div>
 				</div>
