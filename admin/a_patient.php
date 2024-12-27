@@ -367,7 +367,7 @@ if (isset($_SESSION["帳號"])) {
 								});
 							}
 
-							const rowsPerPage = 10; // 每頁顯示 10 行
+							const rowsPerPage = 3; // 每頁顯示 10 行
 							let currentPage = 1;    // 當前頁碼
 
 							// 渲染表格內容
