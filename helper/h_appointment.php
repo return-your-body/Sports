@@ -416,7 +416,7 @@ if (isset($_SESSION["帳號"])) {
             ?>
 
             <!-- 表單 -->
-            <form action="appointment.php" method="post">
+            <form action="預約.php" method="post">
               <label for="people_id">姓名：</label>
               <select id="people_id" name="people_id" required>
                 <option value="">請選擇姓名</option>
