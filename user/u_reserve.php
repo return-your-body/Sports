@@ -215,9 +215,11 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_link.php">醫生介紹</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_caseshare.php">個案分享</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_body-knowledge.php">日常小知識</a>
 										</li>
 									</ul>
 								</li>
@@ -226,10 +228,12 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item active"><a class="rd-dropdown-link"
 												href="u_reserve.php">立即預約</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-record.php">查看預約資料</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_reserve-record.php">查看預約資料</a>
 											<!-- 修改預約 -->
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-time.php">查看預約時段</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_reserve-time.php">查看預約時段</a>
 										</li>
 									</ul>
 								</li>
@@ -310,164 +314,164 @@ if (isset($_SESSION["帳號"])) {
 		</header>
 
 
-  <!--標題-->
-  <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-      <!-- Breadcrumbs-->
-      <section class="breadcrumbs-custom breadcrumbs-custom-svg">
-        <div class="container">
-          <!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
-          <p class="heading-1 breadcrumbs-custom-title">立即預約</p>
-          <ul class="breadcrumbs-custom-path">
-            <li><a href="u_index.php">首頁</a></li>
-            <li class="active">立即預約</li>
-          </ul>
-        </div>
-      </section>
-    </div>
-    <!--標題-->
+		<!--標題-->
+		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+			<!-- Breadcrumbs-->
+			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
+				<div class="container">
+					<!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
+					<p class="heading-1 breadcrumbs-custom-title">立即預約</p>
+					<ul class="breadcrumbs-custom-path">
+						<li><a href="u_index.php">首頁</a></li>
+						<li class="active">立即預約</li>
+					</ul>
+				</div>
+			</section>
+		</div>
+		<!--標題-->
 
 
 		<!--預約-->
 		<section class="section section-lg novi-bg novi-bg-img bg-default">
-      <div class="container">
-        <div class="row row-40 row-lg-50">
-          <style>
-            /* 通用樣式 */
-            /* body {
-              margin: 0; 
-              padding: 0;
-              font-family: Arial, sans-serif;
-              text-align: center;
-            } */
+			<div class="container">
+				<div class="row row-40 row-lg-50">
+					<style>
+						/* 通用樣式 */
+						/* body {
+			  margin: 0; 
+			  padding: 0;
+			  font-family: Arial, sans-serif;
+			  text-align: center;
+			} */
 
-            h1 {
-              margin-bottom: 20px;
-            }
+						h1 {
+							margin-bottom: 20px;
+						}
 
-            /* 表單容器框線樣式 */
-            .form-container {
-              width: 400px;
-              margin: 30px auto;
-              padding: 20px;
-              border: 2px solid black;
-              border-radius: 10px;
-              text-align: left;
-              background-color: #f9f9f9;
-            }
+						/* 表單容器框線樣式 */
+						.form-container {
+							width: 400px;
+							margin: 30px auto;
+							padding: 20px;
+							border: 2px solid black;
+							border-radius: 10px;
+							text-align: left;
+							background-color: #f9f9f9;
+						}
 
-            label {
-              display: block;
-              margin: 10px 0 5px;
-              font-weight: bold;
-            }
+						label {
+							display: block;
+							margin: 10px 0 5px;
+							font-weight: bold;
+						}
 
-            input,
-            select,
-            textarea {
-              width: 100%;
-              padding: 8px;
-              margin-bottom: 15px;
-              border: 1px solid #ccc;
-              border-radius: 5px;
-              font-size: 14px;
-              text-align: left;
-              /* 輸入框內文字靠左 */
-            }
+						input,
+						select,
+						textarea {
+							width: 100%;
+							padding: 8px;
+							margin-bottom: 15px;
+							border: 1px solid #ccc;
+							border-radius: 5px;
+							font-size: 14px;
+							text-align: left;
+							/* 輸入框內文字靠左 */
+						}
 
-            textarea {
-              resize: none;
-            }
+						textarea {
+							resize: none;
+						}
 
-            /* 按鈕樣式 */
-            button {
-              margin: 20px auto 0;
-              /* 距離表格的間距 */
-              display: block;
-              /* 讓按鈕居中 */
-              padding: 10px 20px;
-              font-size: 16px;
-              cursor: pointer;
-            }
+						/* 按鈕樣式 */
+						button {
+							margin: 20px auto 0;
+							/* 距離表格的間距 */
+							display: block;
+							/* 讓按鈕居中 */
+							padding: 10px 20px;
+							font-size: 16px;
+							cursor: pointer;
+						}
 
-            /* 備註標籤位置調整 */
-            #note-label {
-              vertical-align: top;
-            }
-          </style>
+						/* 備註標籤位置調整 */
+						#note-label {
+							vertical-align: top;
+						}
+					</style>
 
-          <div class="form-container">
-            <h3 style="text-align: center;">預約表單</h3>
-            <?php
-            session_start();
-            include "../db.php"; // 引入資料庫連線
-            
-            // 查詢姓名 (people)
-            // $query_people = "SELECT people_id, name FROM people";
-            // $result_people = mysqli_query($link, $query_people);
-            // if (!$result_people) {
-            //   die("查詢姓名失敗: " . mysqli_error($link));
-            // }
+					<div class="form-container">
+						<h3 style="text-align: center;">預約表單</h3>
+						<?php
+						session_start();
+						include "../db.php"; // 引入資料庫連線
+						
+						// 查詢姓名 (people)
+						// $query_people = "SELECT people_id, name FROM people";
+						// $result_people = mysqli_query($link, $query_people);
+						// if (!$result_people) {
+						//   die("查詢姓名失敗: " . mysqli_error($link));
+						// }
+						
+						// 查詢預約時間 (shifttime)
+						$query_shifttime = "SELECT shifttime_id, shifttime FROM shifttime";
+						$result_shifttime = mysqli_query($link, $query_shifttime);
+						if (!$result_shifttime) {
+							die("查詢時間失敗: " . mysqli_error($link));
+						}
 
-            // 查詢預約時間 (shifttime)
-            $query_shifttime = "SELECT shifttime_id, shifttime FROM shifttime";
-            $result_shifttime = mysqli_query($link, $query_shifttime);
-            if (!$result_shifttime) {
-              die("查詢時間失敗: " . mysqli_error($link));
-            }
-
-            // 查詢醫生姓名 (doctor)
-            $query_doctor = "SELECT doctor.doctor_id, doctor.doctor 
+						// 查詢醫生姓名 (doctor)
+						$query_doctor = "SELECT doctor.doctor_id, doctor.doctor 
                  FROM doctor
                  INNER JOIN user ON doctor.user_id = user.user_id
                  WHERE user.grade_id = 2";
-            $result_doctor = mysqli_query($link, $query_doctor);
-            if (!$result_doctor) {
-              die("查詢醫生失敗: " . mysqli_error($link));
-            }
-            ?>
+						$result_doctor = mysqli_query($link, $query_doctor);
+						if (!$result_doctor) {
+							die("查詢醫生失敗: " . mysqli_error($link));
+						}
+						?>
 
-            <!-- 表單 -->
-            <form action="appointment.php" method="post">
-              <label for="people_id">姓名：</label>
-			  <input type="text" id="text" name="people_id" value="<?php echo $姓名;?>"readonly>
+						<form action="預約.php" method="post">
+							<label for="people_id">姓名：</label>
+							<input type="text" id="text" name="people_id" value="<?php echo htmlspecialchars($姓名); ?>"
+								readonly>
 
-              <label for="date">預約日期：</label>
-              <input type="date" id="date" name="date" required min="<?= date('Y-m-d'); ?>">
+							<label for="date">預約日期：</label>
+							<input type="date" id="date" name="date" required min="<?= date('Y-m-d'); ?>">
 
-              <label for="time">預約時間：</label>
-              <select id="time" name="time" required>
-                <option value="">請選擇時間</option>
-                <?php while ($row = mysqli_fetch_assoc($result_shifttime)): ?>
-                  <option value="<?= htmlspecialchars($row['shifttime_id']); ?>">
-                    <?= htmlspecialchars($row['shifttime']); ?>
-                  </option>
-                <?php endwhile; ?>
-              </select>
+							<label for="time">預約時間：</label>
+							<select id="time" name="time" required>
+								<option value="">請選擇時間</option>
+								<?php while ($row = mysqli_fetch_assoc($result_shifttime)): ?>
+									<option value="<?= htmlspecialchars($row['shifttime_id']); ?>">
+										<?= htmlspecialchars($row['shifttime']); ?>
+									</option>
+								<?php endwhile; ?>
+							</select>
 
-              <label for="doctor">醫生姓名：</label>
-              <select id="doctor" name="doctor" required>
-                <option value="">請選擇醫生</option>
-                <?php while ($row = mysqli_fetch_assoc($result_doctor)): ?>
-                  <option value="<?= htmlspecialchars($row['doctor_id']); ?>">
-                    <?= htmlspecialchars($row['doctor']); ?>
-                  </option>
-                <?php endwhile; ?>
-              </select>
+							<label for="doctor">醫生姓名：</label>
+							<select id="doctor" name="doctor" required>
+								<option value="">請選擇醫生</option>
+								<?php while ($row = mysqli_fetch_assoc($result_doctor)): ?>
+									<option value="<?= htmlspecialchars($row['doctor_id']); ?>">
+										<?= htmlspecialchars($row['doctor']); ?>
+									</option>
+								<?php endwhile; ?>
+							</select>
 
-              <label for="note">備註：</label>
-              <textarea id="note" name="note" rows="4" maxlength="200" placeholder="請輸入備註，最多200字"></textarea>
+							<label for="note">備註：</label>
+							<textarea id="note" name="note" rows="4" maxlength="200"
+								placeholder="請輸入備註，最多200字"></textarea>
 
-              <button type="submit">提交預約</button>
-            </form>
+							<button type="submit">提交預約</button>
+						</form>
 
-            <?php mysqli_close($link); // 關閉資料庫連線 ?>
+						<?php mysqli_close($link); ?>
 
-          </div>
-        </div>
-      </div>
-    </section>
-    <!-- 預約-->
-	
+					</div>
+				</div>
+		</section>
+		<!-- 預約-->
+
 
 		<!-- Global Mailform Output-->
 		<div class="snackbars" id="form-output-global"></div>
