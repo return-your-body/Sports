@@ -2,9 +2,9 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-    // 如果未登入或會話過期，跳轉至登入頁面
-    header("Location: ../index.html");
-    exit;
+	// 如果未登入或會話過期，跳轉至登入頁面
+	header("Location: ../index.html");
+	exit;
 }
 
 // 防止頁面被瀏覽器緩存
@@ -14,31 +14,31 @@ header("Pragma: no-cache");
 
 // 檢查是否有 "帳號" 在 Session 中
 if (isset($_SESSION["帳號"])) {
-    // 獲取用戶帳號
-    $帳號 = $_SESSION['帳號'];
+	// 獲取用戶帳號
+	$帳號 = $_SESSION['帳號'];
 
-    // 引入資料庫連接檔案
-    require '../db.php';
+	// 引入資料庫連接檔案
+	require '../db.php';
 
-    // 查詢用戶詳細資料（從資料庫中獲取對應資料）
-    $sql = "SELECT account, grade_id FROM user WHERE account = ?";
-    $stmt = mysqli_prepare($link, $sql);
-    mysqli_stmt_bind_param($stmt, "s", $帳號);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
+	// 查詢用戶詳細資料（從資料庫中獲取對應資料）
+	$sql = "SELECT account, grade_id FROM user WHERE account = ?";
+	$stmt = mysqli_prepare($link, $sql);
+	mysqli_stmt_bind_param($stmt, "s", $帳號);
+	mysqli_stmt_execute($stmt);
+	$result = mysqli_stmt_get_result($stmt);
 
-    if ($result && mysqli_num_rows($result) > 0) {
-        $row = mysqli_fetch_assoc($result);
-        $帳號名稱 = $row['account']; // 使用者帳號
-        $等級 = $row['grade_id']; // 等級（例如 1: 醫生, 2: 護士, 等等）
-    } else {
-        // 如果查詢不到對應的資料
-        echo "<script>
+	if ($result && mysqli_num_rows($result) > 0) {
+		$row = mysqli_fetch_assoc($result);
+		$帳號名稱 = $row['account']; // 使用者帳號
+		$等級 = $row['grade_id']; // 等級（例如 1: 醫生, 2: 護士, 等等）
+	} else {
+		// 如果查詢不到對應的資料
+		echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
               </script>";
-        exit();
-    }
+		exit();
+	}
 }
 ?>
 
@@ -199,9 +199,13 @@ if (isset($_SESSION["帳號"])) {
 										</li>
 									</ul>
 								</li> -->
-								<li class="rd-nav-item"><a class="rd-nav-link" href="a_patient.php">用戶管理</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="a_addhd.php">新增治療師/助手</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_patient.php">用戶管理</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_addhd.php">新增治療師/助手</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_blacklist.php">黑名單</a>
@@ -292,8 +296,8 @@ if (isset($_SESSION["帳號"])) {
 								</ul>
 							</div>
 						</div> -->
-						<?php 
-						echo"歡迎 ~ ";
+						<?php
+						echo "歡迎 ~ ";
 						// 顯示姓名
 						echo $帳號名稱;
 						?>
