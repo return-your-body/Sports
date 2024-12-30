@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
+
 <?php
 session_start();
 
@@ -65,10 +66,9 @@ if (isset($_SESSION["帳號"])) {
 ?>
 
 
-
 <head>
   <!-- Site Title-->
-  <title>醫生-當天人數時段</title>
+  <title>運動筋膜放鬆</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -94,8 +94,7 @@ if (isset($_SESSION["帳號"])) {
     html.lt-ie-10 .ie-panel {
       display: block;
     }
-  </style>
-  <style>
+
     /* 登出確認視窗 - 初始隱藏 */
     .logout-box {
       display: none;
@@ -210,15 +209,18 @@ if (isset($_SESSION["帳號"])) {
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a>
                 </li>
+
                 <li class="rd-nav-item active"><a class="rd-nav-link" href="#">班表</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_doctorshift.php">每月班表</a>
                     </li>
-                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="d_numberpeople.php">當天人數及時段</a>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_numberpeople.php">當天人數及時段</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假</a>
+                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="d_leave.php">請假</a>
                     </li>
                   </ul>
+                </li>
+
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
@@ -228,6 +230,8 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
+                
+                <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
                 </li>
@@ -260,6 +264,7 @@ if (isset($_SESSION["帳號"])) {
                     document.getElementById('logoutBox').style.display = 'none';
                   }
                 </script>
+
               </ul>
             </div>
             <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span></div>
@@ -289,223 +294,25 @@ if (isset($_SESSION["帳號"])) {
     </header>
     <!--標題列-->
 
+
     <!--標題-->
     <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
       <!-- Breadcrumbs-->
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <!-- <p class="breadcrumbs-custom-subtitle">Who We Are</p> -->
-          <p class="heading-1 breadcrumbs-custom-title">當天看診人數</p>
+          <!-- <p class="breadcrumbs-custom-subtitle">What We Offer</p> -->
+          <p class="heading-1 breadcrumbs-custom-title">醫生請假</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="d_index.php">首頁</a></li>
-            <li class="active">當天時段人數</li>
+            <li class="active">醫生請假</li>
           </ul>
         </div>
       </section>
     </div>
-    <!--標題-->
-
-    <section class="section section-lg bg-default novi-bg novi-bg-img">
-      <div class="container">
-        <style>
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-          }
-
-          th,
-          td {
-            border: 1px solid #ddd;
-            text-align: center;
-            padding: 8px;
-          }
-
-          th {
-            background-color: #f2f2f2;
-          }
-
-          form {
-            text-align: center;
-            margin-bottom: 20px;
-          }
-        </style>
-        <?php
-        session_start();
-        require '../db.php';
-
-        // 確保用戶已登入
-        if (!isset($_SESSION['帳號'])) {
-          echo "<script>
-            alert('未登入或會話已過期，請重新登入！');
-            window.location.href = '../index.html';
-          </script>";
-          exit;
-        }
-
-        $帳號 = $_SESSION['帳號'];
-
-        // 取得登入醫生資訊
-        $query_doctor = "SELECT doctor_id, doctor 
-                 FROM doctor 
-                 WHERE user_id = (SELECT user_id FROM user WHERE account = '$帳號')";
-        $result_doctor = mysqli_query($link, $query_doctor);
-
-        if ($row = mysqli_fetch_assoc($result_doctor)) {
-          $doctor_id = $row['doctor_id'];
-          $doctor_name = htmlspecialchars($row['doctor']);
-        } else {
-          die("找不到醫生資訊");
-        }
-
-        // 設定下拉選單的預設值
-        $current_year = date('Y');
-        $current_month = date('m');
-        $current_day = date('d');
-
-        // 接收 GET 參數
-        $selected_year = isset($_GET['year']) ? $_GET['year'] : $current_year;
-        $selected_month = isset($_GET['month']) ? $_GET['month'] : $current_month;
-        $selected_day = isset($_GET['day']) ? $_GET['day'] : $current_day;
-
-        $selected_date = "$selected_year-$selected_month-$selected_day";
-
-        // 查詢當天所有預約的資料
-        $query_appointments = "
-    SELECT st.shifttime, p.name, a.appointment_id
-    FROM doctorshift ds
-    JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
-    LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
-    LEFT JOIN people p ON a.people_id = p.people_id
-    WHERE ds.date = '$selected_date' AND ds.doctor_id = '$doctor_id'
-";
-        $result_appointments = mysqli_query($link, $query_appointments);
-        ?>
 
 
-        <h3 style="text-align: center;">當天時段</h3>
 
-        <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px;text-align: center;">
-          治療師姓名：<?php echo $doctor_name; ?>
-
-          <!-- 日期選擇下拉選單 -->
-          <form method="GET" action="">
-            <label for="year">選擇年份：</label>
-            <select id="year" name="year">
-              <?php
-              for ($year = $current_year - 5; $year <= $current_year + 5; $year++) {
-                $selected = ($year == $selected_year) ? 'selected' : '';
-                echo "<option value='$year' $selected>$year</option>";
-              }
-              ?>
-            </select>
-
-            <label for="month">選擇月份：</label>
-            <select id="month" name="month">
-              <?php
-              for ($month = 1; $month <= 12; $month++) {
-                $month_padded = str_pad($month, 2, '0', STR_PAD_LEFT);
-                $selected = ($month_padded == $selected_month) ? 'selected' : '';
-                echo "<option value='$month_padded' $selected>$month</option>";
-              }
-              ?>
-            </select>
-
-            <label for="day">選擇日期：</label>
-            <select id="day" name="day">
-              <?php
-              for ($day = 1; $day <= 31; $day++) {
-                $day_padded = str_pad($day, 2, '0', STR_PAD_LEFT);
-                $selected = ($day_padded == $selected_day) ? 'selected' : '';
-                echo "<option value='$day_padded' $selected>$day</option>";
-              }
-              ?>
-            </select>
-
-            <button type="submit">
-              查詢
-            </button>
-          </form>
-        </div>
-        <!-- 顯示預約時段和姓名 -->
-        <table border="1" style="width: 100%; text-align: center; border-collapse: collapse; margin-top: 20px;">
-          <tr style="background-color: #f2f2f2;">
-            <th>時段</th>
-            <th>姓名</th>
-          </tr>
-          <?php
-          if (mysqli_num_rows($result_appointments) > 0) {
-            while ($row = mysqli_fetch_assoc($result_appointments)) {
-              $shifttime = htmlspecialchars($row['shifttime']);
-              $name = isset($row['name']) ? htmlspecialchars($row['name']) : '未預約';
-              $appointment_id = $row['appointment_id'];
-
-              echo "<tr>
-                    <td>{$shifttime}</td>
-                    <td>";
-              if ($appointment_id) {
-                echo "<a href='d_appointment_details.php?id={$appointment_id}'>{$name}</a>";
-              } else {
-                echo $name;
-              }
-              echo "</td></tr>";
-            }
-          } else {
-            echo "<tr><td colspan='2'>當天無時段資料</td></tr>";
-          }
-          ?>
-        </table>
-
-        <?php mysqli_close($link); ?>
-      </div>
   </div>
-  </section>
-
-  <!--頁尾-->
-  <footer class="section novi-bg novi-bg-img footer-simple">
-    <div class="container">
-      <div class="row row-40">
-        <!-- <div class="col-md-4">
-            <h4>關於我們</h4>
-            <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
-              professional knowledge using innovative approach.</p>
-          </div> -->
-        <div class="col-md-3">
-          <h4>快速連結</h4>
-          <ul class="list-marked">
-            <li><a href="d_index.php">首頁</a></li>
-            <li><a href="d_appointment.php">預約</a></li>
-            <li><a href="d_numberpeople.php">當天人數及時段</a></li>
-            <li><a href="d_doctorshift.php">班表時段</a></li>
-            <li><a href="d_medical-record.php">看診紀錄</a></li>
-            <li><a href="d_appointment-records.php">預約紀錄</a></li>
-            <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
-          </ul>
-        </div>
-        <!-- <div class="col-md-5">
-            <h4>聯絡我們</h4>
-            <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
-              courses we offer.</p>
-            <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global" data-form-type="subscribe"
-              method="post" action="bat/rd-mailform.php">
-              <div class="form-wrap">
-                <input class="form-input" type="email" name="email" data-constraints="@Email @Required"
-                  id="footer-mail">
-                <label class="form-label" for="footer-mail">Enter your e-mail</label>
-              </div>
-              <button class="form-button linearicons-paper-plane"></button>
-            </form>
-          </div> -->
-      </div>
-      <!-- <p class="rights"><span>&copy;&nbsp;</span><span
-            class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
-            Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank"
-            href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p> -->
-    </div>
-  </footer>
-  </div>
-  <!--頁尾-->
-
   <!-- Global Mailform Output-->
   <div class="snackbars" id="form-output-global"></div>
   <!-- Javascript-->
