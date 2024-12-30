@@ -12,17 +12,20 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 
 $appointment_id = intval($_GET['id']); // 確保 `id` 為整數
 
-// 查詢語句
+// 修正後的查詢語句
 $query_medical_record = "
 SELECT 
     mr.medicalrecord_id,
-    CONCAT(p.name, ' (', 
+    CONCAT(
+        p.name, ' (', 
         CASE 
             WHEN p.gender_id = 1 THEN '男'
             WHEN p.gender_id = 2 THEN '女'
             ELSE '未知'
         END, ', ', 
-        p.birthday, ')') AS patient_info,
+        p.birthday, ', ',
+        TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲', ')'
+    ) AS patient_info,
     d.doctor AS doctor_name,
     a.created_at AS appointment_date,
     i.item AS treatment_item,
@@ -106,7 +109,7 @@ mysqli_close($link);
         <table>
             <thead>
                 <tr>
-                    <th>病人姓名 (性別, 生日)</th>
+                    <th>病人姓名 (性別, 生日, 年齡)</th>
                     <th>醫生姓名</th>
                     <th>預約日期</th>
                     <th>治療項目</th>
