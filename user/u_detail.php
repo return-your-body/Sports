@@ -1,6 +1,3 @@
-<!--看診紀錄-->
-
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 
@@ -16,8 +13,7 @@
             text-align: center;
         }
 
-        th,
-        td {
+        th, td {
             padding: 10px;
             border: 1px solid #ddd;
         }
@@ -63,21 +59,21 @@
     
     // 查詢該預約的看診紀錄
     $query_medical_record = "
-SELECT 
-    mr.medicalrecord_id,
-    p.name AS patient_name,
-    d.doctor AS doctor_name,
-    a.created_at AS appointment_date,
-    i.item AS treatment_item,
-    mr.notes AS notes,
-    mr.created_at AS created_time
-FROM medicalrecord mr
-LEFT JOIN appointment a ON mr.appointment_id = a.appointment_id
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctor d ON mr.doctor_id = d.doctor_id
-LEFT JOIN item i ON mr.item_id = i.item_id
-WHERE mr.appointment_id = ?;
-";
+    SELECT 
+        mr.medicalrecord_id,
+        p.name AS patient_name,
+        d.doctor AS doctor_name,
+        a.created_at AS appointment_date,
+        i.item AS treatment_item,
+        i.price AS treatment_price,
+        mr.created_at AS created_time
+    FROM medicalrecord mr
+    INNER JOIN appointment a ON mr.appointment_id = a.appointment_id
+    INNER JOIN people p ON a.people_id = p.people_id
+    INNER JOIN doctor d ON a.doctor_id = d.doctor_id
+    INNER JOIN item i ON mr.item_id = i.item_id
+    WHERE mr.appointment_id = ?;
+    ";
 
     $stmt = mysqli_prepare($link, $query_medical_record);
     mysqli_stmt_bind_param($stmt, "i", $appointment_id);
@@ -87,7 +83,7 @@ WHERE mr.appointment_id = ?;
     // 檢查是否有資料
     if (!$result_medical_record) {
         echo "<script>
-            alert('查詢失敗：" . mysqli_error($link) . "');
+            alert('查詢失敗：" . mysqli_error($link) . "' );
             window.history.back();
           </script>";
         exit;
@@ -109,7 +105,7 @@ WHERE mr.appointment_id = ?;
                     <th>醫生姓名</th>
                     <th>預約日期</th>
                     <th>治療項目</th>
-                    <th>備註</th>
+                    <th>治療費用</th>
                     <th>建立時間</th>
                 </tr>
             </thead>
@@ -120,7 +116,7 @@ WHERE mr.appointment_id = ?;
                         <td><?php echo htmlspecialchars($record['doctor_name']); ?></td>
                         <td><?php echo htmlspecialchars($record['appointment_date']); ?></td>
                         <td><?php echo htmlspecialchars($record['treatment_item']); ?></td>
-                        <td><?php echo htmlspecialchars($record['notes']); ?></td>
+                        <td><?php echo htmlspecialchars($record['treatment_price']); ?></td>
                         <td><?php echo htmlspecialchars($record['created_time']); ?></td>
                     </tr>
                 <?php endforeach; ?>

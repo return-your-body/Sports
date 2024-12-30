@@ -207,40 +207,23 @@ if (isset($_SESSION["帳號"])) {
               <ul class="rd-navbar-nav">
                 <li class="rd-nav-item"><a class="rd-nav-link" href="h_index.php">首頁</a>
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="h_numberpeople.php">當天人數及時段</a>
-                </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a>
-                  <!-- <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-teacher.html">Single teacher</a>
-                      </li>
-                    </ul> -->
                 </li>
-                <li class="rd-nav-item active"><a class="rd-nav-link" href="h_doctorshift.php">治療師班表</a>
-                  <!-- <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.html">Single course</a>
-                      </li>
-                    </ul> -->
+                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">醫生班表</a>
+                  <ul class="rd-menu rd-navbar-dropdown">
+                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="h_doctorshift.php">治療師班表</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_numberpeople.php">當天人數及時段</a>
+                    </li>
+                  </ul>
                 </li>
+
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">列印</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_print-receipt.php">列印收據</a>
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_print-appointment.php">列印預約單</a>
                     </li>
-                    <!-- <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="404-page.html">404 page</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="503-page.html">503 page</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="buttons.html">Buttons</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="forms.html">Forms</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="grid-system.html">Grid system</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="tables.html">Tables</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="typography.html">Typography</a>
-                      </li> -->
                   </ul>
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="h_patient-needs.php">病患需求</a>
