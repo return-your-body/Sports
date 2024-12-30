@@ -1,7 +1,5 @@
-<!DOCTYPE html>
-<html class="wide wow-animation" lang="en">
-
 <?php
+
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
@@ -63,8 +61,57 @@ if (isset($_SESSION["帳號"])) {
           </script>";
 	exit();
 }
+
+include "../db.php"; // 引入資料庫連線設定檔
+// 從 Session 中獲取用戶帳號
+$帳號 = $_SESSION['帳號'];
+
+// 查詢該用戶的所有預約歷史資料
+$query_history = "
+SELECT 
+    a.appointment_id,
+    p.name AS patient_name,
+    g.gender AS gender,
+    p.birthday AS birthday,
+    ds.date AS appointment_date,
+    st.shifttime AS shifttime,
+    a.note AS note
+FROM appointment a
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN gender g ON p.gender_id = g.gender_id
+LEFT JOIN user u ON p.user_id = u.user_id
+WHERE u.account = ?
+ORDER BY ds.date DESC, st.shifttime ASC
+";
+
+$stmt = mysqli_prepare($link, $query_history);
+mysqli_stmt_bind_param($stmt, "s", $帳號);
+mysqli_stmt_execute($stmt);
+$result_history = mysqli_stmt_get_result($stmt);
+
+// 如果查詢失敗
+if (!$result_history) {
+	echo "<script>
+            alert('發生錯誤：" . mysqli_error($link) . "');
+            window.history.back();
+          </script>";
+	exit;
+}
+
+// 準備資料陣列
+$appointments = [];
+while ($row = mysqli_fetch_assoc($result_history)) {
+	$appointments[] = $row;
+}
+
+mysqli_close($link);
 ?>
 
+
+<!DOCTYPE html>
+<html lang="zh-TW">
 
 <head>
 	<!-- Site Title-->
@@ -216,9 +263,11 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_link.php">醫生介紹</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_caseshare.php">個案分享</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_body-knowledge.php">日常小知識</a>
 										</li>
 									</ul>
 								</li>
@@ -315,10 +364,10 @@ if (isset($_SESSION["帳號"])) {
 
 		<!--標題-->
 		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-			<!-- Breadcrumbs-->
+		
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
-					<!-- <p class="breadcrumbs-custom-subtitle">What We Offer</p> -->
+				
 					<p class="heading-1 breadcrumbs-custom-title">歷史紀錄</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="u_index.php">首頁</a></li>
@@ -328,6 +377,77 @@ if (isset($_SESSION["帳號"])) {
 			</section>
 		</div>
 
+		<!--預約紀錄-->
+		<style>
+			table {
+				width: 90%;
+				margin: 30px auto;
+				border-collapse: collapse;
+				text-align: center;
+			}
+
+			th,
+			td {
+				padding: 10px;
+				border: 1px solid #ddd;
+			}
+
+			th {
+				background-color: #f2f2f2;
+			}
+
+			.btn {
+				padding: 5px 10px;
+				background-color: #007bff;
+				color: white;
+				text-decoration: none;
+				border-radius: 5px;
+			}
+
+			.btn:hover {
+				background-color: #0056b3;
+			}
+
+			p {
+				text-align: center;
+				margin-top: 20px;
+			}
+		</style>
+		<!-- <h3 style="text-align: center; margin-top: 20px;">歷史預約紀錄</h3> -->
+
+		<?php if (count($appointments) > 0): ?>
+			<table>
+				<thead>
+					<tr>
+						<th>姓名</th>
+						<th>性別</th>
+						<th>生日</th>
+						<th>預約日期</th>
+						<th>預約時段</th>
+						<th>備註</th>
+						<th>詳細資料</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($appointments as $appointment): ?>
+						<tr>
+							<td><?php echo htmlspecialchars($appointment['patient_name']); ?></td>
+							<td><?php echo htmlspecialchars($appointment['gender']); ?></td>
+							<td><?php echo htmlspecialchars($appointment['birthday']); ?></td>
+							<td><?php echo htmlspecialchars($appointment['appointment_date']); ?></td>
+							<td><?php echo htmlspecialchars($appointment['shifttime']); ?></td>
+							<td><?php echo htmlspecialchars($appointment['note']); ?></td>
+							<td>
+								<a href="u_detail.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>"
+									class="btn">查看</a>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php else: ?>
+			<p>目前沒有預約歷史資料。</p>
+		<?php endif; ?>
 
 
 	</div>

@@ -4,8 +4,8 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-	header("Location: ../index.html");
-	exit;
+  header("Location: ../index.html");
+  exit;
 }
 
 // 防止頁面被瀏覽器緩存
@@ -15,52 +15,52 @@ header("Pragma: no-cache");
 
 // 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-	// 獲取用戶帳號
-	$帳號 = $_SESSION['帳號'];
+  // 獲取用戶帳號
+  $帳號 = $_SESSION['帳號'];
 
-	// 資料庫連接
-	require '../db.php';
+  // 資料庫連接
+  require '../db.php';
 
-	// 查詢該帳號的詳細資料
+  // 查詢該帳號的詳細資料
   $sql = "SELECT user.account, doctor.doctor AS name 
             FROM user 
             JOIN doctor ON user.user_id = doctor.user_id 
             WHERE user.account = ?";
-	$stmt = mysqli_prepare($link, $sql);
-	mysqli_stmt_bind_param($stmt, "s", $帳號);
-	mysqli_stmt_execute($stmt);
-	$result = mysqli_stmt_get_result($stmt);
+  $stmt = mysqli_prepare($link, $sql);
+  mysqli_stmt_bind_param($stmt, "s", $帳號);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
 
-	if (mysqli_num_rows($result) > 0) {
-		// 抓取對應姓名
-		$row = mysqli_fetch_assoc($result);
-		$姓名 = $row['name'];
-		$帳號名稱 = $row['account'];
+  if (mysqli_num_rows($result) > 0) {
+    // 抓取對應姓名
+    $row = mysqli_fetch_assoc($result);
+    $姓名 = $row['name'];
+    $帳號名稱 = $row['account'];
 
-		// 顯示帳號和姓名
-		// echo "歡迎您！<br>";
-		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-		// echo "姓名：" . htmlspecialchars($姓名);
-		// echo "<script>
-		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-		// </script>";
-	} else {
-		// 如果資料不存在，提示用戶重新登入
-		echo "<script>
+    // 顯示帳號和姓名
+    // echo "歡迎您！<br>";
+    // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
+    // echo "姓名：" . htmlspecialchars($姓名);
+    // echo "<script>
+    //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
+    // </script>";
+  } else {
+    // 如果資料不存在，提示用戶重新登入
+    echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
               </script>";
-		exit();
-	}
+    exit();
+  }
 
-	// 關閉資料庫連接
-	mysqli_close($link);
+  // 關閉資料庫連接
+  mysqli_close($link);
 } else {
-	echo "<script>
+  echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
             window.location.href = '../index.html';
           </script>";
-	exit();
+  exit();
 }
 ?>
 
@@ -297,11 +297,11 @@ if (isset($_SESSION["帳號"])) {
                 </ul>
               </div>
             </div> -->
-            <?php 
-						echo"歡迎 ~ ";
-						// 顯示姓名
-						echo $姓名;
-						?>
+            <?php
+            echo "歡迎 ~ ";
+            // 顯示姓名
+            echo $姓名;
+            ?>
           </div>
         </nav>
       </div>
@@ -336,136 +336,178 @@ if (isset($_SESSION["帳號"])) {
 
               <?php
               session_start(); // 啟用 Session
-              include "../db.php"; // 引入資料庫連線
               
+              // 確保用戶已登入
+              if (!isset($_SESSION['帳號'])) {
+                echo "<script>
+        alert('未登入或會話已過期，請重新登入！');
+        window.location.href = '../index.html';
+    </script>";
+                exit;
+              }
+
+              // 取得當前登入的帳號
+              $帳號 = $_SESSION['帳號'];
+
+              // 引入資料庫連接檔案
+              require '../db.php'; // 包含資料庫連線變數 $link
+              
+              // 接收搜尋參數
+              $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
+
               // 分頁設定
-              $records_per_page = 10;
-              $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-              if ($page < 1)
-                $page = 1;
+              $records_per_page = 10; // 每頁顯示 10 筆資料
+              $page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
+              $offset = ($page - 1) * $records_per_page; // 計算偏移量
+              
+              // 計算總記錄數
+              $count_sql = "
+    SELECT COUNT(*) AS total
+    FROM medicalrecord m
+    LEFT JOIN people p ON m.people_id = p.people_id
+    LEFT JOIN doctor d ON m.doctor_id = d.doctor_id
+    LEFT JOIN item i ON m.item_id = i.item_id
+    WHERE p.name LIKE ?
+";
+              $count_stmt = mysqli_prepare($link, $count_sql); // 初始化查詢
+              $search_term = "%$search_name%"; // 搜尋條件
+              mysqli_stmt_bind_param($count_stmt, 's', $search_term); // 綁定搜尋參數
+              mysqli_stmt_execute($count_stmt); // 執行查詢
+              $count_result = mysqli_stmt_get_result($count_stmt); // 獲取結果
+              $total_records = mysqli_fetch_assoc($count_result)['total']; // 獲取總記錄數
+              $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1; // 計算總頁數
+              
+              // 查詢資料
+              $data_sql = "
+    SELECT 
+        m.medicalrecord_id AS id,
+        p.name AS patient_name,
+        p.birthday AS patient_birthday,
+        d.doctor AS doctor_name,
+        i.item AS treatment_item,
+        i.price AS treatment_price,
+        m.notes AS notes,
+        m.created_at AS created_at
+    FROM medicalrecord m
+    LEFT JOIN people p ON m.people_id = p.people_id
+    LEFT JOIN doctor d ON m.doctor_id = d.doctor_id
+    LEFT JOIN item i ON m.item_id = i.item_id
+    WHERE p.name LIKE ?
+    ORDER BY m.created_at DESC
+    LIMIT ?, ?
+";
+              $data_stmt = mysqli_prepare($link, $data_sql); // 初始化查詢
+              mysqli_stmt_bind_param($data_stmt, 'sii', $search_term, $offset, $records_per_page); // 綁定參數
+              mysqli_stmt_execute($data_stmt); // 執行查詢
+              $data_result = mysqli_stmt_get_result($data_stmt); // 獲取查詢結果
+              
+              ?>
 
-              $count_sql = "SELECT COUNT(*) AS total FROM medicalrecord";
-              $count_result = mysqli_query($link, $count_sql);
-              $count_row = mysqli_fetch_assoc($count_result);
-              $total_records = $count_row['total'];
-              $total_pages = ceil($total_records / $records_per_page);
-
-              $offset = ($page - 1) * $records_per_page;
-
-              $sql = "SELECT 
-            m.medicalrecord_id AS id, 
-            COALESCE(p.name, 'N/A') AS patient_name,
-            CASE 
-                WHEN p.gender_id = 1 THEN '男'
-                WHEN p.gender_id = 2 THEN '女'
-                ELSE 'N/A'
-            END AS patient_gender,
-            COALESCE(p.birthday, 'N/A') AS patient_birthday,
-            COALESCE(d.doctor, 'N/A') AS doctor_name,
-            COALESCE(a.appointment_date, 'N/A') AS consultation_date,
-            COALESCE(st.shifttime, 'N/A') AS consultation_time,
-            COALESCE(i.item, 'N/A') AS diagnosis, 
-            COALESCE(i.price, 0) AS item_price,
-            COALESCE(i.price, 0) AS total_price, 
-            COALESCE(m.notes, 'N/A') AS notes,
-            m.created_at
-        FROM 
-            medicalrecord m
-        LEFT JOIN 
-            people p ON m.people_id = p.people_id
-        LEFT JOIN 
-            doctor d ON m.doctor_id = d.doctor_id
-        LEFT JOIN 
-            appointment a ON m.appointment_id = a.appointment_id
-        LEFT JOIN 
-            shifttime st ON a.shifttime_id = st.shifttime_id
-        LEFT JOIN 
-            item i ON m.item_id = i.item_id
-        ORDER BY 
-            a.appointment_date DESC, st.shifttime DESC
-        LIMIT $offset, $records_per_page";
-
-              $result = mysqli_query($link, $sql);
-
-              echo "<h3 style='text-align: center;'>看診紀錄</h3>";
-              echo "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>
-            <tr style='background-color: #f2f2f2;'>
-                      <th style='padding: 8px;'>編號</th>
-                      <th style='padding: 8px;'>姓名</th>
-                      <th style='padding: 8px;'>性別</th>
-                      <th style='padding: 8px;'>生日</th>
-                      <th style='padding: 8px;'>醫生</th>
-                      <th style='padding: 8px;'>預約日期</th>
-                      <th style='padding: 8px;'>預約時間</th>
-                      <th style='padding: 8px;'>看診項目</th>
-                      <th style='padding: 8px;'>項目價格</th>
-                      <th style='padding: 8px;'>總計價格</th>
-                      <th style='padding: 8px;'>備註</th>
-                      <th style='padding: 8px;'>建立時間</th>
-                  </tr>";
-              // 判斷是否有資料
-              if (mysqli_num_rows($result) > 0) {
-                while ($row = mysqli_fetch_assoc($result)) {
-                  echo "<tr style='white-space: nowrap;'>
-                      <td style='padding: 8px;'>{$row['id']}</td>
-                      <td style='padding: 8px;'>{$row['patient_name']}</td>
-                      <td style='padding: 8px;'>{$row['patient_gender']}</td>
-                      <td style='padding: 8px;'>{$row['patient_birthday']}</td>
-                      <td style='padding: 8px;'>{$row['doctor_name']}</td>
-                      <td style='padding: 8px;'>{$row['consultation_date']}</td>
-                      <td style='padding: 8px;'>{$row['consultation_time']}</td>
-                      <td style='padding: 8px;'>{$row['diagnosis']}</td>
-                      <td style='padding: 8px;'>{$row['item_price']}</td>
-                      <td style='padding: 8px;'>{$row['total_price']}</td>
-                      <td style='padding: 8px;'>{$row['notes']}</td>
-                      <td style='padding: 8px;'>{$row['created_at']}</td>
-                      </tr>";
+              <style>
+                table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin-top: 20px;
                 }
-              } else {
-                // 如果沒有資料，顯示「目前無資料」
-                echo "<tr><td colspan='9' style='text-align: center;'>目前無資料</td></tr>";
-              }
-              echo "</table>";
 
-
-              // 分頁控制
-              echo "<div style='margin-top: 20px; text-align: center;'>";
-              echo "<p>第 $page 頁，共 $total_pages 頁</p>";
-              if ($page > 1) {
-                echo "<a href='?page=" . ($page - 1) . "' style='margin-right: 10px;'>上一頁</a>";
-              }
-              for ($i = 1; $i <= $total_pages; $i++) {
-                if ($i == $page) {
-                  echo "<strong>$i</strong> ";
-                } else {
-                  echo "<a href='?page=$i'>$i</a> ";
+                th,
+                td {
+                  padding: 8px;
+                  text-align: center;
+                  border: 1px solid #ddd;
                 }
-              }
-              if ($page < $total_pages) {
-                echo "<a href='?page=" . ($page + 1) . "' style='margin-left: 10px;'>下一頁</a>";
-              }
-              echo "</div>";
 
+                th {
+                  background-color: #f2f2f2;
+                }
+
+                .search-container {
+                  text-align: right;
+                  margin-bottom: 10px;
+                }
+
+                input,
+                button {
+                  padding: 5px;
+                  margin-right: 5px;
+                }
+              </style>
+
+              <!-- 搜尋框 -->
+              <div class="search-container">
+                <form method="GET" action="">
+                  <input type="text" name="search_name" placeholder="請輸入搜尋姓名"
+                    value="<?php echo htmlspecialchars($search_name); ?>"> <!-- 保留搜尋條件 -->
+                  <button type="submit">搜尋</button>
+                </form>
+              </div>
+
+              <!-- 資料表格 -->
+              <table>
+                <tr>
+                  <th>編號</th>
+                  <th>姓名</th>
+                  <th>生日</th>
+                  <th>醫生</th>
+                  <th>治療項目</th>
+                  <th>治療費用</th>
+                  <th>備註</th>
+                  <th>建立時間</th>
+                </tr>
+                <?php if (mysqli_num_rows($data_result) > 0): ?>
+                  <?php while ($row = mysqli_fetch_assoc($data_result)): ?>
+                    <tr>
+                      <td><?php echo $row['id']; ?></td>
+                      <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
+                      <td><?php echo $row['patient_birthday']; ?></td>
+                      <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
+                      <td><?php echo htmlspecialchars($row['treatment_item']); ?></td>
+                      <td><?php echo $row['treatment_price']; ?></td>
+                      <td><?php echo htmlspecialchars($row['notes']); ?></td>
+                      <td><?php echo $row['created_at']; ?></td>
+                    </tr>
+                  <?php endwhile; ?>
+                <?php else: ?>
+                  <tr>
+                    <td colspan="8">目前無資料</td>
+                  </tr>
+                <?php endif; ?>
+              </table>
+
+              <!-- 分頁 -->
+              <div style="text-align: right; margin-top: 10px; margin-bottom: 10px;">
+                <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（共 <?php echo $total_records; ?>
+                  筆資料）</span>
+              </div>
+
+              <div style="text-align: center; margin-top: 20px;">
+                <?php if ($page > 1): ?>
+                  <a href="?page=<?php echo $page - 1; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
+                <?php endif; ?>
+
+                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                  <?php if ($i == $page): ?>
+                    <strong><?php echo $i; ?></strong>
+                  <?php else: ?>
+                    <a
+                      href="?page=<?php echo $i; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
+                  <?php endif; ?>
+                <?php endfor; ?>
+
+                <?php if ($page < $total_pages): ?>
+                  <a href="?page=<?php echo $page + 1; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
+                <?php endif; ?>
+              </div>
+
+              <?php
+              // 釋放資源並關閉資料庫連線
+              mysqli_stmt_close($count_stmt);
+              mysqli_stmt_close($data_stmt);
               mysqli_close($link);
               ?>
 
-              <!-- <div class="accordion-custom-item accordion-custom-corporate">
-                <h4 class="accordion-custom-heading" id="accordion1-accordion-head-klskjoon">
-                  <button class="accordion-custom-button" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#accordion1-accordion-body-gmraurpr"
-                    aria-controls="accordion1-accordion-body-gmraurpr" aria-expanded="true">How can I change something
-                    in my order?<span class="accordion-custom-arrow"></span>
-                  </button>
-                </h4>
-                <div class="accordion-custom-collapse collapse show" id="accordion1-accordion-body-gmraurpr"
-                  aria-labelledby="accordion1-accordion-head-klskjoon" data-bs-parent="#accordion1">
-                  <div class="accordion-custom-body">
-                    <p>If you need to change something in your order, please contact us immediately. We usually process
-                      orders within 30 minutes, and once we have processed your order, we will be unable to make any
-                      changes.</p>
-                  </div>
-                </div>
-              </div> -->
+
+
             </div>
           </div>
         </div>
