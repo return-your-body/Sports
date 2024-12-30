@@ -1,16 +1,68 @@
 <?php
-session_start();
-include "../db.php"; // 引入資料庫連線設定檔
 
-// 確認用戶是否登入
-if (!isset($_SESSION["帳號"])) {
-	echo "<script>
-            alert('請先登入！');
-            window.location.href = '../index.html';
-          </script>";
+session_start();
+
+if (!isset($_SESSION["登入狀態"])) {
+	header("Location: ../index.html");
 	exit;
 }
 
+// 防止頁面被瀏覽器緩存
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
+header("Pragma: no-cache");
+
+// 檢查 "帳號" 是否存在於 $_SESSION 中
+if (isset($_SESSION["帳號"])) {
+	// 獲取用戶帳號
+	$帳號 = $_SESSION['帳號'];
+
+	// 資料庫連接
+	require '../db.php';
+
+	// 查詢該帳號的詳細資料
+	$sql = "SELECT user.account, people.name 
+            FROM user 
+            JOIN people ON user.user_id = people.user_id 
+            WHERE user.account = ?";
+	$stmt = mysqli_prepare($link, $sql);
+	mysqli_stmt_bind_param($stmt, "s", $帳號);
+	mysqli_stmt_execute($stmt);
+	$result = mysqli_stmt_get_result($stmt);
+
+	if (mysqli_num_rows($result) > 0) {
+		// 抓取對應姓名
+		$row = mysqli_fetch_assoc($result);
+		$姓名 = $row['name'];
+		$帳號名稱 = $row['account'];
+
+		// 顯示帳號和姓名
+		// echo "歡迎您！<br>";
+		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
+		// echo "姓名：" . htmlspecialchars($姓名);
+		// echo "<script>
+		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
+		// </script>";
+	} else {
+		// 如果資料不存在，提示用戶重新登入
+		echo "<script>
+                alert('找不到對應的帳號資料，請重新登入。');
+                window.location.href = '../index.html';
+              </script>";
+		exit();
+	}
+
+	// 關閉資料庫連接
+	mysqli_close($link);
+} else {
+	echo "<script>
+            alert('會話過期或資料遺失，請重新登入。');
+            window.location.href = '../index.html';
+          </script>";
+	exit();
+}
+
+include "../db.php"; // 引入資料庫連線設定檔
 // 從 Session 中獲取用戶帳號
 $帳號 = $_SESSION['帳號'];
 
@@ -324,6 +376,43 @@ mysqli_close($link);
 				</div>
 			</section>
 		</div> -->
+		<style>
+			table {
+				width: 90%;
+				margin: 30px auto;
+				border-collapse: collapse;
+				text-align: center;
+			}
+
+			th,
+			td {
+				padding: 10px;
+				border: 1px solid #ddd;
+			}
+
+			th {
+				background-color: #f2f2f2;
+			}
+
+			.btn {
+				padding: 5px 10px;
+				background-color: #007bff;
+				color: white;
+				text-decoration: none;
+				border-radius: 5px;
+			}
+
+			.btn:hover {
+				background-color: #0056b3;
+			}
+
+			p {
+				text-align: center;
+				margin-top: 20px;
+			}
+		</style>
+		<h3 style="text-align: center; margin-top: 20px;">歷史預約紀錄</h3>
+
 		<?php if (count($appointments) > 0): ?>
 			<table>
 				<thead>
@@ -347,15 +436,20 @@ mysqli_close($link);
 							<td><?php echo htmlspecialchars($appointment['shifttime']); ?></td>
 							<td><?php echo htmlspecialchars($appointment['note']); ?></td>
 							<td>
-								<a href="u_detail.php?id=<?php echo $appointment['appointment_id']; ?>">查看</a>
+								<a href="u_detail.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>"
+									class="btn">查看</a>
 							</td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>
 			</table>
 		<?php else: ?>
-			<p style="text-align: center; margin-top: 20px;">目前沒有預約歷史資料。</p>
+			<p>目前沒有預約歷史資料。</p>
 		<?php endif; ?>
+		<div style="text-align: center; margin-top: 20px;">
+			<a href="javascript:history.back();">返回</a>
+		</div>
+
 
 	</div>
 	<!-- Global Mailform Output-->
