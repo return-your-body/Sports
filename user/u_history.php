@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
@@ -35,14 +34,6 @@ if (isset($_SESSION["帳號"])) {
 		$row = mysqli_fetch_assoc($result);
 		$姓名 = $row['name'];
 		$帳號名稱 = $row['account'];
-
-		// 顯示帳號和姓名
-		// echo "歡迎您！<br>";
-		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-		// echo "姓名：" . htmlspecialchars($姓名);
-		// echo "<script>
-		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-		// </script>";
 	} else {
 		// 如果資料不存在，提示用戶重新登入
 		echo "<script>
@@ -51,9 +42,6 @@ if (isset($_SESSION["帳號"])) {
               </script>";
 		exit();
 	}
-
-	// 關閉資料庫連接
-	mysqli_close($link);
 } else {
 	echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
@@ -61,10 +49,6 @@ if (isset($_SESSION["帳號"])) {
           </script>";
 	exit();
 }
-
-include "../db.php"; // 引入資料庫連線設定檔
-// 從 Session 中獲取用戶帳號
-$帳號 = $_SESSION['帳號'];
 
 // 查詢該用戶的所有預約歷史資料
 $query_history = "
@@ -100,10 +84,34 @@ if (!$result_history) {
 	exit;
 }
 
-// 準備資料陣列
+// 準備歷史資料陣列
 $appointments = [];
 while ($row = mysqli_fetch_assoc($result_history)) {
 	$appointments[] = $row;
+}
+
+// 查詢詳細資料函數
+function getAppointmentDetails($link, $appointment_id)
+{
+	$query_details = "
+    SELECT 
+        d.doctor AS doctor_name,
+        i.item AS treatment_item,
+        i.price AS treatment_price,
+        mr.created_at AS created_time
+    FROM medicalrecord mr
+    LEFT JOIN appointment a ON mr.appointment_id = a.appointment_id
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+    LEFT JOIN item i ON mr.item_id = i.item_id
+    WHERE mr.appointment_id = ?;
+    ";
+
+	$stmt = mysqli_prepare($link, $query_details);
+	mysqli_stmt_bind_param($stmt, "i", $appointment_id);
+	mysqli_stmt_execute($stmt);
+	$result = mysqli_stmt_get_result($stmt);
+	return mysqli_fetch_assoc($result);
 }
 
 mysqli_close($link);
@@ -126,6 +134,75 @@ mysqli_close($link);
 	<link rel="stylesheet" href="css/fonts.css">
 	<link rel="stylesheet" href="css/style.css">
 	<style>
+		/* 彈窗樣式 */
+		.popup {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.5);
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+
+		.popup-content {
+			background: white;
+			padding: 20px;
+			border-radius: 10px;
+			width: 80%;
+			max-width: 600px;
+			text-align: center;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+		}
+
+		table {
+			width: 90%;
+			margin: 20px auto;
+			border-collapse: collapse;
+			text-align: center;
+		}
+
+		th,
+		td {
+			padding: 10px;
+			border: 1px solid #ddd;
+		}
+
+		th {
+			background-color: #f2f2f2;
+		}
+
+		.btn {
+			padding: 5px 10px;
+			background-color: #007bff;
+			color: white;
+			text-decoration: none;
+			border-radius: 5px;
+		}
+
+		.btn:hover {
+			background-color: #0056b3;
+		}
+
+		.close-btn {
+			margin-top: 20px;
+			padding: 10px 20px;
+			background-color: #007bff;
+			color: white;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+
+		.close-btn:hover {
+			background-color: #0056b3;
+		}
+
+
+
 		.ie-panel {
 			display: none;
 			background: #212121;
@@ -364,10 +441,10 @@ mysqli_close($link);
 
 		<!--標題-->
 		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-		
+
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
-				
+
 					<p class="heading-1 breadcrumbs-custom-title">歷史紀錄</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="u_index.php">首頁</a></li>
@@ -415,13 +492,11 @@ mysqli_close($link);
 		</style>
 		<!-- <h3 style="text-align: center; margin-top: 20px;">歷史預約紀錄</h3> -->
 
+		<!-- 預約紀錄表格 -->
 		<?php if (count($appointments) > 0): ?>
 			<table>
 				<thead>
 					<tr>
-						<th>姓名</th>
-						<th>性別</th>
-						<th>生日</th>
 						<th>預約日期</th>
 						<th>預約時段</th>
 						<th>備註</th>
@@ -431,23 +506,66 @@ mysqli_close($link);
 				<tbody>
 					<?php foreach ($appointments as $appointment): ?>
 						<tr>
-							<td><?php echo htmlspecialchars($appointment['patient_name']); ?></td>
-							<td><?php echo htmlspecialchars($appointment['gender']); ?></td>
-							<td><?php echo htmlspecialchars($appointment['birthday']); ?></td>
 							<td><?php echo htmlspecialchars($appointment['appointment_date']); ?></td>
 							<td><?php echo htmlspecialchars($appointment['shifttime']); ?></td>
 							<td><?php echo htmlspecialchars($appointment['note']); ?></td>
 							<td>
-								<a href="u_detail.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>"
-									class="btn">查看</a>
+								<button class="btn"
+									onclick="openPopup(<?php echo $appointment['appointment_id']; ?>)">查看</button>
 							</td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>
 			</table>
 		<?php else: ?>
-			<p>目前沒有預約歷史資料。</p>
+			<p style="text-align: center;">目前沒有預約歷史資料。</p>
 		<?php endif; ?>
+
+		<!-- 彈跳視窗 -->
+		<div id="popup" class="popup">
+			<div class="popup-content">
+				<h2>詳細資料</h2>
+				<table>
+					<tr>
+						<th>醫生姓名</th>
+						<td id="popup-doctor-name"></td>
+					</tr>
+					<tr>
+						<th>治療項目</th>
+						<td id="popup-treatment-item"></td>
+					</tr>
+					<tr>
+						<th>治療費用</th>
+						<td id="popup-treatment-price"></td>
+					</tr>
+					<tr>
+						<th>建立時間</th>
+						<td id="popup-created-time"></td>
+					</tr>
+				</table>
+				<button class="close-btn" onclick="closePopup()">關閉</button>
+			</div>
+		</div>
+
+		<script>
+			function openPopup(appointment_id) {
+				fetch(`處理詳細資料.php?id=${appointment_id}`)
+					.then(response => response.json())
+					.then(data => {
+						document.getElementById('popup-doctor-name').innerText = data.doctor_name || '無資料';
+						document.getElementById('popup-treatment-item').innerText = data.treatment_item || '無資料';
+						document.getElementById('popup-treatment-price').innerText = data.treatment_price || '無資料';
+						document.getElementById('popup-created-time').innerText = data.created_time || '無資料';
+
+						document.getElementById('popup').style.display = 'flex';
+					})
+					.catch(error => console.error('無法獲取資料：', error));
+			}
+
+			function closePopup() {
+				document.getElementById('popup').style.display = 'none';
+			}
+		</script>
 
 
 	</div>
