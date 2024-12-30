@@ -363,7 +363,7 @@ mysqli_close($link);
 		</header>
 
 		<!--標題-->
-		<!-- <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
 		
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
@@ -375,7 +375,9 @@ mysqli_close($link);
 					</ul>
 				</div>
 			</section>
-		</div> -->
+		</div>
+
+		<!--預約紀錄-->
 		<style>
 			table {
 				width: 90%;
