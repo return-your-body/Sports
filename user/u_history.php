@@ -413,7 +413,7 @@ mysqli_close($link);
 				margin-top: 20px;
 			}
 		</style>
-		<h3 style="text-align: center; margin-top: 20px;">歷史預約紀錄</h3>
+		<!-- <h3 style="text-align: center; margin-top: 20px;">歷史預約紀錄</h3> -->
 
 		<?php if (count($appointments) > 0): ?>
 			<table>

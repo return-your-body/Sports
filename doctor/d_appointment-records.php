@@ -285,7 +285,7 @@ if (isset($_SESSION["帳號"])) {
 
     <!--預約紀錄-->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
-      <h3 style='text-align: center;'>預約紀錄</h3>
+      <!-- <h3 style='text-align: center;'>預約紀錄</h3> -->
       <?php
       session_start(); // 啟用 Session
       
@@ -305,34 +305,41 @@ if (isset($_SESSION["帳號"])) {
       require '../db.php';
 
       // 接收搜尋參數
-      $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
+      $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
 
       // 分頁設定
       $records_per_page = 10;
       $page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
       $offset = ($page - 1) * $records_per_page;
 
-      // 計算總記錄數
-      $count_sql = "
+      // 使用 Prepared Statement 進行 SQL 注入防護
+// 計算總記錄數
+      $count_stmt = $link->prepare("
     SELECT COUNT(*) AS total
     FROM appointment a
     LEFT JOIN people p ON a.people_id = p.people_id
     LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
     LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
     LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE u.account = '$帳號'
-    AND p.name LIKE '%$search_name%'
-";
-      $count_result = mysqli_query($link, $count_sql);
-      $total_records = mysqli_fetch_assoc($count_result)['total'];
+    WHERE u.account = ? AND p.name LIKE ?
+");
+      $search_term = "%$search_name%";
+      $count_stmt->bind_param('ss', $帳號, $search_term);
+      $count_stmt->execute();
+      $count_result = $count_stmt->get_result();
+      $total_records = $count_result->fetch_assoc()['total'];
       $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
 
       // 查詢資料
-      $sql = "
+      $query_stmt = $link->prepare("
     SELECT 
         a.appointment_id AS id,
         COALESCE(p.name, '未預約') AS name,
-        CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
+        CASE 
+            WHEN p.gender_id = 1 THEN '男' 
+            WHEN p.gender_id = 2 THEN '女' 
+            ELSE '未設定' 
+        END AS gender,
         COALESCE(p.birthday, 'N/A') AS birthday,
         ds.date AS appointment_date,
         COALESCE(st.shifttime, 'N/A') AS shifttime,
@@ -344,12 +351,13 @@ if (isset($_SESSION["帳號"])) {
     LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
     LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
     LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE u.account = '$帳號'
-    AND p.name LIKE '%$search_name%'
+    WHERE u.account = ? AND p.name LIKE ?
     ORDER BY ds.date, st.shifttime
-    LIMIT $offset, $records_per_page
-";
-      $result = mysqli_query($link, $sql);
+    LIMIT ?, ?
+");
+      $query_stmt->bind_param('ssii', $帳號, $search_term, $offset, $records_per_page);
+      $query_stmt->execute();
+      $result = $query_stmt->get_result();
       ?>
 
       <style>
@@ -403,8 +411,8 @@ if (isset($_SESSION["帳號"])) {
           <th>備註</th>
           <th>建立時間</th>
         </tr>
-        <?php if (mysqli_num_rows($result) > 0): ?>
-          <?php while ($row = mysqli_fetch_assoc($result)): ?>
+        <?php if ($result->num_rows > 0): ?>
+          <?php while ($row = $result->fetch_assoc()): ?>
             <tr>
               <td><?php echo $row['id']; ?></td>
               <td><?php echo htmlspecialchars($row['name']); ?></td>
@@ -443,7 +451,10 @@ if (isset($_SESSION["帳號"])) {
       </div>
 
       <?php
-      mysqli_close($link);
+      // 關閉資料庫連線
+      $query_stmt->close();
+      $count_stmt->close();
+      $link->close();
       ?>
 
     </section>
