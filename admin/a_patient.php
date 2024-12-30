@@ -1,37 +1,53 @@
 <?php
+// 啟動 PHP 會話
 session_start();
 
+// 檢查是否登入，否則跳轉到登入頁面
 if (!isset($_SESSION["登入狀態"])) {
-	// 如果未登入或會話過期，跳轉至登入頁面
+	// 如果用戶未登入，跳轉至登入頁面並結束腳本
 	header("Location: ../index.html");
 	exit;
 }
 
-// 防止頁面被瀏覽器緩存
+// 防止頁面被瀏覽器快取，確保每次都加載最新內容
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
-// 引入資料庫連接檔案
+// 引入資料庫連線檔案，確保連線正確配置
 require '../db.php';
 
-// 分頁參數
-$rowsPerPage = 3; // 每頁顯示筆數
+// 取得每頁顯示的筆數參數，預設為 3
+$rowsPerPage = isset($_GET['rowsPerPage']) ? intval($_GET['rowsPerPage']) : 3;
+
+// 確保每頁筆數在合理範圍內，避免過大或過小
+if ($rowsPerPage < 1) {
+	$rowsPerPage = 3; // 預設筆數
+} elseif ($rowsPerPage > 100) {
+	$rowsPerPage = 100; // 限制最大筆數
+}
+
+// 獲取當前頁碼，預設為 1
 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+if ($page < 1) {
+	$page = 1; // 確保頁碼至少為 1
+}
+
+// 計算偏移量
 $offset = ($page - 1) * $rowsPerPage;
 
-// 搜尋參數
+// 獲取搜尋參數，如果未提供，預設為空字串
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 
-// SQL 查詢：根據搜尋條件獲取用戶列表
+// 準備 SQL 查詢語句，用於獲取符合條件的資料
 $query = "
-    SELECT u.user_id AS id, u.account, p.name, p.idcard
+    SELECT u.user_id AS id, u.account, p.name, p.idcard, p.gender_id, p.birthday, p.phone, p.address, p.email, p.images
     FROM user u
     LEFT JOIN people p ON u.user_id = p.user_id
     WHERE u.grade_id = 1 AND (p.idcard LIKE ? OR p.name LIKE ? OR u.account LIKE ?)
     LIMIT ? OFFSET ?";
 $stmt = mysqli_prepare($link, $query);
-$searchWildcard = '%' . $search . '%';
+$searchWildcard = '%' . $search . '%'; // 模糊搜尋條件
 mysqli_stmt_bind_param($stmt, "sssii", $searchWildcard, $searchWildcard, $searchWildcard, $rowsPerPage, $offset);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
@@ -39,10 +55,14 @@ $result = mysqli_stmt_get_result($stmt);
 // 將查詢結果存入陣列
 $users = [];
 while ($row = mysqli_fetch_assoc($result)) {
+	// 如果圖片欄位存在，將 BLOB 格式圖片轉換為 Base64 格式，便於前端顯示
+	if (!empty($row['images'])) {
+		$row['images'] = base64_encode($row['images']);
+	}
 	$users[] = $row;
 }
 
-// 獲取總筆數
+// 計算符合條件的總數量，用於分頁顯示
 $countQuery = "
     SELECT COUNT(*) AS total
     FROM user u
@@ -53,14 +73,18 @@ mysqli_stmt_bind_param($countStmt, "sss", $searchWildcard, $searchWildcard, $sea
 mysqli_stmt_execute($countStmt);
 $countResult = mysqli_stmt_get_result($countStmt);
 $countRow = mysqli_fetch_assoc($countResult);
+
+// 總筆數
 $totalRows = $countRow['total'];
+// 計算總頁數
 $totalPages = ceil($totalRows / $rowsPerPage);
 
-// 釋放資源
+// 釋放資源並關閉資料庫連線
 mysqli_free_result($result);
 mysqli_free_result($countResult);
 mysqli_close($link);
 ?>
+
 
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
@@ -78,6 +102,77 @@ mysqli_close($link);
 	<link rel="stylesheet" href="css/fonts.css">
 	<link rel="stylesheet" href="css/style.css">
 	<style>
+		/* 彈窗樣式 */
+		.popup {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background-color: rgba(0, 0, 0, 0.5);
+			justify-content: center;
+			align-items: center;
+			z-index: 1000;
+		}
+
+		.popup-content {
+			background: white;
+			border-radius: 10px;
+			padding: 20px;
+			width: 600px;
+			box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+			position: relative;
+			overflow: hidden;
+			/* 防止超出內容影響佈局 */
+		}
+
+		/* 調整頭像樣式 */
+		.profile-image {
+			width: 150px;
+			/* 修改寬度 */
+			height: 150px;
+			/* 修改高度 */
+			border-radius: 50%;
+			/* 保持圓形 */
+			border: 3px solid #ccc;
+			/* 增加邊框寬度 */
+			object-fit: cover;
+			/* 圖片保持比例填充 */
+			background-color: #f0f0f0;
+			/* 預設背景避免空白 */
+		}
+
+
+
+		/* 按鈕樣式 */
+		.popup-btn {
+			background-color: #00A896;
+			color: white;
+			padding: 8px 16px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 14px;
+			transition: background-color 0.3s;
+		}
+
+		.popup-btn:hover {
+			background-color: #007f6e;
+		}
+
+		/* 黑名單切換樣式 */
+		.blacklist-toggle {
+			font-size: 14px;
+			color: #333;
+			cursor: pointer;
+			display: inline-flex;
+			align-items: center;
+		}
+
+
+
+
 		.ie-panel {
 			display: none;
 			background: #212121;
@@ -220,8 +315,11 @@ mysqli_close($link);
 										</li>
 									</ul>
 								</li> -->
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="a_patient.php">用戶管理</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_patient.php">用戶管理</a>
+										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_addhd.php">新增治療師/助手</a>
 										</li>
@@ -305,6 +403,80 @@ mysqli_close($link);
 
 		</div>
 
+		<div id="popup" class="popup">
+			<div class="popup-content">
+				<span class="popup-close" onclick="closePopup()">×</span>
+				<div style="display: flex; gap: 20px; align-items: center;">
+					<!-- 左側 -->
+					<div style="flex: 1; text-align: center;">
+						<img id="popup-image" src="" alt="頭像" class="profile-image">
+						<div style="margin-top: 10px;">
+							<button class="popup-btn" onclick="viewDetails()">詳細</button>
+							<div style="margin-top: 10px;">
+								<label class="blacklist-toggle">
+									<input type="checkbox" id="blacklist-toggle"> 加入黑名單
+								</label>
+							</div>
+						</div>
+					</div>
+					<!-- 右側 -->
+					<div style="flex: 2;">
+						<p><strong>姓名：</strong><span id="popup-name"></span></p>
+						<p><strong>性別：</strong><span id="popup-gender"></span></p>
+						<p><strong>出生日期：</strong><span id="popup-birthday"></span></p>
+						<p><strong>身份證：</strong><span id="popup-idcard"></span></p>
+						<p><strong>電話：</strong><span id="popup-phone"></span></p>
+						<p><strong>地址：</strong><span id="popup-address"></span></p>
+						<p><strong>電子郵件：</strong><span id="popup-email"></span></p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+		<script>
+			function openPopup(user) {
+				try {
+					// 頭像圖片判斷
+					const profileImage = document.getElementById('popup-image');
+
+					if (user.images && user.images.trim() !== '' && user.images !== 'NULL') {
+						// 如果有圖片資料，將 BLOB 格式轉為 Base64 並設置圖片來源
+						const base64Image = `data:image/jpeg;base64,${user.images}`;
+						profileImage.src = base64Image;
+					} else {
+						// 如果沒有圖片資料，使用預設圖片
+						profileImage.src = 'images/300.jpg';
+					}
+
+					// 處理圖片加載失敗的情況
+					profileImage.onerror = function () {
+						this.src = 'images/300.jpg'; // 使用預設圖片
+					};
+
+					// 設置其他用戶資訊
+					document.getElementById('popup-name').innerText = user.name || '無資料';
+					document.getElementById('popup-gender').innerText = user.gender_id === '1' ? '男性' : '女性';
+					document.getElementById('popup-birthday').innerText = user.birthday || '無資料';
+					document.getElementById('popup-idcard').innerText = user.idcard || '無資料';
+					document.getElementById('popup-phone').innerText = user.phone || '無資料';
+					document.getElementById('popup-address').innerText = user.address || '無資料';
+					document.getElementById('popup-email').innerText = user.email || '無資料';
+
+					// 顯示彈窗
+					document.getElementById('popup').style.display = 'flex';
+				} catch (error) {
+					console.error("無法顯示彈窗：", error);
+				}
+			}
+
+			// 關閉彈窗
+			function closePopup() {
+				document.getElementById('popup').style.display = 'none';
+			}
+
+		</script>
+
 		<!-- Bordered Row Table -->
 		<section class="section section-lg bg-default text-center">
 			<div class="container">
@@ -344,6 +516,17 @@ mysqli_close($link);
 									<span class="icon mdi mdi-magnify"></span>搜尋
 								</button>
 							</div>
+							<div style="flex: 1;">
+								<select name="rowsPerPage" onchange="this.form.submit()"
+									style="padding: 10px 15px; font-size: 16px; width: 100%; border: 1px solid #ccc; border-radius: 4px;">
+									<option value="3" <?php echo $rowsPerPage == 3 ? 'selected' : ''; ?>>3筆/頁</option>
+									<option value="5" <?php echo $rowsPerPage == 5 ? 'selected' : ''; ?>>5筆/頁</option>
+									<option value="10" <?php echo $rowsPerPage == 10 ? 'selected' : ''; ?>>10筆/頁</option>
+									<option value="20" <?php echo $rowsPerPage == 20 ? 'selected' : ''; ?>>20筆/頁</option>
+									<option value="25" <?php echo $rowsPerPage == 25 ? 'selected' : ''; ?>>25筆/頁</option>
+									<option value="50" <?php echo $rowsPerPage == 50 ? 'selected' : ''; ?>>50筆/頁</option>
+								</select>
+							</div>
 						</form>
 
 						<!-- 表格區域 -->
@@ -374,8 +557,20 @@ mysqli_close($link);
 													<?php echo htmlspecialchars($user['idcard'] ?? '無資料'); ?>
 												</td>
 												<td style="padding: 10px; text-align: center;">
-													<button
-														style="padding: 6px 12px; font-size: 12px; border: none; background-color: #00A896; color: white; cursor: pointer; border-radius: 4px;">操作</button>
+													<button onclick='openPopup(<?php echo json_encode([
+														"name" => $user["name"] ?? "無資料",
+														"gender_id" => $user["gender_id"] ?? null,
+														"birthday" => $user["birthday"] ?? "無資料",
+														"idcard" => $user["idcard"] ?? "無資料",
+														"phone" => $user["phone"] ?? "無資料",
+														"address" => $user["address"] ?? "無資料",
+														"email" => $user["email"] ?? "無資料",
+														"images" => $user["images"] ?? "images/300.jpg",
+													], JSON_UNESCAPED_SLASHES | JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'
+														style="padding: 6px 12px; font-size: 12px; border: none; background-color: #00A896; color: white; cursor: pointer; border-radius: 4px;">
+														操作
+													</button>
+
 												</td>
 											</tr>
 										<?php endforeach; ?>
@@ -393,15 +588,15 @@ mysqli_close($link);
 							<?php if ($totalPages > 1): ?>
 								<?php for ($i = 1; $i <= $totalPages; $i++): ?>
 									<button
-										onclick="location.href='?page=<?php echo $i; ?>&search=<?php echo htmlspecialchars($search); ?>'"
-										style="
-								margin: 0 5px; padding: 5px 10px; border: none; background-color: <?php echo $i == $page ? '#00A896' : '#f0f0f0'; ?>; color: <?php echo $i == $page ? 'white' : 'black'; ?>; border-radius: 4px; cursor: pointer;">
+										onclick="location.href='?page=<?php echo $i; ?>&rowsPerPage=<?php echo $rowsPerPage; ?>&search=<?php echo htmlspecialchars($search); ?>'"
+										style="margin: 0 5px; padding: 5px 10px; border: none; background-color: <?php echo $i == $page ? '#00A896' : '#f0f0f0'; ?>; color: <?php echo $i == $page ? 'white' : 'black'; ?>; border-radius: 4px; cursor: pointer;">
 										<?php echo $i; ?>
 									</button>
 								<?php endfor; ?>
 								<span>| 共 <?php echo $totalPages; ?> 頁</span>
 							<?php endif; ?>
 						</div>
+
 
 					</div>
 				</div>
