@@ -1,32 +1,33 @@
 <?php
 include "../db.php"; // 引入資料庫連線設定檔
 
-// 從 URL 參數獲取 appointment_id
+// 檢查 URL 中的 `id` 是否存在並有效
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     echo "<script>
-            alert('無效的參數。');
+            alert('無效的參數，請返回。');
             window.history.back();
           </script>";
     exit;
 }
-$appointment_id = intval($_GET['id']);
+
+$appointment_id = intval($_GET['id']); // 確保 `id` 為整數
 
 // 查詢該預約的看診紀錄
 $query_medical_record = "
 SELECT 
     mr.medicalrecord_id,
     p.name AS patient_name,
-    d.name AS doctor_name,
+    d.doctor AS doctor_name,
     a.created_at AS appointment_date,
-    i.item_name AS treatment_item,
+    i.item AS treatment_item,
     mr.notes AS notes,
     mr.created_at AS created_time
 FROM medicalrecord mr
-LEFT JOIN people p ON mr.people_id = p.people_id
-LEFT JOIN doctor d ON mr.doctor_id = d.doctor_id
 LEFT JOIN appointment a ON mr.appointment_id = a.appointment_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctor d ON mr.doctor_id = d.doctor_id
 LEFT JOIN item i ON mr.item_id = i.item_id
-WHERE mr.appointment_id = ?
+WHERE mr.appointment_id = ?;
 ";
 
 $stmt = mysqli_prepare($link, $query_medical_record);
@@ -34,7 +35,7 @@ mysqli_stmt_bind_param($stmt, "i", $appointment_id);
 mysqli_stmt_execute($stmt);
 $result_medical_record = mysqli_stmt_get_result($stmt);
 
-// 如果查詢失敗
+// 檢查是否有資料
 if (!$result_medical_record) {
     echo "<script>
             alert('查詢失敗：" . mysqli_error($link) . "');
@@ -43,7 +44,7 @@ if (!$result_medical_record) {
     exit;
 }
 
-// 準備資料陣列
+// 將資料存入陣列
 $medical_records = [];
 while ($row = mysqli_fetch_assoc($result_medical_record)) {
     $medical_records[] = $row;

@@ -446,9 +446,6 @@ mysqli_close($link);
 		<?php else: ?>
 			<p>目前沒有預約歷史資料。</p>
 		<?php endif; ?>
-		<div style="text-align: center; margin-top: 20px;">
-			<a href="javascript:history.back();">返回</a>
-		</div>
 
 
 	</div>
