@@ -221,9 +221,9 @@ if (isset($_SESSION["帳號"])) {
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_appointment-records.php">預約紀錄</a>
                     </li>
                   </ul>
-                  <!-- </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="d_body-knowledge.php">身體小知識</a>
-                </li> -->
+                  </li>
+               <li class="rd-nav-item"><a class="rd-nav-link" href="d_leave.php">請假</a>
+                </li>
 
                   <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
