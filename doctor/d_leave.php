@@ -67,121 +67,119 @@ if (isset($_SESSION["帳號"])) {
 
 
 <head>
-	<!-- Site Title-->
-	<title>運動筋膜放鬆</title>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<link rel="icon" href="images/favicon.ico" type="image/x-icon">
-	<link rel="stylesheet" type="text/css"
-		href="https://fonts.googleapis.com/css2?family=Exo:wght@300;400;500;600;700&amp;display=swap">
-	<link rel="stylesheet" href="css/bootstrap.css">
-	<link rel="stylesheet" href="css/fonts.css">
-	<link rel="stylesheet" href="css/style.css">
-	<style>
-		.ie-panel {
-			display: none;
-			background: #212121;
-			padding: 10px 0;
-			box-shadow: 3px 3px 5px 0 rgba(0, 0, 0, .3);
-			clear: both;
-			text-align: center;
-			position: relative;
-			z-index: 1;
-		}
+  <!-- Site Title-->
+  <title>運動筋膜放鬆</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" type="text/css"
+    href="https://fonts.googleapis.com/css2?family=Exo:wght@300;400;500;600;700&amp;display=swap">
+  <link rel="stylesheet" href="css/bootstrap.css">
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .ie-panel {
+      display: none;
+      background: #212121;
+      padding: 10px 0;
+      box-shadow: 3px 3px 5px 0 rgba(0, 0, 0, .3);
+      clear: both;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
 
-		html.ie-10 .ie-panel,
-		html.lt-ie-10 .ie-panel {
-			display: block;
-		}
+    html.ie-10 .ie-panel,
+    html.lt-ie-10 .ie-panel {
+      display: block;
+    }
 
-		/* 登出確認視窗 - 初始隱藏 */
-		.logout-box {
-			display: none;
-			/* 預設隱藏 */
-			position: fixed;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;
-			background: rgba(0, 0, 0, 0.5);
-			/* 半透明背景 */
-			justify-content: center;
-			/* 水平置中 */
-			align-items: center;
-			/* 垂直置中 */
-			z-index: 1000;
-			/* 保證在最上層 */
-		}
+    /* 登出確認視窗 - 初始隱藏 */
+    .logout-box {
+      display: none;
+      /* 預設隱藏 */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      /* 半透明背景 */
+      justify-content: center;
+      /* 水平置中 */
+      align-items: center;
+      /* 垂直置中 */
+      z-index: 1000;
+      /* 保證在最上層 */
+    }
 
-		/* 彈出視窗內容 */
-		.logout-dialog {
-			background: #fff;
-			padding: 30px 20px;
-			border-radius: 8px;
-			text-align: center;
-			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-			width: 280px;
-			font-family: Arial, sans-serif;
-		}
+    /* 彈出視窗內容 */
+    .logout-dialog {
+      background: #fff;
+      padding: 30px 20px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      width: 280px;
+      font-family: Arial, sans-serif;
+    }
 
-		/* 彈出視窗內文字 */
-		.logout-dialog p {
-			margin-bottom: 20px;
-			font-size: 18px;
-			color: #333;
-		}
+    /* 彈出視窗內文字 */
+    .logout-dialog p {
+      margin-bottom: 20px;
+      font-size: 18px;
+      color: #333;
+    }
 
-		/* 按鈕樣式 */
-		.logout-dialog button {
-			display: block;
-			width: 100%;
-			margin: 10px 0;
-			padding: 10px;
-			border: none;
-			border-radius: 5px;
-			cursor: pointer;
-			font-size: 16px;
-			background-color: #333;
-			color: #fff;
-			transition: background 0.3s ease;
-		}
+    /* 按鈕樣式 */
+    .logout-dialog button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      background-color: #333;
+      color: #fff;
+      transition: background 0.3s ease;
+    }
 
-		.logout-dialog button:hover {
-			background-color: #555;
-		}
+    .logout-dialog button:hover {
+      background-color: #555;
+    }
 
-		.button-shadow {
-			box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
-		}
-	</style>
+    .button-shadow {
+      box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+    }
+  </style>
 </head>
 
 <body>
-	<div class="ie-panel"><a href="http://windows.microsoft.com/en-US/internet-explorer/"><img
-				src="images/ie8-panel/warning_bar_0000_us.jpg" height="42" width="820"
-				alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today."></a>
-	</div>
-	<!-- Page preloader-->
-	<div class="page-loader">
-		<div class="preloader-inner">
-			<svg class="preloader-svg" width="200" height="200" viewbox="0 0 100 100">
-				<polyline class="line-cornered stroke-still" points="0,0 100,0 100,100" stroke-width="10" fill="none">
-				</polyline>
-				<polyline class="line-cornered stroke-still" points="0,0 0,100 100,100" stroke-width="10" fill="none">
-				</polyline>
-				<polyline class="line-cornered stroke-animation" points="0,0 100,0 100,100" stroke-width="10"
-					fill="none">
-				</polyline>
-				<polyline class="line-cornered stroke-animation" points="0,0 0,100 100,100" stroke-width="10"
-					fill="none">
-				</polyline>
-			</svg>
-		</div>
-	</div>
+  <div class="ie-panel"><a href="http://windows.microsoft.com/en-US/internet-explorer/"><img
+        src="images/ie8-panel/warning_bar_0000_us.jpg" height="42" width="820"
+        alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today."></a>
+  </div>
+  <!-- Page preloader-->
+  <div class="page-loader">
+    <div class="preloader-inner">
+      <svg class="preloader-svg" width="200" height="200" viewbox="0 0 100 100">
+        <polyline class="line-cornered stroke-still" points="0,0 100,0 100,100" stroke-width="10" fill="none">
+        </polyline>
+        <polyline class="line-cornered stroke-still" points="0,0 0,100 100,100" stroke-width="10" fill="none">
+        </polyline>
+        <polyline class="line-cornered stroke-animation" points="0,0 100,0 100,100" stroke-width="10" fill="none">
+        </polyline>
+        <polyline class="line-cornered stroke-animation" points="0,0 0,100 100,100" stroke-width="10" fill="none">
+        </polyline>
+      </svg>
+    </div>
+  </div>
 
-	<!--標題列-->
-    <div class="page">
+  <!--標題列-->
+  <div class="page">
     <header class="section page-header">
       <!-- RD Navbar-->
       <div class="rd-navbar-wrap rd-navbar-centered">
@@ -209,19 +207,20 @@ if (isset($_SESSION["帳號"])) {
               <ul class="rd-navbar-nav">
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_index.php">首頁</a>
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="d_numberpeople.php">當天人數及時段</a>
-                </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a>
-                  <!-- <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-teacher.php"></a>
-                      </li>
-                    </ul> -->
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="d_doctorshift.php">班表時段</a>
-                  <!-- <ul class="rd-menu rd-navbar-dropdown">
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="single-course.php">123</a>
-                      </li>
-                    </ul> -->
+
+                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">班表</a>
+                  <ul class="rd-menu rd-navbar-dropdown">
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_doctorshift.php">每月班表</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_numberpeople.php">當天人數及時段</a>
+                    </li>
+                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="d_leave.php">請假</a>
+                    </li>
+                  </ul>
+                </li>
+
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
@@ -229,24 +228,9 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_appointment-records.php">預約紀錄</a>
                     </li>
-                    <!-- <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="404-page.html">404 page</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="503-page.html">503 page</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="buttons.html">Buttons</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="forms.html">Forms</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="grid-system.html">Grid system</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="tables.html">Tables</a>
-                      </li>
-                      <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="typography.html">Typography</a>
-                      </li> -->
                   </ul>
                 </li>
-                <li class="rd-nav-item active"><a class="rd-nav-link" href="d_leave.php">請假</a>
-                </li>
+                
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
@@ -311,29 +295,29 @@ if (isset($_SESSION["帳號"])) {
     <!--標題列-->
 
 
-		<!--標題-->
-		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-			<!-- Breadcrumbs-->
-			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
-				<div class="container">
-					<!-- <p class="breadcrumbs-custom-subtitle">What We Offer</p> -->
-					<p class="heading-1 breadcrumbs-custom-title">醫生請假</p>
-					<ul class="breadcrumbs-custom-path">
-						<li><a href="d_index.php">首頁</a></li>
-						<li class="active">醫生請假</li>
-					</ul>
-				</div>
-			</section>
-		</div>
+    <!--標題-->
+    <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+      <!-- Breadcrumbs-->
+      <section class="breadcrumbs-custom breadcrumbs-custom-svg">
+        <div class="container">
+          <!-- <p class="breadcrumbs-custom-subtitle">What We Offer</p> -->
+          <p class="heading-1 breadcrumbs-custom-title">醫生請假</p>
+          <ul class="breadcrumbs-custom-path">
+            <li><a href="d_index.php">首頁</a></li>
+            <li class="active">醫生請假</li>
+          </ul>
+        </div>
+      </section>
+    </div>
 
 
 
-	</div>
-	<!-- Global Mailform Output-->
-	<div class="snackbars" id="form-output-global"></div>
-	<!-- Javascript-->
-	<script src="js/core.min.js"></script>
-	<script src="js/script.js"></script>
+  </div>
+  <!-- Global Mailform Output-->
+  <div class="snackbars" id="form-output-global"></div>
+  <!-- Javascript-->
+  <script src="js/core.min.js"></script>
+  <script src="js/script.js"></script>
 </body>
 
 </html>

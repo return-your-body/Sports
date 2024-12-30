@@ -207,12 +207,17 @@ if (isset($_SESSION["帳號"])) {
               <ul class="rd-navbar-nav">
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_index.php">首頁</a>
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="d_numberpeople.php">當天人數及時段</a>
-                </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a>
                 </li>
-                <li class="rd-nav-item active"><a class="rd-nav-link" href="d_doctorshift.php">班表時段</a>
-
+                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">班表</a>
+                  <ul class="rd-menu rd-navbar-dropdown">
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_doctorshift.php">每月班表</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_numberpeople.php">當天人數及時段</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假</a>
+                    </li>
+                  </ul>
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
@@ -221,8 +226,6 @@ if (isset($_SESSION["帳號"])) {
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_appointment-records.php">預約紀錄</a>
                     </li>
                   </ul>
-                </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="d_leave.php">請假</a>
                 </li>
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
