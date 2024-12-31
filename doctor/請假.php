@@ -1,64 +1,67 @@
 <?php
 session_start();
-require '../db.php';  // 引入資料庫連線
+require '../db.php'; // 引入資料庫連線
 
-// 查詢 leaves 表資料，並通過 doctor_id 關聯 doctor 表
-$sql = "
-    SELECT 
-        l.leaves_id, 
-        l.doctor_id, 
-        d.doctor AS doctor_name, 
-        l.leave_type, 
-        l.leave_type_other, 
-        l.start_date, 
-        l.end_date, 
-        l.reason, 
-        l.created_at
-    FROM 
-        leaves AS l
-    INNER JOIN 
-        doctor AS d
-    ON 
-        l.doctor_id = d.doctor_id
-";
+// 接收表單資料
+$applicant_name = trim($_POST['name']); // 申請人姓名
+$leave_type = trim($_POST['leave-type']); // 請假類別
+$leave_type_other = isset($_POST['leave-type-other']) ? trim($_POST['leave-type-other']) : null; // 其他請假原因
+$start_date = trim($_POST['start-date']); // 請假起始日期
+$end_date = trim($_POST['end-date']); // 請假結束日期
+$reason = trim($_POST['reason']); // 請假原因
 
-// 執行查詢
-$result = mysqli_query($link, $sql);
-
-// 檢查是否有資料
-if (mysqli_num_rows($result) > 0) {
-    // 顯示查詢結果
-    echo "<table border='1' cellpadding='10'>";
-    echo "<tr>
-            <th>請假編號</th>
-            <th>醫生編號</th>
-            <th>醫生名稱</th>
-            <th>請假類別</th>
-            <th>其他請假原因</th>
-            <th>請假起始日期</th>
-            <th>請假結束日期</th>
-            <th>請假原因</th>
-            <th>提交時間</th>
-          </tr>";
-
-    while ($row = mysqli_fetch_assoc($result)) {
-        echo "<tr>
-                <td>" . htmlspecialchars($row['leaves_id']) . "</td>
-                <td>" . htmlspecialchars($row['doctor_id']) . "</td>
-                <td>" . htmlspecialchars($row['doctor_name']) . "</td>
-                <td>" . htmlspecialchars($row['leave_type']) . "</td>
-                <td>" . htmlspecialchars($row['leave_type_other']) . "</td>
-                <td>" . htmlspecialchars($row['start_date']) . "</td>
-                <td>" . htmlspecialchars($row['end_date']) . "</td>
-                <td>" . htmlspecialchars($row['reason']) . "</td>
-                <td>" . htmlspecialchars($row['created_at']) . "</td>
-              </tr>";
-    }
-    echo "</table>";
-} else {
-    echo "沒有找到相關資料。";
+// 驗證必填欄位
+if (empty($applicant_name) || empty($leave_type) || empty($start_date) || empty($end_date) || empty($reason)) {
+    echo "<script>
+            alert('所有欄位均為必填，請重新填寫！');
+            window.history.back();
+          </script>";
+    exit;
 }
 
-// 關閉連線
+// 防止 SQL 注入
+$applicant_name = mysqli_real_escape_string($link, $applicant_name);
+$leave_type = mysqli_real_escape_string($link, $leave_type);
+$leave_type_other = $leave_type_other ? mysqli_real_escape_string($link, $leave_type_other) : null;
+$start_date = mysqli_real_escape_string($link, $start_date);
+$end_date = mysqli_real_escape_string($link, $end_date);
+$reason = mysqli_real_escape_string($link, $reason);
+
+// 確認申請人是否存在於 doctor 資料表
+$check_doctor_sql = "
+    SELECT doctor_id FROM doctor 
+    WHERE doctor = '$applicant_name'
+";
+$result_doctor = mysqli_query($link, $check_doctor_sql) or die(mysqli_error($link));
+if (mysqli_num_rows($result_doctor) == 0) {
+    echo "<script>
+            alert('找不到該申請人的醫生資料，請確認姓名是否正確！');
+            window.history.back();
+          </script>";
+    exit;
+}
+
+// 獲取 doctor_id
+$row = mysqli_fetch_assoc($result_doctor);
+$doctor_id = $row['doctor_id'];
+
+// 插入請假資料
+$insert_leave_sql = "
+    INSERT INTO leaves (doctor_id, leave_type, leave_type_other, start_date, end_date, reason)
+    VALUES ('$doctor_id', '$leave_type', " . ($leave_type_other ? "'$leave_type_other'" : "NULL") . ", '$start_date', '$end_date', '$reason')
+";
+if (mysqli_query($link, $insert_leave_sql)) {
+    echo "<script>
+            alert('請假資料提交成功！');
+            window.location.href = 'd_leave.php';
+          </script>";
+} else {
+    echo "<script>
+            alert('提交失敗：" . mysqli_error($link) . "');
+            window.history.back();
+          </script>";
+}
+
+// 關閉資料庫連線
 mysqli_close($link);
 ?>
