@@ -8,7 +8,7 @@ if (!isset($_SESSION["登入狀態"])) {
 	header("Location: ../index.html");
 	exit;
 }
-
+$帳號 = $_SESSION['帳號'];
 // 防止頁面被瀏覽器快取，確保每次都加載最新內容
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
@@ -169,7 +169,6 @@ mysqli_close($link);
 			display: inline-flex;
 			align-items: center;
 		}
-
 
 
 
@@ -382,7 +381,7 @@ mysqli_close($link);
 						<?php
 						echo "歡迎 ~ ";
 						// 顯示姓名
-						echo $帳號名稱;
+						echo $帳號;
 						?>
 					</div>
 				</nav>
@@ -417,6 +416,7 @@ mysqli_close($link);
 									<input type="checkbox" id="blacklist-toggle"> 加入黑名單
 								</label>
 							</div>
+
 						</div>
 					</div>
 					<!-- 右側 -->
@@ -454,10 +454,25 @@ mysqli_close($link);
 						this.src = 'images/300.jpg'; // 使用預設圖片
 					};
 
+					// 計算歲數
+					let ageText = "無資料";
+					if (user.birthday && user.birthday !== "無資料") {
+						const birthday = new Date(user.birthday);
+						const today = new Date();
+						let age = today.getFullYear() - birthday.getFullYear();
+						const monthDifference = today.getMonth() - birthday.getMonth();
+
+						// 如果生日月份尚未到，或者生日月份到了但日期未到，歲數減一
+						if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthday.getDate())) {
+							age--;
+						}
+						ageText = `${age} 歲`;
+					}
+
 					// 設置其他用戶資訊
 					document.getElementById('popup-name').innerText = user.name || '無資料';
 					document.getElementById('popup-gender').innerText = user.gender_id === '1' ? '男性' : '女性';
-					document.getElementById('popup-birthday').innerText = user.birthday || '無資料';
+					document.getElementById('popup-birthday').innerText = user.birthday ? `${user.birthday} (${ageText})` : '無資料';
 					document.getElementById('popup-idcard').innerText = user.idcard || '無資料';
 					document.getElementById('popup-phone').innerText = user.phone || '無資料';
 					document.getElementById('popup-address').innerText = user.address || '無資料';
@@ -469,6 +484,7 @@ mysqli_close($link);
 					console.error("無法顯示彈窗：", error);
 				}
 			}
+
 
 			// 關閉彈窗
 			function closePopup() {
