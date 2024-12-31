@@ -297,7 +297,8 @@ if (isset($_SESSION["帳號"])) {
           <p class="heading-1 breadcrumbs-custom-title">治療師班表時段</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
-            <li class="active">治療師班表時段</li>
+            <li><a href="#">醫生班表</a></li>
+            <li class="active">治療師班表</li>
           </ul>
         </div>
       </section>
