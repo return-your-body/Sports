@@ -230,7 +230,7 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
-                
+
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
@@ -304,14 +304,131 @@ if (isset($_SESSION["帳號"])) {
           <p class="heading-1 breadcrumbs-custom-title">醫生請假</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="d_index.php">首頁</a></li>
-            <li class="active">醫生請假</li>
+            <li><a href="#">班表</a></li>
+            <li class="active">請假</li>
           </ul>
         </div>
       </section>
     </div>
 
+    <style>
+      /* 通用樣式 */
+      h1 {
+        margin-bottom: 20px;
+      }
 
+      /* 表單容器框線樣式 */
+      .form-container {
+        width: 400px;
+        margin: 30px auto;
+        padding: 20px;
+        border: 2px solid black;
+        border-radius: 10px;
+        text-align: left;
+        background-color: #f9f9f9;
+      }
 
+      label {
+        display: block;
+        margin: 10px 0 5px;
+        font-weight: bold;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        text-align: left;
+      }
+
+      textarea {
+        resize: none;
+      }
+
+      /* 按鈕樣式 */
+      button {
+        margin: 20px auto 0;
+        display: block;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      /* 備註標籤位置調整 */
+      #note-label {
+        vertical-align: top;
+      }
+    </style>
+
+    <div class="form-container">
+      <h3 style="text-align: center;">請假單</h3>
+      <form id="leave-form">
+        <label for="name">申請人姓名：</label>
+        <input type="text" id="name" name="name"  value="<?php echo htmlspecialchars($姓名); ?>" readonly>
+
+        <label for="leave-type">請假類別：</label>
+        <select id="leave-type" name="leave-type" required>
+          <option value="" disabled selected>請選擇請假類別</option>
+          <option value="年假">年假</option>
+          <option value="病假">病假</option>
+          <option value="事假">事假</option>
+          <option value="公假">公假</option>
+          <option value="其他">其他</option>
+        </select>
+        <input type="text" id="leave-type-other" name="leave-type-other" placeholder="若選擇其他，請填寫原因"
+          style="display: none;">
+
+        <label for="start-date">請假起始日期與時間：</label>
+        <input type="datetime-local" id="start-date" name="start-date" required>
+
+        <label for="end-date">請假結束日期與時間：</label>
+        <input type="datetime-local" id="end-date" name="end-date" required>
+
+        <label for="reason">請假原因：</label>
+        <textarea id="reason" name="reason" rows="4" placeholder="請輸入請假原因" required></textarea>
+
+        <button type="submit">提交</button>
+      </form>
+    </div>
+
+    <script>
+      const leaveTypeSelect = document.getElementById('leave-type');
+      const leaveTypeOther = document.getElementById('leave-type-other');
+      const form = document.getElementById('leave-form');
+
+      // 顯示或隱藏「其他」文字框
+      leaveTypeSelect.addEventListener('change', function () {
+        if (this.value === '其他') {
+          leaveTypeOther.style.display = 'block';
+          leaveTypeOther.setAttribute('required', 'required');
+        } else {
+          leaveTypeOther.style.display = 'none';
+          leaveTypeOther.removeAttribute('required');
+          leaveTypeOther.value = '';
+        }
+      });
+
+      // 防呆功能檢查
+      form.addEventListener('submit', function (e) {
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+
+        // 確保起始時間早於結束時間
+        if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+          alert('請假結束時間必須晚於起始時間！');
+          e.preventDefault();
+          return;
+        }
+
+        alert('表單提交成功！');
+      });
+    </script>
+  </div>
   </div>
   <!-- Global Mailform Output-->
   <div class="snackbars" id="form-output-global"></div>

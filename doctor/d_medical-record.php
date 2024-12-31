@@ -316,7 +316,6 @@ if (isset($_SESSION["帳號"])) {
             <!-- Bootstrap collapse-->
             <div class="accordion-custom-group accordion-custom-group-custom accordion-custom-group-corporate"
               id="accordion1" role="tablist" aria-multiselectable="false">
-
               <?php
               session_start(); // 啟用 Session
               
@@ -335,57 +334,34 @@ if (isset($_SESSION["帳號"])) {
               // 引入資料庫連接檔案
               require '../db.php'; // 包含資料庫連線變數 $link
               
-              // 接收搜尋參數
-              $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
-
-              // 分頁設定
-              $records_per_page = 10; // 每頁顯示 10 筆資料
-              $page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
-              $offset = ($page - 1) * $records_per_page; // 計算偏移量
-              
-              // 計算總記錄數
-              $count_sql = "
-    SELECT COUNT(*) AS total
-    FROM medicalrecord m
-    LEFT JOIN people p ON m.people_id = p.people_id
-    LEFT JOIN doctor d ON m.doctor_id = d.doctor_id
-    LEFT JOIN item i ON m.item_id = i.item_id
-    WHERE p.name LIKE ?
-";
-              $count_stmt = mysqli_prepare($link, $count_sql); // 初始化查詢
-              $search_term = "%$search_name%"; // 搜尋條件
-              mysqli_stmt_bind_param($count_stmt, 's', $search_term); // 綁定搜尋參數
-              mysqli_stmt_execute($count_stmt); // 執行查詢
-              $count_result = mysqli_stmt_get_result($count_stmt); // 獲取結果
-              $total_records = mysqli_fetch_assoc($count_result)['total']; // 獲取總記錄數
-              $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1; // 計算總頁數
-              
               // 查詢資料
-              $data_sql = "
-    SELECT 
-        m.medicalrecord_id AS id,
-        p.name AS patient_name,
-        p.birthday AS patient_birthday,
-        d.doctor AS doctor_name,
-        i.item AS treatment_item,
-        i.price AS treatment_price,
-        m.notes AS notes,
-        m.created_at AS created_at
-    FROM medicalrecord m
-    LEFT JOIN people p ON m.people_id = p.people_id
-    LEFT JOIN doctor d ON m.doctor_id = d.doctor_id
-    LEFT JOIN item i ON m.item_id = i.item_id
-    WHERE p.name LIKE ?
-    ORDER BY m.created_at DESC
-    LIMIT ?, ?
+              $sql = "
+SELECT 
+    m.medicalrecord_id,
+    a.appointment_id,
+    p.name AS patient_name,
+    CASE 
+        WHEN p.gender_id = 1 THEN '男'
+        WHEN p.gender_id = 2 THEN '女'
+        ELSE '未設定'
+    END AS gender,
+    CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') AS birthday_with_age,
+    d.doctor AS doctor_name,
+    i.item AS treatment_item,
+    i.price AS treatment_price,
+    m.created_at
+FROM medicalrecord m
+LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN item i ON m.item_id = i.item_id
+WHERE 1=1
+LIMIT 10;
 ";
-              $data_stmt = mysqli_prepare($link, $data_sql); // 初始化查詢
-              mysqli_stmt_bind_param($data_stmt, 'sii', $search_term, $offset, $records_per_page); // 綁定參數
-              mysqli_stmt_execute($data_stmt); // 執行查詢
-              $data_result = mysqli_stmt_get_result($data_stmt); // 獲取查詢結果
-              
-              ?>
 
+              $result = mysqli_query($link, $sql);
+              ?>
               <style>
                 table {
                   width: 100%;
@@ -403,91 +379,53 @@ if (isset($_SESSION["帳號"])) {
                 th {
                   background-color: #f2f2f2;
                 }
-
-                .search-container {
-                  text-align: right;
-                  margin-bottom: 10px;
-                }
-
-                input,
-                button {
-                  padding: 5px;
-                  margin-right: 5px;
-                }
               </style>
 
-              <!-- 搜尋框 -->
-              <div class="search-container">
-                <form method="GET" action="">
-                  <input type="text" name="search_name" placeholder="請輸入搜尋姓名"
-                    value="<?php echo htmlspecialchars($search_name); ?>"> <!-- 保留搜尋條件 -->
-                  <button type="submit">搜尋</button>
-                </form>
-              </div>
+              <h1>看診紀錄</h1>
 
-              <!-- 資料表格 -->
               <table>
-                <tr>
-                  <th>編號</th>
-                  <th>姓名</th>
-                  <th>生日</th>
-                  <th>醫生</th>
-                  <th>治療項目</th>
-                  <th>治療費用</th>
-                  <th>備註</th>
-                  <th>建立時間</th>
-                </tr>
-                <?php if (mysqli_num_rows($data_result) > 0): ?>
-                  <?php while ($row = mysqli_fetch_assoc($data_result)): ?>
-                    <tr>
-                      <td><?php echo $row['id']; ?></td>
-                      <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
-                      <td><?php echo $row['patient_birthday']; ?></td>
-                      <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
-                      <td><?php echo htmlspecialchars($row['treatment_item']); ?></td>
-                      <td><?php echo $row['treatment_price']; ?></td>
-                      <td><?php echo htmlspecialchars($row['notes']); ?></td>
-                      <td><?php echo $row['created_at']; ?></td>
-                    </tr>
-                  <?php endwhile; ?>
-                <?php else: ?>
+                <thead>
                   <tr>
-                    <td colspan="8">目前無資料</td>
+                    <th>醫療紀錄編號</th>
+                    <th>預約編號</th>
+                    <th>患者姓名</th>
+                    <th>性別</th>
+                    <th>生日 (年齡)</th>
+                    <th>醫生</th>
+                    <th>治療項目</th>
+                    <th>治療費用</th>
+                    <th>建立時間</th>
                   </tr>
-                <?php endif; ?>
+                </thead>
+                <tbody>
+                  <?php if (mysqli_num_rows($result) > 0): ?>
+                    <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                      <tr>
+                        <td><?php echo $row['medicalrecord_id']; ?></td>
+                        <td><?php echo $row['appointment_id']; ?></td>
+                        <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
+                        <td><?php echo htmlspecialchars($row['gender']); ?></td>
+                        <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
+                        <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
+                        <td><?php echo htmlspecialchars($row['treatment_item']); ?></td>
+                        <td><?php echo htmlspecialchars($row['treatment_price']); ?></td>
+                        <td><?php echo htmlspecialchars($row['created_at']); ?></td>
+                      </tr>
+                    <?php endwhile; ?>
+                  <?php else: ?>
+                    <tr>
+                      <td colspan="9">目前無資料</td>
+                    </tr>
+                  <?php endif; ?>
+                </tbody>
               </table>
 
-              <!-- 分頁 -->
-              <div style="text-align: right; margin-top: 10px; margin-bottom: 10px;">
-                <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（共 <?php echo $total_records; ?>
-                  筆資料）</span>
-              </div>
-
-              <div style="text-align: center; margin-top: 20px;">
-                <?php if ($page > 1): ?>
-                  <a href="?page=<?php echo $page - 1; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
-                <?php endif; ?>
-
-                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                  <?php if ($i == $page): ?>
-                    <strong><?php echo $i; ?></strong>
-                  <?php else: ?>
-                    <a
-                      href="?page=<?php echo $i; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
-                  <?php endif; ?>
-                <?php endfor; ?>
-
-                <?php if ($page < $total_pages): ?>
-                  <a href="?page=<?php echo $page + 1; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
-                <?php endif; ?>
-              </div>
-
               <?php
-              // 釋放資源並關閉資料庫連線
-              mysqli_stmt_close($count_stmt);
-              mysqli_stmt_close($data_stmt);
+              // 釋放結果並關閉連線
+              mysqli_free_result($result);
               mysqli_close($link);
               ?>
+
 
 
 

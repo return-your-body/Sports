@@ -324,8 +324,8 @@ if (isset($_SESSION["帳號"])) {
               // 確保用戶已登入
               if (!isset($_SESSION['帳號'])) {
                 echo "<script>
-        alert('未登入或會話已過期，請重新登入！');
-        window.location.href = '../index.html';
+    alert('未登入或會話已過期，請重新登入！');
+    window.location.href = '../index.html';
     </script>";
                 exit;
               }
@@ -346,14 +346,14 @@ if (isset($_SESSION["帳號"])) {
 
               // 計算總記錄數
               $count_sql = "
-    SELECT COUNT(*) AS total
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE u.account = '$帳號'
-    AND p.name LIKE '%$search_name%'
+SELECT COUNT(*) AS total
+FROM appointment a
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN user u ON d.user_id = u.user_id
+WHERE u.account = '$帳號'
+AND p.name LIKE '%$search_name%'
 ";
               $count_result = mysqli_query($link, $count_sql);
               $total_records = mysqli_fetch_assoc($count_result)['total'];
@@ -361,25 +361,30 @@ if (isset($_SESSION["帳號"])) {
 
               // 查詢資料
               $sql = "
-    SELECT 
-        a.appointment_id AS id,
-        COALESCE(p.name, '未預約') AS name,
-        CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
-        COALESCE(p.birthday, 'N/A') AS birthday,
-        ds.date AS appointment_date,
-        COALESCE(st.shifttime, 'N/A') AS shifttime,
-        COALESCE(a.note, '') AS note,
-        a.created_at
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE u.account = '$帳號'
-    AND p.name LIKE '%$search_name%'
-    ORDER BY ds.date, st.shifttime
-    LIMIT $offset, $records_per_page
+SELECT 
+    a.appointment_id AS id,
+    COALESCE(p.name, '未預約') AS name,
+    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
+    CONCAT(COALESCE(p.birthday, 'N/A'), 
+           ' (', 
+           CASE 
+               WHEN p.birthday IS NOT NULL THEN TIMESTAMPDIFF(YEAR, p.birthday, CURDATE())
+               ELSE 'N/A' 
+           END, '歲)') AS birthday,
+    ds.date AS appointment_date,
+    COALESCE(st.shifttime, 'N/A') AS shifttime,
+    COALESCE(a.note, '') AS note,
+    a.created_at
+FROM appointment a
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN user u ON d.user_id = u.user_id
+WHERE u.account = '$帳號'
+AND p.name LIKE '%$search_name%'
+ORDER BY ds.date, st.shifttime
+LIMIT $offset, $records_per_page
 ";
               $result = mysqli_query($link, $sql);
               ?>
@@ -429,7 +434,7 @@ if (isset($_SESSION["帳號"])) {
                   <th>編號</th>
                   <th>姓名</th>
                   <th>性別</th>
-                  <th>生日</th>
+                  <th>生日(年齡)</th>
                   <th>預約日期</th>
                   <th>預約時間</th>
                   <th>備註</th>
@@ -483,6 +488,7 @@ if (isset($_SESSION["帳號"])) {
               <?php
               mysqli_close($link);
               ?>
+
             </div>
           </div>
         </div>
