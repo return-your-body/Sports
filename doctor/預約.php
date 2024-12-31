@@ -1,6 +1,6 @@
 <?php
 session_start();
-include "../db.php"; // 引入資料庫連線
+require '../db.php'; // 引入資料庫連線
 
 // 接收表單資料
 $people_id = trim($_POST['people_id']);
