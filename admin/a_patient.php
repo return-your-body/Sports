@@ -304,7 +304,16 @@ mysqli_close($link);
 							<ul class="rd-navbar-nav">
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link" href="a_therapist.php">治療師時間表</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="">關於治療師</a>
+									<ul class="rd-menu rd-navbar-dropdown">
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_therapist.php">治療師時間表</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="addds.php">新增治療師班表</a>
+										</li>
+
+									</ul>
 								</li>
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
 								</li>
@@ -395,11 +404,11 @@ mysqli_close($link);
 					<p class="heading-1 breadcrumbs-custom-title">用戶管理</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="a_index.php">首頁</a></li>
+						<li><a href="">用戶管理</a></li>
 						<li class="active">用戶管理</li>
 					</ul>
 				</div>
 			</section>
-
 		</div>
 
 		<div id="popup" class="popup">
