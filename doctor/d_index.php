@@ -62,7 +62,12 @@ if (isset($_SESSION["帳號"])) {
           </script>";
   exit();
 }
+
+
+// 醫生簡介
+
 ?>
+
 
 <head>
   <!-- Site Title-->
@@ -154,6 +159,38 @@ if (isset($_SESSION["帳號"])) {
     .button-shadow {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
+
+
+    /* 醫生簡介 */
+    <style>body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 20px;
+    }
+
+    .doctor-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .doctor-card h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      color: #333;
+    }
+
+    .doctor-card p {
+      margin: 5px 0;
+    }
+
+    .doctor-card .section-title {
+      font-weight: bold;
+      color: #555;
+      margin-top: 10px;
+    }
   </style>
 </head>
 
@@ -209,7 +246,7 @@ if (isset($_SESSION["帳號"])) {
                 <li class="rd-nav-item active"><a class="rd-nav-link" href="d_index.php">首頁</a></li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a></li>
 
-                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">班表</a>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="#">班表</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_doctorshift.php">每月班表</a>
                     </li>
@@ -315,51 +352,58 @@ if (isset($_SESSION["帳號"])) {
       <div class="container">
         <div class="row row-30 align-items-center justify-content-xxl-between">
           <div class="col-md-10">
-            <h2 class="box-small-title">醫生簡介</h2>
-            <p class="big">
-              🏋🏻吳孟軒</br>
-              🏋🏻長庚大學 物理治療學系-學士、生物醫學系-學士</br>
-              🏋🏻現任 大重仁復健科診所--成人物理治療師</p>
-            <div class="row row-30 row-offset-1">
-              <div class="col-md-10 offset-xxl-2">
-                <div class="box-small">
-                  <h4 class="box-small-title">專長</h4>
-                  <div class="box-small-text">
-                    <p class="big">
-                      💪🏻徒手治撩：筋肌膜疼縮、軟組織放鬆</br>
-                      💪🏻動作分析與控制訓練</br>
-                      💪🏻肌肉骨骼疼痛</br>
-                      💪🏻慢性下背痛</br>
-                      💪🏻肩頸功能障礙：頸因性頭痛、落枕、五十肩、旋轉肌群拉傷</br>
-                      💪🏻術後復健</p>
-                  </div>
-                </div>
-                <div class="box-small">
-                  <h4 class="box-small-title">專業認證與進修課程</h4>
-                  <div class="box-small-text">
-                    <p class="big">
-                      🏅 中華民國高考合格物理治療師</br>
-                      🏅 McConnell Institute 實證下肢生物力學</br>
-                      🏅 McConnell Institute 起始位置與肌肉骨骼問題之關係</br>
-                      🏅 台灣陽明學苑骨科肌肉系統全方位處置策略</br>
-                      🏅 解剖列車 Anatomy Trains in Motion: Myofascial</br>
-                      🏅 Body Map for Movement</br>
-                      🏅 結構治療
-                    </p>
-                  </div>
-                </div>
-                <div class="box-small">
-                  <h4 class="box-small-title">治療理念</h4>
-                  <div class="box-small-text">
-                    <p class="big">
-                      治療是一個控制疼痛的過程,如何控制好疼痛不再出現是重要的課題。</br>
-                      透過評估尋找真正造成問題的來源,進而改變原因達到控制疼痛。</br>
-                      在一對一治療中使得身體使用模式回歸到中軸,讓身體活動更輕鬆、更能享受生活。
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <h3 class="box-small-title">醫生簡介</h3>
+            <?php
+            session_start();
+            require '../db.php';  // 載入資料庫連線設定
+            
+            if (!isset($_SESSION['帳號'])) {
+              die("請先登入！");
+            }
+
+            $帳號 = $_SESSION['帳號'];
+
+            // 查詢 doctorprofile 資料，根據帳號篩選
+            $sql = "SELECT dp.*
+        FROM doctorprofile dp
+        INNER JOIN doctor d ON dp.doctor_id = d.doctor_id
+        INNER JOIN user u ON d.user_id = u.user_id
+        WHERE u.account = ?";
+            $stmt = mysqli_prepare($link, $sql);
+            if (!$stmt) {
+              die("SQL 準備失敗: " . mysqli_error($link));
+            }
+            mysqli_stmt_bind_param($stmt, "s", $帳號);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+
+            if (!$result) {
+              die("SQL 查詢錯誤: " . mysqli_error($link));
+            }
+
+            $doctorProfiles = [];
+            while ($row = mysqli_fetch_assoc($result)) {
+              $doctorProfiles[] = $row;
+            }
+
+            mysqli_stmt_close($stmt);
+            mysqli_close($link);
+
+            // 顯示資料
+            if (!empty($doctorProfiles)) {
+              foreach ($doctorProfiles as $profile) {
+                echo "<div class='doctor-card'>";
+                echo "<p><strong>學歷：</strong>" . nl2br(htmlspecialchars($profile['education'] ?? '無')) . "</p>";
+                echo "<p><strong>現任職務：</strong>" . nl2br(htmlspecialchars($profile['current_position'] ?? '無')) . "</p>";
+                echo "<p><strong>專長描述：</strong>" . nl2br(htmlspecialchars($profile['specialty'] ?? '無')) . "</p>";
+                echo "<p><strong>專業認證與進修課程：</strong>" . nl2br(htmlspecialchars($profile['certifications'] ?? '無')) . "</p>";
+                echo "<p><strong>治療理念：</strong>" . nl2br(htmlspecialchars($profile['treatment_concept'] ?? '無')) . "</p>";
+                echo "</div>";
+              }
+            } else {
+              echo "<p>目前無資料。</p>";
+            }
+            ?>
           </div>
           <!-- 圖片-->
           <!-- <div class="col-md-6 col-lg-5 col-xl-4 offset-xl-1 col-xxl-5 position-relative d-none d-md-block">

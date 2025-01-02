@@ -155,6 +155,7 @@ if (isset($_SESSION["帳號"])) {
 			box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
 		}
 	</style>
+
 </head>
 
 <body>
@@ -216,9 +217,11 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_link.php">醫生介紹</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_caseshare.php">個案分享</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_body-knowledge.php">日常小知識</a>
 										</li>
 									</ul>
 								</li>
@@ -327,6 +330,8 @@ if (isset($_SESSION["帳號"])) {
 				</div>
 			</section>
 		</div>
+
+
 
 
 

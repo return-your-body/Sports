@@ -154,6 +154,29 @@ if (isset($_SESSION["帳號"])) {
 		.button-shadow {
 			box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
 		}
+
+		/* 預約資料 */
+		table {
+			margin: 20px auto;
+			border-collapse: collapse;
+			width: 80%;
+		}
+
+		th,
+		td {
+			border: 1px solid #ddd;
+			padding: 8px;
+			text-align: left;
+		}
+
+		th {
+			background-color: #f4f4f4;
+		}
+
+		.center {
+			text-align: center;
+			margin-top: 20px;
+		}
 	</style>
 </head>
 
@@ -216,9 +239,11 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_link.php">醫生介紹</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_caseshare.php">個案分享</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_body-knowledge.php">日常小知識</a>
 										</li>
 									</ul>
 								</li>
@@ -231,8 +256,7 @@ if (isset($_SESSION["帳號"])) {
 												href="u_reserve-record.php">查看預約資料</a>
 											<!-- 修改預約 -->
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="">查看預約時段</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約時段</a>
 										</li>
 									</ul>
 								</li>
@@ -328,7 +352,35 @@ if (isset($_SESSION["帳號"])) {
 			</section>
 		</div>
 
+		<!-- 預約資料 -->
+		<section class="section section-lg bg-default novi-bg novi-bg-img">
+			<div class="container">
+				<div class="row row-30 align-items-center justify-content-xxl-between">
+					<div class="col-md-10">
+					
+						<table>
+							<tr>
+								<th>姓名</th>
+								<td><?php echo $people_id; ?></td>
+							</tr>
+							<tr>
+								<th>預約日期</th>
+								<td><?php echo $appointment_date; ?></td>
+							</tr>
+							<tr>
+								<th>預約時段</th>
+								<td><?php echo $shifttime; ?></td>
+							</tr>
+							<tr>
+								<th>備註</th>
+								<td><?php echo $note; ?></td>
+							</tr>
+						</table>
 
+
+					</div>
+				</div>
+		</section>
 
 	</div>
 	<!-- Global Mailform Output-->

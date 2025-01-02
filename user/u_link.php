@@ -2,8 +2,8 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-	header("Location: ../index.html");
-	exit;
+    header("Location: ../index.html");
+    exit;
 }
 
 // 防止頁面被瀏覽器緩存
@@ -13,52 +13,52 @@ header("Pragma: no-cache");
 
 // 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-	// 獲取用戶帳號
-	$帳號 = $_SESSION['帳號'];
+    // 獲取用戶帳號
+    $帳號 = $_SESSION['帳號'];
 
-	// 資料庫連接
-	require '../db.php';
+    // 資料庫連接
+    require '../db.php';
 
-	// 查詢該帳號的詳細資料
-	$sql = "SELECT user.account, people.name 
+    // 查詢該帳號的詳細資料
+    $sql = "SELECT user.account, people.name 
             FROM user 
             JOIN people ON user.user_id = people.user_id 
             WHERE user.account = ?";
-	$stmt = mysqli_prepare($link, $sql);
-	mysqli_stmt_bind_param($stmt, "s", $帳號);
-	mysqli_stmt_execute($stmt);
-	$result = mysqli_stmt_get_result($stmt);
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "s", $帳號);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
 
-	if (mysqli_num_rows($result) > 0) {
-		// 抓取對應姓名
-		$row = mysqli_fetch_assoc($result);
-		$姓名 = $row['name'];
-		$帳號名稱 = $row['account'];
+    if (mysqli_num_rows($result) > 0) {
+        // 抓取對應姓名
+        $row = mysqli_fetch_assoc($result);
+        $姓名 = $row['name'];
+        $帳號名稱 = $row['account'];
 
-		// 顯示帳號和姓名
-		// echo "歡迎您！<br>";
-		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-		// echo "姓名：" . htmlspecialchars($姓名);
-		// echo "<script>
-		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-		// </script>";
-	} else {
-		// 如果資料不存在，提示用戶重新登入
-		echo "<script>
+        // 顯示帳號和姓名
+        // echo "歡迎您！<br>";
+        // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
+        // echo "姓名：" . htmlspecialchars($姓名);
+        // echo "<script>
+        //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
+        // </script>";
+    } else {
+        // 如果資料不存在，提示用戶重新登入
+        echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
               </script>";
-		exit();
-	}
+        exit();
+    }
 
-	// 關閉資料庫連接
-	mysqli_close($link);
+    // 關閉資料庫連接
+    mysqli_close($link);
 } else {
-	echo "<script>
+    echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
             window.location.href = '../index.html';
           </script>";
-	exit();
+    exit();
 }
 ?>
 
@@ -212,11 +212,14 @@ if (isset($_SESSION["帳號"])) {
 
                                 <li class="rd-nav-item active"><a class="rd-nav-link" href="#">關於我們</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="u_link.php">醫生介紹</a>
+                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
+                                                href="u_link.php">醫生介紹</a>
                                         </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_caseshare.php">個案分享</a>
                                         </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_body-knowledge.php">日常小知識</a>
                                         </li>
                                     </ul>
                                 </li>
@@ -225,10 +228,12 @@ if (isset($_SESSION["帳號"])) {
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="u_reserve.php">立即預約</a>
                                         </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-record.php">查看預約資料</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_reserve-record.php">查看預約資料</a>
                                             <!-- 修改預約 -->
                                         </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-time.php">查看預約時段</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_reserve-time.php">查看預約時段</a>
                                         </li>
                                     </ul>
                                 </li>
@@ -298,80 +303,75 @@ if (isset($_SESSION["帳號"])) {
                                 </ul>
                             </div>
                         </div> -->
-                        <?php 
-						echo"歡迎 ~ ";
-						// 顯示姓名
-						echo $姓名;
-						?>
+                        <?php
+                        echo "歡迎 ~ ";
+                        // 顯示姓名
+                        echo $姓名;
+                        ?>
                     </div>
                 </nav>
             </div>
         </header>
 
 
-	<!--標題-->
-    <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-			<!-- Breadcrumbs-->
-			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
-				<div class="container">
-					<!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
-					<p class="heading-1 breadcrumbs-custom-title">醫生介紹</p>
-					<ul class="breadcrumbs-custom-path">
-						<li><a href="u_index.php">首頁</a></li>
-						<li class="active">醫生介紹</li>
-					</ul>
-				</div>
-			</section>
-		</div>
-		<!--標題-->
-        
+        <!--標題-->
+        <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+            <!-- Breadcrumbs-->
+            <section class="breadcrumbs-custom breadcrumbs-custom-svg">
+                <div class="container">
+                    <!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
+                    <p class="heading-1 breadcrumbs-custom-title">醫生介紹</p>
+                    <ul class="breadcrumbs-custom-path">
+                        <li><a href="u_index.php">首頁</a></li>
+                        <li class="active">醫生介紹</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+        <!--標題-->
+
         <!-- Team-->
         <section class="section section-lg novi-bg novi-bg-img bg-default">
+            <?php
+            require '../db.php';  // 載入資料庫連線設定
+            
+            // 查詢所有非助手醫生
+            $sql = "SELECT doctor FROM doctor WHERE doctor NOT LIKE '%助手%'";
+            $result = mysqli_query($link, $sql);
+
+            if (!$result) {
+                die("SQL 查詢錯誤: " . mysqli_error($link));
+            }
+
+            $doctors = [];
+            while ($row = mysqli_fetch_assoc($result)) {
+                $doctors[] = $row['doctor'];
+            }
+
+            mysqli_close($link);
+            ?>
             <div class="container">
                 <div class="row row-40 row-lg-50">
-                    <div class="col-sm-6 col-lg-3">
-                        <div class="team-default box-width-3">
-                            <div class="team-default-media"><img class="team-default-img"
-                                    src="images/home-10-260x345.jpg" alt="" width="260" height="345" loading="lazy" />
+                    <?php foreach ($doctors as $doctorName): ?>
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="team-default box-width-3">
+                                <div class="team-default-media">
+                                    <img class="team-default-img" src="images/home-10-260x345.jpg" alt="" width="260"
+                                        height="345" loading="lazy" />
+                                </div>
+                                <h6 class="team-default-title">
+                                    <a href="u_link1.php?doctor=<?php echo urlencode($doctorName); ?>">
+                                        <?php echo htmlspecialchars($doctorName); ?>
+                                    </a>
+                                </h6>
+                                <div class="team-default-meta small">治療師</div>
                             </div>
-                            <h6 class="team-default-title"><a href="u_link1.php">吳孟軒</a></h6>
-                            <div class="team-default-meta small">治療師</div>
-                            <!-- <div class="team-default-social">
-                                <a class="team-default-icon icon-custom-facebook" href="#"></a>
-                                <a class="team-default-icon icon-custom-linkedin" href="#"></a>
-                                <a class="team-default-icon icon-custom-instagram" href="#"></a>
-                            </div> -->
                         </div>
-                    </div>
-                    <div class="col-sm-6 col-lg-3">
-                        <div class="team-default box-width-3">
-                            <div class="team-default-media"><img class="team-default-img"
-                                    src="images/home-11-260x345.jpg" alt="" width="260" height="345" loading="lazy" />
-                            </div>
-                            <h6 class="team-default-title"><a href="u_link2.php">醫生1</a></h6>
-                            <div class="team-default-meta small">治療師</div>
-                            <!-- <div class="team-default-social">
-                                <a class="team-default-icon icon-custom-facebook" href="#"></a>
-                                <a class="team-default-icon icon-custom-linkedin" href="#"></a>
-                                <a class="team-default-icon icon-custom-instagram" href="#"></a>
-                            </div> -->
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-lg-3">
-                        <div class="team-default box-width-3">
-                            <div class="team-default-media"><img class="team-default-img"
-                                    src="images/home-12-260x345.jpg" alt="" width="260" height="345" loading="lazy" />
-                            </div>
-                            <h6 class="team-default-title"><a href="u_link3.php">醫生2</a></h6>
-                            <div class="team-default-meta small">治療師</div>
-                            <!-- <div class="team-default-social">
-                                <a class="team-default-icon icon-custom-facebook" href="#"></a>
-                                <a class="team-default-icon icon-custom-linkedin" href="#"></a>
-                                <a class="team-default-icon icon-custom-instagram" href="#"></a>
-                            </div> -->
-                        </div>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
+            </div>
+
+
         </section>
 
         <!-- Global Mailform Output-->
