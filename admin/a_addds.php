@@ -187,7 +187,7 @@ if (isset($_SESSION["帳號"])) {
                         </div>
                         <div class="rd-navbar-nav-wrap">
                             <ul class="rd-navbar-nav">
-                                <li class="rd-nav-item active"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
                                 </li>
                                 <li class="rd-nav-item active"><a class="rd-nav-link" href="">關於治療師</a>
 									<ul class="rd-menu rd-navbar-dropdown">
@@ -195,7 +195,7 @@ if (isset($_SESSION["帳號"])) {
 												href="a_therapist.php">治療師時間表</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="addds.php">新增治療師班表</a>
+												href="a_addds.php">新增治療師班表</a>
 										</li>
 
 									</ul>
@@ -256,38 +256,6 @@ if (isset($_SESSION["帳號"])) {
                                         document.getElementById('logoutBox').style.display = 'none';
                                     }
                                 </script>
-
-                                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="#">Pages</a>
-                                    <ul class="rd-menu rd-navbar-dropdown">
-
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="privacy-policy.html">Privacy policy</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="404-page.html">404 page</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="503-page.html">503 page</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="buttons.html">Buttons</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="forms.html">Forms</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="grid-system.html">Grid system</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="tables.html">Tables</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="typography.html">Typography</a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="contacts.html">Contacts</a>
-                                </li> -->
                             </ul>
                         </div>
                         <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span>
@@ -320,7 +288,7 @@ if (isset($_SESSION["帳號"])) {
             <!-- Breadcrumbs-->
             <section class="breadcrumbs-custom breadcrumbs-custom-svg">
                 <div class="container">
-                    <p class="heading-1 breadcrumbs-custom-title">關於治療師</p>
+                    <p class="heading-1 breadcrumbs-custom-title">新增治療師班表</p>
                     <ul class="breadcrumbs-custom-path">
                         <li><a href="a_index.php">首頁</a></li>
                         <li><a href="">關於治療師</a></li>
