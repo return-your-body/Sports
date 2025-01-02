@@ -4,8 +4,8 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-	header("Location: ../index.html");
-	exit;
+  header("Location: ../index.html");
+  exit;
 }
 
 // 防止頁面被瀏覽器緩存
@@ -15,52 +15,52 @@ header("Pragma: no-cache");
 
 // 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-	// 獲取用戶帳號
-	$帳號 = $_SESSION['帳號'];
+  // 獲取用戶帳號
+  $帳號 = $_SESSION['帳號'];
 
-	// 資料庫連接
-	require '../db.php';
+  // 資料庫連接
+  require '../db.php';
 
-	// 查詢該帳號的詳細資料
+  // 查詢該帳號的詳細資料
   $sql = "SELECT user.account, doctor.doctor AS name 
             FROM user 
             JOIN doctor ON user.user_id = doctor.user_id 
             WHERE user.account = ?";
-	$stmt = mysqli_prepare($link, $sql);
-	mysqli_stmt_bind_param($stmt, "s", $帳號);
-	mysqli_stmt_execute($stmt);
-	$result = mysqli_stmt_get_result($stmt);
+  $stmt = mysqli_prepare($link, $sql);
+  mysqli_stmt_bind_param($stmt, "s", $帳號);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
 
-	if (mysqli_num_rows($result) > 0) {
-		// 抓取對應姓名
-		$row = mysqli_fetch_assoc($result);
-		$姓名 = $row['name'];
-		$帳號名稱 = $row['account'];
+  if (mysqli_num_rows($result) > 0) {
+    // 抓取對應姓名
+    $row = mysqli_fetch_assoc($result);
+    $姓名 = $row['name'];
+    $帳號名稱 = $row['account'];
 
-		// 顯示帳號和姓名
-		// echo "歡迎您！<br>";
-		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-		// echo "姓名：" . htmlspecialchars($姓名);
-		// echo "<script>
-		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-		// </script>";
-	} else {
-		// 如果資料不存在，提示用戶重新登入
-		echo "<script>
+    // 顯示帳號和姓名
+    // echo "歡迎您！<br>";
+    // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
+    // echo "姓名：" . htmlspecialchars($姓名);
+    // echo "<script>
+    //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
+    // </script>";
+  } else {
+    // 如果資料不存在，提示用戶重新登入
+    echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
               </script>";
-		exit();
-	}
+    exit();
+  }
 
-	// 關閉資料庫連接
-	mysqli_close($link);
+  // 關閉資料庫連接
+  mysqli_close($link);
 } else {
-	echo "<script>
+  echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
             window.location.href = '../index.html';
           </script>";
-	exit();
+  exit();
 }
 ?>
 
@@ -278,11 +278,11 @@ if (isset($_SESSION["帳號"])) {
                 </ul>
               </div>
             </div> -->
-            <?php 
-						echo"歡迎 ~ ";
-						// 顯示姓名
-						echo $姓名;
-						?>
+            <?php
+            echo "歡迎 ~ ";
+            // 顯示姓名
+            echo $姓名;
+            ?>
           </div>
         </nav>
       </div>
@@ -333,7 +333,6 @@ if (isset($_SESSION["帳號"])) {
     INNER JOIN user u ON d.user_id = u.user_id 
     WHERE u.account = ?
 ";
-
       $stmt = mysqli_prepare($link, $query);
       mysqli_stmt_bind_param($stmt, "s", $帳號);
       mysqli_stmt_execute($stmt);
@@ -357,8 +356,18 @@ if (isset($_SESSION["帳號"])) {
     GROUP BY ds.date
 ";
 
+      // 查詢請假資料
+      $leave_query = "
+    SELECT start_date, end_date, reason
+    FROM leaves
+    WHERE doctor_id = ?
+";
+
       $reservations = [];
+      $leaves = []; // 用於存放請假資料
+      
       if (!empty($doctor_id)) {
+        // 查詢排班資料
         $stmt = mysqli_prepare($link, $reservation_query);
         mysqli_stmt_bind_param($stmt, "i", $doctor_id);
         mysqli_stmt_execute($stmt);
@@ -367,16 +376,34 @@ if (isset($_SESSION["帳號"])) {
         while ($res_row = mysqli_fetch_assoc($res_result)) {
           $reservations[$res_row['date']] = $res_row['people_count'];
         }
+
+        // 查詢請假資料
+        $stmt_leave = mysqli_prepare($link, $leave_query);
+        mysqli_stmt_bind_param($stmt_leave, "i", $doctor_id);
+        mysqli_stmt_execute($stmt_leave);
+        $leave_result = mysqli_stmt_get_result($stmt_leave);
+
+        while ($leave_row = mysqli_fetch_assoc($leave_result)) {
+          $start_date = substr($leave_row['start_date'], 0, 10); // 取得請假的開始日期 (只取年月日)
+          $end_date = substr($leave_row['end_date'], 0, 10);     // 取得請假的結束日期 (只取年月日)
+          $reason = $leave_row['reason'];
+
+          $current_date = $start_date;
+          while ($current_date <= $end_date) {
+            $leaves[$current_date] = $reason; // 將請假日期及原因存入陣列
+            $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
+          }
+        }
       }
 
       mysqli_stmt_close($stmt);
       mysqli_close($link);
       ?>
 
-       <h3 style="text-align: center;">治療師班表</h3>
-    
+      <h3 style="text-align: center;">治療師班表</h3>
+
       <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
-        治療師姓名：<?php echo $doctor_name; ?> <br/>  <!-- 顯示醫生姓名 -->
+        治療師姓名：<?php echo $doctor_name; ?> <br /> <!-- 顯示醫生姓名 -->
         <label for="year">選擇年份：</label>
         <select id="year"></select>
         <label for="month">選擇月份：</label>
@@ -397,7 +424,6 @@ if (isset($_SESSION["帳號"])) {
         </thead>
         <tbody id="calendar"></tbody>
       </table>
-
       <script>
         const currentDate = new Date();
         const currentYear = currentDate.getFullYear();
@@ -407,8 +433,9 @@ if (isset($_SESSION["帳號"])) {
         const monthSelect = document.getElementById('month');
         const calendarBody = document.getElementById('calendar');
 
-        // 從 PHP 獲取預約資料
+        // 從 PHP 獲取預約資料與請假資料
         const reservations = <?php echo json_encode($reservations); ?>;
+        const leaves = <?php echo json_encode($leaves); ?>;
 
         function initYearOptions() {
           const startYear = currentYear - 5;
@@ -443,13 +470,26 @@ if (isset($_SESSION["帳號"])) {
             row.appendChild(document.createElement('td'));
           }
 
-          // 填入日期和預約人數
+          // 填入日期和預約/請假資訊
           for (let date = 1; date <= lastDate; date++) {
             const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
             const cell = document.createElement('td');
             cell.textContent = date;
 
-            if (reservations[fullDate]) {
+            // 如果是請假日
+            if (leaves[fullDate]) {
+              const leaveInfo = document.createElement('div');
+              leaveInfo.textContent = '休';
+              leaveInfo.style.color = 'blue';
+              leaveInfo.style.cursor = 'pointer';
+
+              leaveInfo.addEventListener('click', () => {
+                alert(`日期: ${fullDate}\n原因: ${leaves[fullDate]}`);
+              });
+
+              cell.appendChild(leaveInfo);
+            } else if (reservations[fullDate]) {
+              // 如果有預約
               const reservationInfo = document.createElement('div');
               reservationInfo.textContent = `預約: ${reservations[fullDate]} 人`;
               reservationInfo.style.color = 'red';
@@ -483,6 +523,7 @@ if (isset($_SESSION["帳號"])) {
           generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
         });
       </script>
+
 
 
     </section>

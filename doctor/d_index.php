@@ -314,7 +314,7 @@ if (isset($_SESSION["帳號"])) {
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
         <div class="row row-30 align-items-center justify-content-xxl-between">
-          <div class="col-md-6">
+          <div class="col-md-10">
             <h2 class="box-small-title">醫生簡介</h2>
             <p class="big">
               🏋🏻吳孟軒</br>

@@ -297,6 +297,7 @@ if (isset($_SESSION["帳號"])) {
           <p class="heading-1 breadcrumbs-custom-title">列印收據</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
+            <li><a href="#">列印</a></li>
             <li class="active">列印收據</li>
           </ul>
         </div>

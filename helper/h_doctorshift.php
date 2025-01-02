@@ -297,7 +297,8 @@ if (isset($_SESSION["帳號"])) {
           <p class="heading-1 breadcrumbs-custom-title">治療師班表時段</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
-            <li class="active">治療師班表時段</li>
+            <li><a href="#">醫生班表</a></li>
+            <li class="active">治療師班表</li>
           </ul>
         </div>
       </section>
@@ -368,7 +369,9 @@ WHERE u.grade_id = 2
 
       // 查詢該醫生的班表和預約數量
       $reservations = [];
+      $leaves = []; // 用於存放請假資料
       if ($doctor_id > 0) {
+        // 查詢排班與預約資料
         $reservation_query = "
     SELECT ds.date, COUNT(a.appointment_id) AS people_count
     FROM doctorshift ds
@@ -385,10 +388,35 @@ WHERE u.grade_id = 2
           $reservations[$row['date']] = $row['people_count'];
         }
         mysqli_stmt_close($stmt);
+
+        // 查詢請假資料
+        $leave_query = "
+    SELECT start_date, end_date, reason
+    FROM leaves
+    WHERE doctor_id = ? AND (YEAR(start_date) = ? OR YEAR(end_date) = ?)
+    ";
+        $stmt_leave = mysqli_prepare($link, $leave_query);
+        mysqli_stmt_bind_param($stmt_leave, "iii", $doctor_id, $year, $year);
+        mysqli_stmt_execute($stmt_leave);
+        $leave_result = mysqli_stmt_get_result($stmt_leave);
+
+        while ($row = mysqli_fetch_assoc($leave_result)) {
+          $start_date = substr($row['start_date'], 0, 10);
+          $end_date = substr($row['end_date'], 0, 10);
+          $reason = $row['reason'];
+
+          $current_date = $start_date;
+          while ($current_date <= $end_date) {
+            $leaves[$current_date] = $reason;
+            $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
+          }
+        }
+        mysqli_stmt_close($stmt_leave);
       }
 
       mysqli_close($link);
       ?>
+
 
       <h3 style="text-align: center;">治療師班表</h3>
 
@@ -437,6 +465,7 @@ WHERE u.grade_id = 2
         const calendarBody = document.getElementById('calendar');
 
         const reservations = <?php echo json_encode($reservations); ?>;
+        const leaves = <?php echo json_encode($leaves); ?>;
 
         function initSelectOptions() {
           yearSelect.innerHTML = '';
@@ -449,9 +478,6 @@ WHERE u.grade_id = 2
           for (let month = 1; month <= 12; month++) {
             monthSelect.innerHTML += `<option value="${month}" ${month == <?php echo $month; ?> ? 'selected' : ''}>${month}</option>`;
           }
-
-          // 當重整後，若 doctor_id 為 0，設回「請選擇」
-          if (doctorSelect.value == "0") doctorSelect.selectedIndex = 0;
         }
 
         function generateCalendar() {
@@ -470,7 +496,18 @@ WHERE u.grade_id = 2
             const cell = document.createElement('td');
             cell.textContent = date;
 
-            if (reservations[fullDate]) {
+            if (leaves[fullDate]) {
+              const leaveInfo = document.createElement('div');
+              leaveInfo.textContent = '休';
+              leaveInfo.style.color = 'blue';
+              leaveInfo.style.cursor = 'pointer';
+
+              leaveInfo.addEventListener('click', () => {
+                alert(`日期: ${fullDate}\n原因: ${leaves[fullDate]}`);
+              });
+
+              cell.appendChild(leaveInfo);
+            } else if (reservations[fullDate]) {
               const info = document.createElement('div');
               info.textContent = `預約: ${reservations[fullDate]} 人`;
               info.className = 'reservation-info';
@@ -502,6 +539,7 @@ WHERE u.grade_id = 2
         initSelectOptions();
         generateCalendar();
       </script>
+
 
     </section>
 

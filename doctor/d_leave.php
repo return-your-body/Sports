@@ -367,7 +367,7 @@ if (isset($_SESSION["帳號"])) {
 
     <div class="form-container">
       <h3 style="text-align: center;">請假單</h3>
-      <form id="leave-form">
+      <form action="請假.php" method="post" >
         <label for="name">申請人姓名：</label>
         <input type="text" id="name" name="name"  value="<?php echo htmlspecialchars($姓名); ?>" readonly>
 
