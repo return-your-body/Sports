@@ -20,7 +20,8 @@ if (isset($_SESSION["帳號"])) {
 
   // 資料庫連接
   require '../db.php';
-
+  // 接收搜尋參數
+  $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
   // 查詢該帳號的詳細資料
   $sql = "SELECT user.account, doctor.doctor AS name 
             FROM user 
@@ -193,9 +194,15 @@ $result = mysqli_query($link, $sql);
 
     /* 看診紀錄 */
     table {
-      width: 100%;
+      width: auto;
+      /* 讓表格寬度根據內容自動調整 */
       border-collapse: collapse;
       margin-top: 20px;
+    }
+
+    .search-container {
+      text-align: right;
+      margin-bottom: 10px;
     }
 
     th,
@@ -203,10 +210,19 @@ $result = mysqli_query($link, $sql);
       padding: 8px;
       text-align: center;
       border: 1px solid #ddd;
+      white-space: nowrap;
+      /* 防止文字換行，保持欄位寬度符合文字 */
     }
 
     th {
       background-color: #f2f2f2;
+    }
+
+    table th,
+    table td {
+      text-align: center;
+      vertical-align: middle;
+      /* 垂直置中 */
     }
   </style>
 
@@ -371,13 +387,22 @@ $result = mysqli_query($link, $sql);
             <!-- Bootstrap collapse-->
             <div class="accordion-custom-group accordion-custom-group-custom accordion-custom-group-corporate"
               id="accordion1" role="tablist" aria-multiselectable="false">
-              <h1>看診紀錄</h1>
+
+              <!-- 搜尋框 -->
+              <div class="search-container">
+                <form method="GET" action="">
+                  <input type="text" name="search_name" placeholder="請輸入搜尋姓名"
+                    value="<?php echo htmlspecialchars($search_name); ?>">
+                  <button type="submit">搜尋</button>
+                </form>
+              </div>
+
               <table>
                 <thead>
                   <tr>
-                    <th>醫療紀錄編號</th>
-                    <th>預約編號</th>
-                    <th>患者姓名</th>
+                    <th>編號</th>
+                    <!-- <th>預約編號</th> -->
+                    <th>姓名</th>
                     <th>性別</th>
                     <th>生日 (年齡)</th>
                     <th>醫生</th>
@@ -391,7 +416,7 @@ $result = mysqli_query($link, $sql);
                     <?php while ($row = mysqli_fetch_assoc($result)): ?>
                       <tr>
                         <td><?php echo $row['medicalrecord_id']; ?></td>
-                        <td><?php echo $row['appointment_id']; ?></td>
+                        <!-- <td><?php echo $row['appointment_id']; ?></td> -->
                         <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
                         <td><?php echo htmlspecialchars($row['gender']); ?></td>
                         <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
