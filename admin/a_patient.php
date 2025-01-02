@@ -410,7 +410,7 @@ mysqli_close($link);
 					<div style="flex: 1; text-align: center;">
 						<img id="popup-image" src="" alt="頭像" class="profile-image">
 						<div style="margin-top: 10px;">
-							<button class="popup-btn" onclick="viewDetails()">詳細</button>
+							<!-- <button class="popup-btn" onclick="viewDetails()">詳細</button> -->
 							<div style="margin-top: 10px;">
 								<label class="blacklist-toggle">
 									<input type="checkbox" id="blacklist-toggle"> 加入黑名單
