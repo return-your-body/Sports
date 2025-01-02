@@ -62,6 +62,41 @@ if (isset($_SESSION["帳號"])) {
           </script>";
   exit();
 }
+
+
+//看診紀錄
+$帳號 = $_SESSION['帳號'];  // 取得當前登入的帳號
+
+
+require '../db.php'; // 引入資料庫連接檔案
+
+// 查詢資料
+$sql = "
+SELECT 
+m.medicalrecord_id,
+a.appointment_id,
+p.name AS patient_name,
+CASE 
+WHEN p.gender_id = 1 THEN '男'
+WHEN p.gender_id = 2 THEN '女'
+ELSE '未設定'
+END AS gender,
+CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') AS birthday_with_age,
+d.doctor AS doctor_name,
+i.item AS treatment_item,
+i.price AS treatment_price,
+m.created_at
+FROM medicalrecord m
+LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN item i ON m.item_id = i.item_id
+WHERE 1=1
+LIMIT 10;
+";
+
+$result = mysqli_query($link, $sql);
 ?>
 
 
@@ -154,7 +189,27 @@ if (isset($_SESSION["帳號"])) {
     .button-shadow {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
+
+
+    /* 看診紀錄 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
   </style>
+
 </head>
 
 <body>
@@ -316,73 +371,7 @@ if (isset($_SESSION["帳號"])) {
             <!-- Bootstrap collapse-->
             <div class="accordion-custom-group accordion-custom-group-custom accordion-custom-group-corporate"
               id="accordion1" role="tablist" aria-multiselectable="false">
-              <?php
-              session_start(); // 啟用 Session
-              
-              // 確保用戶已登入
-              if (!isset($_SESSION['帳號'])) {
-                echo "<script>
-        alert('未登入或會話已過期，請重新登入！');
-        window.location.href = '../index.html';
-    </script>";
-                exit;
-              }
-
-              // 取得當前登入的帳號
-              $帳號 = $_SESSION['帳號'];
-
-              // 引入資料庫連接檔案
-              require '../db.php'; // 包含資料庫連線變數 $link
-              
-              // 查詢資料
-              $sql = "
-SELECT 
-    m.medicalrecord_id,
-    a.appointment_id,
-    p.name AS patient_name,
-    CASE 
-        WHEN p.gender_id = 1 THEN '男'
-        WHEN p.gender_id = 2 THEN '女'
-        ELSE '未設定'
-    END AS gender,
-    CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') AS birthday_with_age,
-    d.doctor AS doctor_name,
-    i.item AS treatment_item,
-    i.price AS treatment_price,
-    m.created_at
-FROM medicalrecord m
-LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN item i ON m.item_id = i.item_id
-WHERE 1=1
-LIMIT 10;
-";
-
-              $result = mysqli_query($link, $sql);
-              ?>
-              <style>
-                table {
-                  width: 100%;
-                  border-collapse: collapse;
-                  margin-top: 20px;
-                }
-
-                th,
-                td {
-                  padding: 8px;
-                  text-align: center;
-                  border: 1px solid #ddd;
-                }
-
-                th {
-                  background-color: #f2f2f2;
-                }
-              </style>
-
               <h1>看診紀錄</h1>
-
               <table>
                 <thead>
                   <tr>
@@ -425,10 +414,6 @@ LIMIT 10;
               mysqli_free_result($result);
               mysqli_close($link);
               ?>
-
-
-
-
             </div>
           </div>
         </div>

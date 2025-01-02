@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html class="wide wow-animation" lang="en">
 <?php
 session_start();
 
@@ -62,7 +60,80 @@ if (isset($_SESSION["帳號"])) {
           </script>";
   exit();
 }
+
+//班表 
+require '../db.php';
+
+// 查詢所有醫生的資料供下拉選單使用
+$doctor_list_query = "
+SELECT d.doctor_id, d.doctor
+FROM doctor d
+INNER JOIN user u ON d.user_id = u.user_id
+WHERE u.grade_id = 2
+";
+$doctor_list_result = mysqli_query($link, $doctor_list_query);
+$doctor_list = [];
+while ($row = mysqli_fetch_assoc($doctor_list_result)) {
+  $doctor_list[] = $row;
+}
+
+// 取得 GET 參數
+$doctor_id = isset($_GET['doctor_id']) ? (int) $_GET['doctor_id'] : 0;
+$year = isset($_GET['year']) ? (int) $_GET['year'] : date('Y');
+$month = isset($_GET['month']) ? (int) $_GET['month'] : date('m');
+
+// 查詢該醫生的班表和預約數量
+$reservations = [];
+$leaves = []; // 用於存放請假資料
+if ($doctor_id > 0) {
+  // 查詢排班與預約資料
+  $reservation_query = "
+SELECT ds.date, COUNT(a.appointment_id) AS people_count
+FROM doctorshift ds
+LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
+WHERE ds.doctor_id = ? AND YEAR(ds.date) = ? AND MONTH(ds.date) = ?
+GROUP BY ds.date
+";
+  $stmt = mysqli_prepare($link, $reservation_query);
+  mysqli_stmt_bind_param($stmt, "iii", $doctor_id, $year, $month);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
+
+  while ($row = mysqli_fetch_assoc($result)) {
+    $reservations[$row['date']] = $row['people_count'];
+  }
+  mysqli_stmt_close($stmt);
+
+  // 查詢請假資料
+  $leave_query = "
+SELECT start_date, end_date, reason
+FROM leaves
+WHERE doctor_id = ? AND (YEAR(start_date) = ? OR YEAR(end_date) = ?)
+";
+  $stmt_leave = mysqli_prepare($link, $leave_query);
+  mysqli_stmt_bind_param($stmt_leave, "iii", $doctor_id, $year, $year);
+  mysqli_stmt_execute($stmt_leave);
+  $leave_result = mysqli_stmt_get_result($stmt_leave);
+
+  while ($row = mysqli_fetch_assoc($leave_result)) {
+    $start_date = substr($row['start_date'], 0, 10);
+    $end_date = substr($row['end_date'], 0, 10);
+    $reason = $row['reason'];
+
+    $current_date = $start_date;
+    while ($current_date <= $end_date) {
+      $leaves[$current_date] = $reason;
+      $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
+    }
+  }
+  mysqli_stmt_close($stmt_leave);
+}
+
+mysqli_close($link);
 ?>
+
+<!DOCTYPE html>
+<html class="wide wow-animation" lang="en">
 
 <head>
   <!-- Site Title-->
@@ -92,8 +163,8 @@ if (isset($_SESSION["帳號"])) {
     html.lt-ie-10 .ie-panel {
       display: block;
     }
-  </style>
-  <style>
+
+
     /* 登出確認視窗 - 初始隱藏 */
     .logout-box {
       display: none;
@@ -153,7 +224,36 @@ if (isset($_SESSION["帳號"])) {
     .button-shadow {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
+
+
+    /* 醫生班表 */
+    .table-custom {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .table-custom th,
+    .table-custom td {
+      border: 1px solid #ddd;
+      text-align: left;
+      /* 文字靠左對齊 */
+      padding: 8px;
+      white-space: nowrap;
+    }
+
+    .table-custom th {
+      background-color: #00a79d;
+      color: white;
+      text-align: center;
+    }
+
+    .reservation-info {
+      color: red;
+      margin-top: 5px;
+    }
   </style>
+
 </head>
 
 <body>
@@ -307,123 +407,12 @@ if (isset($_SESSION["帳號"])) {
 
     <!--當日時段表-->
     <section class="section section-lg bg-default">
-      <style>
-        .table-custom {
-          width: 100%;
-          border-collapse: collapse;
-          table-layout: fixed;
-        }
-
-        .table-custom th,
-        .table-custom td {
-          border: 1px solid #ddd;
-          text-align: left;
-          /* 文字靠左對齊 */
-          padding: 8px;
-          white-space: nowrap;
-        }
-
-        .table-custom th {
-          background-color: #00a79d;
-          color: white;
-          text-align: center;
-        }
-
-        .reservation-info {
-          color: red;
-          margin-top: 5px;
-        }
-      </style>
-
-      <?php
-      session_start(); // 啟用 Session
-      
-      // 確保用戶已登入
-      if (!isset($_SESSION['帳號'])) {
-        echo "<script>
-        alert('未登入或會話已過期，請重新登入！');
-        window.location.href = '../index.html';
-    </script>";
-        exit;
-      }
-
-      require '../db.php';
-
-      // 查詢所有醫生的資料供下拉選單使用
-      $doctor_list_query = "
-SELECT d.doctor_id, d.doctor
-FROM doctor d
-INNER JOIN user u ON d.user_id = u.user_id
-WHERE u.grade_id = 2
-";
-      $doctor_list_result = mysqli_query($link, $doctor_list_query);
-      $doctor_list = [];
-      while ($row = mysqli_fetch_assoc($doctor_list_result)) {
-        $doctor_list[] = $row;
-      }
-
-      // 取得 GET 參數
-      $doctor_id = isset($_GET['doctor_id']) ? (int) $_GET['doctor_id'] : 0;
-      $year = isset($_GET['year']) ? (int) $_GET['year'] : date('Y');
-      $month = isset($_GET['month']) ? (int) $_GET['month'] : date('m');
-
-      // 查詢該醫生的班表和預約數量
-      $reservations = [];
-      $leaves = []; // 用於存放請假資料
-      if ($doctor_id > 0) {
-        // 查詢排班與預約資料
-        $reservation_query = "
-    SELECT ds.date, COUNT(a.appointment_id) AS people_count
-    FROM doctorshift ds
-    LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
-    WHERE ds.doctor_id = ? AND YEAR(ds.date) = ? AND MONTH(ds.date) = ?
-    GROUP BY ds.date
-    ";
-        $stmt = mysqli_prepare($link, $reservation_query);
-        mysqli_stmt_bind_param($stmt, "iii", $doctor_id, $year, $month);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-
-        while ($row = mysqli_fetch_assoc($result)) {
-          $reservations[$row['date']] = $row['people_count'];
-        }
-        mysqli_stmt_close($stmt);
-
-        // 查詢請假資料
-        $leave_query = "
-    SELECT start_date, end_date, reason
-    FROM leaves
-    WHERE doctor_id = ? AND (YEAR(start_date) = ? OR YEAR(end_date) = ?)
-    ";
-        $stmt_leave = mysqli_prepare($link, $leave_query);
-        mysqli_stmt_bind_param($stmt_leave, "iii", $doctor_id, $year, $year);
-        mysqli_stmt_execute($stmt_leave);
-        $leave_result = mysqli_stmt_get_result($stmt_leave);
-
-        while ($row = mysqli_fetch_assoc($leave_result)) {
-          $start_date = substr($row['start_date'], 0, 10);
-          $end_date = substr($row['end_date'], 0, 10);
-          $reason = $row['reason'];
-
-          $current_date = $start_date;
-          while ($current_date <= $end_date) {
-            $leaves[$current_date] = $reason;
-            $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
-          }
-        }
-        mysqli_stmt_close($stmt_leave);
-      }
-
-      mysqli_close($link);
-      ?>
-
-
       <h3 style="text-align: center;">治療師班表</h3>
 
       <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
         <!-- 醫生選單 -->
         <label for="doctor">選擇治療師：</label>
-        <select id="doctor" onchange="fetchSchedule()">
+        <select id="doctor">
           <option value="0" selected>-- 請選擇 --</option>
           <?php foreach ($doctor_list as $doctor): ?>
             <option value="<?php echo $doctor['doctor_id']; ?>" <?php if ($doctor_id == $doctor['doctor_id'])
@@ -435,9 +424,12 @@ WHERE u.grade_id = 2
 
         <!-- 年份與月份選單 -->
         <label for="year">選擇年份：</label>
-        <select id="year" onchange="fetchSchedule()"></select>
+        <select id="year"></select>
         <label for="month">選擇月份：</label>
-        <select id="month" onchange="fetchSchedule()"></select>
+        <select id="month"></select>
+
+        <!-- 搜尋按鈕 -->
+        <button id="searchButton" onclick="validateAndFetch()">搜尋</button>
 
         <!-- 日曆表格 -->
         <table class="table-custom">
@@ -467,6 +459,7 @@ WHERE u.grade_id = 2
         const reservations = <?php echo json_encode($reservations); ?>;
         const leaves = <?php echo json_encode($leaves); ?>;
 
+        // 初始化選單
         function initSelectOptions() {
           yearSelect.innerHTML = '';
           monthSelect.innerHTML = '';
@@ -480,6 +473,34 @@ WHERE u.grade_id = 2
           }
         }
 
+        // 驗證所有選單並執行搜尋
+        function validateAndFetch() {
+          const doctor = doctorSelect.value;
+          const year = yearSelect.value;
+          const month = monthSelect.value;
+
+          if (doctor === "0") {
+            alert("請選擇治療師！");
+            return;
+          }
+          if (!year) {
+            alert("請選擇年份！");
+            return;
+          }
+          if (!month) {
+            alert("請選擇月份！");
+            return;
+          }
+
+          fetchSchedule(doctor, year, month);
+        }
+
+        // 搜尋並跳轉到指定參數的網址
+        function fetchSchedule(doctorId, year, month) {
+          window.location.href = `?doctor_id=${doctorId}&year=${year}&month=${month}`;
+        }
+
+        // 生成日曆
         function generateCalendar() {
           const year = yearSelect.value;
           const month = monthSelect.value - 1;
@@ -524,21 +545,11 @@ WHERE u.grade_id = 2
           calendarBody.appendChild(row);
         }
 
-        function fetchSchedule() {
-          const doctorId = doctorSelect.value;
-          const year = yearSelect.value;
-          const month = monthSelect.value;
-
-          if (doctorId === "0") {
-            window.location.href = window.location.pathname;
-          } else {
-            window.location.href = `?doctor_id=${doctorId}&year=${year}&month=${month}`;
-          }
-        }
-
+        // 初始化選單與日曆
         initSelectOptions();
         generateCalendar();
       </script>
+
 
 
     </section>
