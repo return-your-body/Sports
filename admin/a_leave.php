@@ -12,15 +12,15 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
+// 引入資料庫連接檔案
+require '../db.php';
+
 // 檢查是否有 "帳號" 在 Session 中
 if (isset($_SESSION["帳號"])) {
 	// 獲取用戶帳號
 	$帳號 = $_SESSION['帳號'];
 
-	// 引入資料庫連接檔案
-	require '../db.php';
-
-	// 查詢用戶詳細資料（從資料庫中獲取對應資料）
+	// 查詢用戶詳細資料
 	$sql = "SELECT account, grade_id FROM user WHERE account = ?";
 	$stmt = mysqli_prepare($link, $sql);
 	mysqli_stmt_bind_param($stmt, "s", $帳號);
@@ -40,6 +40,22 @@ if (isset($_SESSION["帳號"])) {
 		exit();
 	}
 }
+
+// 取得醫生資料
+$query = "
+    SELECT d.doctor_id, d.doctor
+    FROM doctor d
+    INNER JOIN user u ON d.user_id = u.user_id
+    INNER JOIN grade g ON u.grade_id = g.grade_id
+    WHERE g.grade = '醫生'
+";
+$result = mysqli_query($link, $query);
+
+// 檢查查詢結果
+if (!$result) {
+	echo "Error fetching doctor data: " . mysqli_error($link);
+	exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -47,7 +63,7 @@ if (isset($_SESSION["帳號"])) {
 
 <head>
 	<!-- Site Title-->
-	<title>Teachers</title>
+	<title>健康醫療網站</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -58,6 +74,11 @@ if (isset($_SESSION["帳號"])) {
 	<link rel="stylesheet" href="css/fonts.css">
 	<link rel="stylesheet" href="css/style.css">
 	<style>
+		.highlight-red {
+			color: red;
+			font-weight: bold;
+		}
+
 		.ie-panel {
 			display: none;
 			background: #212121;
@@ -74,6 +95,59 @@ if (isset($_SESSION["帳號"])) {
 			display: block;
 		}
 
+		body {
+			font-family: Arial, sans-serif;
+			text-align: center;
+			margin: 20px;
+		}
+
+		.calendar {
+			display: grid;
+			grid-template-columns: repeat(7, 1fr);
+			gap: 5px;
+			margin-top: 20px;
+		}
+
+		.calendar div {
+			border: 1px solid #ccc;
+			padding: 10px;
+			background: #f9f9f9;
+			cursor: pointer;
+		}
+
+		.calendar .header {
+			font-weight: bold;
+			background: #ddd;
+		}
+
+		.calendar .empty {
+			background: transparent;
+			cursor: default;
+		}
+
+		/* 日期樣式：改為柔和文字色系 */
+		.calendar .date-link {
+			display: block;
+			padding: 10px;
+			color: #00796B;
+			/* 第二張圖片的綠色系 */
+			text-decoration: none;
+			/* 移除底線 */
+			font-size: 14px;
+			font-weight: bold;
+		}
+
+		.calendar .date-link:hover {
+			text-decoration: underline;
+			/* 滑鼠懸停時加底線 */
+			color: #004D40;
+			/* 深綠色，增加互動感 */
+		}
+
+		select {
+			padding: 5px;
+			margin: 5px;
+		}
 
 		/* 登出確認視窗 - 初始隱藏 */
 		.logout-box {
@@ -203,15 +277,8 @@ if (isset($_SESSION["帳號"])) {
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
 								</li>
-								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
-									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">Single teacher</a>
-										</li>
-									</ul>
-								</li> -->
-
 								<li class="rd-nav-item"><a class="rd-nav-link" href="">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
@@ -225,6 +292,7 @@ if (isset($_SESSION["帳號"])) {
 										</li>
 									</ul>
 								</li>
+
 								<!-- 登出按鈕 -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
 										onclick="showLogoutBox()">登出</a>
@@ -283,23 +351,28 @@ if (isset($_SESSION["帳號"])) {
 				</nav>
 			</div>
 		</header>
-		<section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
-			<div class="fullwidth-page-inner">
-				<div class="section-md text-center">
-					<div class="container">
-						<p class="breadcrumbs-custom-subtitle">您所點選的頁面尚未開放，敬請期待～！</p>
-						<p class="heading-1 breadcrumbs-custom-title">Error 404</p>
-						<p>The page you selected is not yet open, please stay tuned.</p>
-					</div>
+		<!-- Page Header-->
+		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+			<!-- Breadcrumbs-->
+			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
+				<div class="container">
+					<p class="heading-1 breadcrumbs-custom-title">請假申請</p>
+					<ul class="breadcrumbs-custom-path">
+						<li><a href="a_index.php">首頁</a></li>
+						<li><a href="">關於治療師</a></li>
+						<li class="active">請假申請</li>
+					</ul>
 				</div>
-			</div>
-		</section>
+			</section>
+		</div>
+
+		<!-- Global Mailform Output-->
+		<div class="snackbars" id="form-output-global"></div>
+		<!-- Javascript-->
+		<script src="js/core.min.js"></script>
+		<script src="js/script.js"></script>
+
 	</div>
-	<!-- Global Mailform Output-->
-	<div class="snackbars" id="form-output-global"></div>
-	<!-- Javascript-->
-	<script src="js/core.min.js"></script>
-	<script src="js/script.js"></script>
 </body>
 
 </html>
