@@ -292,16 +292,19 @@ if (isset($_GET['fetch'])) {
 							<ul class="rd-navbar-nav">
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
 								</li>
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="a_therapist.php">治療師時間表</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="">關於治療師</a>
+									<ul class="rd-menu rd-navbar-dropdown">
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_therapist.php">治療師時間表</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="addds.php">新增治療師班表</a>
+										</li>
+
+									</ul>
 								</li>
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
 								</li>
-								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
-									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">Single teacher</a>
-										</li>
-									</ul>
-								</li> -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
@@ -379,17 +382,15 @@ if (isset($_GET['fetch'])) {
 			<!-- Breadcrumbs-->
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
-					<p class="heading-1 breadcrumbs-custom-title">治療師時間表</p>
+					<p class="heading-1 breadcrumbs-custom-title">關於治療師</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="a_index.php">首頁</a></li>
+						<li><a href="">關於治療師</a></li>
 						<li class="active">治療師時間表</li>
 					</ul>
 				</div>
 			</section>
-
 		</div>
-
-
 		<div>
 			<label for="year">選擇年份：</label>
 			<select id="year"></select>

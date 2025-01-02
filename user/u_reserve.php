@@ -34,14 +34,6 @@ if (isset($_SESSION["帳號"])) {
 		$row = mysqli_fetch_assoc($result);
 		$姓名 = $row['name'];
 		$帳號名稱 = $row['account'];
-
-		// 顯示帳號和姓名
-		// echo "歡迎您！<br>";
-		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-		// echo "姓名：" . htmlspecialchars($姓名);
-		// echo "<script>
-		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-		// </script>";
 	} else {
 		// 如果資料不存在，提示用戶重新登入
 		echo "<script>
@@ -336,14 +328,6 @@ if (isset($_SESSION["帳號"])) {
 			<div class="container">
 				<div class="row row-40 row-lg-50">
 					<style>
-						/* 通用樣式 */
-						/* body {
-			  margin: 0; 
-			  padding: 0;
-			  font-family: Arial, sans-serif;
-			  text-align: center;
-			} */
-
 						h1 {
 							margin-bottom: 20px;
 						}
