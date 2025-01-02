@@ -215,9 +215,11 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item active"><a class="rd-dropdown-link"
 												href="u_link.php">醫生介紹</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_caseshare.php">個案分享</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_body-knowledge.php">日常小知識</a>
 										</li>
 									</ul>
 								</li>
@@ -230,7 +232,8 @@ if (isset($_SESSION["帳號"])) {
 												href="u_reserve-record.php">查看預約資料</a>
 											<!-- 修改預約 -->
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-time.php">查看預約時段</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_reserve-time.php">查看預約時段</a>
 										</li>
 									</ul>
 								</li>
@@ -327,167 +330,62 @@ if (isset($_SESSION["帳號"])) {
 		</div>
 		<!--標題-->
 
-		<!-- Ronald Chen-->
-		<section class="section section-lg bg-default text-start novi-bg novi-bg-img">
+		<!--醫生簡介-->
+		<section class="section section-lg bg-default novi-bg novi-bg-img">
 			<div class="container">
-				<div class="row row-70 row-ten row-fix justify-content-xl-between">
-					<div class="col-xl-3">
-						<div class="row row-70 row-fix align-items-md-center">
-							<div class="col-md-6 col-xl-12"><img src="images/team-member-1-420x420.jpg" alt=""
-									width="420" height="420" />
-							</div>
-							<div class="col-md-6 col-xl-12 text-md-start">
-								<h6>Get in Touch</h6>
-								<!-- RD Mailform-->
-								<form class="rd-mailform" data-form-output="form-output-global" data-form-type="contact"
-									method="post" action="bat/rd-mailform.php">
-									<div class="row row-20 row-fix">
-										<div class="col-md-12">
-											<div class="form-wrap form-wrap-validation">
-												<label class="form-label-outside" for="form-1-name">First name</label>
-												<input class="form-input" id="form-1-name" type="text" name="name"
-													data-constraints="@Required">
-											</div>
-										</div>
-										<div class="col-md-12">
-											<div class="form-wrap form-wrap-validation">
-												<label class="form-label-outside" for="form-1-email">E-mail</label>
-												<input class="form-input" id="form-1-email" type="email" name="email"
-													data-constraints="@Email @Required">
-											</div>
-										</div>
-										<div class="col-sm-12">
-											<div class="form-wrap form-wrap-validation">
-												<label class="form-label-outside" for="form-1-message">Message</label>
-												<textarea class="form-input" id="form-1-message" name="message"
-													data-constraints="@Required"></textarea>
-											</div>
-										</div>
-										<div class="col-sm-12 offset-custom-4">
-											<div class="form-button">
-												<button class="button button-primary button-nina" type="submit">Send
-													message</button>
-											</div>
-										</div>
-									</div>
-								</form>
-							</div>
-						</div>
-					</div>
-					<div class="col-xl-6">
-						<div class="row row-120 row-fix">
-							<div class="col-sm-12">
-								<div class="heading-5">Web design instructor</div>
-								<h3>Theresa Webb</h3>
-								<div class="divider divider-default"></div>
-								<p class="text-spacing-sm">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-									do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-									veniam, quis nostrud exercitation.</p>
-								<div class="row text-center row-lg row-30 justify-content-center">
-									<div class="col-auto col-sm-4">
-										<!--Circle progress bar-->
-										<div class="progress-circle">
-											<div class="progress-circle-block">
-												<svg class="progress-circle-bar" x="0" y="0" width="140" height="140"
-													viewbox="0 0 140 140">
-													<circle class="progress-circle-bg" cx="70" cy="70" r="67"></circle>
-													<circle class="progress-circle-fg clipped" cx="70" cy="70" r="67">
-													</circle>
-												</svg>
-												<div class="progress-circle-counter radial">75</div>
-											</div>
-											<div class="heading-5 progress-circle-title">UI/UX Design</div>
-										</div>
-									</div>
-									<div class="col-auto col-sm-4">
-										<!--Circle progress bar-->
-										<div class="progress-circle">
-											<div class="progress-circle-block">
-												<svg class="progress-circle-bar" x="0" y="0" width="140" height="140"
-													viewbox="0 0 140 140">
-													<circle class="progress-circle-bg" cx="70" cy="70" r="67"></circle>
-													<circle class="progress-circle-fg clipped" cx="70" cy="70" r="67">
-													</circle>
-												</svg>
-												<div class="progress-circle-counter radial">50</div>
-											</div>
-											<div class="heading-5 progress-circle-title">Research</div>
-										</div>
-									</div>
-									<div class="col-auto col-sm-4">
-										<!--Circle progress bar-->
-										<div class="progress-circle">
-											<div class="progress-circle-block">
-												<svg class="progress-circle-bar" x="0" y="0" width="140" height="140"
-													viewbox="0 0 140 140">
-													<circle class="progress-circle-bg" cx="70" cy="70" r="67"></circle>
-													<circle class="progress-circle-fg clipped" cx="70" cy="70" r="67">
-													</circle>
-												</svg>
-												<div class="progress-circle-counter radial">25</div>
-											</div>
-											<div class="heading-5 progress-circle-title">Graphic Design</div>
-										</div>
-									</div>
-								</div>
-							</div>
-							<div class="col-sm-12">
-								<div class="row row-70">
-									<div class="col-md-6">
-										<h6>Skills</h6>
-										<p>Visual design, UX, communication, creativity, time management, teamwork<br
-												class="d-none d-xxl-block"> strategy, communication, coaching, PR
-										</p>
-									</div>
-									<div class="col-md-6">
-										<h6>Awards</h6>
-										<ul class="list list-xxs text-spacing-sm">
-											<li>2021 - The Best Web Design Instructor</li>
-											<li>2018 - UX Designer of the Year</li>
-											<li>2017 - #1 Web Design Course Instructor</li>
-										</ul>
-									</div>
-									<div class="col-md-6">
-										<h6>Certificates</h6>
-										<ul class="list list-xxs text-spacing-sm">
-											<li>2021 - New Ways of Design</li>
-											<li>2019 - UX Design for Mobile Platforms</li>
-											<li>2017 - Advanced Graphic Design</li>
-										</ul>
-									</div>
-									<div class="col-md-6">
-										<h6>Contact information</h6>
-										<ul class="list-xs">
-											<li class="box-inline box-inline-gray"><span
-													class="icon novi-icon icon-md-smaller icon-primary mdi mdi-map-marker"></span>
-												<div><a href="#">2130 Fulton Street, San Diego, CA<br>94117-1080 USA</a>
-												</div>
-											</li>
-											<li class="box-inline box-inline-gray"><span
-													class="icon novi-icon icon-md-smaller icon-primary mdi mdi-phone"></span>
-												<ul class="list-comma">
-													<li><a href="tel:#">1-800-1234-567</a></li>
-												</ul>
-											</li>
-											<li>
-												<ul class="inline-list-xs">
-													<li><a class="icon novi-icon icon-sm-bigger icon-gray-1 mdi mdi-facebook"
-															href="#"></a></li>
-													<li><a class="icon novi-icon icon-sm-bigger icon-gray-1 mdi mdi-twitter"
-															href="#"></a></li>
-													<li><a class="icon novi-icon icon-sm-bigger icon-gray-1 mdi mdi-instagram"
-															href="#"></a></li>
-													<li><a class="icon novi-icon icon-sm-bigger icon-gray-1 mdi mdi-google"
-															href="#"></a></li>
-													<li><a class="icon novi-icon icon-sm-bigger icon-gray-1 mdi mdi-linkedin"
-															href="#"></a></li>
-												</ul>
-											</li>
-										</ul>
-									</div>
-								</div>
-							</div>
-						</div>
+				<div class="row row-30 align-items-center justify-content-xxl-between">
+					<div class="col-md-10">
+						<h3 class="box-small-title">醫生簡介</h3>
+
+						<?php
+						require '../db.php';  // 載入資料庫連線設定
+						
+						// 獲取 GET 傳遞的醫生姓名
+						$doctorName = isset($_GET['doctor']) ? $_GET['doctor'] : '';
+
+						if (empty($doctorName)) {
+							die("未提供醫生姓名！");
+						}
+
+						$sql = "SELECT dp.*
+        FROM doctorprofile dp
+        INNER JOIN doctor d ON dp.doctor_id = d.doctor_id
+        WHERE d.doctor = ?";
+						$stmt = mysqli_prepare($link, $sql);
+
+						if (!$stmt) {
+							die("SQL 準備失敗: " . mysqli_error($link));
+						}
+
+						mysqli_stmt_bind_param($stmt, "s", $doctorName);
+						mysqli_stmt_execute($stmt);
+						$result = mysqli_stmt_get_result($stmt);
+
+						if (!$result || mysqli_num_rows($result) == 0) {
+							die("未找到對應醫生資料！");
+						}
+
+						$doctorProfile = mysqli_fetch_assoc($result);
+
+						mysqli_stmt_close($stmt);
+						mysqli_close($link);
+
+						// 顯示醫生資料
+						echo "<div class='doctor-profile'>";
+						echo "<h5>醫生姓名: " . htmlspecialchars($doctorName) . "</h5>";
+						echo "<p><strong>學歷：</strong>" . nl2br(htmlspecialchars($doctorProfile['education'] ?? '無')) . "</p>";
+						echo "<p><strong>現任職務：</strong>" . nl2br(htmlspecialchars($doctorProfile['current_position'] ?? '無')) . "</p>";
+						echo "<p><strong>專長描述：</strong>" . nl2br(htmlspecialchars($doctorProfile['specialty'] ?? '無')) . "</p>";
+						echo "<p><strong>專業認證與進修課程：</strong>" . nl2br(htmlspecialchars($doctorProfile['certifications'] ?? '無')) . "</p>";
+						echo "<p><strong>治療理念：</strong>" . nl2br(htmlspecialchars($doctorProfile['treatment_concept'] ?? '無')) . "</p>";
+						// echo "<p><strong>創建時間：</strong>" . htmlspecialchars($doctorProfile['created_at'] ?? '無') . "</p>";
+						// echo "<p><strong>最後更新時間：</strong>" . htmlspecialchars($doctorProfile['updated_at'] ?? '無') . "</p>";
+						echo "</div>";
+						echo "</br>";
+						// 返回按鈕
+						echo '<button onclick="window.location.href=\'u_link.php\'" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">返回</button>';
+						?>
+
 					</div>
 				</div>
 			</div>

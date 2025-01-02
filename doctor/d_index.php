@@ -352,7 +352,7 @@ if (isset($_SESSION["帳號"])) {
       <div class="container">
         <div class="row row-30 align-items-center justify-content-xxl-between">
           <div class="col-md-10">
-            <h2 class="box-small-title">醫生簡介</h2>
+            <h3 class="box-small-title">醫生簡介</h3>
             <?php
             session_start();
             require '../db.php';  // 載入資料庫連線設定
@@ -404,10 +404,6 @@ if (isset($_SESSION["帳號"])) {
               echo "<p>目前無資料。</p>";
             }
             ?>
-
-
-
-
           </div>
           <!-- 圖片-->
           <!-- <div class="col-md-6 col-lg-5 col-xl-4 offset-xl-1 col-xxl-5 position-relative d-none d-md-block">
