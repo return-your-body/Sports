@@ -298,7 +298,7 @@ if (isset($_GET['fetch'])) {
 												href="a_therapist.php">治療師時間表</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="addds.php">新增治療師班表</a>
+												href="a_addds.php">新增治療師班表</a>
 										</li>
 
 									</ul>
