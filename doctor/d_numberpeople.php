@@ -374,7 +374,7 @@ $result_appointments = mysqli_query($link, $query_appointments);
 
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
-        <h3 style="text-align: center;">當天時段</h3>
+        <!-- <h3 style="text-align: center;">當天時段</h3> -->
 
         <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px;text-align: center;">
           治療師姓名：<?php echo $doctor_name; ?>

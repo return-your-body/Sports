@@ -387,7 +387,7 @@ mysqli_close($link);
 
     <!--治療師班表-->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
-      <h3 style="text-align: center;">治療師班表</h3>
+      <!-- <h3 style="text-align: center;">治療師班表</h3> -->
       <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
         治療師姓名：<?php echo $doctor_name; ?> <br /> <!-- 顯示醫生姓名 -->
         <label for="year">選擇年份：</label>

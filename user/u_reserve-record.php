@@ -156,24 +156,34 @@ if (isset($_SESSION["帳號"])) {
 		}
 
 		/* 預約資料 */
+
+		body {
+			font-family: Arial, sans-serif;
+			background-color: #f9f9f9;
+		}
+
 		table {
-			margin: 20px auto;
+			width: 60%;
+			margin: auto;
 			border-collapse: collapse;
-			width: 80%;
+			margin-top: 30px;
+			background-color: #fff;
+			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 		}
 
 		th,
 		td {
 			border: 1px solid #ddd;
-			padding: 8px;
-			text-align: left;
+			padding: 10px;
+			text-align: center;
 		}
 
 		th {
 			background-color: #f4f4f4;
+			font-weight: bold;
 		}
 
-		.center {
+		h2 {
 			text-align: center;
 			margin-top: 20px;
 		}
@@ -256,7 +266,7 @@ if (isset($_SESSION["帳號"])) {
 												href="u_reserve-record.php">查看預約資料</a>
 											<!-- 修改預約 -->
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">查看預約時段</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_reserve-time.php">查看預約時段</a>
 										</li>
 									</ul>
 								</li>
@@ -357,26 +367,82 @@ if (isset($_SESSION["帳號"])) {
 			<div class="container">
 				<div class="row row-30 align-items-center justify-content-xxl-between">
 					<div class="col-md-10">
-					
-						<table>
-							<tr>
-								<th>姓名</th>
-								<td><?php echo $people_id; ?></td>
-							</tr>
-							<tr>
-								<th>預約日期</th>
-								<td><?php echo $appointment_date; ?></td>
-							</tr>
-							<tr>
-								<th>預約時段</th>
-								<td><?php echo $shifttime; ?></td>
-							</tr>
-							<tr>
-								<th>備註</th>
-								<td><?php echo $note; ?></td>
-							</tr>
-						</table>
+						<?php
+						// 開啟 session 並取得登入帳號
+						session_start();
+						if (!isset($_SESSION['帳號'])) {
+							echo "<script>alert('未登入，請先登入！'); window.location.href = 'login.php';</script>";
+							exit;
+						}
 
+						require '../db.php'; // 引入資料庫連接檔案
+						
+						// 取得登入帳號
+						$帳號 = $_SESSION['帳號'];
+
+						// 查詢該使用者的所有預約資料
+						$query = "
+SELECT 
+    a.appointment_id, 
+    COALESCE(p.name, '未知') AS patient_name, -- 患者姓名
+    COALESCE(g.gender, '未知') AS gender, -- 性別
+    COALESCE(p.birthday, '未知') AS birthday, -- 生日
+    COALESCE(ds.date, '未知') AS appointment_date, -- 預約日期
+    COALESCE(st.shifttime, '未知') AS shifttime, -- 預約時段
+    COALESCE(a.note, '無備註') AS note -- 備註
+FROM appointment a
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id -- 關聯班表
+LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id -- 關聯時段
+LEFT JOIN people p ON a.people_id = p.people_id -- 關聯患者
+LEFT JOIN gender g ON p.gender_id = g.gender_id -- 關聯性別
+LEFT JOIN user u ON p.user_id = u.user_id -- 關聯使用者
+WHERE u.account = ?
+ORDER BY a.appointment_id DESC
+";
+
+						$stmt = mysqli_prepare($link, $query);
+						if (!$stmt) {
+							die("SQL 錯誤：" . mysqli_error($link));
+						}
+
+						// 綁定參數並執行查詢
+						mysqli_stmt_bind_param($stmt, 's', $帳號);
+						mysqli_stmt_execute($stmt);
+						$result = mysqli_stmt_get_result($stmt);
+
+						?>
+						<?php if (mysqli_num_rows($result) > 0): ?>
+							<?php while ($row = mysqli_fetch_assoc($result)): ?>
+								<table>
+									<tr>
+										<th>姓名</th>
+										<td><?php echo htmlspecialchars($row['patient_name']); ?></td>
+									</tr>
+									<tr>
+										<th>性別</th>
+										<td><?php echo htmlspecialchars($row['gender']); ?></td>
+									</tr>
+									<tr>
+										<th>生日</th>
+										<td><?php echo htmlspecialchars($row['birthday']); ?></td>
+									</tr>
+									<tr>
+										<th>預約日期</th>
+										<td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
+									</tr>
+									<tr>
+										<th>預約時段</th>
+										<td><?php echo htmlspecialchars($row['shifttime']); ?></td>
+									</tr>
+									<tr>
+										<th>備註</th>
+										<td><?php echo htmlspecialchars($row['note']); ?></td>
+									</tr>
+								</table>
+							<?php endwhile; ?>
+						<?php else: ?>
+							<p style="text-align: center;">目前無預約記錄</p>
+						<?php endif; ?>
 
 					</div>
 				</div>
