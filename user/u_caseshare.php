@@ -208,7 +208,7 @@ if (isset($_SESSION["帳號"])) {
 						</div>
 						<div class="rd-navbar-nav-wrap">
 							<ul class="rd-navbar-nav">
-								<li class="rd-nav-item "><a class="rd-nav-link" href="u_index.php">主頁</a>
+								<li class="rd-nav-item "><a class="rd-nav-link" href="u_index.php">首頁</a>
 								</li>
 
 								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">關於我們</a>
@@ -322,13 +322,47 @@ if (isset($_SESSION["帳號"])) {
 					<p class="heading-1 breadcrumbs-custom-title">個案分享</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="u_index.php">首頁</a></li>
+						<li><a href="#">關於我們</a></li>
 						<li class="active">個案分享</li>
 					</ul>
 				</div>
 			</section>
 		</div>
 
+		<footer class="section novi-bg novi-bg-img footer-simple">
+			<div class="container">
+				<div class="row row-40">
+					<div class="col-md-4">
+						<h4>關於我們</h4>
+						<ul class="list-inline" style="font-size: 40px; display: inline-block;color: #333333; ">
+							<li><a class="icon novi-icon icon-default icon-custom-facebook"
+									href="https://www.facebook.com/ReTurnYourBody/" target="_blank"></a></li>
+							<li><a class="icon novi-icon icon-default icon-custom-linkedin"
+									href="https://lin.ee/sUaUVMq" target="_blank"></a></li>
+							<li><a class="icon novi-icon icon-default icon-custom-instagram"
+									href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"
+									target="_blank"></a></li>
+						</ul>
 
+					</div>
+					<div class="col-md-3">
+						<h4>快速連結</h4>
+						<ul class="list-marked">
+							<li><a href="u_index.php">首頁</a></li>
+							<li><a href="u_link.php.php">醫生介紹</a></li>
+							<li><a href="u_caseshare.php">個案分享</a></li>
+							<li><a href="u_body-knowledge.php">日常小知識</a></li>
+							<li><a href="u_reserve.php">預約</a></li>
+							<li><a href="u_reserve-record.php">查看預約資料</a></li>
+							<li><a href="u_reserve-time.php">查看預約時段</a></li>
+							<li><a href="u_history.php">歷史紀錄</a></li>
+							<li> <a href="u_profile.php">個人資料</a></li>
+							</a></li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</footer>
 
 	</div>
 	<!-- Global Mailform Output-->
