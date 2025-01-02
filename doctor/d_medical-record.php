@@ -64,12 +64,34 @@ if (isset($_SESSION["帳號"])) {
   exit();
 }
 
-
 //看診紀錄
 $帳號 = $_SESSION['帳號'];  // 取得當前登入的帳號
-
-
+              
 require '../db.php'; // 引入資料庫連接檔案
+
+// 分頁設定
+$records_per_page = 10; // 每頁顯示的記錄數
+$page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1; // 當前頁碼，預設為第1頁
+$offset = ($page - 1) * $records_per_page; // 計算記錄的起始位置
+
+// 搜尋條件
+$search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, $_GET['search_name']) : '';
+
+// 計算總記錄數
+$count_sql = "
+SELECT COUNT(*) AS total
+FROM medicalrecord m
+LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN item i ON m.item_id = i.item_id
+WHERE 1=1
+" . ($search_name ? "AND p.name LIKE '%$search_name%'" : "");
+
+$count_result = mysqli_query($link, $count_sql);
+$total_records = mysqli_fetch_assoc($count_result)['total'];
+$total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
 
 // 查詢資料
 $sql = "
@@ -94,8 +116,8 @@ LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
 LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
 LEFT JOIN item i ON m.item_id = i.item_id
 WHERE 1=1
-LIMIT 10;
-";
+" . ($search_name ? "AND p.name LIKE '%$search_name%'" : "") . "
+LIMIT $offset, $records_per_page";
 
 $result = mysqli_query($link, $sql);
 ?>
@@ -401,7 +423,6 @@ $result = mysqli_query($link, $sql);
                 <thead>
                   <tr>
                     <th>編號</th>
-                    <!-- <th>預約編號</th> -->
                     <th>姓名</th>
                     <th>性別</th>
                     <th>生日 (年齡)</th>
@@ -416,7 +437,6 @@ $result = mysqli_query($link, $sql);
                     <?php while ($row = mysqli_fetch_assoc($result)): ?>
                       <tr>
                         <td><?php echo $row['medicalrecord_id']; ?></td>
-                        <!-- <td><?php echo $row['appointment_id']; ?></td> -->
                         <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
                         <td><?php echo htmlspecialchars($row['gender']); ?></td>
                         <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
@@ -428,17 +448,42 @@ $result = mysqli_query($link, $sql);
                     <?php endwhile; ?>
                   <?php else: ?>
                     <tr>
-                      <td colspan="9">目前無資料</td>
+                      <td colspan="8">目前無資料</td>
                     </tr>
                   <?php endif; ?>
                 </tbody>
               </table>
+              <!-- 分頁 -->
+              <div style="text-align: right; margin-top: 10px; margin-bottom: 10px;">
+                <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（共 <?php echo $total_records; ?>
+                  筆資料）</span>
+              </div>
+
+              <div style="text-align: center; margin-top: 20px;">
+                <?php if ($page > 1): ?>
+                  <a href="?page=<?php echo $page - 1; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
+                <?php endif; ?>
+
+                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                  <?php if ($i == $page): ?>
+                    <strong><?php echo $i; ?></strong>
+                  <?php else: ?>
+                    <a
+                      href="?page=<?php echo $i; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
+                  <?php endif; ?>
+                <?php endfor; ?>
+
+                <?php if ($page < $total_pages): ?>
+                  <a href="?page=<?php echo $page + 1; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
+                <?php endif; ?>
+              </div>
 
               <?php
               // 釋放結果並關閉連線
               mysqli_free_result($result);
               mysqli_close($link);
               ?>
+
             </div>
           </div>
         </div>
