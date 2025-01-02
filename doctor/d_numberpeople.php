@@ -62,6 +62,48 @@ if (isset($_SESSION["帳號"])) {
           </script>";
   exit();
 }
+
+
+//當天人數
+require '../db.php';
+
+$帳號 = $_SESSION['帳號'];
+
+// 取得登入醫生資訊
+$query_doctor = "SELECT doctor_id, doctor 
+         FROM doctor 
+         WHERE user_id = (SELECT user_id FROM user WHERE account = '$帳號')";
+$result_doctor = mysqli_query($link, $query_doctor);
+
+if ($row = mysqli_fetch_assoc($result_doctor)) {
+  $doctor_id = $row['doctor_id'];
+  $doctor_name = htmlspecialchars($row['doctor']);
+} else {
+  die("找不到醫生資訊");
+}
+
+// 設定下拉選單的預設值
+$current_year = date('Y');
+$current_month = date('m');
+$current_day = date('d');
+
+// 接收 GET 參數
+$selected_year = isset($_GET['year']) ? $_GET['year'] : $current_year;
+$selected_month = isset($_GET['month']) ? $_GET['month'] : $current_month;
+$selected_day = isset($_GET['day']) ? $_GET['day'] : $current_day;
+
+$selected_date = "$selected_year-$selected_month-$selected_day";
+
+// 查詢當天所有預約的資料
+$query_appointments = "
+SELECT st.shifttime, p.name, a.appointment_id
+FROM doctorshift ds
+JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
+LEFT JOIN people p ON a.people_id = p.people_id
+WHERE ds.date = '$selected_date' AND ds.doctor_id = '$doctor_id'
+";
+$result_appointments = mysqli_query($link, $query_appointments);
 ?>
 
 
@@ -155,6 +197,30 @@ if (isset($_SESSION["帳號"])) {
     .button-shadow {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
+
+    /* 當天時段 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      border: 1px solid #ddd;
+      text-align: center;
+      padding: 8px;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    form {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+  </style>
   </style>
 </head>
 
@@ -214,7 +280,8 @@ if (isset($_SESSION["帳號"])) {
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_doctorshift.php">每月班表</a>
                     </li>
-                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="d_numberpeople.php">當天人數及時段</a>
+                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
+                        href="d_numberpeople.php">當天人數及時段</a>
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假</a>
                     </li>
@@ -307,82 +374,6 @@ if (isset($_SESSION["帳號"])) {
 
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
-        <style>
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-          }
-
-          th,
-          td {
-            border: 1px solid #ddd;
-            text-align: center;
-            padding: 8px;
-          }
-
-          th {
-            background-color: #f2f2f2;
-          }
-
-          form {
-            text-align: center;
-            margin-bottom: 20px;
-          }
-        </style>
-        <?php
-        session_start();
-        require '../db.php';
-
-        // 確保用戶已登入
-        if (!isset($_SESSION['帳號'])) {
-          echo "<script>
-            alert('未登入或會話已過期，請重新登入！');
-            window.location.href = '../index.html';
-          </script>";
-          exit;
-        }
-
-        $帳號 = $_SESSION['帳號'];
-
-        // 取得登入醫生資訊
-        $query_doctor = "SELECT doctor_id, doctor 
-                 FROM doctor 
-                 WHERE user_id = (SELECT user_id FROM user WHERE account = '$帳號')";
-        $result_doctor = mysqli_query($link, $query_doctor);
-
-        if ($row = mysqli_fetch_assoc($result_doctor)) {
-          $doctor_id = $row['doctor_id'];
-          $doctor_name = htmlspecialchars($row['doctor']);
-        } else {
-          die("找不到醫生資訊");
-        }
-
-        // 設定下拉選單的預設值
-        $current_year = date('Y');
-        $current_month = date('m');
-        $current_day = date('d');
-
-        // 接收 GET 參數
-        $selected_year = isset($_GET['year']) ? $_GET['year'] : $current_year;
-        $selected_month = isset($_GET['month']) ? $_GET['month'] : $current_month;
-        $selected_day = isset($_GET['day']) ? $_GET['day'] : $current_day;
-
-        $selected_date = "$selected_year-$selected_month-$selected_day";
-
-        // 查詢當天所有預約的資料
-        $query_appointments = "
-    SELECT st.shifttime, p.name, a.appointment_id
-    FROM doctorshift ds
-    JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
-    LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
-    LEFT JOIN people p ON a.people_id = p.people_id
-    WHERE ds.date = '$selected_date' AND ds.doctor_id = '$doctor_id'
-";
-        $result_appointments = mysqli_query($link, $query_appointments);
-        ?>
-
-
         <h3 style="text-align: center;">當天時段</h3>
 
         <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px;text-align: center;">

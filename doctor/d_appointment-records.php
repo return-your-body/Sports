@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html class="wide wow-animation" lang="en">
 <?php
 session_start();
 
@@ -62,7 +60,67 @@ if (isset($_SESSION["帳號"])) {
           </script>";
   exit();
 }
+
+//預約紀錄
+$帳號 = $_SESSION['帳號'];// 取得當前登入的帳號
+
+require '../db.php';   // 引入資料庫連接檔案
+
+// 接收搜尋參數
+$search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
+
+// 分頁設定
+$records_per_page = 10;
+$page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
+$offset = ($page - 1) * $records_per_page;
+
+// 計算總記錄數
+$count_sql = "
+SELECT COUNT(*) AS total
+FROM appointment a
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN user u ON d.user_id = u.user_id
+WHERE u.account = '$帳號'
+AND p.name LIKE '%$search_name%'
+";
+$count_result = mysqli_query($link, $count_sql);
+$total_records = mysqli_fetch_assoc($count_result)['total'];
+$total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
+
+// 查詢資料
+$sql = "
+SELECT 
+a.appointment_id AS id,
+COALESCE(p.name, '未預約') AS name,
+CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
+CONCAT(COALESCE(p.birthday, 'N/A'), 
+' (', 
+CASE 
+ WHEN p.birthday IS NOT NULL THEN TIMESTAMPDIFF(YEAR, p.birthday, CURDATE())
+ ELSE 'N/A' 
+END, '歲)') AS birthday,
+ds.date AS appointment_date,
+COALESCE(st.shifttime, 'N/A') AS shifttime,
+COALESCE(a.note, '') AS note,
+a.created_at
+FROM appointment a
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN user u ON d.user_id = u.user_id
+WHERE u.account = '$帳號'
+AND p.name LIKE '%$search_name%'
+ORDER BY ds.date, st.shifttime
+LIMIT $offset, $records_per_page
+";
+$result = mysqli_query($link, $sql);
 ?>
+
+<!DOCTYPE html>
+<html class="wide wow-animation" lang="en">
 
 <head>
   <!-- Site Title-->
@@ -152,6 +210,35 @@ if (isset($_SESSION["帳號"])) {
 
     .button-shadow {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    /*預約紀錄 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .search-container {
+      text-align: right;
+      margin-bottom: 10px;
+    }
+
+    input,
+    button {
+      padding: 5px;
+      margin-right: 5px;
     }
   </style>
 </head>
@@ -318,106 +405,6 @@ if (isset($_SESSION["帳號"])) {
             <div class="accordion-custom-group accordion-custom-group-custom accordion-custom-group-corporate"
               id="accordion1" role="tablist" aria-multiselectable="false">
               <!-- <h3 style='text-align: center;'>預約紀錄</h3> -->
-              <?php
-              session_start(); // 啟用 Session
-              
-              // 確保用戶已登入
-              if (!isset($_SESSION['帳號'])) {
-                echo "<script>
-    alert('未登入或會話已過期，請重新登入！');
-    window.location.href = '../index.html';
-    </script>";
-                exit;
-              }
-
-              // 取得當前登入的帳號
-              $帳號 = $_SESSION['帳號'];
-
-              // 引入資料庫連接檔案
-              require '../db.php';
-
-              // 接收搜尋參數
-              $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
-
-              // 分頁設定
-              $records_per_page = 10;
-              $page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
-              $offset = ($page - 1) * $records_per_page;
-
-              // 計算總記錄數
-              $count_sql = "
-SELECT COUNT(*) AS total
-FROM appointment a
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN user u ON d.user_id = u.user_id
-WHERE u.account = '$帳號'
-AND p.name LIKE '%$search_name%'
-";
-              $count_result = mysqli_query($link, $count_sql);
-              $total_records = mysqli_fetch_assoc($count_result)['total'];
-              $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
-
-              // 查詢資料
-              $sql = "
-SELECT 
-    a.appointment_id AS id,
-    COALESCE(p.name, '未預約') AS name,
-    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
-    CONCAT(COALESCE(p.birthday, 'N/A'), 
-           ' (', 
-           CASE 
-               WHEN p.birthday IS NOT NULL THEN TIMESTAMPDIFF(YEAR, p.birthday, CURDATE())
-               ELSE 'N/A' 
-           END, '歲)') AS birthday,
-    ds.date AS appointment_date,
-    COALESCE(st.shifttime, 'N/A') AS shifttime,
-    COALESCE(a.note, '') AS note,
-    a.created_at
-FROM appointment a
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN user u ON d.user_id = u.user_id
-WHERE u.account = '$帳號'
-AND p.name LIKE '%$search_name%'
-ORDER BY ds.date, st.shifttime
-LIMIT $offset, $records_per_page
-";
-              $result = mysqli_query($link, $sql);
-              ?>
-
-              <style>
-                table {
-                  width: 100%;
-                  border-collapse: collapse;
-                  margin-top: 20px;
-                }
-
-                th,
-                td {
-                  padding: 8px;
-                  text-align: center;
-                  border: 1px solid #ddd;
-                }
-
-                th {
-                  background-color: #f2f2f2;
-                }
-
-                .search-container {
-                  text-align: right;
-                  margin-bottom: 10px;
-                }
-
-                input,
-                button {
-                  padding: 5px;
-                  margin-right: 5px;
-                }
-              </style>
 
               <!-- 搜尋框 -->
               <div class="search-container">

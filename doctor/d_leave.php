@@ -154,7 +154,62 @@ if (isset($_SESSION["帳號"])) {
     .button-shadow {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
+
+    /* 請假單 */
+    /* 通用樣式 */
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    /* 表單容器框線樣式 */
+    .form-container {
+      width: 400px;
+      margin: 30px auto;
+      padding: 20px;
+      border: 2px solid black;
+      border-radius: 10px;
+      text-align: left;
+      background-color: #f9f9f9;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    textarea {
+      resize: none;
+    }
+
+    /* 按鈕樣式 */
+    button {
+      margin: 20px auto 0;
+      display: block;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    /* 備註標籤位置調整 */
+    #note-label {
+      vertical-align: top;
+    }
   </style>
+
+
 </head>
 
 <body>
@@ -311,65 +366,12 @@ if (isset($_SESSION["帳號"])) {
       </section>
     </div>
 
-    <style>
-      /* 通用樣式 */
-      h1 {
-        margin-bottom: 20px;
-      }
-
-      /* 表單容器框線樣式 */
-      .form-container {
-        width: 400px;
-        margin: 30px auto;
-        padding: 20px;
-        border: 2px solid black;
-        border-radius: 10px;
-        text-align: left;
-        background-color: #f9f9f9;
-      }
-
-      label {
-        display: block;
-        margin: 10px 0 5px;
-        font-weight: bold;
-      }
-
-      input,
-      select,
-      textarea {
-        width: 100%;
-        padding: 8px;
-        margin-bottom: 15px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        font-size: 14px;
-        text-align: left;
-      }
-
-      textarea {
-        resize: none;
-      }
-
-      /* 按鈕樣式 */
-      button {
-        margin: 20px auto 0;
-        display: block;
-        padding: 10px 20px;
-        font-size: 16px;
-        cursor: pointer;
-      }
-
-      /* 備註標籤位置調整 */
-      #note-label {
-        vertical-align: top;
-      }
-    </style>
-
+    <!-- 請假單 -->
     <div class="form-container">
       <h3 style="text-align: center;">請假單</h3>
-      <form action="請假.php" method="post" >
+      <form action="請假.php" method="post">
         <label for="name">申請人姓名：</label>
-        <input type="text" id="name" name="name"  value="<?php echo htmlspecialchars($姓名); ?>" readonly>
+        <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($姓名); ?>" readonly>
 
         <label for="leave-type">請假類別：</label>
         <select id="leave-type" name="leave-type" required>
@@ -429,7 +431,7 @@ if (isset($_SESSION["帳號"])) {
       });
     </script>
   </div>
-  </div>
+
   <!-- Global Mailform Output-->
   <div class="snackbars" id="form-output-global"></div>
   <!-- Javascript-->

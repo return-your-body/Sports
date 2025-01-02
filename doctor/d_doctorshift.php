@@ -62,6 +62,84 @@ if (isset($_SESSION["帳號"])) {
           </script>";
   exit();
 }
+
+//醫生班表
+$帳號 = $_SESSION['帳號'];  // 取得當前登入的帳號
+
+require '../db.php'; // 引入資料庫連接檔案
+
+// SQL 查詢：根據登入帳號取得對應的醫生姓名
+$query = "
+SELECT d.doctor_id, d.doctor 
+FROM doctor d 
+INNER JOIN user u ON d.user_id = u.user_id 
+WHERE u.account = ?
+";
+$stmt = mysqli_prepare($link, $query);
+mysqli_stmt_bind_param($stmt, "s", $帳號);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+
+if ($row = mysqli_fetch_assoc($result)) {
+  $doctor_id = $row['doctor_id'];
+  $doctor_name = htmlspecialchars($row['doctor']);
+} else {
+  $doctor_id = '';
+  $doctor_name = '未知醫生';
+  error_log("未找到醫生資料，帳號: $帳號");
+}
+
+// 查詢排班與預約資料
+$reservation_query = "
+SELECT ds.date, COUNT(a.appointment_id) AS people_count
+FROM doctorshift ds
+LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
+WHERE ds.doctor_id = ?
+GROUP BY ds.date
+";
+
+// 查詢請假資料
+$leave_query = "
+SELECT start_date, end_date, reason
+FROM leaves
+WHERE doctor_id = ?
+";
+
+$reservations = [];
+$leaves = []; // 用於存放請假資料
+
+if (!empty($doctor_id)) {
+  // 查詢排班資料
+  $stmt = mysqli_prepare($link, $reservation_query);
+  mysqli_stmt_bind_param($stmt, "i", $doctor_id);
+  mysqli_stmt_execute($stmt);
+  $res_result = mysqli_stmt_get_result($stmt);
+
+  while ($res_row = mysqli_fetch_assoc($res_result)) {
+    $reservations[$res_row['date']] = $res_row['people_count'];
+  }
+
+  // 查詢請假資料
+  $stmt_leave = mysqli_prepare($link, $leave_query);
+  mysqli_stmt_bind_param($stmt_leave, "i", $doctor_id);
+  mysqli_stmt_execute($stmt_leave);
+  $leave_result = mysqli_stmt_get_result($stmt_leave);
+
+  while ($leave_row = mysqli_fetch_assoc($leave_result)) {
+    $start_date = substr($leave_row['start_date'], 0, 10); // 取得請假的開始日期 (只取年月日)
+    $end_date = substr($leave_row['end_date'], 0, 10);     // 取得請假的結束日期 (只取年月日)
+    $reason = $leave_row['reason'];
+
+    $current_date = $start_date;
+    while ($current_date <= $end_date) {
+      $leaves[$current_date] = $reason; // 將請假日期及原因存入陣列
+      $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
+    }
+  }
+}
+
+mysqli_stmt_close($stmt);
+mysqli_close($link);
 ?>
 
 
@@ -154,6 +232,8 @@ if (isset($_SESSION["帳號"])) {
     .button-shadow {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
+
+    /* 醫生班表 */
   </style>
 </head>
 
@@ -307,101 +387,7 @@ if (isset($_SESSION["帳號"])) {
 
     <!--治療師班表-->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
-
-      <?php
-      session_start(); // 啟用 Session
-      
-      // 確保用戶已登入
-      if (!isset($_SESSION['帳號'])) {
-        echo "<script>
-        alert('未登入或會話已過期，請重新登入！');
-        window.location.href = '../index.html';
-    </script>";
-        exit;
-      }
-
-      // 取得當前登入的帳號
-      $帳號 = $_SESSION['帳號'];
-
-      // 引入資料庫連接檔案
-      require '../db.php';
-
-      // SQL 查詢：根據登入帳號取得對應的醫生姓名
-      $query = "
-    SELECT d.doctor_id, d.doctor 
-    FROM doctor d 
-    INNER JOIN user u ON d.user_id = u.user_id 
-    WHERE u.account = ?
-";
-      $stmt = mysqli_prepare($link, $query);
-      mysqli_stmt_bind_param($stmt, "s", $帳號);
-      mysqli_stmt_execute($stmt);
-      $result = mysqli_stmt_get_result($stmt);
-
-      if ($row = mysqli_fetch_assoc($result)) {
-        $doctor_id = $row['doctor_id'];
-        $doctor_name = htmlspecialchars($row['doctor']);
-      } else {
-        $doctor_id = '';
-        $doctor_name = '未知醫生';
-        error_log("未找到醫生資料，帳號: $帳號");
-      }
-
-      // 查詢排班與預約資料
-      $reservation_query = "
-    SELECT ds.date, COUNT(a.appointment_id) AS people_count
-    FROM doctorshift ds
-    LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
-    WHERE ds.doctor_id = ?
-    GROUP BY ds.date
-";
-
-      // 查詢請假資料
-      $leave_query = "
-    SELECT start_date, end_date, reason
-    FROM leaves
-    WHERE doctor_id = ?
-";
-
-      $reservations = [];
-      $leaves = []; // 用於存放請假資料
-      
-      if (!empty($doctor_id)) {
-        // 查詢排班資料
-        $stmt = mysqli_prepare($link, $reservation_query);
-        mysqli_stmt_bind_param($stmt, "i", $doctor_id);
-        mysqli_stmt_execute($stmt);
-        $res_result = mysqli_stmt_get_result($stmt);
-
-        while ($res_row = mysqli_fetch_assoc($res_result)) {
-          $reservations[$res_row['date']] = $res_row['people_count'];
-        }
-
-        // 查詢請假資料
-        $stmt_leave = mysqli_prepare($link, $leave_query);
-        mysqli_stmt_bind_param($stmt_leave, "i", $doctor_id);
-        mysqli_stmt_execute($stmt_leave);
-        $leave_result = mysqli_stmt_get_result($stmt_leave);
-
-        while ($leave_row = mysqli_fetch_assoc($leave_result)) {
-          $start_date = substr($leave_row['start_date'], 0, 10); // 取得請假的開始日期 (只取年月日)
-          $end_date = substr($leave_row['end_date'], 0, 10);     // 取得請假的結束日期 (只取年月日)
-          $reason = $leave_row['reason'];
-
-          $current_date = $start_date;
-          while ($current_date <= $end_date) {
-            $leaves[$current_date] = $reason; // 將請假日期及原因存入陣列
-            $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
-          }
-        }
-      }
-
-      mysqli_stmt_close($stmt);
-      mysqli_close($link);
-      ?>
-
       <h3 style="text-align: center;">治療師班表</h3>
-
       <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
         治療師姓名：<?php echo $doctor_name; ?> <br /> <!-- 顯示醫生姓名 -->
         <label for="year">選擇年份：</label>
@@ -409,7 +395,6 @@ if (isset($_SESSION["帳號"])) {
         <label for="month">選擇月份：</label>
         <select id="month"></select>
       </div>
-
       <table class="table-custom table-color-header table-custom-bordered">
         <thead>
           <tr>
@@ -523,9 +508,6 @@ if (isset($_SESSION["帳號"])) {
           generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
         });
       </script>
-
-
-
     </section>
 
 
