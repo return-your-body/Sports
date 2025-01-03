@@ -66,7 +66,7 @@ if (isset($_SESSION["帳號"])) {
 
 //看診紀錄
 $帳號 = $_SESSION['帳號'];  // 取得當前登入的帳號
-              
+
 require '../db.php'; // 引入資料庫連接檔案
 
 // 分頁設定
@@ -444,7 +444,6 @@ $result = mysqli_query($link, $sql);
                         <td><?php echo htmlspecialchars($row['treatment_item']); ?></td>
                         <td><?php echo htmlspecialchars($row['treatment_price']); ?></td>
                         <td><?php echo htmlspecialchars($row['created_at']); ?></td>
-                      </tr>
                     <?php endwhile; ?>
                   <?php else: ?>
                     <tr>

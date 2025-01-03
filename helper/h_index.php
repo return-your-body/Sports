@@ -224,6 +224,15 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
+                  <ul class="rd-menu rd-navbar-dropdown">
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_medical-record.php">看診紀錄</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                        href="h_appointment-records.php">預約紀錄</a>
+                    </li>
+                  </ul>
+                </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="h_patient-needs.php">病患需求</a>
                 </li>
                 <!-- 登出按鈕 -->
