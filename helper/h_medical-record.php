@@ -108,6 +108,8 @@ CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') AS 
 d.doctor AS doctor_name,
 i.item AS treatment_item,
 i.price AS treatment_price,
+DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
+DAYNAME(ds.date) AS consultation_weekday,
 m.created_at
 FROM medicalrecord m
 LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
@@ -120,12 +122,14 @@ WHERE 1=1
 LIMIT $offset, $records_per_page";
 
 $result = mysqli_query($link, $sql);
+
+
 ?>
 
 
 <head>
     <!-- Site Title-->
-    <title>醫生-看診紀錄</title>
+    <title>助手-看診紀錄</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -442,6 +446,7 @@ $result = mysqli_query($link, $sql);
                                         <th>姓名</th>
                                         <th>性別</th>
                                         <th>生日 (年齡)</th>
+                                        <th>看診日期(星期)</th>
                                         <th>醫生</th>
                                         <th>治療項目</th>
                                         <th>治療費用</th>
@@ -453,50 +458,40 @@ $result = mysqli_query($link, $sql);
                                     <?php if (mysqli_num_rows($result) > 0): ?>
                                         <?php while ($row = mysqli_fetch_assoc($result)): ?>
                                             <tr>
-                                                <td><?php echo $row['medicalrecord_id']; ?></td>
+                                                <td><?php echo htmlspecialchars($row['medicalrecord_id']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['gender']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
+                                                <td>
+                                                    <?php
+                                                    // 顯示看診日期和星期
+                                                    $consultation_date = htmlspecialchars($row['consultation_date']); // 日期
+                                                    $timestamp = strtotime($consultation_date); // 將日期轉為時間戳記
+                                                    $weekdays = ['日', '一', '二', '三', '四', '五', '六']; // 中文星期對應
+                                                    $weekday = $weekdays[date('w', $timestamp)]; // 獲取星期數字對應的中文
+                                                    echo $consultation_date . ' (星期' . $weekday . ')';
+                                                    ?>
+                                                </td>
                                                 <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['treatment_item']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['treatment_price']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['created_at']); ?></td>
-
-                                                <?php
-                                                require '../db.php';
-
-                                                $query = "SELECT medicalrecord_id, appointment_id, item_id, created_at FROM medicalrecord";
-                                                $result = mysqli_query($link, $query);
-
-                                                if ($result && mysqli_num_rows($result) > 0) {
-                                                    while ($record = mysqli_fetch_assoc($result)) {
-                                                        // 輸出按鈕
-                                                        echo '<td>';
-                                                        if (isset($record['medicalrecord_id']) && !empty($record['medicalrecord_id'])) {
-                                                            echo '<a href="h_print-receipt.php?id=' . $record['medicalrecord_id'] . '" target="_blank">
-                    <button type="button">列印收據</button>
-                  </a>';
-                                                        } else {
-                                                            echo "未找到任何資料";
-                                                        }
-                                                        echo '</td>';
-                                                    }
-                                                } else {
-                                                    echo "查詢未返回任何數據";
-                                                }
-                                                ?>
-
-
-
+                                                <td>
+                                                    <a href="h_print-receipt.php?id=<?php echo $row['medicalrecord_id']; ?>"
+                                                        target="_blank">
+                                                        <button type="button">列印收據</button>
+                                                    </a>
+                                                </td>
                                             </tr>
                                         <?php endwhile; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="9">目前無資料</td>
+                                            <td colspan="10">目前無資料</td>
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
+
                             <!-- 分頁 -->
                             <div style="text-align: right; margin-top: 10px; margin-bottom: 10px;">
                                 <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（共
