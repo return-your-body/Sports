@@ -2,7 +2,6 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-	// 如果未登入或會話過期，跳轉至登入頁面
 	header("Location: ../index.html");
 	exit;
 }
@@ -12,15 +11,12 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
-// 檢查是否有 "帳號" 在 Session 中
 if (isset($_SESSION["帳號"])) {
-	// 獲取用戶帳號
 	$帳號 = $_SESSION['帳號'];
 
-	// 引入資料庫連接檔案
 	require '../db.php';
 
-	// 查詢用戶詳細資料（從資料庫中獲取對應資料）
+	// 查詢用戶詳細資料
 	$sql = "SELECT account, grade_id FROM user WHERE account = ?";
 	$stmt = mysqli_prepare($link, $sql);
 	mysqli_stmt_bind_param($stmt, "s", $帳號);
@@ -29,10 +25,9 @@ if (isset($_SESSION["帳號"])) {
 
 	if ($result && mysqli_num_rows($result) > 0) {
 		$row = mysqli_fetch_assoc($result);
-		$帳號名稱 = $row['account']; // 使用者帳號
-		$等級 = $row['grade_id']; // 等級（例如 1: 醫生, 2: 護士, 等等）
+		$帳號名稱 = $row['account'];
+		$等級 = $row['grade_id'];
 	} else {
-		// 如果查詢不到對應的資料
 		echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
@@ -41,38 +36,26 @@ if (isset($_SESSION["帳號"])) {
 	}
 }
 
-
 require '../db.php';
 
-// 取得醫生資料 (保留原有邏輯)
-$query = "
-    SELECT d.doctor_id, d.doctor
-    FROM doctor d
-    INNER JOIN user u ON d.user_id = u.user_id
-    INNER JOIN grade g ON u.grade_id = g.grade_id
-    WHERE g.grade = '醫生'
-";
-$result = mysqli_query($link, $query);
-
-// 處理 AJAX 請求，返回排班數量
+// 處理 AJAX 請求，返回按日期的總人數
 if (isset($_GET['fetch'])) {
 	$year = $_GET['year'] ?? date('Y');
 	$month = $_GET['month'] ?? date('m');
 	$doctor_id = $_GET['doctor_id'] ?? '';
 
-	// 查詢指定年份、月份和醫生的排班數量
-	$sql = "SELECT DATE(date) as shift_date, COUNT(*) as total
-            FROM doctorshift
-            WHERE YEAR(date) = ? AND MONTH(date) = ?";
+	$sql = "SELECT DATE(d.date) as appointment_date, COUNT(*) as total
+            FROM appointment a
+            INNER JOIN doctorshift d ON a.doctorshift_id = d.doctorshift_id
+            WHERE YEAR(d.date) = ? AND MONTH(d.date) = ?";
 	$params = [$year, $month];
 
 	if ($doctor_id !== '') {
-		$sql .= " AND doctor_id = ?";
+		$sql .= " AND d.doctor_id = ?";
 		$params[] = $doctor_id;
 	}
-	$sql .= " GROUP BY DATE(date)";
+	$sql .= " GROUP BY DATE(d.date)";
 
-	// 執行查詢
 	$stmt = mysqli_prepare($link, $sql);
 	mysqli_stmt_bind_param($stmt, str_repeat("s", count($params)), ...$params);
 	mysqli_stmt_execute($stmt);
@@ -80,12 +63,14 @@ if (isset($_GET['fetch'])) {
 
 	$data = [];
 	while ($row = mysqli_fetch_assoc($result)) {
-		$data[$row['shift_date']] = $row['total'];
+		$data[$row['appointment_date']] = $row['total'];
 	}
 	echo json_encode($data);
 	exit;
 }
 ?>
+
+
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
 
