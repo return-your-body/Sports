@@ -74,6 +74,97 @@ if (!$result) {
 	<link rel="stylesheet" href="css/fonts.css">
 	<link rel="stylesheet" href="css/style.css">
 	<style>
+			.custom-green-button {
+				display: inline-block;
+				padding: 10px 20px;
+				/* 調整按鈕內的間距 */
+				font-size: 14px;
+				/* 調整字體大小 */
+				font-weight: bold;
+				/* 讓文字加粗 */
+				color: #ffffff;
+				/* 文字顏色為白色 */
+				background-color: #00a99d;
+				/* 綠色背景色 */
+				border: none;
+				/* 移除邊框 */
+				border-radius: 8px;
+				/* 圓角按鈕 */
+				cursor: pointer;
+				/* 滑鼠移上時變成手指 */
+				transition: all 0.3s ease;
+				/* 添加過渡效果 */
+				box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+				/* 按鈕陰影 */
+			}
+
+			.custom-green-button:hover {
+				background-color: #008f84;
+				/* 懸停時加深綠色 */
+				box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
+				/* 懸停時加強陰影效果 */
+				transform: translateY(-2px);
+				/* 懸停時向上移動一點 */
+			}
+
+			.custom-green-button:active {
+				background-color: #00796c;
+				/* 按下時的深綠色 */
+				box-shadow: 0px 3px 4px rgba(0, 0, 0, 0.1);
+				/* 按下時陰影變小 */
+				transform: translateY(0);
+				/* 回到原位 */
+			}
+
+
+
+			/* 多選下拉選單的容器樣式 */
+			.dropdown-container {
+				position: relative;
+				display: inline-block;
+			}
+
+			/* 按鈕樣式，用於打開下拉選單 */
+			.dropdown-button {
+				padding: 8px;
+				border: 1px solid #ccc;
+				cursor: pointer;
+				background-color: white;
+			}
+
+			/* 下拉選項的樣式 */
+			.dropdown-options {
+				display: none;
+				/* 預設為隱藏 */
+				position: absolute;
+				z-index: 1;
+				/* 保證選單在其他內容之上 */
+				border: 1px solid #ccc;
+				background-color: white;
+				max-height: 150px;
+				/* 最大高度，避免內容過長 */
+				overflow-y: auto;
+				/* 垂直滾動條 */
+				box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+				/* 陰影效果 */
+			}
+
+			/* 每個選項的樣式 */
+			.dropdown-options label {
+				display: block;
+				/* 每個選項單獨一行 */
+				padding: 5px;
+				cursor: pointer;
+			}
+
+			/* 滑鼠懸停在選項時的樣式 */
+			.dropdown-options label:hover {
+				background-color: #f1f1f1;
+				/* 提示使用者可點選 */
+			}
+
+
+
 		.highlight-red {
 			color: red;
 			font-weight: bold;
@@ -422,98 +513,6 @@ if (!$result) {
 
 			<tbody id="calendar"></tbody> <!-- 日曆內容將由 JavaScript 動態生成 -->
 		</table>
-
-		<style>
-			.custom-green-button {
-				display: inline-block;
-				padding: 10px 20px;
-				/* 調整按鈕內的間距 */
-				font-size: 14px;
-				/* 調整字體大小 */
-				font-weight: bold;
-				/* 讓文字加粗 */
-				color: #ffffff;
-				/* 文字顏色為白色 */
-				background-color: #00a99d;
-				/* 綠色背景色 */
-				border: none;
-				/* 移除邊框 */
-				border-radius: 8px;
-				/* 圓角按鈕 */
-				cursor: pointer;
-				/* 滑鼠移上時變成手指 */
-				transition: all 0.3s ease;
-				/* 添加過渡效果 */
-				box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-				/* 按鈕陰影 */
-			}
-
-			.custom-green-button:hover {
-				background-color: #008f84;
-				/* 懸停時加深綠色 */
-				box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
-				/* 懸停時加強陰影效果 */
-				transform: translateY(-2px);
-				/* 懸停時向上移動一點 */
-			}
-
-			.custom-green-button:active {
-				background-color: #00796c;
-				/* 按下時的深綠色 */
-				box-shadow: 0px 3px 4px rgba(0, 0, 0, 0.1);
-				/* 按下時陰影變小 */
-				transform: translateY(0);
-				/* 回到原位 */
-			}
-
-
-
-			/* 多選下拉選單的容器樣式 */
-			.dropdown-container {
-				position: relative;
-				display: inline-block;
-			}
-
-			/* 按鈕樣式，用於打開下拉選單 */
-			.dropdown-button {
-				padding: 8px;
-				border: 1px solid #ccc;
-				cursor: pointer;
-				background-color: white;
-			}
-
-			/* 下拉選項的樣式 */
-			.dropdown-options {
-				display: none;
-				/* 預設為隱藏 */
-				position: absolute;
-				z-index: 1;
-				/* 保證選單在其他內容之上 */
-				border: 1px solid #ccc;
-				background-color: white;
-				max-height: 150px;
-				/* 最大高度，避免內容過長 */
-				overflow-y: auto;
-				/* 垂直滾動條 */
-				box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-				/* 陰影效果 */
-			}
-
-			/* 每個選項的樣式 */
-			.dropdown-options label {
-				display: block;
-				/* 每個選項單獨一行 */
-				padding: 5px;
-				cursor: pointer;
-			}
-
-			/* 滑鼠懸停在選項時的樣式 */
-			.dropdown-options label:hover {
-				background-color: #f1f1f1;
-				/* 提示使用者可點選 */
-			}
-		</style>
-
 		<script>
 			document.querySelector('.custom-green-button').addEventListener('click', function () {
 				var doctor_id = document.getElementById('the').value; // 取得選中的醫生
