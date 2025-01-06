@@ -189,7 +189,7 @@ if (isset($_SESSION["帳號"])) {
 							<ul class="rd-navbar-nav">
 								<li class="rd-nav-item active"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
 								</li>
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="">關於治療師</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="">關於治療師</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_therapist.php">治療師時間表</a>
