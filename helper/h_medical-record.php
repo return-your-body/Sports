@@ -461,16 +461,38 @@ $result = mysqli_query($link, $sql);
                                                 <td><?php echo htmlspecialchars($row['treatment_item']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['treatment_price']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['created_at']); ?></td>
-                                                <td> <!-- 列印按鈕 -->
-                                                    <a href="h_print-receipt.php?id=<?php echo $record['id']; ?>"
-                                                        target="_blank">
-                                                        <button>列印收據</button>
-                                                    </a>
+
+                                                <?php
+                                                require '../db.php';
+
+                                                $query = "SELECT medicalrecord_id, appointment_id, item_id, created_at FROM medicalrecord";
+                                                $result = mysqli_query($link, $query);
+
+                                                if ($result && mysqli_num_rows($result) > 0) {
+                                                    while ($record = mysqli_fetch_assoc($result)) {
+                                                        // 輸出按鈕
+                                                        echo '<td>';
+                                                        if (isset($record['medicalrecord_id']) && !empty($record['medicalrecord_id'])) {
+                                                            echo '<a href="h_print-receipt.php?id=' . $record['medicalrecord_id'] . '" target="_blank">
+                    <button type="button">列印收據</button>
+                  </a>';
+                                                        } else {
+                                                            echo "未找到任何資料";
+                                                        }
+                                                        echo '</td>';
+                                                    }
+                                                } else {
+                                                    echo "查詢未返回任何數據";
+                                                }
+                                                ?>
+
+
+
                                             </tr>
                                         <?php endwhile; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="8">目前無資料</td>
+                                            <td colspan="9">目前無資料</td>
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>

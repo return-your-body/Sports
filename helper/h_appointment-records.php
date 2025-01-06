@@ -431,6 +431,7 @@ $result = mysqli_query($link, $sql);
                   <th>預約時間</th>
                   <th>備註</th>
                   <th>建立時間</th>
+                  <th>選項</th>
                 </tr>
                 <?php if (mysqli_num_rows($result) > 0): ?>
                   <?php while ($row = mysqli_fetch_assoc($result)): ?>
@@ -443,11 +444,16 @@ $result = mysqli_query($link, $sql);
                       <td><?php echo $row['shifttime']; ?></td>
                       <td><?php echo htmlspecialchars($row['note']); ?></td>
                       <td><?php echo $row['created_at']; ?></td>
+                      <td> <!-- 列印按鈕 -->
+                        <a href="h_print-appointment.php?id=<?php echo $record['id']; ?>" target="_blank">
+                          <button>列印收據</button>
+                        </a>
+                      </td>
                     </tr>
                   <?php endwhile; ?>
                 <?php else: ?>
                   <tr>
-                    <td colspan="8">目前無資料</td>
+                    <td colspan="9">目前無資料</td>
                   </tr>
                 <?php endif; ?>
               </table>
