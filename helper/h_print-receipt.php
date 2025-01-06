@@ -224,6 +224,15 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
+                  <ul class="rd-menu rd-navbar-dropdown">
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_medical-record.php">看診紀錄</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                        href="h_appointment-records.php">預約紀錄</a>
+                    </li>
+                  </ul>
+                </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="h_patient-needs.php">病患需求</a>
                 </li>
                 <!-- 登出按鈕 -->
@@ -421,24 +430,6 @@ if (isset($_SESSION["帳號"])) {
 
                 <!-- 列印按鈕 -->
                 <button onclick="window.print()">列印收據</button>
-
-                <!-- <div class="accordion-custom-item accordion-custom-corporate">
-                <h4 class="accordion-custom-heading" id="accordion1-accordion-head-aogsrrgj">
-                  <button class="accordion-custom-button" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#accordion1-accordion-body-iqrnvtmc"
-                    aria-controls="accordion1-accordion-body-iqrnvtmc" aria-expanded="false">Can I track my order?<span
-                      class="accordion-custom-arrow"></span>
-                  </button>
-                </h4>
-                <div class="accordion-custom-collapse collapse" id="accordion1-accordion-body-iqrnvtmc"
-                  aria-labelledby="accordion1-accordion-head-aogsrrgj" data-bs-parent="#accordion1">
-                  <div class="accordion-custom-body">
-                    <p>Yes, you can! After placing your order you will receive an order confirmation via email. Each
-                      order starts production 24 hours after your order is placed. Within 72 hours of you placing your
-                      order, you will receive an expected delivery date.</p>
-                  </div>
-                </div>
-              </div> -->
               </dl>
             </div>
           </div>

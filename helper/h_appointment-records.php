@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html class="wide wow-animation" lang="en">
 <?php
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-	header("Location: ../index.html");
-	exit;
+  header("Location: ../index.html");
+  exit;
 }
 
 // 防止頁面被瀏覽器緩存
@@ -15,58 +13,119 @@ header("Pragma: no-cache");
 
 // 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-	// 獲取用戶帳號
-	$帳號 = $_SESSION['帳號'];
+  // 獲取用戶帳號
+  $帳號 = $_SESSION['帳號'];
 
-	// 資料庫連接
-	require '../db.php';
+  // 資料庫連接
+  require '../db.php';
 
-	// 查詢該帳號的詳細資料
+  // 查詢該帳號的詳細資料
   $sql = "SELECT user.account, doctor.doctor AS name 
             FROM user 
             JOIN doctor ON user.user_id = doctor.user_id 
             WHERE user.account = ?";
-	$stmt = mysqli_prepare($link, $sql);
-	mysqli_stmt_bind_param($stmt, "s", $帳號);
-	mysqli_stmt_execute($stmt);
-	$result = mysqli_stmt_get_result($stmt);
+  $stmt = mysqli_prepare($link, $sql);
+  mysqli_stmt_bind_param($stmt, "s", $帳號);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
 
-	if (mysqli_num_rows($result) > 0) {
-		// 抓取對應姓名
-		$row = mysqli_fetch_assoc($result);
-		$姓名 = $row['name'];
-		$帳號名稱 = $row['account'];
+  if (mysqli_num_rows($result) > 0) {
+    // 抓取對應姓名
+    $row = mysqli_fetch_assoc($result);
+    $姓名 = $row['name'];
+    $帳號名稱 = $row['account'];
 
-		// 顯示帳號和姓名
-		// echo "歡迎您！<br>";
-		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-		// echo "姓名：" . htmlspecialchars($姓名);
-		// echo "<script>
-		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-		// </script>";
-	} else {
-		// 如果資料不存在，提示用戶重新登入
-		echo "<script>
+    // 顯示帳號和姓名
+    // echo "歡迎您！<br>";
+    // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
+    // echo "姓名：" . htmlspecialchars($姓名);
+    // echo "<script>
+    //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
+    // </script>";
+  } else {
+    // 如果資料不存在，提示用戶重新登入
+    echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
               </script>";
-		exit();
-	}
+    exit();
+  }
 
-	// 關閉資料庫連接
-	mysqli_close($link);
+  // 關閉資料庫連接
+  mysqli_close($link);
 } else {
-	echo "<script>
+  echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
             window.location.href = '../index.html';
           </script>";
-	exit();
+  exit();
 }
+
+
+//預約紀錄
+$帳號 = $_SESSION['帳號'];// 取得當前登入的帳號
+
+require '../db.php';   // 引入資料庫連接檔案
+
+// 接收搜尋參數
+$search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
+
+// 分頁設定
+$records_per_page = 10;
+$page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
+$offset = ($page - 1) * $records_per_page;
+
+// 計算總記錄數
+$count_sql = "
+SELECT COUNT(*) AS total
+FROM appointment a
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN user u ON d.user_id = u.user_id
+WHERE u.account = '$帳號'
+AND p.name LIKE '%$search_name%'
+";
+$count_result = mysqli_query($link, $count_sql);
+$total_records = mysqli_fetch_assoc($count_result)['total'];
+$total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
+
+// 查詢資料
+$sql = "
+SELECT 
+a.appointment_id AS id,
+COALESCE(p.name, '未預約') AS name,
+CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
+CONCAT(COALESCE(p.birthday, 'N/A'), 
+' (', 
+CASE 
+ WHEN p.birthday IS NOT NULL THEN TIMESTAMPDIFF(YEAR, p.birthday, CURDATE())
+ ELSE 'N/A' 
+END, '歲)') AS birthday,
+ds.date AS appointment_date,
+COALESCE(st.shifttime, 'N/A') AS shifttime,
+COALESCE(a.note, '') AS note,
+a.created_at
+FROM appointment a
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN user u ON d.user_id = u.user_id
+WHERE u.account = '$帳號'
+AND p.name LIKE '%$search_name%'
+ORDER BY ds.date, st.shifttime
+LIMIT $offset, $records_per_page
+";
+$result = mysqli_query($link, $sql);
 ?>
+
+<!DOCTYPE html>
+<html class="wide wow-animation" lang="en">
 
 <head>
   <!-- Site Title-->
-  <title>患者需求</title>
+  <title>醫生-預約紀錄</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -153,6 +212,35 @@ if (isset($_SESSION["帳號"])) {
     .button-shadow {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
+
+    /*預約紀錄 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .search-container {
+      text-align: right;
+      margin-bottom: 10px;
+    }
+
+    input,
+    button {
+      padding: 5px;
+      margin-right: 5px;
+    }
   </style>
 </head>
 
@@ -206,8 +294,7 @@ if (isset($_SESSION["帳號"])) {
               <ul class="rd-navbar-nav">
                 <li class="rd-nav-item"><a class="rd-nav-link" href="h_index.php">首頁</a>
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a>
-                </li>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a></li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">醫生班表</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_doctorshift.php">治療師班表</a>
@@ -224,16 +311,17 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
+
+                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_medical-record.php">看診紀錄</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
                         href="h_appointment-records.php">預約紀錄</a>
                     </li>
                   </ul>
                 </li>
-                <li class="rd-nav-item active"><a class="rd-nav-link" href="h_patient-needs.php">病患需求</a>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="h_patient-needs.php">病患需求</a>
                 </li>
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
@@ -286,89 +374,154 @@ if (isset($_SESSION["帳號"])) {
                 </ul>
               </div>
             </div> -->
-            <?php 
-						echo"歡迎 ~ ";
-						// 顯示姓名
-						echo $姓名;
-						?>
+            <?php
+            echo "歡迎 ~ ";
+            // 顯示姓名
+            echo $姓名;
+            ?>
           </div>
         </nav>
       </div>
     </header>
 
-
     <!--標題-->
-    <!-- <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+    <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+      <!-- Breadcrumbs-->
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <p class="breadcrumbs-custom-subtitle">Get in Touch with Us</p>
-          <p class="heading-1 breadcrumbs-custom-title">患者需求</p>
+          <!-- <p class="breadcrumbs-custom-subtitle">Terms of Use</p> -->
+          <p class="heading-1 breadcrumbs-custom-title">預約紀錄</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
-            <li class="active">患者需求</li>
+            <li><a href="#">紀錄</a></li>
+            <li class="active">預約紀錄</li>
           </ul>
         </div>
       </section>
-    </div> -->
+    </div>
     <!--標題-->
 
-
-    <!-- 患者需求整理-->
-    <!-- <section class="section section-lg text-center text-md-start bg-default">
+    <!--預約紀錄-->
+    <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
-       
-      </div>
-    </section> -->
+        <div class="row row-50 justify-content-lg-center">
+          <div class="col-lg-10 col-xl-8">
+            <!-- Bootstrap collapse-->
+            <div class="accordion-custom-group accordion-custom-group-custom accordion-custom-group-corporate"
+              id="accordion1" role="tablist" aria-multiselectable="false">
+              <!-- <h3 style='text-align: center;'>預約紀錄</h3> -->
 
-    <!--503錯誤-->
-    <section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
-      <div class="fullwidth-page-inner">
-        <div class="section-md text-center">
-          <div class="container">
-            <p class="breadcrumbs-custom-subtitle">您所點選的頁面正在製作中，暫時關閉</p>
-            <p class="heading-1 breadcrumbs-custom-title">Error 503</p>
-            <p>Sorry, we are working overtime to make our website better, so stay tuned!</p>
+              <!-- 搜尋框 -->
+              <div class="search-container">
+                <form method="GET" action="">
+                  <input type="text" name="search_name" placeholder="請輸入搜尋姓名"
+                    value="<?php echo htmlspecialchars($search_name); ?>">
+                  <button type="submit">搜尋</button>
+                </form>
+              </div>
+
+              <!-- 資料表格 -->
+              <table>
+                <tr>
+                  <th>編號</th>
+                  <th>姓名</th>
+                  <th>性別</th>
+                  <th>生日(年齡)</th>
+                  <th>預約日期</th>
+                  <th>預約時間</th>
+                  <th>備註</th>
+                  <th>建立時間</th>
+                </tr>
+                <?php if (mysqli_num_rows($result) > 0): ?>
+                  <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                    <tr>
+                      <td><?php echo $row['id']; ?></td>
+                      <td><?php echo htmlspecialchars($row['name']); ?></td>
+                      <td><?php echo $row['gender']; ?></td>
+                      <td><?php echo $row['birthday']; ?></td>
+                      <td><?php echo $row['appointment_date']; ?></td>
+                      <td><?php echo $row['shifttime']; ?></td>
+                      <td><?php echo htmlspecialchars($row['note']); ?></td>
+                      <td><?php echo $row['created_at']; ?></td>
+                    </tr>
+                  <?php endwhile; ?>
+                <?php else: ?>
+                  <tr>
+                    <td colspan="8">目前無資料</td>
+                  </tr>
+                <?php endif; ?>
+              </table>
+
+              <!-- 分頁 -->
+              <div style="text-align: right; margin-top: 10px; margin-bottom: 10px;">
+                <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（共 <?php echo $total_records; ?>
+                  筆資料）</span>
+              </div>
+
+              <div style="text-align: center; margin-top: 20px;">
+                <?php if ($page > 1): ?>
+                  <a href="?page=<?php echo $page - 1; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
+                <?php endif; ?>
+
+                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                  <?php if ($i == $page): ?>
+                    <strong><?php echo $i; ?></strong>
+                  <?php else: ?>
+                    <a
+                      href="?page=<?php echo $i; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
+                  <?php endif; ?>
+                <?php endfor; ?>
+
+                <?php if ($page < $total_pages): ?>
+                  <a href="?page=<?php echo $page + 1; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
+                <?php endif; ?>
+              </div>
+
+              <?php
+              mysqli_close($link);
+              ?>
+
+            </div>
           </div>
         </div>
       </div>
     </section>
-
+    <!--預約紀錄-->
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
         <div class="row row-40">
           <!-- <div class="col-md-4">
-            <h4>關於我們</h4>
-            <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
-              professional knowledge using innovative approach.</p>
-          </div> -->
+          <h4>關於我們</h4>
+          <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
+            professional knowledge using innovative approach.</p>
+        </div> -->
           <div class="col-md-3">
             <h4>快速連結</h4>
             <ul class="list-marked">
-              <li><a href="h_index.php">首頁</a></li>
-              <li><a href="h_appointment.php">預約</a></li>
-              <li><a href="h_numberpeople.php">當天人數及時段</a></li>
-              <li><a href="h_doctorshift.php">班表時段</a></li>
-              <li><a href="h_print-receipt.php">列印收據</a></li>
-              <li><a href="h_print-appointment.php">列印預約單</a></li>
-              <li><a href="h_patient-needs.php">患者需求</a></li>
+              <li><a href="d_index.php">首頁</a></li>
+              <li><a href="d_appointment.php">預約</a></li>
+              <li><a href="d_numberpeople.php">當天人數及時段</a></li>
+              <li><a href="d_doctorshift.php">班表時段</a></li>
+              <li><a href="d_medical-record.php">看診紀錄</a></li>
+              <li> <a href="d_appointment-records.php">預約紀錄</a></li>
+              </a></li>
             </ul>
           </div>
           <!-- <div class="col-md-5">
-            <h4>聯絡我們</h4>
-            <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
-              courses we offer.</p>
-            <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global" data-form-type="subscribe"
-              method="post" action="bat/rd-mailform.php">
-              <div class="form-wrap">
-                <input class="form-input" type="email" name="email" data-constraints="@Email @Required"
-                  id="footer-mail">
-                <label class="form-label" for="footer-mail">Enter your e-mail</label>
-              </div>
-              <button class="form-button linearicons-paper-plane"></button>
-            </form>
-          </div> -->
+          <h4>聯絡我們</h4>
+          <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
+            courses we offer.</p>
+          <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global" data-form-type="subscribe"
+            method="post" action="bat/rd-mailform.php">
+            <div class="form-wrap">
+              <input class="form-input" type="email" name="email" data-constraints="@Email @Required" id="footer-mail">
+              <label class="form-label" for="footer-mail">Enter your e-mail</label>
+            </div>
+            <button class="form-button linearicons-paper-plane"></button>
+          </form>
+        </div> -->
         </div>
         <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
@@ -379,12 +532,12 @@ if (isset($_SESSION["帳號"])) {
   </div>
   <!--頁尾-->
 
-
   <!-- Global Mailform Output-->
   <div class="snackbars" id="form-output-global"></div>
   <!-- Javascript-->
   <script src="js/core.min.js"></script>
   <script src="js/script.js"></script>
+  <!-- coded by Himic-->
 </body>
 
 </html>
