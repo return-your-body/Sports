@@ -433,11 +433,45 @@ $result = mysqli_query($link, $sql);
                             <!-- 搜尋框 -->
                             <div class="search-container">
                                 <form method="GET" action="">
-                                    <input type="text" name="search_name" placeholder="請輸入搜尋姓名"
-                                        value="<?php echo htmlspecialchars($search_name); ?>">
+                                    <!-- 隱藏的狀態標誌，用於檢測是否按下搜尋按鈕 -->
+                                    <input type="hidden" name="is_search" value="1">
+                                    <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
+                                        value="<?php echo isset($_GET['search_name']) ? htmlspecialchars($_GET['search_name']) : ''; ?>">
                                     <button type="submit">搜尋</button>
                                 </form>
                             </div>
+
+                            <?php
+                            require '../db.php'; // 引入資料庫連接檔案
+                            
+                            // 檢查是否由搜尋按鈕提交
+                            if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['is_search'])) {
+                                $search_name = trim($_GET['search_name']);
+
+                                if ($search_name === '') {
+                                    // 如果搜尋姓名為空，顯示彈跳訊息
+                                    echo "<script>alert('請輸入搜尋姓名！');</script>";
+                                } else {
+                                    // 執行資料庫查詢，檢查是否有該資料
+                                    $sql = "
+        SELECT COUNT(*) AS total
+        FROM medicalrecord a
+        LEFT JOIN people p ON a.people_id = p.people_id
+        WHERE p.name LIKE '%$search_name%'
+        ";
+                                    $result = mysqli_query($link, $sql);
+                                    $data = mysqli_fetch_assoc($result);
+
+                                    if ($data['total'] == 0) {
+                                        // 查無資料，顯示彈跳訊息
+                                        echo "<script>alert('查無此人！');</script>";
+                                    }
+                                }
+                            }
+                            ?>
+
+
+
 
                             <table>
                                 <thead>

@@ -61,9 +61,72 @@ if (isset($_SESSION["帳號"])) {
   exit();
 }
 
-
 //預約紀錄
+$帳號 = $_SESSION['帳號'];// 取得當前登入的帳號
 
+require '../db.php';   // 引入資料庫連接檔案
+
+// 接收搜尋參數
+$search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
+
+// 分頁設定
+$records_per_page = 10;
+$page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
+$offset = ($page - 1) * $records_per_page;
+
+// 計算總記錄數
+$count_sql = "
+SELECT COUNT(*) AS total
+FROM appointment a
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN user u ON d.user_id = u.user_id
+WHERE u.account = '$帳號'
+AND p.name LIKE '%$search_name%'
+";
+$count_result = mysqli_query($link, $count_sql);
+$total_records = mysqli_fetch_assoc($count_result)['total'];
+$total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
+
+// 查詢資料
+$sql = "
+SELECT 
+    a.appointment_id AS id,
+    COALESCE(p.name, '未預約') AS name,
+    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
+    CONCAT(COALESCE(p.birthday, 'N/A'), 
+        ' (', 
+        CASE 
+            WHEN p.birthday IS NOT NULL THEN TIMESTAMPDIFF(YEAR, p.birthday, CURDATE())
+            ELSE 'N/A' 
+        END, '歲)') AS birthday,
+    DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date, -- 看診日期
+    CASE 
+        WHEN DAYOFWEEK(ds.date) = 1 THEN '星期日'
+        WHEN DAYOFWEEK(ds.date) = 2 THEN '星期一'
+        WHEN DAYOFWEEK(ds.date) = 3 THEN '星期二'
+        WHEN DAYOFWEEK(ds.date) = 4 THEN '星期三'
+        WHEN DAYOFWEEK(ds.date) = 5 THEN '星期四'
+        WHEN DAYOFWEEK(ds.date) = 6 THEN '星期五'
+        WHEN DAYOFWEEK(ds.date) = 7 THEN '星期六'
+    END AS appointment_weekday, -- 中文星期
+    COALESCE(st.shifttime, 'N/A') AS shifttime,
+    COALESCE(a.note, '') AS note,
+    a.created_at
+FROM appointment a
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN user u ON d.user_id = u.user_id
+WHERE u.account = '$帳號'
+AND p.name LIKE '%$search_name%'
+ORDER BY ds.date, st.shifttime
+LIMIT $offset, $records_per_page;
+";
+
+$result = mysqli_query($link, $sql);
 ?>
 
 <!DOCTYPE html>
@@ -71,7 +134,7 @@ if (isset($_SESSION["帳號"])) {
 
 <head>
   <!-- Site Title-->
-  <title>助手 -預約紀錄</title>
+  <title>助手-預約紀錄</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -214,6 +277,7 @@ if (isset($_SESSION["帳號"])) {
       </svg>
     </div>
   </div>
+
 
   <!--標題列-->
   <div class="page">
@@ -366,90 +430,41 @@ if (isset($_SESSION["帳號"])) {
               <!-- 搜尋框 -->
               <div class="search-container">
                 <form method="GET" action="">
-                  <input type="text" name="search_name" placeholder="請輸入搜尋姓名"
-                    value="<?php echo htmlspecialchars($search_name); ?>">
+                  <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
+                    value="<?php echo isset($search_name) ? htmlspecialchars($search_name) : ''; ?>">
                   <button type="submit">搜尋</button>
                 </form>
               </div>
 
-              <!-- 資料表格 -->
               <?php
-              $帳號 = $_SESSION['帳號']; // 取得當前登入的帳號
-              
               require '../db.php'; // 引入資料庫連接檔案
               
-              // 接收搜尋參數
-              $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
+              $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
 
-              // 分頁設定
-              $records_per_page = 10;
-              $page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
-              $offset = ($page - 1) * $records_per_page;
+              if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                if ($search_name === '') {
+                  echo "<script>alert('請輸入搜尋姓名！');</script>";
+                } else {
+                  // 查詢資料
+                  $sql = "
+        SELECT COUNT(*) AS total
+        FROM appointment a
+        LEFT JOIN people p ON a.people_id = p.people_id
+        WHERE p.name LIKE '%$search_name%'
+        ";
+                  $result = mysqli_query($link, $sql);
+                  $data = mysqli_fetch_assoc($result);
 
-              // 計算總記錄數
-              $count_sql = "
-SELECT COUNT(*) AS total
-FROM appointment a
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN user u ON d.user_id = u.user_id
-WHERE u.account = '$帳號'
-" . ($search_name ? "AND p.name LIKE '%$search_name%'" : "");
-
-              $count_result = mysqli_query($link, $count_sql);
-
-              if (!$count_result) {
-                die("計算總記錄數出錯：" . mysqli_error($link));
-              }
-
-              $total_records = mysqli_fetch_assoc($count_result)['total'];
-              $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
-
-              // 查詢資料
-              $sql = "
-SELECT 
-    a.appointment_id AS id,
-    COALESCE(p.name, '未預約') AS name,
-    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
-    CONCAT(COALESCE(p.birthday, 'N/A'), 
-        ' (', 
-        CASE 
-            WHEN p.birthday IS NOT NULL THEN TIMESTAMPDIFF(YEAR, p.birthday, CURDATE())
-            ELSE 'N/A' 
-        END, '歲)') AS birthday,
-    DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
-    CASE 
-        WHEN DAYOFWEEK(ds.date) = 1 THEN '星期日'
-        WHEN DAYOFWEEK(ds.date) = 2 THEN '星期一'
-        WHEN DAYOFWEEK(ds.date) = 3 THEN '星期二'
-        WHEN DAYOFWEEK(ds.date) = 4 THEN '星期三'
-        WHEN DAYOFWEEK(ds.date) = 5 THEN '星期四'
-        WHEN DAYOFWEEK(ds.date) = 6 THEN '星期五'
-        WHEN DAYOFWEEK(ds.date) = 7 THEN '星期六'
-    END AS appointment_weekday,
-    COALESCE(st.shifttime, 'N/A') AS shifttime,
-    COALESCE(a.note, '') AS note,
-    a.created_at
-FROM appointment a
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN user u ON d.user_id = u.user_id
-WHERE u.account = '$帳號'
-" . ($search_name ? "AND p.name LIKE '%$search_name%'" : "") . "
-ORDER BY ds.date, st.shifttime
-LIMIT $offset, $records_per_page;
-";
-
-              $result = mysqli_query($link, $sql);
-
-              if (!$result) {
-                die("查詢資料出錯：" . mysqli_error($link));
+                  if ($data['total'] == 0) {
+                    // 沒有查詢到資料
+                    echo "<script>alert('查無此人！');</script>";
+                  }
+                }
               }
               ?>
 
+
+              <!-- 資料表格 -->
               <table>
                 <thead>
                   <tr>
@@ -461,7 +476,6 @@ LIMIT $offset, $records_per_page;
                     <th>看診時間</th>
                     <th>備註</th>
                     <th>建立時間</th>
-                    <th>選項</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -479,22 +493,16 @@ LIMIT $offset, $records_per_page;
                         <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
                         <td><?php echo htmlspecialchars($row['note']); ?></td>
                         <td><?php echo htmlspecialchars($row['created_at']); ?></td>
-                        <td>
-                          <a href="h_appointment-records.php?id=<?php echo $row['id']; ?>" target="_blank">
-                            <button type="button">列印預約單</button>
-                          </a>
-                        </td>
                       </tr>
                     <?php endwhile; ?>
                   <?php else: ?>
                     <tr>
-                      <td colspan="9">目前無資料</td>
+                      <td colspan="8">目前無資料</td>
                     </tr>
                   <?php endif; ?>
                 </tbody>
               </table>
 
-              
               <!-- 分頁 -->
               <div style="text-align: right; margin-top: 10px; margin-bottom: 10px;">
                 <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（共 <?php echo $total_records; ?>
@@ -543,13 +551,13 @@ LIMIT $offset, $records_per_page;
           <div class="col-md-3">
             <h4>快速連結</h4>
             <ul class="list-marked">
-              <li><a href="d_index.php">首頁</a></li>
-              <li><a href="d_appointment.php">預約</a></li>
-              <li><a href="d_numberpeople.php">當天人數及時段</a></li>
-              <li><a href="d_doctorshift.php">班表時段</a></li>
-              <li><a href="d_medical-record.php">看診紀錄</a></li>
-              <li> <a href="d_appointment-records.php">預約紀錄</a></li>
-              </a></li>
+              <li><a href="h_index.php">首頁</a></li>
+              <li><a href="h_appointment.php">預約</a></li>
+              <li><a href="h_numberpeople.php">當天人數及時段</a></li>
+              <li><a href="h_doctorshift.php">班表時段</a></li>
+              <li><a href="h_print-receipt.php">列印收據</a></li>
+              <li><a href="h_print-appointment.php">列印預約單</a></li>
+              <li><a href="h_patient-needs.php">患者需求</a></li>
             </ul>
           </div>
           <!-- <div class="col-md-5">
