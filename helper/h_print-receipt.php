@@ -65,7 +65,64 @@ if (isset($_SESSION["帳號"])) {
 
 
 //列印收據
+require '../db.php'; // 引入資料庫連接檔案
 
+// 確認 GET 請求是否攜帶有效的 ID
+if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+  $id = intval($_GET['id']);
+
+  // 查詢關聯資料
+  $query = "
+SELECT 
+m.medicalrecord_id,
+a.appointment_id,
+p.name AS people_name,
+CASE 
+WHEN p.gender_id = 1 THEN '男'
+WHEN p.gender_id = 2 THEN '女'
+ELSE '未設定'
+END AS gender,
+CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') AS birthday_with_age,
+d.doctor AS doctor_name,
+ds.date AS appointment_date,
+i.item AS treatment_item,
+i.price AS treatment_price,
+m.created_at
+FROM medicalrecord m
+LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN item i ON m.item_id = i.item_id
+WHERE m.medicalrecord_id = $id
+";
+
+  $result = mysqli_query($link, $query);
+
+  if (!$result) {
+    echo "SQL 錯誤：" . mysqli_error($link);
+    exit;
+  }
+
+  if (mysqli_num_rows($result) > 0) {
+    $record = mysqli_fetch_assoc($result);
+
+    // 提取資料到變數
+    $people_name = $record['people_name'];
+    $gender = $record['gender'];
+    $birthday_with_age = $record['birthday_with_age'];
+    $appointment_date = $record['appointment_date'];
+    $doctor_name = $record['doctor_name'];
+    $treatment_item = $record['treatment_item'];
+    $treatment_price = $record['treatment_price'];
+  } else {
+    echo "未找到對應的病歷資料";
+    exit;
+  }
+} else {
+  echo "無效的 ID";
+  exit;
+}
 ?>
 
 <head>
@@ -158,15 +215,17 @@ if (isset($_SESSION["帳號"])) {
     }
 
     /* 列印收據 */
+    /* 通用樣式 */
     #print-area {
       width: 350px;
       margin: 0 auto;
+      /* 水平居中 */
       border: 2px solid black;
       padding: 20px;
       text-align: left;
       box-sizing: border-box;
       page-break-inside: avoid;
-      /* 防止內容在頁面內分割 */
+      /* 防止分頁 */
     }
 
     #print-area h1 {
@@ -181,25 +240,47 @@ if (isset($_SESSION["帳號"])) {
       font-size: 16px;
     }
 
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      text-align: center;
+    .doctor-sign {
+      margin-top: 20px;
+      font-weight: bold;
     }
 
-    th,
-    td {
-      border: 1px solid black;
-      padding: 8px;
+    /* 新增按鈕容器樣式 */
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      /* 按鈕之間的間距 */
+      margin-top: 20px;
     }
 
+    /* 按鈕樣式 */
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      /* 圓角按鈕 */
+      /* cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f5f5f5; 
+      transition: background-color 0.3s ease; */
+    }
+
+    button:hover {
+      background-color: #e0e0e0;
+      /* 懸停效果 */
+    }
+
+    /* 列印樣式 */
     @media print {
+
+      html,
       body {
         margin: 0;
         padding: 0;
-        height: auto;
+        height: 100%;
         overflow: hidden;
-        /* 隱藏超出的內容，避免列印空白頁 */
+        /* 防止滾動條 */
       }
 
       body * {
@@ -210,13 +291,17 @@ if (isset($_SESSION["帳號"])) {
       #print-area,
       #print-area * {
         visibility: visible;
-        /* 只顯示打印區域的內容 */
+        /* 只顯示目標區域 */
       }
 
       #print-area {
         margin: 0 auto;
         page-break-inside: avoid;
         /* 防止分頁 */
+        page-break-before: auto;
+        /* 避免提前分頁 */
+        page-break-after: avoid;
+        /* 避免結束後另起空白頁 */
       }
 
       button {
@@ -224,15 +309,8 @@ if (isset($_SESSION["帳號"])) {
         /* 隱藏按鈕 */
       }
     }
-
-    button {
-      margin: 20px auto 0;
-      display: block;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
   </style>
+
 </head>
 
 <body>
@@ -303,7 +381,7 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li> -->
-                <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
+                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_medical-record.php">看診紀錄</a>
                     </li>
@@ -403,66 +481,6 @@ if (isset($_SESSION["帳號"])) {
               id="accordion1" role="tablist" aria-multiselectable="false">
               <dl class="list-terms">
                 <!-- 收據顯示區域 -->
-                <?php
-                require '../db.php'; // 引入資料庫連接檔案
-                
-                // 確認 GET 請求是否攜帶有效的 ID
-                if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-                  $id = intval($_GET['id']);
-
-                  // 查詢關聯資料
-                  $query = "
-    SELECT 
-        m.medicalrecord_id,
-        a.appointment_id,
-        p.name AS people_name,
-        CASE 
-            WHEN p.gender_id = 1 THEN '男'
-            WHEN p.gender_id = 2 THEN '女'
-            ELSE '未設定'
-        END AS gender,
-        CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') AS birthday_with_age,
-        d.doctor AS doctor_name,
-        ds.date AS appointment_date,
-        i.item AS treatment_item,
-        i.price AS treatment_price,
-        m.created_at
-    FROM medicalrecord m
-    LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN item i ON m.item_id = i.item_id
-    WHERE m.medicalrecord_id = $id
-    ";
-
-                  $result = mysqli_query($link, $query);
-
-                  if (!$result) {
-                    echo "SQL 錯誤：" . mysqli_error($link);
-                    exit;
-                  }
-
-                  if (mysqli_num_rows($result) > 0) {
-                    $record = mysqli_fetch_assoc($result);
-
-                    // 提取資料到變數
-                    $people_name = $record['people_name'];
-                    $gender = $record['gender'];
-                    $birthday_with_age = $record['birthday_with_age'];
-                    $appointment_date = $record['appointment_date'];
-                    $doctor_name = $record['doctor_name'];
-                    $treatment_item = $record['treatment_item'];
-                    $treatment_price = $record['treatment_price'];
-                  } else {
-                    echo "未找到對應的病歷資料";
-                    exit;
-                  }
-                } else {
-                  echo "無效的 ID";
-                  exit;
-                }
-                ?>
 
                 <div id="print-area">
                   <h1>看診收據</h1>
@@ -486,11 +504,13 @@ if (isset($_SESSION["帳號"])) {
                     </tr>
                   </table>
                   <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
+
+                </div>
+                <div class="button-container">
                   <button onclick="window.print()">列印收據</button>
+                  <button onclick="location.href='h_medical-record.php'">返回</button>
                 </div>
 
-                <!-- 返回按鈕 -->
-                <button onclick="location.href='h_medical-record.php'">返回</button>
               </dl>
             </div>
           </div>
