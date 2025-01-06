@@ -92,19 +92,28 @@ $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) :
 // 查詢資料
 $sql = "
 SELECT 
-a.appointment_id AS id,
-COALESCE(p.name, '未預約') AS name,
-CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
-CONCAT(COALESCE(p.birthday, 'N/A'), 
-' (', 
-CASE 
- WHEN p.birthday IS NOT NULL THEN TIMESTAMPDIFF(YEAR, p.birthday, CURDATE())
- ELSE 'N/A' 
-END, '歲)') AS birthday,
-ds.date AS appointment_date,
-COALESCE(st.shifttime, 'N/A') AS shifttime,
-COALESCE(a.note, '') AS note,
-a.created_at
+    a.appointment_id AS id,
+    COALESCE(p.name, '未預約') AS name,
+    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
+    CONCAT(COALESCE(p.birthday, 'N/A'), 
+        ' (', 
+        CASE 
+            WHEN p.birthday IS NOT NULL THEN TIMESTAMPDIFF(YEAR, p.birthday, CURDATE())
+            ELSE 'N/A' 
+        END, '歲)') AS birthday,
+    DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date, -- 看診日期
+    CASE 
+        WHEN DAYOFWEEK(ds.date) = 1 THEN '星期日'
+        WHEN DAYOFWEEK(ds.date) = 2 THEN '星期一'
+        WHEN DAYOFWEEK(ds.date) = 3 THEN '星期二'
+        WHEN DAYOFWEEK(ds.date) = 4 THEN '星期三'
+        WHEN DAYOFWEEK(ds.date) = 5 THEN '星期四'
+        WHEN DAYOFWEEK(ds.date) = 6 THEN '星期五'
+        WHEN DAYOFWEEK(ds.date) = 7 THEN '星期六'
+    END AS appointment_weekday, -- 中文星期
+    COALESCE(st.shifttime, 'N/A') AS shifttime,
+    COALESCE(a.note, '') AS note,
+    a.created_at
 FROM appointment a
 LEFT JOIN people p ON a.people_id = p.people_id
 LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
@@ -114,8 +123,9 @@ LEFT JOIN user u ON d.user_id = u.user_id
 WHERE u.account = '$帳號'
 AND p.name LIKE '%$search_name%'
 ORDER BY ds.date, st.shifttime
-LIMIT $offset, $records_per_page
+LIMIT $offset, $records_per_page;
 ";
+
 $result = mysqli_query($link, $sql);
 ?>
 
@@ -214,20 +224,10 @@ $result = mysqli_query($link, $sql);
 
     /*預約紀錄 */
     table {
-      width: 100%;
+      width: auto;
+      /* 讓表格寬度根據內容自動調整 */
       border-collapse: collapse;
       margin-top: 20px;
-    }
-
-    th,
-    td {
-      padding: 8px;
-      text-align: center;
-      border: 1px solid #ddd;
-    }
-
-    th {
-      background-color: #f2f2f2;
     }
 
     .search-container {
@@ -235,10 +235,24 @@ $result = mysqli_query($link, $sql);
       margin-bottom: 10px;
     }
 
-    input,
-    button {
-      padding: 5px;
-      margin-right: 5px;
+    th,
+    td {
+      padding: 8px;
+      text-align: center;
+      border: 1px solid #ddd;
+      white-space: nowrap;
+      /* 防止文字換行，保持欄位寬度符合文字 */
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    table th,
+    table td {
+      text-align: center;
+      vertical-align: middle;
+      /* 垂直置中 */
     }
   </style>
 </head>
@@ -409,42 +423,81 @@ $result = mysqli_query($link, $sql);
               <!-- 搜尋框 -->
               <div class="search-container">
                 <form method="GET" action="">
-                  <input type="text" name="search_name" placeholder="請輸入搜尋姓名"
-                    value="<?php echo htmlspecialchars($search_name); ?>">
+                  <!-- 隱藏的狀態標誌，用於檢測是否按下搜尋按鈕 -->
+                  <input type="hidden" name="is_search" value="1">
+                  <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
+                    value="<?php echo isset($_GET['search_name']) ? htmlspecialchars($_GET['search_name']) : ''; ?>">
                   <button type="submit">搜尋</button>
                 </form>
               </div>
 
+              <?php
+              require '../db.php'; // 引入資料庫連接檔案
+              
+              // 檢查是否由搜尋按鈕提交
+              if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['is_search'])) {
+                $search_name = trim($_GET['search_name']);
+
+                if ($search_name === '') {
+                  // 如果搜尋姓名為空，顯示彈跳訊息
+                  echo "<script>alert('請輸入搜尋姓名！');</script>";
+                } else {
+                  // 執行資料庫查詢，檢查是否有該資料
+                  $sql = "
+        SELECT COUNT(*) AS total
+        FROM appointment a
+        LEFT JOIN people p ON a.people_id = p.people_id
+        WHERE p.name LIKE '%$search_name%'
+        ";
+                  $result = mysqli_query($link, $sql);
+                  $data = mysqli_fetch_assoc($result);
+
+                  if ($data['total'] == 0) {
+                    // 查無資料，顯示彈跳訊息
+                    echo "<script>alert('查無此人！');</script>";
+                  }
+                }
+              }
+              ?>
+
+
               <!-- 資料表格 -->
               <table>
-                <tr>
-                  <th>編號</th>
-                  <th>姓名</th>
-                  <th>性別</th>
-                  <th>生日(年齡)</th>
-                  <th>預約日期</th>
-                  <th>預約時間</th>
-                  <th>備註</th>
-                  <th>建立時間</th>
-                </tr>
-                <?php if (mysqli_num_rows($result) > 0): ?>
-                  <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                    <tr>
-                      <td><?php echo $row['id']; ?></td>
-                      <td><?php echo htmlspecialchars($row['name']); ?></td>
-                      <td><?php echo $row['gender']; ?></td>
-                      <td><?php echo $row['birthday']; ?></td>
-                      <td><?php echo $row['appointment_date']; ?></td>
-                      <td><?php echo $row['shifttime']; ?></td>
-                      <td><?php echo htmlspecialchars($row['note']); ?></td>
-                      <td><?php echo $row['created_at']; ?></td>
-                    </tr>
-                  <?php endwhile; ?>
-                <?php else: ?>
+                <thead>
                   <tr>
-                    <td colspan="8">目前無資料</td>
+                    <th>編號</th>
+                    <th>姓名</th>
+                    <th>性別</th>
+                    <th>生日 (年齡)</th>
+                    <th>看診日期 (星期)</th>
+                    <th>看診時間</th>
+                    <th>備註</th>
+                    <th>建立時間</th>
                   </tr>
-                <?php endif; ?>
+                </thead>
+                <tbody>
+                  <?php if (mysqli_num_rows($result) > 0): ?>
+                    <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                      <tr>
+                        <td><?php echo htmlspecialchars($row['id']); ?></td>
+                        <td><?php echo htmlspecialchars($row['name']); ?></td>
+                        <td><?php echo htmlspecialchars($row['gender']); ?></td>
+                        <td><?php echo htmlspecialchars($row['birthday']); ?></td>
+                        <td>
+                          <?php echo htmlspecialchars($row['appointment_date']); ?>
+                          (<?php echo htmlspecialchars($row['appointment_weekday']); ?>)
+                        </td>
+                        <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
+                        <td><?php echo htmlspecialchars($row['note']); ?></td>
+                        <td><?php echo htmlspecialchars($row['created_at']); ?></td>
+                      </tr>
+                    <?php endwhile; ?>
+                  <?php else: ?>
+                    <tr>
+                      <td colspan="8">目前無資料</td>
+                    </tr>
+                  <?php endif; ?>
+                </tbody>
               </table>
 
               <!-- 分頁 -->

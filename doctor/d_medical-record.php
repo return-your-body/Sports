@@ -64,7 +64,7 @@ if (isset($_SESSION["帳號"])) {
   exit();
 }
 
-//看診紀錄
+// 看診紀錄
 $帳號 = $_SESSION['帳號'];  // 取得當前登入的帳號
 
 require '../db.php'; // 引入資料庫連接檔案
@@ -108,18 +108,33 @@ CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') AS 
 d.doctor AS doctor_name,
 i.item AS treatment_item,
 i.price AS treatment_price,
+DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date, -- 看診日期
+CASE 
+  WHEN DAYOFWEEK(ds.date) = 1 THEN '星期日'
+  WHEN DAYOFWEEK(ds.date) = 2 THEN '星期一'
+  WHEN DAYOFWEEK(ds.date) = 3 THEN '星期二'
+  WHEN DAYOFWEEK(ds.date) = 4 THEN '星期三'
+  WHEN DAYOFWEEK(ds.date) = 5 THEN '星期四'
+  WHEN DAYOFWEEK(ds.date) = 6 THEN '星期五'
+  WHEN DAYOFWEEK(ds.date) = 7 THEN '星期六'
+END AS consultation_weekday, -- 中文星期
+COALESCE(st.shifttime, '未設定') AS consultation_time, -- 看診時間
 m.created_at
 FROM medicalrecord m
 LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
 LEFT JOIN people p ON a.people_id = p.people_id
 LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
 LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
 LEFT JOIN item i ON m.item_id = i.item_id
 WHERE 1=1
 " . ($search_name ? "AND p.name LIKE '%$search_name%'" : "") . "
+ORDER BY ds.date, st.shifttime -- 按日期與時間排序
 LIMIT $offset, $records_per_page";
 
+
 $result = mysqli_query($link, $sql);
+
 ?>
 
 
@@ -413,11 +428,43 @@ $result = mysqli_query($link, $sql);
               <!-- 搜尋框 -->
               <div class="search-container">
                 <form method="GET" action="">
-                  <input type="text" name="search_name" placeholder="請輸入搜尋姓名"
-                    value="<?php echo htmlspecialchars($search_name); ?>">
+                  <!-- 隱藏的狀態標誌，用於檢測是否按下搜尋按鈕 -->
+                  <input type="hidden" name="is_search" value="1">
+                  <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
+                    value="<?php echo isset($_GET['search_name']) ? htmlspecialchars($_GET['search_name']) : ''; ?>">
                   <button type="submit">搜尋</button>
                 </form>
               </div>
+
+              <?php
+              require '../db.php'; // 引入資料庫連接檔案
+              
+              // 檢查是否由搜尋按鈕提交
+              if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['is_search'])) {
+                $search_name = trim($_GET['search_name']);
+
+                if ($search_name === '') {
+                  // 如果搜尋姓名為空，顯示彈跳訊息
+                  echo "<script>alert('請輸入搜尋姓名！');</script>";
+                } else {
+                  // 執行資料庫查詢，檢查是否有該資料
+                  $sql = "
+        SELECT COUNT(*) AS total
+        FROM medicalrecord a
+        LEFT JOIN people p ON a.people_id = p.people_id
+        WHERE p.name LIKE '%$search_name%'
+        ";
+                  $result = mysqli_query($link, $sql);
+                  $data = mysqli_fetch_assoc($result);
+
+                  if ($data['total'] == 0) {
+                    // 查無資料，顯示彈跳訊息
+                    echo "<script>alert('查無此人！');</script>";
+                  }
+                }
+              }
+              ?>
+
 
               <table>
                 <thead>
@@ -426,7 +473,8 @@ $result = mysqli_query($link, $sql);
                     <th>姓名</th>
                     <th>性別</th>
                     <th>生日 (年齡)</th>
-                    <th>醫生</th>
+                    <th>看診日期 (星期)</th>
+                    <th>看診時間</th>
                     <th>治療項目</th>
                     <th>治療費用</th>
                     <th>建立時間</th>
@@ -436,22 +484,29 @@ $result = mysqli_query($link, $sql);
                   <?php if (mysqli_num_rows($result) > 0): ?>
                     <?php while ($row = mysqli_fetch_assoc($result)): ?>
                       <tr>
-                        <td><?php echo $row['medicalrecord_id']; ?></td>
+                        <td><?php echo htmlspecialchars($row['medicalrecord_id']); ?></td>
                         <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
                         <td><?php echo htmlspecialchars($row['gender']); ?></td>
                         <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
-                        <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
+                        <td>
+                          <?php echo htmlspecialchars($row['consultation_date']); ?>
+                          (<?php echo htmlspecialchars($row['consultation_weekday']); ?>)
+                        </td>
+                        <td><?php echo htmlspecialchars($row['consultation_time']); ?></td>
                         <td><?php echo htmlspecialchars($row['treatment_item']); ?></td>
                         <td><?php echo htmlspecialchars($row['treatment_price']); ?></td>
                         <td><?php echo htmlspecialchars($row['created_at']); ?></td>
+                      </tr>
                     <?php endwhile; ?>
                   <?php else: ?>
                     <tr>
-                      <td colspan="8">目前無資料</td>
+                      <td colspan="9">目前無資料</td>
                     </tr>
                   <?php endif; ?>
                 </tbody>
               </table>
+
+
               <!-- 分頁 -->
               <div style="text-align: right; margin-top: 10px; margin-bottom: 10px;">
                 <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（共 <?php echo $total_records; ?>
