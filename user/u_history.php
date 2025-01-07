@@ -598,6 +598,32 @@ mysqli_close($link);
 							</a></li>
 						</ul>
 					</div>
+					
+					<div class="col-md-4">
+						<h4>聯絡我們</h4>
+						<br />
+						<ul>
+							<li>📍 <strong>診療地點:</strong>大重仁骨科復健科診所</li><br />
+							<li>📍 <strong>地址:</strong>
+								<a href="https://maps.app.goo.gl/u3TojSMqjGmdx5Pt5" class="custom-link" target="_blank"
+									rel="noopener noreferrer">
+									241 新北市三重區重新路五段 592 號
+								</a>
+							</li>
+							<br />
+							<li>📍 <strong>電話:</strong>(02) 2995-8283</li>
+						</ul>
+
+						<!-- <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global"
+							data-form-type="subscribe" method="post" action="bat/rd-mailform.php">
+							<div class="form-wrap">
+								<input class="form-input" type="email" name="email" data-constraints="@Email @Required"
+									id="footer-mail">
+								<label class="form-label" for="footer-mail">請輸入您的電子郵件</label>
+							</div>
+							<button class="form-button linearicons-paper-plane"></button>
+						</form> -->
+					</div>
 				</div>
 			</div>
 		</footer>

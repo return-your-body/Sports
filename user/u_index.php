@@ -277,7 +277,7 @@ mysqli_close($link);
 		/* 聯絡我們 */
 		/* 自定義超連結樣式 */
 		.custom-link {
-			color:rgb(246, 247, 248);
+			color: rgb(246, 247, 248);
 			/* 設定超連結顏色 */
 			text-decoration: none;
 			/* 移除超連結的下劃線 */
@@ -656,11 +656,16 @@ mysqli_close($link);
 
 					<div class="col-md-4">
 						<h4>聯絡我們</h4>
-						<br/>
+						<br />
 						<ul>
-							<li>📍 <strong>診療地點:</strong>大重仁骨科復健科診所</li><br/>
-							<li>📍 <strong>地址:</strong><a href="https://maps.app.goo.gl/u3TojSMqjGmdx5Pt5" class="custom-link">241
-									新北市三重區重新路五段 592 號</a></li><br/>
+							<li>📍 <strong>診療地點:</strong>大重仁骨科復健科診所</li><br />
+							<li>📍 <strong>地址:</strong>
+								<a href="https://maps.app.goo.gl/u3TojSMqjGmdx5Pt5" class="custom-link" target="_blank"
+									rel="noopener noreferrer">
+									241 新北市三重區重新路五段 592 號
+								</a>
+							</li>
+							<br />
 							<li>📍 <strong>電話:</strong>(02) 2995-8283</li>
 						</ul>
 
