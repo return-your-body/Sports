@@ -4,8 +4,8 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-	header("Location: ../index.html");
-	exit;
+  header("Location: ../index.html");
+  exit;
 }
 
 // 防止頁面被瀏覽器緩存
@@ -15,54 +15,101 @@ header("Pragma: no-cache");
 
 // 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-	// 獲取用戶帳號
-	$帳號 = $_SESSION['帳號'];
+  // 獲取用戶帳號
+  $帳號 = $_SESSION['帳號'];
 
-	// 資料庫連接
-	require '../db.php';
+  // 資料庫連接
+  require '../db.php';
 
-	// 查詢該帳號的詳細資料
+  // 查詢該帳號的詳細資料
   $sql = "SELECT user.account, doctor.doctor AS name 
             FROM user 
             JOIN doctor ON user.user_id = doctor.user_id 
             WHERE user.account = ?";
-	$stmt = mysqli_prepare($link, $sql);
-	mysqli_stmt_bind_param($stmt, "s", $帳號);
-	mysqli_stmt_execute($stmt);
-	$result = mysqli_stmt_get_result($stmt);
+  $stmt = mysqli_prepare($link, $sql);
+  mysqli_stmt_bind_param($stmt, "s", $帳號);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
 
-	if (mysqli_num_rows($result) > 0) {
-		// 抓取對應姓名
-		$row = mysqli_fetch_assoc($result);
-		$姓名 = $row['name'];
-		$帳號名稱 = $row['account'];
+  if (mysqli_num_rows($result) > 0) {
+    // 抓取對應姓名
+    $row = mysqli_fetch_assoc($result);
+    $姓名 = $row['name'];
+    $帳號名稱 = $row['account'];
 
-		// 顯示帳號和姓名
-		// echo "歡迎您！<br>";
-		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-		// echo "姓名：" . htmlspecialchars($姓名);
-		// echo "<script>
-		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-		// </script>";
-	} else {
-		// 如果資料不存在，提示用戶重新登入
-		echo "<script>
+    // 顯示帳號和姓名
+    // echo "歡迎您！<br>";
+    // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
+    // echo "姓名：" . htmlspecialchars($姓名);
+    // echo "<script>
+    //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
+    // </script>";
+  } else {
+    // 如果資料不存在，提示用戶重新登入
+    echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
               </script>";
-		exit();
-	}
+    exit();
+  }
 
-	// 關閉資料庫連接
-	mysqli_close($link);
+  // 關閉資料庫連接
+  mysqli_close($link);
 } else {
-	echo "<script>
+  echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
             window.location.href = '../index.html';
           </script>";
-	exit();
+  exit();
 }
+
+//列印預約單
+require '../db.php'; // 引入資料庫連接
+                
+// 檢查是否有傳入 id
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+  die("未傳入有效的預約 ID");
+}
+
+$appointment_id = mysqli_real_escape_string($link, $_GET['id']);
+
+// SQL 查詢
+$sql = "
+SELECT 
+a.appointment_id,
+p.name AS people_name,
+p.birthday AS people_birthday,
+CASE 
+WHEN p.gender_id = 1 THEN '男' 
+WHEN p.gender_id = 2 THEN '女' 
+ELSE '未設定' 
+END AS people_gender,
+ds.date AS appointment_date,
+st.shifttime AS appointment_time,
+d.doctor AS doctor_name
+FROM appointment a
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+WHERE a.appointment_id = '$appointment_id'
+";
+
+$result = mysqli_query($link, $sql);
+
+if (!$result || mysqli_num_rows($result) === 0) {
+  die("找不到對應的預約單資料");
+}
+
+// 取得查詢結果
+$data = mysqli_fetch_assoc($result);
+
+// 輸出結果進行調試
+// echo "<pre>";
+// print_r($data);
+// echo "</pre>";
 ?>
+
 
 <head>
   <!-- Site Title-->
@@ -217,7 +264,7 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
-                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">列印</a>
+                <!-- <li class="rd-nav-item active"><a class="rd-nav-link" href="#">列印</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_print-receipt.php">列印收據</a>
                     </li>
@@ -225,12 +272,12 @@ if (isset($_SESSION["帳號"])) {
                         href="h_print-appointment.php">列印預約單</a>
                     </li>
                   </ul>
-                </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
+                </li> -->
+                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_medical-record.php">看診紀錄</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
                         href="h_appointment-records.php">預約紀錄</a>
                     </li>
                   </ul>
@@ -288,11 +335,11 @@ if (isset($_SESSION["帳號"])) {
                 </ul>
               </div>
             </div> -->
-            <?php 
-						echo"歡迎 ~ ";
-						// 顯示姓名
-						echo $姓名;
-						?>
+            <?php
+            echo "歡迎 ~ ";
+            // 顯示姓名
+            echo $姓名;
+            ?>
           </div>
         </nav>
       </div>
@@ -319,21 +366,16 @@ if (isset($_SESSION["帳號"])) {
     <!--列印預約單-->
     <style>
       /* 通用樣式 */
-      /* body {
-                    margin: 0;
-                    padding: 0;
-                    font-family: Arial, sans-serif;
-                    text-align: center;
-                   } */
-
       #print-area {
         width: 350px;
-        margin: 50px auto;
-        /* 區塊垂直居中 */
+        margin: 0 auto;
+        /* 水平居中 */
         border: 2px solid black;
         padding: 20px;
         text-align: left;
         box-sizing: border-box;
+        page-break-inside: avoid;
+        /* 防止分頁 */
       }
 
       #print-area h1 {
@@ -354,24 +396,93 @@ if (isset($_SESSION["帳號"])) {
       }
 
       /* 列印樣式 */
+      /* 通用樣式 */
+      #print-area {
+        width: 350px;
+        margin: 0 auto;
+        /* 水平居中 */
+        border: 2px solid black;
+        padding: 20px;
+        text-align: left;
+        box-sizing: border-box;
+        page-break-inside: avoid;
+        /* 防止分頁 */
+      }
+
+      #print-area h1 {
+        text-align: center;
+        margin: 0 0 20px;
+        font-size: 24px;
+      }
+
+      #print-area p {
+        margin: 10px 0;
+        line-height: 1.6;
+        font-size: 16px;
+      }
+
+      .doctor-sign {
+        margin-top: 20px;
+        font-weight: bold;
+      }
+
+      /* 新增按鈕容器樣式 */
+      .button-container {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        /* 按鈕之間的間距 */
+        margin-top: 20px;
+      }
+
+      /* 按鈕樣式 */
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        /* 圓角按鈕 */
+        /* cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f5f5f5; 
+      transition: background-color 0.3s ease; */
+      }
+
+      button:hover {
+        background-color: #e0e0e0;
+        /* 懸停效果 */
+      }
+
+      /* 列印樣式 */
       @media print {
+
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+          overflow: hidden;
+          /* 防止滾動條 */
+        }
+
         body * {
           visibility: hidden;
+          /* 隱藏其他內容 */
         }
 
         #print-area,
         #print-area * {
           visibility: visible;
+          /* 只顯示目標區域 */
         }
 
         #print-area {
           margin: 0 auto;
           page-break-inside: avoid;
-        }
-
-        html,
-        body {
-          height: 100%;
+          /* 防止分頁 */
+          page-break-before: auto;
+          /* 避免提前分頁 */
+          page-break-after: avoid;
+          /* 避免結束後另起空白頁 */
         }
 
         button {
@@ -379,33 +490,40 @@ if (isset($_SESSION["帳號"])) {
           /* 隱藏按鈕 */
         }
       }
-
-      /* 按鈕樣式 */
-      button {
-        margin: 20px auto 0;
-        /* 距離表格的間距 */
-        display: block;
-        /* 讓按鈕居中 */
-        padding: 10px 20px;
-        font-size: 16px;
-        cursor: pointer;
-      }
     </style>
 
-    <div id="print-area">
-      <h1>預約單</h1>
-      <p>姓名：<?php echo $people_name; ?></p>
-      <p>性別：<?php echo $people_gender; ?></p>
-      <p>生日：<?php echo $people_birthday; ?></p>
-      <p>預約日期：<?php echo $appointment_date; ?></p>
-      <p>預約時間：<?php echo $appointment_time; ?></p>
-      <p>治療師：<?php echo $doctor_name; ?></p>
-      <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
-    </div>
 
-    <!-- 列印按鈕 -->
-    <button onclick="window.print()">列印預約單</button>
-    <br />
+
+    <section class="section section-lg bg-default text-center">
+      <div class="container">
+        <div class="row row-50 justify-content-lg-center">
+          <div class="col-lg-10 col-xl-8">
+            <!-- Bootstrap collapse-->
+            <div class="accordion-custom-group accordion-custom-group-custom accordion-custom-group-corporate"
+              id="accordion1" role="tablist" aria-multiselectable="false">
+              <dl class="list-terms">
+
+                <div id="print-area">
+                  <h1>預約單</h1>
+                  <p>姓名：<?php echo htmlspecialchars($data['people_name']); ?></p>
+                  <p>性別：<?php echo htmlspecialchars($data['people_gender']); ?></p>
+                  <p>生日：<?php echo htmlspecialchars($data['people_birthday']); ?></p>
+                  <p>預約日期：<?php echo htmlspecialchars($data['appointment_date']); ?></p>
+                  <p>預約時間：<?php echo htmlspecialchars($data['appointment_time']); ?></p>
+                  <p>治療師：<?php echo htmlspecialchars($data['doctor_name']); ?></p>
+                  <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
+                </div>
+                <div class="button-container">
+                <button onclick="window.print()">列印預約單</button>
+                <button onclick="location.href='h_appointment-records.php'">返回</button>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
@@ -423,8 +541,8 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="h_appointment.php">預約</a></li>
               <li><a href="h_numberpeople.php">當天人數及時段</a></li>
               <li><a href="h_doctorshift.php">班表時段</a></li>
-              <li><a href="h_print-receipt.php">列印收據</a></li>
-              <li><a href="h_print-appointment.php">列印預約單</a></li>
+              <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
+              <li><a href="h_print-appointment.php">列印預約單</a></li> -->
               <li><a href="h_patient-needs.php">患者需求</a></li>
             </ul>
           </div>

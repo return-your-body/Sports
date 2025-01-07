@@ -228,6 +228,8 @@ if (isset($_SESSION["帳號"])) {
 									</ul>
 								</li>
 
+								<li class="rd-nav-item"><a class="rd-nav-link" href="a_doctorlist.php">醫生資料</a>
+								</li>
 
 								<!-- 登出按鈕 -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"

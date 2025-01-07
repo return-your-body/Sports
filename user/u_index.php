@@ -231,31 +231,62 @@ mysqli_close($link);
 		}
 
 
-
+		/*醫生班表 */
+		/* 表格樣式設定 */
 		.table-custom {
 			width: 100%;
+			/* 表格寬度為 100% */
 			border-collapse: collapse;
+			/* 合併邊框，讓表格看起來更整齊 */
 			table-layout: fixed;
+			/* 固定表格佈局，讓所有列均分寬度 */
 		}
 
+		/* 表格內容 (單元格) 的樣式 */
 		.table-custom th,
 		.table-custom td {
 			border: 1px solid #ddd;
+			/* 單元格邊框設定 */
 			text-align: left;
 			/* 文字靠左對齊 */
 			padding: 8px;
+			/* 單元格內部填充，增強可讀性 */
 			white-space: nowrap;
+			/* 禁止文字換行 */
 		}
 
+		/* 表格標題 (表頭) 的樣式 */
 		.table-custom th {
 			background-color: #00a79d;
+			/* 表頭背景色設定 */
 			color: white;
+			/* 表頭文字顏色設定為白色 */
 			text-align: center;
+			/* 表頭文字置中 */
 		}
 
+		/* 預約資訊的文字樣式 */
 		.reservation-info {
 			color: red;
+			/* 文字顏色設定為紅色，用於突顯重要資訊 */
 			margin-top: 5px;
+			/* 與其他元素保持適當間距 */
+		}
+
+
+		/* 聯絡我們 */
+		.custom-link {
+			color: rgb(246, 247, 248);
+			/* 設定超連結顏色 */
+			text-decoration: none;
+			/* 移除超連結的下劃線 */
+		}
+
+		.custom-link:hover {
+			color: #0056b3;
+			/* 滑鼠懸停時的顏色，例如深藍色 */
+			text-decoration: underline;
+			/* 懸停時增加下劃線效果 */
 		}
 	</style>
 </head>
@@ -418,7 +449,7 @@ mysqli_close($link);
 			</div>
 		</header>
 
-		<!-- <marquee>跑馬燈</marquee> -->
+
 
 		<!--Welcome back user-->
 		<section class="section section-xl bg-image bg-image-9 text-center novi-bg novi-bg-img">
@@ -437,7 +468,9 @@ mysqli_close($link);
 		</section>
 		<!--Welcome back doctor-->
 
-
+		<marquee>
+			您好！目前任職於三重的「大重仁復健科診所」。由於治療師的上班時間每月不同，歡迎來電或留言詢問預約時段。感謝您的配合！
+		</marquee>
 
 		<!--班表-->
 		<section class="section section-lg bg-default">
@@ -603,7 +636,7 @@ mysqli_close($link);
 						</ul>
 
 					</div>
-					<div class="col-md-3">
+					<div class="col-md-4">
 						<h4>快速連結</h4>
 						<ul class="list-marked">
 							<li><a href="u_index.php">首頁</a></li>
@@ -618,11 +651,38 @@ mysqli_close($link);
 							</a></li>
 						</ul>
 					</div>
+
+
+					<div class="col-md-4">
+						<h4>聯絡我們</h4>
+						<br />
+						<ul>
+							<li>📍 <strong>診療地點:</strong>大重仁骨科復健科診所</li><br />
+							<li>📍 <strong>地址:</strong>
+								<a href="https://maps.app.goo.gl/u3TojSMqjGmdx5Pt5" class="custom-link" target="_blank"
+									rel="noopener noreferrer">
+									241 新北市三重區重新路五段 592 號
+								</a>
+							</li>
+							<br />
+							<li>📍 <strong>電話:</strong>(02) 2995-8283</li>
+						</ul>
+
+						<!-- <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global"
+							data-form-type="subscribe" method="post" action="bat/rd-mailform.php">
+							<div class="form-wrap">
+								<input class="form-input" type="email" name="email" data-constraints="@Email @Required"
+									id="footer-mail">
+								<label class="form-label" for="footer-mail">請輸入您的電子郵件</label>
+							</div>
+							<button class="form-button linearicons-paper-plane"></button>
+						</form> -->
+					</div>
 				</div>
 			</div>
 		</footer>
 
-		
+
 	</div>
 	<!-- Global Mailform Output-->
 	<div class="snackbars" id="form-output-global"></div>

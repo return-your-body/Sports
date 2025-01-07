@@ -319,7 +319,7 @@ $result = mysqli_query($link, $sql);
                                         </li>
                                     </ul>
                                 </li>
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">列印</a>
+                                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="#">列印</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="h_print-receipt.php">列印收據</a>
@@ -328,7 +328,7 @@ $result = mysqli_query($link, $sql);
                                                 href="h_print-appointment.php">列印預約單</a>
                                         </li>
                                     </ul>
-                                </li>
+                                </li> -->
 
                                 <li class="rd-nav-item active"><a class="rd-nav-link" href="#">紀錄</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
@@ -470,9 +470,6 @@ $result = mysqli_query($link, $sql);
                             }
                             ?>
 
-
-
-
                             <table>
                                 <thead>
                                     <tr>
@@ -579,13 +576,13 @@ $result = mysqli_query($link, $sql);
                     <div class="col-md-3">
                         <h4>快速連結</h4>
                         <ul class="list-marked">
-                            <li><a href="d_index.php">首頁</a></li>
-                            <li><a href="d_appointment.php">預約</a></li>
-                            <li><a href="d_numberpeople.php">當天人數及時段</a></li>
-                            <li><a href="d_doctorshift.php">班表時段</a></li>
-                            <li><a href="d_medical-record.php">看診紀錄</a></li>
-                            <li><a href="d_appointment-records.php">預約紀錄</a></li>
-                            <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
+                            <li><a href="h_index.php">首頁</a></li>
+                            <li><a href="h_appointment.php">預約</a></li>
+                            <li><a href="h_numberpeople.php">當天人數及時段</a></li>
+                            <li><a href="h_doctorshift.php">班表時段</a></li>
+                            <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
+                            <li><a href="h_print-appointment.php">列印預約單</a></li> -->
+                            <li><a href="h_patient-needs.php">患者需求</a></li>
                         </ul>
                     </div>
                     <!-- <div class="col-md-5">

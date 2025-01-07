@@ -2,6 +2,7 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
+    // 如果未登入或會話過期，跳轉至登入頁面
     header("Location: ../index.html");
     exit;
 }
@@ -11,65 +12,42 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
-// 檢查 "帳號" 是否存在於 $_SESSION 中
+// 檢查是否有 "帳號" 在 Session 中
 if (isset($_SESSION["帳號"])) {
     // 獲取用戶帳號
     $帳號 = $_SESSION['帳號'];
 
-    // 資料庫連接
+    // 引入資料庫連接檔案
     require '../db.php';
 
-    // 查詢該帳號的詳細資料
-    $sql = "SELECT user.account, people.name 
-            FROM user 
-            JOIN people ON user.user_id = people.user_id 
-            WHERE user.account = ?";
+    // 查詢用戶詳細資料（從資料庫中獲取對應資料）
+    $sql = "SELECT account, grade_id FROM user WHERE account = ?";
     $stmt = mysqli_prepare($link, $sql);
     mysqli_stmt_bind_param($stmt, "s", $帳號);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
 
-    if (mysqli_num_rows($result) > 0) {
-        // 抓取對應姓名
+    if ($result && mysqli_num_rows($result) > 0) {
         $row = mysqli_fetch_assoc($result);
-        $姓名 = $row['name'];
-        $帳號名稱 = $row['account'];
-
-        // 顯示帳號和姓名
-        // echo "歡迎您！<br>";
-        // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-        // echo "姓名：" . htmlspecialchars($姓名);
-        // echo "<script>
-        //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-        // </script>";
+        $帳號名稱 = $row['account']; // 使用者帳號
+        $等級 = $row['grade_id']; // 等級（例如 1: 醫生, 2: 護士, 等等）
     } else {
-        // 如果資料不存在，提示用戶重新登入
+        // 如果查詢不到對應的資料
         echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
               </script>";
         exit();
     }
-
-    // 關閉資料庫連接
-    mysqli_close($link);
-} else {
-    echo "<script>
-            alert('會話過期或資料遺失，請重新登入。');
-            window.location.href = '../index.html';
-          </script>";
-    exit();
 }
 ?>
 
-
-
 <!DOCTYPE html>
-<html class="wide wow-animation" lang="en">
+<html lang="en">
 
 <head>
     <!-- Site Title-->
-    <title>運動筋膜放鬆</title>
+    <title>Single course</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -95,6 +73,7 @@ if (isset($_SESSION["帳號"])) {
         html.lt-ie-10 .ie-panel {
             display: block;
         }
+
 
         /* 登出確認視窗 - 初始隱藏 */
         .logout-box {
@@ -155,21 +134,6 @@ if (isset($_SESSION["帳號"])) {
         .button-shadow {
             box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
         }
-
-        /* 聯絡我們 */
-        .custom-link {
-            color: rgb(246, 247, 248);
-            /* 設定超連結顏色 */
-            text-decoration: none;
-            /* 移除超連結的下劃線 */
-        }
-
-        .custom-link:hover {
-            color: #0056b3;
-            /* 滑鼠懸停時的顏色，例如深藍色 */
-            text-decoration: underline;
-            /* 懸停時增加下劃線效果 */
-        }
     </style>
 </head>
 
@@ -187,9 +151,11 @@ if (isset($_SESSION["帳號"])) {
                 <polyline class="line-cornered stroke-still" points="0,0 0,100 100,100" stroke-width="10" fill="none">
                 </polyline>
                 <polyline class="line-cornered stroke-animation" points="0,0 100,0 100,100" stroke-width="10"
-                    fill="none"></polyline>
+                    fill="none">
+                </polyline>
                 <polyline class="line-cornered stroke-animation" points="0,0 0,100 100,100" stroke-width="10"
-                    fill="none"></polyline>
+                    fill="none">
+                </polyline>
             </svg>
         </div>
     </div>
@@ -214,7 +180,7 @@ if (isset($_SESSION["帳號"])) {
                                 data-rd-navbar-toggle=".rd-navbar-nav-wrap"><span></span></button>
                             <!-- RD Navbar Brand-->
                             <div class="rd-navbar-brand">
-                                <!--Brand--><a class="brand-name" href="u_index.html"><img class="logo-default"
+                                <!--Brand--><a class="brand-name" href="index.php"><img class="logo-default"
                                         src="images/logo-default-172x36.png" alt="" width="86" height="18"
                                         loading="lazy" /><img class="logo-inverse" src="images/logo-inverse-172x36.png"
                                         alt="" width="86" height="18" loading="lazy" /></a>
@@ -222,47 +188,44 @@ if (isset($_SESSION["帳號"])) {
                         </div>
                         <div class="rd-navbar-nav-wrap">
                             <ul class="rd-navbar-nav">
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="u_index.php">首頁</a>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
                                 </li>
-
-                                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">關於我們</a>
+                                <li class="rd-nav-item active"><a class="rd-nav-link" href="">關於治療師</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
-                                                href="u_link.php">醫生介紹</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_therapist.php">治療師時間表</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="u_caseshare.php">個案分享</a>
+                                                href="a_addds.php">新增治療師班表</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="u_body-knowledge.php">日常小知識</a>
+                                                href="a_leave.php">請假申請</a>
                                         </li>
                                     </ul>
                                 </li>
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
-                                    <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="u_reserve.php">立即預約</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="u_reserve-record.php">查看預約資料</a>
-                                            <!-- 修改預約 -->
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="u_reserve-time.php">查看預約時段</a>
-                                        </li>
-                                    </ul>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
                                 </li>
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
-                                </li>
-                                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
+                                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="single-teacher.html">個人資料</a>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">Single teacher</a>
                                         </li>
                                     </ul>
                                 </li> -->
+                                <li class="rd-nav-item "><a class="rd-nav-link" href="">用戶管理</a>
+                                    <ul class="rd-menu rd-navbar-dropdown">
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_patient.php">用戶管理</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_addhd.php">新增治療師/助手</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_blacklist.php">黑名單</a>
+                                        </li>
+                                    </ul>
+                                </li>
 
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="u_profile.php">個人資料</a>
+                                <li class="rd-nav-item active"><a class="rd-nav-link" href="a_doctorlist.php">醫生資料</a>
                                 </li>
 
                                 <!-- 登出按鈕 -->
@@ -298,20 +261,16 @@ if (isset($_SESSION["帳號"])) {
                                         document.getElementById('logoutBox').style.display = 'none';
                                     }
                                 </script>
-                                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="contacts.html">Contacts</a>
-                                  </li> -->
                             </ul>
                         </div>
                         <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span>
                         </div>
                         <!-- <div class="rd-navbar-aside-right rd-navbar-collapse">
                             <div class="rd-navbar-social">
-                                <div class="rd-navbar-social-text">聯絡方式</div>
+                                <div class="rd-navbar-social-text">Follow us</div>
                                 <ul class="list-inline">
                                     <li><a class="icon novi-icon icon-default icon-custom-facebook"
                                             href="https://www.facebook.com/ReTurnYourBody/"></a></li>
-                                    <li><a class="icon novi-icon icon-default icon-custom-linkedin"
-                                            href="https://lin.ee/sUaUVMq"></a></li>
                                     <li><a class="icon novi-icon icon-default icon-custom-instagram"
                                             href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"></a>
                                     </li>
@@ -321,146 +280,141 @@ if (isset($_SESSION["帳號"])) {
                         <?php
                         echo "歡迎 ~ ";
                         // 顯示姓名
-                        echo $姓名;
+                        echo $帳號名稱;
                         ?>
                     </div>
                 </nav>
             </div>
         </header>
-
-
-        <!--標題-->
+        <!-- Page Header-->
         <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
             <!-- Breadcrumbs-->
             <section class="breadcrumbs-custom breadcrumbs-custom-svg">
                 <div class="container">
-                    <!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
-                    <p class="heading-1 breadcrumbs-custom-title">醫生介紹</p>
+                    <p class="heading-1 breadcrumbs-custom-title">管理醫生資料</p>
                     <ul class="breadcrumbs-custom-path">
-                        <li><a href="u_index.php">首頁</a></li>
-                        <li><a href="#">關於我們</a></li>
-                        <li class="active">醫生介紹</li>
+                        <li><a href="a_index.php">首頁</a></li>
+                        <li><a href="">管理</a></li>
+                        <li class="active">管理醫生資料</li>
                     </ul>
                 </div>
             </section>
+
         </div>
-        <!--標題-->
 
-        <!-- Team-->
-        <section class="section section-lg novi-bg novi-bg-img bg-default">
+
+        <?php
+        // 引入資料庫連線檔案
+        require '../db.php';
+
+        // 初始化變數
+        $doctorprofile_id = $doctor_id = $education = $current_position = $specialty = $certifications = $treatment_concept = "";
+
+        if (isset($_GET['edit_id'])) {
+            // 編輯模式：根據ID抓取資料
+            $edit_id = $_GET['edit_id'];
+            $query = "SELECT * FROM doctorprofile WHERE doctorprofile_id = $edit_id";
+            $result = mysqli_query($link, $query);
+
+            if ($result && $row = mysqli_fetch_assoc($result)) {
+                $doctorprofile_id = $row['doctorprofile_id'];
+                $doctor_id = $row['doctor_id'];
+                $education = $row['education'];
+                $current_position = $row['current_position'];
+                $specialty = $row['specialty'];
+                $certifications = $row['certifications'];
+                $treatment_concept = $row['treatment_concept'];
+            }
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            // 處理表單提交
+            $doctor_id = $_POST['doctor_id'];
+            $education = $_POST['education'];
+            $current_position = $_POST['current_position'];
+            $specialty = $_POST['specialty'];
+            $certifications = $_POST['certifications'];
+            $treatment_concept = $_POST['treatment_concept'];
+
+            if (isset($_POST['doctorprofile_id']) && !empty($_POST['doctorprofile_id'])) {
+                // 更新資料
+                $doctorprofile_id = $_POST['doctorprofile_id'];
+                $query = "UPDATE doctorprofile SET doctor_id='$doctor_id', education='$education', current_position='$current_position', 
+                      specialty='$specialty', certifications='$certifications', treatment_concept='$treatment_concept', updated_at=NOW() 
+                      WHERE doctorprofile_id=$doctorprofile_id";
+            } else {
+                // 新增資料
+                $query = "INSERT INTO doctorprofile (doctor_id, education, current_position, specialty, certifications, treatment_concept, created_at, updated_at) 
+                      VALUES ('$doctor_id', '$education', '$current_position', '$specialty', '$certifications', '$treatment_concept', NOW(), NOW())";
+            }
+
+            if (mysqli_query($link, $query)) {
+                echo "<p>資料成功保存！</p>";
+            } else {
+                echo "<p>錯誤: " . mysqli_error($link) . "</p>";
+            }
+        }
+        ?>
+
+        <form method="POST" action="">
+            <input type="hidden" name="doctorprofile_id" value="<?php echo $doctorprofile_id; ?>">
+
+            <label for="doctor_id">醫生 ID:</label><br>
+            <input type="text" name="doctor_id" id="doctor_id" value="<?php echo $doctor_id; ?>" required><br><br>
+
+            <label for="education">學歷:</label><br>
+            <textarea name="education" id="education"><?php echo $education; ?></textarea><br><br>
+
+            <label for="current_position">目前職位:</label><br>
+            <textarea name="current_position" id="current_position"><?php echo $current_position; ?></textarea><br><br>
+
+            <label for="specialty">專長:</label><br>
+            <textarea name="specialty" id="specialty"><?php echo $specialty; ?></textarea><br><br>
+
+            <label for="certifications">證書:</label><br>
+            <textarea name="certifications" id="certifications"><?php echo $certifications; ?></textarea><br><br>
+
+            <label for="treatment_concept">治療理念:</label><br>
+            <textarea name="treatment_concept"
+                id="treatment_concept"><?php echo $treatment_concept; ?></textarea><br><br>
+
+            <button type="submit">保存</button>
+        </form>
+
+        <h3>現有資料</h3>
+        <table border="1">
+            <tr>
+                <th>ID</th>
+                <th>醫生 ID</th>
+                <th>學歷</th>
+                <th>目前職位</th>
+                <th>專長</th>
+                <th>證書</th>
+                <th>治療理念</th>
+                <th>操作</th>
+            </tr>
             <?php
-            require '../db.php';  // 載入資料庫連線設定
-            
-            // 查詢所有非助手醫生
-            $sql = "SELECT doctor FROM doctor WHERE doctor NOT LIKE '%助手%'";
-            $result = mysqli_query($link, $sql);
+            // 抓取所有資料
+            $query = "SELECT * FROM doctorprofile";
+            $result = mysqli_query($link, $query);
 
-            if (!$result) {
-                die("SQL 查詢錯誤: " . mysqli_error($link));
+            if ($result) {
+                while ($row = mysqli_fetch_assoc($result)) {
+                    echo "<tr>";
+                    echo "<td>" . $row['doctorprofile_id'] . "</td>";
+                    echo "<td>" . $row['doctor_id'] . "</td>";
+                    echo "<td>" . $row['education'] . "</td>";
+                    echo "<td>" . $row['current_position'] . "</td>";
+                    echo "<td>" . $row['specialty'] . "</td>";
+                    echo "<td>" . $row['certifications'] . "</td>";
+                    echo "<td>" . $row['treatment_concept'] . "</td>";
+                    echo "<td><a href='?edit_id=" . $row['doctorprofile_id'] . "'>編輯</a></td>";
+                    echo "</tr>";
+                }
             }
-
-            $doctors = [];
-            while ($row = mysqli_fetch_assoc($result)) {
-                $doctors[] = $row['doctor'];
-            }
-
-            mysqli_close($link);
             ?>
-            <div class="container">
-                <div class="row row-40 row-lg-50">
-                    <?php foreach ($doctors as $doctorName): ?>
-                        <div class="col-sm-6 col-lg-3">
-                            <div class="team-default box-width-3">
-                                <div class="team-default-media">
-                                    <img class="team-default-img" src="images/doctor.png" alt="" width="260" height="345"
-                                        loading="lazy" />
-                                </div>
-                                <h6 class="team-default-title">
-                                    <a href="u_link1.php?doctor=<?php echo urlencode($doctorName); ?>">
-                                        <?php echo htmlspecialchars($doctorName); ?>
-                                    </a>
-                                </h6>
-                                <div class="team-default-meta small">治療師</div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </section>
+        </table>
 
-        <footer class="section novi-bg novi-bg-img footer-simple">
-            <div class="container">
-                <div class="row row-40">
-                    <div class="col-md-4">
-                        <h4>關於我們</h4>
-                        <ul class="list-inline" style="font-size: 40px; display: inline-block; color: #333333;">
-                            <li>
-                                <a class="icon novi-icon icon-default icon-custom-facebook"
-                                    href="https://www.facebook.com/ReTurnYourBody/" target="_blank"></a>
-                            </li>
-                            <li>
-                                <a class="icon novi-icon icon-default icon-custom-line" href="https://lin.ee/sUaUVMq"
-                                    target="_blank"></a>
-                            </li>
-                            <li>
-                                <a class="icon novi-icon icon-default icon-custom-instagram"
-                                    href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"
-                                    target="_blank"></a>
-                            </li>
-                        </ul>
-
-
-                    </div>
-                    <div class="col-md-3">
-                        <h4>快速連結</h4>
-                        <ul class="list-marked">
-                            <li><a href="u_index.php">首頁</a></li>
-                            <li><a href="u_link.php.php">醫生介紹</a></li>
-                            <li><a href="u_caseshare.php">個案分享</a></li>
-                            <li><a href="u_body-knowledge.php">日常小知識</a></li>
-                            <li><a href="u_reserve.php">預約</a></li>
-                            <li><a href="u_reserve-record.php">查看預約資料</a></li>
-                            <li><a href="u_reserve-time.php">查看預約時段</a></li>
-                            <li><a href="u_history.php">歷史紀錄</a></li>
-                            <li> <a href="u_profile.php">個人資料</a></li>
-                            </a></li>
-                        </ul>
-                    </div>
-
-                    <div class="col-md-4">
-                        <h4>聯絡我們</h4>
-                        <br />
-                        <ul>
-                            <li>📍 <strong>診療地點:</strong>大重仁骨科復健科診所</li><br />
-                            <li>📍 <strong>地址:</strong>
-                                <a href="https://maps.app.goo.gl/u3TojSMqjGmdx5Pt5" class="custom-link" target="_blank"
-                                    rel="noopener noreferrer">
-                                    241 新北市三重區重新路五段 592 號
-                                </a>
-                            </li>
-                            <br />
-                            <li>📍 <strong>電話:</strong>(02) 2995-8283</li>
-                        </ul>
-
-                        <!-- <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global"
-                            data-form-type="subscribe" method="post" action="bat/rd-mailform.php">
-                            <div class="form-wrap">
-                                <input class="form-input" type="email" name="email" data-constraints="@Email @Required"
-                                    id="footer-mail">
-                                <label class="form-label" for="footer-mail">請輸入您的電子郵件</label>
-                            </div>
-                            <button class="form-button linearicons-paper-plane"></button>
-                        </form> -->
-                    </div>
-                </div>
-            </div>
-        </footer>
-
-        <!-- Global Mailform Output-->
-        <div class="snackbars" id="form-output-global"></div>
-        <!-- Javascript-->
-        <script src="js/core.min.js"></script>
-        <script src="js/script.js"></script>
 </body>
 
 </html>
