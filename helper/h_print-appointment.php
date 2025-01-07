@@ -541,8 +541,8 @@ $data = mysqli_fetch_assoc($result);
               <li><a href="h_appointment.php">預約</a></li>
               <li><a href="h_numberpeople.php">當天人數及時段</a></li>
               <li><a href="h_doctorshift.php">班表時段</a></li>
-              <li><a href="h_print-receipt.php">列印收據</a></li>
-              <li><a href="h_print-appointment.php">列印預約單</a></li>
+              <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
+              <li><a href="h_print-appointment.php">列印預約單</a></li> -->
               <li><a href="h_patient-needs.php">患者需求</a></li>
             </ul>
           </div>
