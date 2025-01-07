@@ -306,6 +306,21 @@ if ($result && mysqli_num_rows($result) > 0) {
         .button-shadow {
             box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
         }
+
+        /* 聯絡我們 */
+		.custom-link {
+			color: rgb(246, 247, 248);
+			/* 設定超連結顏色 */
+			text-decoration: none;
+			/* 移除超連結的下劃線 */
+		}
+
+		.custom-link:hover {
+			color: #0056b3;
+			/* 滑鼠懸停時的顏色，例如深藍色 */
+			text-decoration: underline;
+			/* 懸停時增加下劃線效果 */
+		}
     </style>
 </head>
 

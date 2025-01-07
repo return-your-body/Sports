@@ -147,6 +147,76 @@ if (isset($_SESSION["帳號"])) {
 		.button-shadow {
 			box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
 		}
+
+		/* 預約 */
+		h1 {
+			margin-bottom: 20px;
+		}
+
+		/* 表單容器框線樣式 */
+		.form-container {
+			width: 400px;
+			margin: 30px auto;
+			padding: 20px;
+			border: 2px solid black;
+			border-radius: 10px;
+			text-align: left;
+			background-color: #f9f9f9;
+		}
+
+		label {
+			display: block;
+			margin: 10px 0 5px;
+			font-weight: bold;
+		}
+
+		input,
+		select,
+		textarea {
+			width: 100%;
+			padding: 8px;
+			margin-bottom: 15px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			font-size: 14px;
+			text-align: left;
+			/* 輸入框內文字靠左 */
+		}
+
+		textarea {
+			resize: none;
+		}
+
+		/* 按鈕樣式 */
+		button {
+			margin: 20px auto 0;
+			/* 距離表格的間距 */
+			display: block;
+			/* 讓按鈕居中 */
+			padding: 10px 20px;
+			font-size: 16px;
+			cursor: pointer;
+		}
+
+		/* 備註標籤位置調整 */
+		#note-label {
+			vertical-align: top;
+		}
+
+		/* 聯絡我們 */
+		.custom-link {
+			color: rgb(246, 247, 248);
+			/* 設定超連結顏色 */
+			text-decoration: none;
+			/* 移除超連結的下劃線 */
+		}
+
+		.custom-link:hover {
+			color: #0056b3;
+			/* 滑鼠懸停時的顏色，例如深藍色 */
+			text-decoration: underline;
+			/* 懸停時增加下劃線效果 */
+		}
 	</style>
 </head>
 
@@ -328,61 +398,6 @@ if (isset($_SESSION["帳號"])) {
 		<section class="section section-lg novi-bg novi-bg-img bg-default">
 			<div class="container">
 				<div class="row row-40 row-lg-50">
-					<style>
-						h1 {
-							margin-bottom: 20px;
-						}
-
-						/* 表單容器框線樣式 */
-						.form-container {
-							width: 400px;
-							margin: 30px auto;
-							padding: 20px;
-							border: 2px solid black;
-							border-radius: 10px;
-							text-align: left;
-							background-color: #f9f9f9;
-						}
-
-						label {
-							display: block;
-							margin: 10px 0 5px;
-							font-weight: bold;
-						}
-
-						input,
-						select,
-						textarea {
-							width: 100%;
-							padding: 8px;
-							margin-bottom: 15px;
-							border: 1px solid #ccc;
-							border-radius: 5px;
-							font-size: 14px;
-							text-align: left;
-							/* 輸入框內文字靠左 */
-						}
-
-						textarea {
-							resize: none;
-						}
-
-						/* 按鈕樣式 */
-						button {
-							margin: 20px auto 0;
-							/* 距離表格的間距 */
-							display: block;
-							/* 讓按鈕居中 */
-							padding: 10px 20px;
-							font-size: 16px;
-							cursor: pointer;
-						}
-
-						/* 備註標籤位置調整 */
-						#note-label {
-							vertical-align: top;
-						}
-					</style>
 
 					<div class="form-container">
 						<h3 style="text-align: center;">預約表單</h3>
@@ -487,7 +502,7 @@ if (isset($_SESSION["帳號"])) {
 							</a></li>
 						</ul>
 					</div>
-					
+
 					<div class="col-md-4">
 						<h4>聯絡我們</h4>
 						<br />

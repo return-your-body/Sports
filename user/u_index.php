@@ -275,7 +275,6 @@ mysqli_close($link);
 
 
 		/* 聯絡我們 */
-		/* 自定義超連結樣式 */
 		.custom-link {
 			color: rgb(246, 247, 248);
 			/* 設定超連結顏色 */
