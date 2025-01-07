@@ -198,6 +198,9 @@ if (isset($_SESSION["帳號"])) {
 												href="a_addds.php">新增治療師班表</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="">修改治療師班表</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_leave.php">請假申請</a>
 										</li>
 									</ul>

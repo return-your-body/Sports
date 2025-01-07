@@ -41,22 +41,8 @@ if (isset($_SESSION["帳號"])) {
 	}
 }
 
-// 取得醫生資料
-$query = "
-    SELECT d.doctor_id, d.doctor
-    FROM doctor d
-    INNER JOIN user u ON d.user_id = u.user_id
-    INNER JOIN grade g ON u.grade_id = g.grade_id
-    WHERE g.grade = '醫生'
-";
-$result = mysqli_query($link, $query);
-
-// 檢查查詢結果
-if (!$result) {
-	echo "Error fetching doctor data: " . mysqli_error($link);
-	exit;
-}
 ?>
+
 
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
@@ -74,96 +60,124 @@ if (!$result) {
 	<link rel="stylesheet" href="css/fonts.css">
 	<link rel="stylesheet" href="css/style.css">
 	<style>
-			.custom-green-button {
-				display: inline-block;
-				padding: 10px 20px;
-				/* 調整按鈕內的間距 */
-				font-size: 14px;
-				/* 調整字體大小 */
-				font-weight: bold;
-				/* 讓文字加粗 */
-				color: #ffffff;
-				/* 文字顏色為白色 */
-				background-color: #00a99d;
-				/* 綠色背景色 */
-				border: none;
-				/* 移除邊框 */
-				border-radius: 8px;
-				/* 圓角按鈕 */
-				cursor: pointer;
-				/* 滑鼠移上時變成手指 */
-				transition: all 0.3s ease;
-				/* 添加過渡效果 */
-				box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-				/* 按鈕陰影 */
-			}
+		.custom-green-button {
+			display: inline-block;
+			padding: 10px 20px;
+			/* 調整按鈕內的間距 */
+			font-size: 14px;
+			/* 調整字體大小 */
+			font-weight: bold;
+			/* 讓文字加粗 */
+			color: #ffffff;
+			/* 文字顏色為白色 */
+			background-color: #00a99d;
+			/* 綠色背景色 */
+			border: none;
+			/* 移除邊框 */
+			border-radius: 8px;
+			/* 圓角按鈕 */
+			cursor: pointer;
+			/* 滑鼠移上時變成手指 */
+			transition: all 0.3s ease;
+			/* 添加過渡效果 */
+			box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+			/* 按鈕陰影 */
+		}
 
-			.custom-green-button:hover {
-				background-color: #008f84;
-				/* 懸停時加深綠色 */
-				box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
-				/* 懸停時加強陰影效果 */
-				transform: translateY(-2px);
-				/* 懸停時向上移動一點 */
-			}
+		.custom-green-button:hover {
+			background-color: #008f84;
+			/* 懸停時加深綠色 */
+			box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2);
+			/* 懸停時加強陰影效果 */
+			transform: translateY(-2px);
+			/* 懸停時向上移動一點 */
+		}
 
-			.custom-green-button:active {
-				background-color: #00796c;
-				/* 按下時的深綠色 */
-				box-shadow: 0px 3px 4px rgba(0, 0, 0, 0.1);
-				/* 按下時陰影變小 */
-				transform: translateY(0);
-				/* 回到原位 */
-			}
+		.custom-green-button:active {
+			background-color: #00796c;
+			/* 按下時的深綠色 */
+			box-shadow: 0px 3px 4px rgba(0, 0, 0, 0.1);
+			/* 按下時陰影變小 */
+			transform: translateY(0);
+			/* 回到原位 */
+		}
 
+		/* 多選下拉選單的容器樣式 */
+		.dropdown-container {
+			position: relative;
+			display: inline-block;
+			width: 200px;
+			/* 調整容器寬度，方便設計 */
+		}
 
+		/* 按鈕樣式，用於打開下拉選單 */
+		.dropdown-button {
+			padding: 10px;
+			width: 100%;
+			/* 讓按鈕適應容器寬度 */
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			/* 圓角設計 */
+			cursor: pointer;
+			background-color: #fff;
+			color: #333;
+			text-align: left;
+			/* 文字靠左對齊 */
+			box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+			/* 添加陰影效果 */
+			transition: background-color 0.3s ease, box-shadow 0.3s ease;
+			/* 動態效果 */
+		}
 
-			/* 多選下拉選單的容器樣式 */
-			.dropdown-container {
-				position: relative;
-				display: inline-block;
-			}
+		/* 懸停時按鈕樣式 */
+		.dropdown-button:hover {
+			background-color: #f9f9f9;
+			box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+			/* 提高陰影效果 */
+		}
 
-			/* 按鈕樣式，用於打開下拉選單 */
-			.dropdown-button {
-				padding: 8px;
-				border: 1px solid #ccc;
-				cursor: pointer;
-				background-color: white;
-			}
+		/* 確保下拉選單顯示在其他元素上方 */
+		.dropdown-options {
+			display: none;
+			/* 預設隱藏 */
+			position: absolute;
+			z-index: 1000;
+			/* 確保下拉選單在最上層 */
+			border: 1px solid #ccc;
+			background-color: white;
+			max-height: 200px;
+			/* 防止內容過長 */
+			overflow-y: auto;
+			/* 添加垂直滾動條 */
+			width: 100%;
+			/* 確保與按鈕對齊 */
+			box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+		}
 
-			/* 下拉選項的樣式 */
-			.dropdown-options {
-				display: none;
-				/* 預設為隱藏 */
-				position: absolute;
-				z-index: 1;
-				/* 保證選單在其他內容之上 */
-				border: 1px solid #ccc;
-				background-color: white;
-				max-height: 150px;
-				/* 最大高度，避免內容過長 */
-				overflow-y: auto;
-				/* 垂直滾動條 */
-				box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-				/* 陰影效果 */
-			}
+		/* 修正按鈕樣式 */
+		.dropdown-button {
+			position: relative;
+			cursor: pointer;
+			border: 1px solid #ccc;
+			background-color: #fff;
+			padding: 8px 12px;
+			text-align: left;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			transition: all 0.2s ease;
+		}
 
-			/* 每個選項的樣式 */
-			.dropdown-options label {
-				display: block;
-				/* 每個選項單獨一行 */
-				padding: 5px;
-				cursor: pointer;
-			}
+		/* 選項樣式 */
+		.dropdown-options label {
+			display: block;
+			padding: 10px;
+			font-size: 14px;
+			cursor: pointer;
+			transition: background-color 0.2s ease;
+		}
 
-			/* 滑鼠懸停在選項時的樣式 */
-			.dropdown-options label:hover {
-				background-color: #f1f1f1;
-				/* 提示使用者可點選 */
-			}
-
-
+		.dropdown-options label:hover {
+			background-color: #f1f1f1;
+		}
 
 		.highlight-red {
 			color: red;
@@ -364,6 +378,9 @@ if (!$result) {
 												href="a_addds.php">新增治療師班表</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="">修改治療師班表</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_leave.php">請假申請</a>
 										</li>
 									</ul>
@@ -456,30 +473,58 @@ if (!$result) {
 				</div>
 			</section>
 		</div>
-		<div class="form-row">
-			<!-- 年份選擇 -->
-			<label for="year">選擇年份：</label>
-			<select id="year"></select>
-
-			<!-- 月份選擇 -->
-			<label for="month">選擇月份：</label>
-			<select id="month"></select>
-
-			<!-- 治療師選擇 -->
+		<!-- 表單 -->
+		<form id="scheduleForm" method="POST" action="新增班表.php">
+			<!-- 選擇治療師 -->
 			<label for="the">選擇治療師：</label>
-			<select id="the" name="doctor">
-				<option value="">所有</option>
+			<select id="the" name="doctor_id">
 				<?php
+				include '../db.php'; // 引入資料庫連線檔案
+				
+				// 查詢等級為「醫生」的資料
+				$query = "
+        SELECT d.doctor_id, d.doctor
+        FROM doctor d
+        INNER JOIN user u ON d.user_id = u.user_id
+        INNER JOIN grade g ON u.grade_id = g.grade_id
+        WHERE g.grade_id = 2
+    ";
+				$result = mysqli_query($link, $query);
+
+				// 檢查查詢結果
+				if (!$result) {
+					echo "Error fetching doctor data: " . mysqli_error($link);
+					exit;
+				}
+
+				// 輸出查詢結果到下拉選單
 				while ($row = mysqli_fetch_assoc($result)) {
 					echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
 				}
 				?>
 			</select>
 
-			<!-- 工作日選擇 -->
+
+			<!-- 選擇年份 -->
+			<label for="year">選擇年份：</label>
+			<select id="year"></select>
+
+			<!-- 選擇月份 -->
+			<label for="month">選擇月份：</label>
+			<select id="month"></select>
+
+			<!-- 選擇範圍 -->
+			<label for="range">選擇範圍：</label>
+			<select id="range">
+				<option value="1-week">一周</option>
+				<option value="2-weeks">兩周</option>
+				<option value="1-month" selected>一個月</option>
+			</select>
+
+			<!-- 工作日選單 -->
 			<label for="weekday-select">選擇工作日：</label>
 			<div class="dropdown-container">
-				<button id="dropdownButton" class="dropdown-button">選擇工作日</button>
+				<button type="button" id="dropdownButton" class="dropdown-button">選擇工作日</button>
 				<div class="dropdown-options" id="dropdownOptions">
 					<label><input type="checkbox" value="0"> 日</label>
 					<label><input type="checkbox" value="1" checked> 一</label>
@@ -491,112 +536,60 @@ if (!$result) {
 				</div>
 			</div>
 
+			<!-- 日曆表格 -->
+			<table class="table-custom table-color-header table-custom-bordered">
+				<thead>
+					<tr>
+						<th>日</th>
+						<th>一</th>
+						<th>二</th>
+						<th>三</th>
+						<th>四</th>
+						<th>五</th>
+						<th>六</th>
+					</tr>
+				</thead>
+				<tbody id="calendar"></tbody>
+			</table>
+
+			<!-- 隱藏的表單數據 -->
+			<div id="calendarData"></div>
+
 			<!-- 送出按鈕 -->
-			<button type="button" class="custom-green-button">送出</button>
-		</div>
+			<button type="button" id="submitSchedule" class="custom-green-button">送出</button>
+		</form>
 
-
-		<!-- 日曆表格，用於顯示每個月的天數及工作安排 -->
-		<table class="table-custom table-color-header table-custom-bordered">
-			<thead>
-				<tr>
-					<!-- 星期標題 -->
-					<th>日</th>
-					<th>一</th>
-					<th>二</th>
-					<th>三</th>
-					<th>四</th>
-					<th>五</th>
-					<th>六</th>
-				</tr>
-			</thead>
-
-			<tbody id="calendar"></tbody> <!-- 日曆內容將由 JavaScript 動態生成 -->
-		</table>
 		<script>
-			document.querySelector('.custom-green-button').addEventListener('click', function () {
-				var doctor_id = document.getElementById('the').value; // 取得選中的醫生
-				if (!doctor_id) {
-					alert('請選擇治療師');
-					return;
-				}
-
-				var year = document.getElementById('year').value;
-				var month = document.getElementById('month').value;
-				month = (parseInt(month) + 1).toString().padStart(2, '0'); // 修正月份格式
-
-				var shifts = [];
-				document.querySelectorAll('#calendar td').forEach(function (cell) {
-					var date = cell.querySelector('div')?.textContent?.trim();
-					if (!date || isNaN(date)) return; // 跳過空白或非數字的單元格
-					date = date.padStart(2, '0'); // 日期補零
-					var fullDate = `${year}-${month}-${date}`; // 完整日期
-
-					var startHour = cell.querySelector('.start-hour')?.value || '07';
-					var startMinute = cell.querySelector('.start-minute')?.value || '00';
-					var endHour = cell.querySelector('.end-hour')?.value || '16';
-					var endMinute = cell.querySelector('.end-minute')?.value || '00';
-					var offDuty = cell.querySelector('.off-duty-checkbox')?.checked;
-
-					if (offDuty) return; // 跳過不上班
-
-					var start_time = `${startHour}:${startMinute}`;
-					var end_time = `${endHour}:${endMinute}`;
-					shifts.push({ date: fullDate, start_time: start_time, end_time: end_time });
-				});
-
-				if (shifts.length === 0) {
-					alert('無有效的班表資料');
-					return;
-				}
-
-				var xhr = new XMLHttpRequest();
-				xhr.open('POST', '新增班表.php', true);
-				xhr.setRequestHeader('Content-Type', 'application/json');
-				xhr.onreadystatechange = function () {
-					if (xhr.readyState === 4 && xhr.status === 200) {
-						var response = JSON.parse(xhr.responseText);
-						if (response.status === 'success') {
-							alert('班表新增成功！');
-						} else {
-							alert('班表新增失敗：' + response.message);
-						}
-					}
-				};
-				xhr.send(JSON.stringify({ doctor_id: doctor_id, shifts: shifts }));
-			});
-
-
-			// 以下為現有代碼的動態日曆與表單初始化邏輯
 			const currentDate = new Date();
 			const currentYear = currentDate.getFullYear();
 			const currentMonth = currentDate.getMonth();
 
 			const yearSelect = document.getElementById('year');
 			const monthSelect = document.getElementById('month');
-			const doctorSelect = document.getElementById('the');
+			const rangeSelect = document.getElementById('range');
 			const calendarBody = document.getElementById('calendar');
+			// 選擇按鈕和選單
 			const dropdownButton = document.getElementById('dropdownButton');
 			const dropdownOptions = document.getElementById('dropdownOptions');
 
-			function initHourOptions(defaultHour = null) {
-				const hours = [];
-				for (let hour = 7; hour <= 24; hour++) {
-					const selected = defaultHour === hour ? 'selected' : '';
-					hours.push(`<option value="${hour}" ${selected}>${hour.toString().padStart(2, '0')}</option>`);
-				}
-				return hours.join('');
-			}
+			// 點擊按鈕顯示/隱藏選單
+			dropdownButton.addEventListener('click', (e) => {
+				e.stopPropagation(); // 防止事件冒泡影響其他元素
+				dropdownOptions.style.display = dropdownOptions.style.display === 'block' ? 'none' : 'block';
+			});
 
-			function initMinuteOptions(defaultMinute = null) {
-				const minutes = [];
-				for (let minute = 0; minute < 60; minute += 20) {
-					const selected = defaultMinute === minute ? 'selected' : '';
-					minutes.push(`<option value="${minute}" ${selected}>${minute.toString().padStart(2, '0')}</option>`);
-				}
-				return minutes.join('');
-			}
+			// 點擊選項時，不關閉下拉選單
+			dropdownOptions.addEventListener('click', (e) => {
+				e.stopPropagation(); // 防止選擇時關閉下拉選單
+			});
 
+			// 點擊其他地方時關閉選單
+			document.addEventListener('click', () => {
+				dropdownOptions.style.display = 'none';
+			});
+
+
+			// 初始化年份選單
 			function initYearOptions() {
 				for (let year = currentYear - 5; year <= currentYear + 5; year++) {
 					const option = document.createElement('option');
@@ -607,6 +600,7 @@ if (!$result) {
 				}
 			}
 
+			// 初始化月份選單
 			function initMonthOptions() {
 				for (let month = 0; month < 12; month++) {
 					const option = document.createElement('option');
@@ -617,122 +611,264 @@ if (!$result) {
 				}
 			}
 
+			// 獲取選中的工作日
 			function getSelectedWeekdays() {
 				const selectedOptions = Array.from(dropdownOptions.querySelectorAll('input:checked'));
 				return selectedOptions.map(option => parseInt(option.value));
 			}
 
-			function handleOffDutyCheckbox(event, dateCell) {
-				const checkbox = event.target;
-				const startHourSelect = dateCell.querySelector('.start-hour');
-				const startMinuteSelect = dateCell.querySelector('.start-minute');
-				const endHourSelect = dateCell.querySelector('.end-hour');
-				const endMinuteSelect = dateCell.querySelector('.end-minute');
+			// 確保「選擇工作日」按鈕正確顯示選項
+			dropdownButton.addEventListener('click', () => {
+				dropdownOptions.classList.toggle('visible'); // 切換選單的顯示/隱藏
+			});
 
-				if (checkbox.checked) {
-					startHourSelect.value = '0';
-					startMinuteSelect.value = '0';
-					endHourSelect.value = '0';
-					endMinuteSelect.value = '0';
-					startHourSelect.disabled = true;
-					startMinuteSelect.disabled = true;
-					endHourSelect.disabled = true;
-					endMinuteSelect.disabled = true;
-				} else {
-					startHourSelect.disabled = false;
-					startMinuteSelect.disabled = false;
-					endHourSelect.disabled = false;
-					endMinuteSelect.disabled = false;
-					startHourSelect.value = '7';
-					startMinuteSelect.value = '0';
-					endHourSelect.value = '16';
-					endMinuteSelect.value = '0';
-				}
-			}
-
-			function generateCalendar(year, month) {
+			// 動態更新選中的工作日，並刷新日曆
+			dropdownOptions.addEventListener('change', () => {
+				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value), rangeSelect.value);
+			});
+			/**
+ * 根據選擇的年份、月份和範圍生成對應的日曆。
+ * @param {number} year - 選擇的年份。
+ * @param {number} month - 選擇的月份 (0 表示 1 月，11 表示 12 月)。
+ * @param {string} range - 日曆顯示範圍，可選值為 "1-week" (一週)、"2-weeks" (兩週)、"1-month" (整個月)。
+ */
+			function generateCalendar(year, month, range) {
+				// 清空日曆的內容
 				calendarBody.innerHTML = '';
-				const firstDay = new Date(year, month, 1).getDay();
-				const lastDate = new Date(year, month + 1, 0).getDate();
-				const selectedWeekdays = getSelectedWeekdays();
 
-				let row = document.createElement('tr');
+				// 定義當前月份的第一天和最後一天
+				const firstDayOfMonth = new Date(year, month, 1); // 月份的第一天
+				const lastDayOfMonth = new Date(year, month + 1, 0); // 月份的最後一天
+				let startDate, endDate;
 
-				for (let i = 0; i < firstDay; i++) {
-					const emptyCell = document.createElement('td');
-					row.appendChild(emptyCell);
+				// 根據範圍選擇，計算日曆的開始日期和結束日期
+				if (range === '1-week') {
+					// 一週範圍：從當前日期所在週的週日到週六
+					const today = new Date(); // 獲取當前日期
+					const currentDay = today.getDay(); // 獲取當前日期是星期幾 (0 表示週日，6 表示週六)
+					startDate = new Date(year, month, today.getDate() - currentDay); // 本週的週日
+					endDate = new Date(startDate);
+					endDate.setDate(startDate.getDate() + 6); // 本週的週六
+
+					// 如果範圍超出了當前月份，調整到當月範圍內
+					if (startDate < firstDayOfMonth) startDate = firstDayOfMonth;
+					if (endDate > lastDayOfMonth) endDate = lastDayOfMonth;
+
+				} else if (range === '2-weeks') {
+					// 兩週範圍：從當前日期所在週的週日開始，顯示兩週
+					const today = new Date();
+					const currentDay = today.getDay(); // 獲取當前日期是星期幾
+					startDate = new Date(year, month, today.getDate() - currentDay); // 本週的週日
+					endDate = new Date(startDate);
+					endDate.setDate(startDate.getDate() + 13); // 兩週的週六
+
+					// 如果範圍超出了當前月份，調整到當月範圍內
+					if (startDate < firstDayOfMonth) startDate = firstDayOfMonth;
+					if (endDate > lastDayOfMonth) endDate = lastDayOfMonth;
+
+				} else if (range === '1-month') {
+					// 整個月範圍：從該月的第一天到最後一天
+					startDate = firstDayOfMonth;
+					endDate = lastDayOfMonth;
+
+				} else {
+					console.error('未知的範圍選項:', range);
+					return;
 				}
 
-				for (let date = 1; date <= lastDate; date++) {
+				// 以起始日期開始生成日曆
+				let currentDate = new Date(startDate);
+				let row = document.createElement('tr'); // 創建表格的行
+
+				// 在日曆開頭補齊空白單元格，讓第一天對齊對應的星期
+				for (let i = 0; i < startDate.getDay(); i++) {
+					row.appendChild(document.createElement('td')); // 添加空白單元格
+				}
+
+				// 循環生成日曆的每一天
+				while (currentDate <= endDate) {
+					// 如果行已滿 7 個單元格（即一週），添加到日曆中，並創建新行
 					if (row.children.length === 7) {
 						calendarBody.appendChild(row);
 						row = document.createElement('tr');
 					}
 
-					const weekday = (firstDay + date - 1) % 7;
-					const isOffDuty = !selectedWeekdays.includes(weekday);
+					const cell = document.createElement('td'); // 創建單元格
+					const dayOfMonth = currentDate.getDate(); // 獲取日期 (1-31)
+					const dayOfWeek = currentDate.getDay(); // 獲取星期幾 (0 表示週日)
+					const isOffDuty = !getSelectedWeekdays().includes(dayOfWeek); // 是否為非工作日
 
-					const dateCell = document.createElement('td');
-					dateCell.innerHTML = `
-				<div>${date}</div>
-				<div>
-					<label>上班：</label><br>
-					<select class="start-hour" ${isOffDuty ? 'disabled' : ''}>${initHourOptions(isOffDuty ? 0 : 7)}</select> :
-					<select class="start-minute" ${isOffDuty ? 'disabled' : ''}>${initMinuteOptions(isOffDuty ? 0 : 0)}</select>
-				</div>
-				<div>
-					<label>下班：</label><br>
-					<select class="end-hour" ${isOffDuty ? 'disabled' : ''}>${initHourOptions(isOffDuty ? 0 : 16)}</select> :
-					<select class="end-minute" ${isOffDuty ? 'disabled' : ''}>${initMinuteOptions(isOffDuty ? 0 : 0)}</select>
-				</div>
-				<div>
-					<label>
-						<input type="checkbox" class="off-duty-checkbox" ${isOffDuty ? 'checked' : ''}> 不上班
-					</label>
-				</div>
-			`;
+					// 單元格的 HTML 結構
+					cell.innerHTML = `
+			<div>${dayOfMonth}</div>
+			<div>
+				<label>上班：</label>
+				<select class="start-hour"></select>
+			</div>
+			<div>
+				<label>下班：</label>
+				<select class="end-hour"></select>
+			</div>
+			<div>
+				<label><input type="checkbox" class="off-duty-checkbox" ${isOffDuty ? 'checked' : ''}> 不上班</label>
+			</div>
+		`;
 
-					const offDutyCheckbox = dateCell.querySelector('.off-duty-checkbox');
-					offDutyCheckbox.addEventListener('change', (event) => handleOffDutyCheckbox(event, dateCell));
+					const startHourSelect = cell.querySelector('.start-hour'); // 上班時間下拉選單
+					const endHourSelect = cell.querySelector('.end-hour'); // 下班時間下拉選單
+					const offDutyCheckbox = cell.querySelector('.off-duty-checkbox'); // 「不上班」的勾選框
 
-					row.appendChild(dateCell);
+					// 動態生成時間選項
+					generateHourOptions(startHourSelect, "07:00");
+					generateHourOptions(endHourSelect, "16:00");
+
+					// 如果是非工作日，禁用時間選擇並勾選「不上班」
+					if (isOffDuty) {
+						startHourSelect.disabled = true;
+						endHourSelect.disabled = true;
+						offDutyCheckbox.checked = true;
+					}
+
+					// 綁定「不上班」的勾選框切換事件
+					offDutyCheckbox.addEventListener('change', function () {
+						if (this.checked) {
+							startHourSelect.disabled = true;
+							endHourSelect.disabled = true;
+						} else {
+							startHourSelect.disabled = false;
+							endHourSelect.disabled = false;
+						}
+					});
+
+					row.appendChild(cell); // 將單元格添加到當前行
+
+					// 跳到下一天
+					currentDate.setDate(currentDate.getDate() + 1);
 				}
 
+				// 在日曆末尾補齊空白單元格，讓最後一行對齊
 				while (row.children.length < 7) {
-					const emptyCell = document.createElement('td');
-					row.appendChild(emptyCell);
+					row.appendChild(document.createElement('td'));
 				}
-				calendarBody.appendChild(row);
+
+				calendarBody.appendChild(row); // 添加最後一行到日曆
 			}
 
-			dropdownButton.addEventListener('click', () => {
-				dropdownOptions.style.display = dropdownOptions.style.display === 'block' ? 'none' : 'block';
-			});
-
-			document.addEventListener('click', (event) => {
-				if (!dropdownButton.contains(event.target) && !dropdownOptions.contains(event.target)) {
-					dropdownOptions.style.display = 'none';
+			/**
+			 * 動態生成整點時間選項。
+			 * @param {HTMLElement} selectElement - 下拉選單的 HTML 元素。
+			 * @param {string} defaultTime - 預設選中的時間，例如 "07:00"。
+			 */
+			function generateHourOptions(selectElement, defaultTime) {
+				selectElement.innerHTML = ''; // 清空下拉選單的內容
+				for (let hour = 0; hour < 24; hour++) {
+					const option = document.createElement('option');
+					option.value = `${hour.toString().padStart(2, '0')}:00`;
+					option.textContent = `${hour.toString().padStart(2, '0')}:00`;
+					if (`${hour.toString().padStart(2, '0')}:00` === defaultTime) {
+						option.selected = true; // 設置預設選中
+					}
+					selectElement.appendChild(option); // 添加選項到下拉選單
 				}
+			}
+
+			/**
+			 * 獲取選中的工作日。
+			 * @returns {number[]} 返回選中的工作日索引數組，例如 [1, 2, 3, 4, 5] 表示週一到週五。
+			 */
+			function getSelectedWeekdays() {
+				const selectedOptions = Array.from(dropdownOptions.querySelectorAll('input:checked'));
+				return selectedOptions.map(option => parseInt(option.value));
+			}
+
+			// 初始化年份和月份選擇器
+			function initYearMonthSelectors() {
+				const yearSelect = document.getElementById('year');
+				const monthSelect = document.getElementById('month');
+
+				const currentYear = new Date().getFullYear();
+				const currentMonth = new Date().getMonth();
+
+				// 初始化年份選項
+				for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+					const option = document.createElement('option');
+					option.value = year;
+					option.textContent = year;
+					if (year === currentYear) option.selected = true;
+					yearSelect.appendChild(option);
+				}
+
+				// 初始化月份選項
+				for (let month = 0; month < 12; month++) {
+					const option = document.createElement('option');
+					option.value = month;
+					option.textContent = month + 1;
+					if (month === currentMonth) option.selected = true;
+					monthSelect.appendChild(option);
+				}
+			}
+
+			// 初始化範圍選擇事件
+			document.getElementById('range').addEventListener('change', () => {
+				const year = parseInt(document.getElementById('year').value);
+				const month = parseInt(document.getElementById('month').value);
+				const range = document.getElementById('range').value;
+				generateCalendar(year, month, range); // 根據選擇生成日曆
 			});
 
+			// 初始化年份和月份選擇器，並默認顯示當前周
+			initYearMonthSelectors();
+			generateCalendar(new Date().getFullYear(), new Date().getMonth(), '1-week');
+
+
+			// 動態更新選中的工作日，並刷新日曆
 			dropdownOptions.addEventListener('change', () => {
-				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value), rangeSelect.value);
 			});
 
-			yearSelect.addEventListener('change', () => {
-				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+
+
+			document.getElementById('submitSchedule').addEventListener('click', function () {
+				const doctorId = document.getElementById('the').value;
+				if (!doctorId) {
+					alert('請選擇治療師！');
+					return;
+				}
+
+				const calendarData = document.getElementById('calendarData');
+				calendarData.innerHTML = ''; // 清空舊數據
+
+				// 遍歷日曆中的每一天，生成隱藏輸入
+				document.querySelectorAll('#calendar td').forEach((cell) => {
+					const dateDiv = cell.querySelector('div');
+					if (!dateDiv) return; // 跳過空白單元格
+
+					const date = `${yearSelect.value}-${(parseInt(monthSelect.value) + 1).toString().padStart(2, '0')}-${dateDiv.textContent.padStart(2, '0')}`;
+					const startHour = cell.querySelector('.start-hour').value;
+					const endHour = cell.querySelector('.end-hour').value;
+					const offDuty = cell.querySelector('.off-duty-checkbox').checked ? 1 : 0;
+
+					if (offDuty) return; // 不上班時，跳過該日期
+
+					calendarData.innerHTML += `
+		<input type="hidden" name="dates[]" value="${date}">
+		<input type="hidden" name="go_times[]" value="${startHour}">
+		<input type="hidden" name="off_times[]" value="${endHour}">
+		`;
+				});
+
+				document.getElementById('scheduleForm').submit(); // 提交表單
 			});
 
-			monthSelect.addEventListener('change', () => {
-				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-			});
 
+			// 初始化
 			initYearOptions();
 			initMonthOptions();
-			generateCalendar(currentYear, currentMonth);
+			generateCalendar(currentYear, currentMonth, '1-month');
+			rangeSelect.addEventListener('change', () => {
+				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value), rangeSelect.value);
+			});
 		</script>
-
-
 
 		<!-- Global Mailform Output-->
 		<div class="snackbars" id="form-output-global"></div>
