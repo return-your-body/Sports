@@ -53,8 +53,6 @@ if (isset($_SESSION["帳號"])) {
     exit();
   }
 
-  // 關閉資料庫連接
-  mysqli_close($link);
 } else {
   echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
@@ -65,7 +63,6 @@ if (isset($_SESSION["帳號"])) {
 
 
 //當天人數
-require '../db.php';
 
 $帳號 = $_SESSION['帳號'];
 

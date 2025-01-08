@@ -51,8 +51,6 @@ if (isset($_SESSION["帳號"])) {
     exit();
   }
 
-  // 關閉資料庫連接
-  mysqli_close($link);
 } else {
   echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
@@ -62,8 +60,6 @@ if (isset($_SESSION["帳號"])) {
 }
 
 //預約
-include "../db.php"; // 引入資料庫連線
-
 // 查詢姓名 (people)
 $query_people = "SELECT people_id, name FROM people";
 $result_people = mysqli_query($link, $query_people);
