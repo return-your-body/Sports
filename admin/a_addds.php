@@ -377,8 +377,7 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_addds.php">新增治療師班表</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="">修改治療師班表</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">修改治療師班表</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_leave.php">請假申請</a>
@@ -763,14 +762,16 @@ if (isset($_SESSION["帳號"])) {
 				selectElement.innerHTML = ''; // 清空下拉選單的內容
 				for (let hour = 0; hour < 24; hour++) {
 					const option = document.createElement('option');
-					option.value = `${hour.toString().padStart(2, '0')}:00`;
+					option.value = `${hour.toString().padStart(2, '0')}:00`; // 格式為 HH:MM
 					option.textContent = `${hour.toString().padStart(2, '0')}:00`;
 					if (`${hour.toString().padStart(2, '0')}:00` === defaultTime) {
 						option.selected = true; // 設置預設選中
 					}
-					selectElement.appendChild(option); // 添加選項到下拉選單
+					selectElement.appendChild(option);
 				}
 			}
+
+
 
 			/**
 			 * 獲取選中的工作日。

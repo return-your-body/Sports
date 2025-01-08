@@ -17,25 +17,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // 確保時間格式為 HH:MM
-    function formatTime($time) {
+    function formatTime($time)
+    {
         return str_pad($time, 2, '0', STR_PAD_LEFT) . ":00";
     }
 
     // 將時間轉換為 shifttime_id 的對應查詢
-    function getShiftTimeId($time, $link) {
+    function getShiftTimeId($time, $link)
+    {
+        // 如果時間包含秒數，去掉 ":00"
+        $formatted_time = preg_replace('/:\d{2}$/', '', $time);
+
         $sql = "SELECT shifttime_id FROM shifttime WHERE shifttime = ?";
         $stmt = mysqli_prepare($link, $sql);
-        mysqli_stmt_bind_param($stmt, 's', $time);
+        mysqli_stmt_bind_param($stmt, 's', $formatted_time);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
 
         if ($row = mysqli_fetch_assoc($result)) {
             return $row['shifttime_id'];
         }
-        // 如果未找到，顯示錯誤日誌，便於除錯
-        error_log("無法找到對應的 shifttime_id，時間為：$time");
-        return null; // 若未找到，回傳 null
+
+        // 如果未找到，記錄錯誤日誌
+        error_log("無法找到對應的 shifttime_id，時間為：$formatted_time");
+        return null;
     }
+
 
     // 遍歷每一天的班表數據
     foreach ($dates as $index => $date) {
