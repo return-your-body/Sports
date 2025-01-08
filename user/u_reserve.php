@@ -393,84 +393,9 @@ if (isset($_SESSION["帳號"])) {
 		</div>
 		<!--標題-->
 
+		
 
-		<!--預約-->
-		<section class="section section-lg novi-bg novi-bg-img bg-default">
-			<div class="container">
-				<div class="row row-40 row-lg-50">
 
-					<div class="form-container">
-						<h3 style="text-align: center;">預約表單</h3>
-						<?php
-						session_start();
-						include "../db.php"; // 引入資料庫連線
-						
-						// 查詢姓名 (people)
-						// $query_people = "SELECT people_id, name FROM people";
-						// $result_people = mysqli_query($link, $query_people);
-						// if (!$result_people) {
-						//   die("查詢姓名失敗: " . mysqli_error($link));
-						// }
-						
-						// 查詢預約時間 (shifttime)
-						$query_shifttime = "SELECT shifttime_id, shifttime FROM shifttime";
-						$result_shifttime = mysqli_query($link, $query_shifttime);
-						if (!$result_shifttime) {
-							die("查詢時間失敗: " . mysqli_error($link));
-						}
-
-						// 查詢醫生姓名 (doctor)
-						$query_doctor = "SELECT doctor.doctor_id, doctor.doctor 
-                 FROM doctor
-                 INNER JOIN user ON doctor.user_id = user.user_id
-                 WHERE user.grade_id = 2";
-						$result_doctor = mysqli_query($link, $query_doctor);
-						if (!$result_doctor) {
-							die("查詢醫生失敗: " . mysqli_error($link));
-						}
-						?>
-
-						<form action="預約.php" method="post">
-							<label for="people_id">姓名：</label>
-							<input type="text" id="text" name="people_id" value="<?php echo htmlspecialchars($姓名); ?>"
-								readonly>
-
-							<label for="date">預約日期：</label>
-							<input type="date" id="date" name="date" required min="<?= date('Y-m-d'); ?>">
-
-							<label for="time">預約時間：</label>
-							<select id="time" name="time" required>
-								<option value="">請選擇時間</option>
-								<?php while ($row = mysqli_fetch_assoc($result_shifttime)): ?>
-									<option value="<?= htmlspecialchars($row['shifttime_id']); ?>">
-										<?= htmlspecialchars($row['shifttime']); ?>
-									</option>
-								<?php endwhile; ?>
-							</select>
-
-							<label for="doctor">醫生姓名：</label>
-							<select id="doctor" name="doctor" required>
-								<option value="">請選擇醫生</option>
-								<?php while ($row = mysqli_fetch_assoc($result_doctor)): ?>
-									<option value="<?= htmlspecialchars($row['doctor_id']); ?>">
-										<?= htmlspecialchars($row['doctor']); ?>
-									</option>
-								<?php endwhile; ?>
-							</select>
-
-							<label for="note">備註：</label>
-							<textarea id="note" name="note" rows="4" maxlength="200"
-								placeholder="請輸入備註，最多200字"></textarea>
-
-							<button type="submit">提交預約</button>
-						</form>
-
-						<?php mysqli_close($link); ?>
-
-					</div>
-				</div>
-		</section>
-		<!-- 預約-->
 		<footer class="section novi-bg novi-bg-img footer-simple">
 			<div class="container">
 				<div class="row row-40">

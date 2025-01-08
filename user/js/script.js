@@ -162,19 +162,19 @@
 			let regularConstraintsMessages = [
 				{
 					type:       regula.Constraint.Required,
-					newMessage: "The text field is required."
+					newMessage: "此欄位為必填。"
 				},
 				{
 					type:       regula.Constraint.Email,
-					newMessage: "The email is not a valid email."
+					newMessage: "該電子郵件不是有效的電子郵件。"
 				},
 				{
 					type:       regula.Constraint.Numeric,
-					newMessage: "Only numbers are required"
+					newMessage: "只需要數字。"
 				},
 				{
 					type:       regula.Constraint.Selected,
-					newMessage: "Please choose an option."
+					newMessage: "請選擇一個選項。"
 				}
 			];
 

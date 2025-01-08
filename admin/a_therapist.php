@@ -285,6 +285,8 @@ if (isset($_GET['fetch'])) {
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_addds.php">新增治療師班表</a>
 										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">修改治療師班表</a>
+										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_leave.php">請假申請</a>
 										</li>
@@ -383,16 +385,37 @@ if (isset($_GET['fetch'])) {
 			<select id="year"></select>
 			<label for="month">選擇月份：</label>
 			<select id="month"></select>
+			<!-- 選擇治療師 -->
 			<label for="the">選擇治療師：</label>
-			<select id="the" name="doctor">
-				<option value="">所有</option> <!-- 修改這一行 -->
+			<select id="the" name="doctor_id">
+				<!-- 新增「所有治療師」選項 -->
+				<option value="all">所有治療師</option>
 				<?php
-				// 從資料庫中讀取資料並顯示在下拉選單中
+				include '../db.php'; // 引入資料庫連線檔案
+				
+				// 查詢等級為「醫生」的資料
+				$query = "
+        SELECT d.doctor_id, d.doctor
+        FROM doctor d
+        INNER JOIN user u ON d.user_id = u.user_id
+        INNER JOIN grade g ON u.grade_id = g.grade_id
+        WHERE g.grade_id = 2
+    ";
+				$result = mysqli_query($link, $query);
+
+				// 檢查查詢結果
+				if (!$result) {
+					echo "Error fetching doctor data: " . mysqli_error($link);
+					exit;
+				}
+
+				// 輸出查詢結果到下拉選單
 				while ($row = mysqli_fetch_assoc($result)) {
 					echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
 				}
 				?>
 			</select>
+
 			<a href="">數據</a>
 
 		</div>
