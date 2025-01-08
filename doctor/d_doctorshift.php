@@ -53,8 +53,6 @@ if (isset($_SESSION["帳號"])) {
     exit();
   }
 
-  // 關閉資料庫連接
-  mysqli_close($link);
 } else {
   echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
@@ -65,6 +63,90 @@ if (isset($_SESSION["帳號"])) {
 
 //醫生班表
 
+$帳號 = $_SESSION['帳號']; // 取得當前登入的帳號
+
+// SQL 查詢：根據登入帳號取得對應的醫生姓名
+$query = "
+SELECT d.doctor_id, d.doctor 
+FROM doctor d 
+INNER JOIN user u ON d.user_id = u.user_id 
+WHERE u.account = ?
+";
+$stmt = mysqli_prepare($link, $query);
+mysqli_stmt_bind_param($stmt, "s", $帳號);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+
+if ($row = mysqli_fetch_assoc($result)) {
+  $doctor_id = $row['doctor_id'];
+  $doctor_name = htmlspecialchars($row['doctor']);
+} else {
+  $doctor_id = '';
+  $doctor_name = '未知醫生';
+  error_log("未找到醫生資料，帳號: $帳號");
+}
+
+// 查詢排班資料（關聯 shifttime 表）
+$shift_query = "
+SELECT ds.date, st1.shifttime AS start_time, st2.shifttime AS end_time
+FROM doctorshift ds
+INNER JOIN shifttime st1 ON ds.go = st1.shifttime_id
+INNER JOIN shifttime st2 ON ds.off = st2.shifttime_id
+WHERE ds.doctor_id = ?
+";
+
+// 查詢請假資料
+$leave_query = "
+SELECT start_date, end_date, reason
+FROM leaves
+WHERE doctor_id = ?
+";
+
+$shifts = []; // 用於存放排班資料
+$leaves = []; // 用於存放請假資料
+
+if (!empty($doctor_id)) {
+  // 查詢排班資料
+  $stmt_shift = mysqli_prepare($link, $shift_query);
+  mysqli_stmt_bind_param($stmt_shift, "i", $doctor_id);
+  mysqli_stmt_execute($stmt_shift);
+  $shift_result = mysqli_stmt_get_result($stmt_shift);
+
+  while ($shift_row = mysqli_fetch_assoc($shift_result)) {
+    $shifts[$shift_row['date']] = [
+      'start_time' => $shift_row['start_time'],
+      'end_time' => $shift_row['end_time']
+    ];
+  }
+
+  // 查詢請假資料
+  $stmt_leave = mysqli_prepare($link, $leave_query);
+  mysqli_stmt_bind_param($stmt_leave, "i", $doctor_id);
+  mysqli_stmt_execute($stmt_leave);
+  $leave_result = mysqli_stmt_get_result($stmt_leave);
+
+  while ($leave_row = mysqli_fetch_assoc($leave_result)) {
+    $start_date = substr($leave_row['start_date'], 0, 10);
+    $end_date = substr($leave_row['end_date'], 0, 10);
+    $start_time = substr($leave_row['start_date'], 11, 5);
+    $end_time = substr($leave_row['end_date'], 11, 5);
+    $reason = $leave_row['reason'];
+
+    $current_date = $start_date;
+    while ($current_date <= $end_date) {
+      $leaves[$current_date] = [
+        'reason' => $reason,
+        'start_time' => $start_time,
+        'end_time' => $end_time
+      ];
+      $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
+    }
+  }
+}
+
+mysqli_stmt_close($stmt_shift);
+mysqli_stmt_close($stmt_leave);
+mysqli_close($link);
 ?>
 
 
@@ -313,94 +395,11 @@ if (isset($_SESSION["帳號"])) {
     <!--治療師班表-->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <!-- <h3 style="text-align: center;">治療師班表</h3> -->
-      <?php
-      $帳號 = $_SESSION['帳號'];  // 取得當前登入的帳號
-      
-      require '../db.php'; // 引入資料庫連接檔案
-      
-      // SQL 查詢：根據登入帳號取得對應的醫生姓名
-      $query = "
-SELECT d.doctor_id, d.doctor 
-FROM doctor d 
-INNER JOIN user u ON d.user_id = u.user_id 
-WHERE u.account = ?
-";
-      $stmt = mysqli_prepare($link, $query);
-      mysqli_stmt_bind_param($stmt, "s", $帳號);
-      mysqli_stmt_execute($stmt);
-      $result = mysqli_stmt_get_result($stmt);
 
-      if ($row = mysqli_fetch_assoc($result)) {
-        $doctor_id = $row['doctor_id'];
-        $doctor_name = htmlspecialchars($row['doctor']);
-      } else {
-        $doctor_id = '';
-        $doctor_name = '未知醫生';
-        error_log("未找到醫生資料，帳號: $帳號");
-      }
-
-      // 查詢排班資料（關聯 shifttime 表）
-      $shift_query = "
-SELECT ds.date, st1.shifttime AS start_time, st2.shifttime AS end_time
-FROM doctorshift ds
-INNER JOIN shifttime st1 ON ds.go = st1.shifttime_id
-INNER JOIN shifttime st2 ON ds.off = st2.shifttime_id
-WHERE ds.doctor_id = ?
-";
-
-      // 查詢請假資料
-      $leave_query = "
-SELECT start_date, end_date, reason
-FROM leaves
-WHERE doctor_id = ?
-";
-
-      $shifts = []; // 用於存放排班資料
-      $leaves = []; // 用於存放請假資料
-      
-      if (!empty($doctor_id)) {
-        // 查詢排班資料
-        $stmt_shift = mysqli_prepare($link, $shift_query);
-        mysqli_stmt_bind_param($stmt_shift, "i", $doctor_id);
-        mysqli_stmt_execute($stmt_shift);
-        $shift_result = mysqli_stmt_get_result($stmt_shift);
-
-        while ($shift_row = mysqli_fetch_assoc($shift_result)) {
-          $shifts[$shift_row['date']] = [
-            'start_time' => $shift_row['start_time'],
-            'end_time' => $shift_row['end_time']
-          ];
-        }
-
-        // 查詢請假資料
-        $stmt_leave = mysqli_prepare($link, $leave_query);
-        mysqli_stmt_bind_param($stmt_leave, "i", $doctor_id);
-        mysqli_stmt_execute($stmt_leave);
-        $leave_result = mysqli_stmt_get_result($stmt_leave);
-
-        while ($leave_row = mysqli_fetch_assoc($leave_result)) {
-          $start_date = substr($leave_row['start_date'], 0, 10);
-          $end_date = substr($leave_row['end_date'], 0, 10);
-          $start_time = substr($leave_row['start_date'], 11, 5);
-          $end_time = substr($leave_row['end_date'], 11, 5);
-          $reason = $leave_row['reason'];
-
-          $current_date = $start_date;
-          while ($current_date <= $end_date) {
-            $leaves[$current_date] = [
-              'reason' => $reason,
-              'start_time' => $start_time,
-              'end_time' => $end_time
-            ];
-            $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
-          }
-        }
-      }
-
-      mysqli_stmt_close($stmt_shift);
-      mysqli_stmt_close($stmt_leave);
-      mysqli_close($link);
-      ?>
+      <script>
+        const shifts = <?php echo json_encode($shifts); ?>;
+        const leaves = <?php echo json_encode($leaves); ?>;
+      </script>
 
       <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
         治療師姓名：<?php echo $doctor_name; ?> <br /> <!-- 顯示醫生姓名 -->
@@ -423,41 +422,10 @@ WHERE doctor_id = ?
         </thead>
         <tbody id="calendar"></tbody>
       </table>
+
+
       <script>
-
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth();
-
-        const yearSelect = document.getElementById('year');
-        const monthSelect = document.getElementById('month');
         const calendarBody = document.getElementById('calendar');
-
-        // 從 PHP 獲取排班與請假資料
-        const shifts = <?php echo json_encode($shifts); ?>;
-        const leaves = <?php echo json_encode($leaves); ?>;
-
-        function initYearOptions() {
-          const startYear = currentYear - 5;
-          const endYear = currentYear + 5;
-          for (let year = startYear; year <= endYear; year++) {
-            const option = document.createElement('option');
-            option.value = year;
-            option.textContent = year;
-            if (year === currentYear) option.selected = true;
-            yearSelect.appendChild(option);
-          }
-        }
-
-        function initMonthOptions() {
-          for (let month = 0; month < 12; month++) {
-            const option = document.createElement('option');
-            option.value = month;
-            option.textContent = month + 1;
-            if (month === currentMonth) option.selected = true;
-            monthSelect.appendChild(option);
-          }
-        }
 
         function generateCalendar(year, month) {
           calendarBody.innerHTML = ''; // 清空日曆內容
@@ -477,24 +445,41 @@ WHERE doctor_id = ?
             const cell = document.createElement('td');
             cell.textContent = date;
 
-            // 顯示請假資料優先
-            if (leaves[fullDate]) {
+            if (leaves[fullDate] && shifts[fullDate]) {
+              const shiftStart = shifts[fullDate].start_time;
+              const shiftEnd = shifts[fullDate].end_time;
+              const leaveStart = leaves[fullDate].start_time;
+              const leaveEnd = leaves[fullDate].end_time;
+
+              if (shiftStart < leaveStart) {
+                const workBeforeLeave = document.createElement('div');
+                workBeforeLeave.textContent = `上班: ${shiftStart}~${leaveStart}`;
+                workBeforeLeave.style.color = 'green';
+                cell.appendChild(workBeforeLeave);
+              }
+
               const leaveInfo = document.createElement('div');
-              leaveInfo.textContent = `請假: ${leaves[fullDate].start_time}~${leaves[fullDate].end_time}`;
+              leaveInfo.textContent = `請假: ${leaveStart}~${leaveEnd}`;
               leaveInfo.style.color = 'blue';
-              leaveInfo.style.cursor = 'pointer';
-              leaveInfo.addEventListener('click', () => {
-                alert(`日期: ${fullDate}\n原因: ${leaves[fullDate].reason}`);
-              });
               cell.appendChild(leaveInfo);
+
+              if (leaveEnd < shiftEnd) {
+                const workAfterLeave = document.createElement('div');
+                workAfterLeave.textContent = `上班: ${leaveEnd}~${shiftEnd}`;
+                workAfterLeave.style.color = 'green';
+                cell.appendChild(workAfterLeave);
+              }
             } else if (shifts[fullDate]) {
-              // 顯示排班資料
               const shiftInfo = document.createElement('div');
               shiftInfo.textContent = `上班: ${shifts[fullDate].start_time}~${shifts[fullDate].end_time}`;
               shiftInfo.style.color = 'green';
               cell.appendChild(shiftInfo);
+            } else if (leaves[fullDate]) {
+              const leaveInfo = document.createElement('div');
+              leaveInfo.textContent = `請假: ${leaves[fullDate].start_time}~${leaves[fullDate].end_time}`;
+              leaveInfo.style.color = 'blue';
+              cell.appendChild(leaveInfo);
             } else {
-              // 如果既沒有排班又沒有請假
               cell.style.color = 'gray';
             }
 
@@ -506,7 +491,6 @@ WHERE doctor_id = ?
             }
           }
 
-          // 填補最後一行空白單元格
           while (row.children.length < 7) {
             const emptyCell = document.createElement('td');
             row.appendChild(emptyCell);
@@ -515,21 +499,44 @@ WHERE doctor_id = ?
         }
 
         // 初始化日曆
-        initYearOptions();
-        initMonthOptions();
-        generateCalendar(currentYear, currentMonth);
+        function initYearMonth() {
+          const currentDate = new Date();
+          const currentYear = currentDate.getFullYear();
+          const currentMonth = currentDate.getMonth();
 
-        yearSelect.addEventListener('change', () => {
-          generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-        });
-        monthSelect.addEventListener('change', () => {
-          generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-        });
+          const yearSelect = document.getElementById('year');
+          const monthSelect = document.getElementById('month');
 
+          for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            if (i === currentYear) option.selected = true;
+            yearSelect.appendChild(option);
+          }
+
+          for (let i = 0; i < 12; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i + 1;
+            if (i === currentMonth) option.selected = true;
+            monthSelect.appendChild(option);
+          }
+
+          yearSelect.addEventListener('change', () => {
+            generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+          });
+
+          monthSelect.addEventListener('change', () => {
+            generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+          });
+
+          generateCalendar(currentYear, currentMonth);
+        }
+
+        initYearMonth();
 
       </script>
-
-
     </section>
 
 

@@ -54,8 +54,7 @@ if (isset($_SESSION["帳號"])) {
     exit();
   }
 
-  // 關閉資料庫連接
-  mysqli_close($link);
+
 } else {
   echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
@@ -65,75 +64,7 @@ if (isset($_SESSION["帳號"])) {
 }
 
 // 看診紀錄
-$帳號 = $_SESSION['帳號'];  // 取得當前登入的帳號
 
-require '../db.php'; // 引入資料庫連接檔案
-
-// 分頁設定
-$records_per_page = 10; // 每頁顯示的記錄數
-$page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1; // 當前頁碼，預設為第1頁
-$offset = ($page - 1) * $records_per_page; // 計算記錄的起始位置
-
-// 搜尋條件
-$search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, $_GET['search_name']) : '';
-
-// 計算總記錄數
-$count_sql = "
-SELECT COUNT(*) AS total
-FROM medicalrecord m
-LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN item i ON m.item_id = i.item_id
-WHERE 1=1
-" . ($search_name ? "AND p.name LIKE '%$search_name%'" : "");
-
-$count_result = mysqli_query($link, $count_sql);
-$total_records = mysqli_fetch_assoc($count_result)['total'];
-$total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
-
-// 查詢資料
-$sql = "
-SELECT 
-m.medicalrecord_id,
-a.appointment_id,
-p.name AS patient_name,
-CASE 
-WHEN p.gender_id = 1 THEN '男'
-WHEN p.gender_id = 2 THEN '女'
-ELSE '未設定'
-END AS gender,
-CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') AS birthday_with_age,
-d.doctor AS doctor_name,
-i.item AS treatment_item,
-i.price AS treatment_price,
-DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date, -- 看診日期
-CASE 
-  WHEN DAYOFWEEK(ds.date) = 1 THEN '星期日'
-  WHEN DAYOFWEEK(ds.date) = 2 THEN '星期一'
-  WHEN DAYOFWEEK(ds.date) = 3 THEN '星期二'
-  WHEN DAYOFWEEK(ds.date) = 4 THEN '星期三'
-  WHEN DAYOFWEEK(ds.date) = 5 THEN '星期四'
-  WHEN DAYOFWEEK(ds.date) = 6 THEN '星期五'
-  WHEN DAYOFWEEK(ds.date) = 7 THEN '星期六'
-END AS consultation_weekday, -- 中文星期
-COALESCE(st.shifttime, '未設定') AS consultation_time, -- 看診時間
-m.created_at
-FROM medicalrecord m
-LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN item i ON m.item_id = i.item_id
-WHERE 1=1
-" . ($search_name ? "AND p.name LIKE '%$search_name%'" : "") . "
-ORDER BY ds.date, st.shifttime -- 按日期與時間排序
-LIMIT $offset, $records_per_page";
-
-
-$result = mysqli_query($link, $sql);
 
 ?>
 
@@ -450,7 +381,7 @@ $result = mysqli_query($link, $sql);
                   // 執行資料庫查詢，檢查是否有該資料
                   $sql = "
         SELECT COUNT(*) AS total
-        FROM medicalrecord a
+        FROM appointment a
         LEFT JOIN people p ON a.people_id = p.people_id
         WHERE p.name LIKE '%$search_name%'
         ";
@@ -463,80 +394,101 @@ $result = mysqli_query($link, $sql);
                   }
                 }
               }
+              // 接收搜尋參數
+              $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
+
               ?>
-
-
-              <table>
-                <thead>
-                  <tr>
-                    <th>編號</th>
-                    <th>姓名</th>
-                    <th>性別</th>
-                    <th>生日 (年齡)</th>
-                    <th>看診日期 (星期)</th>
-                    <th>看診時間</th>
-                    <th>治療項目</th>
-                    <th>治療費用</th>
-                    <th>建立時間</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php if (mysqli_num_rows($result) > 0): ?>
-                    <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                      <tr>
-                        <td><?php echo htmlspecialchars($row['medicalrecord_id']); ?></td>
-                        <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
-                        <td><?php echo htmlspecialchars($row['gender']); ?></td>
-                        <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
-                        <td>
-                          <?php echo htmlspecialchars($row['consultation_date']); ?>
-                          (<?php echo htmlspecialchars($row['consultation_weekday']); ?>)
-                        </td>
-                        <td><?php echo htmlspecialchars($row['consultation_time']); ?></td>
-                        <td><?php echo htmlspecialchars($row['treatment_item']); ?></td>
-                        <td><?php echo htmlspecialchars($row['treatment_price']); ?></td>
-                        <td><?php echo htmlspecialchars($row['created_at']); ?></td>
-                      </tr>
-                    <?php endwhile; ?>
-                  <?php else: ?>
-                    <tr>
-                      <td colspan="9">目前無資料</td>
-                    </tr>
-                  <?php endif; ?>
-                </tbody>
-              </table>
-
-
-              <!-- 分頁 -->
-              <div style="text-align: right; margin-top: 10px; margin-bottom: 10px;">
-                <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（共 <?php echo $total_records; ?>
-                  筆資料）</span>
-              </div>
-
-              <div style="text-align: center; margin-top: 20px;">
-                <?php if ($page > 1): ?>
-                  <a href="?page=<?php echo $page - 1; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
-                <?php endif; ?>
-
-                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                  <?php if ($i == $page): ?>
-                    <strong><?php echo $i; ?></strong>
-                  <?php else: ?>
-                    <a
-                      href="?page=<?php echo $i; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
-                  <?php endif; ?>
-                <?php endfor; ?>
-
-                <?php if ($page < $total_pages): ?>
-                  <a href="?page=<?php echo $page + 1; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
-                <?php endif; ?>
-              </div>
 
               <?php
-              // 釋放結果並關閉連線
-              mysqli_free_result($result);
+              
+              $page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
+              $records_per_page = 10; // 每頁顯示筆數
+              $offset = ($page - 1) * $records_per_page;
+
+              // 查詢條件
+              $where_clause = "1=1";
+              if ($search_name !== '') {
+                $where_clause .= " AND p.name LIKE '%" . mysqli_real_escape_string($link, $search_name) . "%'";
+              }
+
+              // 查詢總筆數
+              $count_sql = "
+SELECT COUNT(*) AS total
+FROM medicalrecord m
+LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN item i ON m.item_id = i.item_id
+WHERE $where_clause";
+
+              $count_result = mysqli_query($link, $count_sql);
+              $total_records = mysqli_fetch_assoc($count_result)['total'];
+              $total_pages = max(ceil($total_records / $records_per_page), 1);
+
+              // 查詢資料
+              $sql = "
+SELECT 
+  m.medicalrecord_id,
+  p.name AS patient_name,
+  p.gender_id,
+  p.birthday,
+  ds.date,
+  i.item,
+  i.price,
+  m.created_at
+FROM medicalrecord m
+LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN item i ON m.item_id = i.item_id
+WHERE $where_clause
+ORDER BY ds.date
+LIMIT $offset, $records_per_page";
+
+              $result = mysqli_query($link, $sql);
+
+              if (!$result) {
+                die("SQL Query Failed: " . mysqli_error($link));
+              }
+
+              // 顯示表格
+              if (mysqli_num_rows($result) > 0) {
+                echo "<table>";
+                echo "<thead>
+        <tr>
+            <th>編號</th>
+            <th>姓名</th>
+            <th>性別</th>
+            <th>生日</th>
+            <th>看診日期</th>
+            <th>治療項目</th>
+            <th>治療費用</th>
+            <th>建立時間</th>
+        </tr>
+    </thead>";
+                echo "<tbody>";
+                while ($row = mysqli_fetch_assoc($result)) {
+                  echo "<tr>
+            <td>{$row['medicalrecord_id']}</td>
+            <td>{$row['patient_name']}</td>
+            <td>" . ($row['gender_id'] == 1 ? '男' : '女') . "</td>
+            <td>{$row['birthday']}</td>
+            <td>{$row['date']}</td>
+            <td>{$row['item']}</td>
+            <td>{$row['price']}</td>
+            <td>{$row['created_at']}</td>
+        </tr>";
+                }
+                echo "</tbody>";
+                echo "</table>";
+              } else {
+                echo "<p>目前無資料，請輸入條件進行搜尋。</p>";
+              }
+
               mysqli_close($link);
               ?>
+
+
 
             </div>
           </div>
