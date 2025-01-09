@@ -348,100 +348,102 @@ if (isset($_SESSION["帳號"])) {
     <!--標題-->
 
     <!--看診紀錄-->
-    <section class="section section-lg bg-default text-center">
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh;">
-          <!-- 搜尋框 -->
-          <div class="search-container" style="margin-bottom: 20px;text-align: right;">
-            <form method="GET" action="">
-              <!-- 隱藏的狀態標誌，用於檢測是否按下搜尋按鈕 -->
-              <input type="hidden" name="is_search" value="1">
-              <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
-                value="<?php echo isset($_GET['search_name']) ? htmlspecialchars($_GET['search_name']) : ''; ?>">
-              <button type="submit" style="margin-left: 10px;">搜尋</button>
-            </form>
-          </div>
+    <section class="section section-lg bg-default text-center" style="padding: 20px 0;">
+      <div
+        style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh;">
+        <!-- 搜尋框 -->
+        <div class="search-container" style="margin-bottom: 10px; width: 80%; text-align: right;">
+          <form method="GET" action="">
+            <!-- 隱藏的狀態標誌，用於檢測是否按下搜尋按鈕 -->
+            <input type="hidden" name="is_search" value="1">
+            <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
+              value="<?php echo isset($_GET['search_name']) ? htmlspecialchars($_GET['search_name']) : ''; ?>"
+              style="padding: 5px; width: 200px;">
+            <button type="submit" style="padding: 5px 10px; margin-left: 10px;">搜尋</button>
+          </form>
+        </div>
 
-          <?php
-          require '../db.php'; // 引入資料庫連接檔案
-          
-          // 檢查是否由搜尋按鈕提交
-          if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['is_search'])) {
-            $search_name = trim($_GET['search_name']);
+        <?php
+        require '../db.php'; // 引入資料庫連接檔案
+        
+        // 檢查是否由搜尋按鈕提交
+        if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['is_search'])) {
+          $search_name = trim($_GET['search_name']);
 
-            if ($search_name === '') {
-              // 如果搜尋姓名為空，顯示彈跳訊息
-              echo "<script>alert('請輸入搜尋姓名！');</script>";
-            } else {
-              // 執行資料庫查詢，檢查是否有該資料
-              $sql = "
-          SELECT COUNT(*) AS total
-          FROM appointment a
-          LEFT JOIN people p ON a.people_id = p.people_id
-          WHERE p.name LIKE '%$search_name%'
-      ";
-              $result = mysqli_query($link, $sql);
-              $data = mysqli_fetch_assoc($result);
+          if ($search_name === '') {
+            // 如果搜尋姓名為空，顯示彈跳訊息
+            echo "<script>alert('請輸入搜尋姓名！');</script>";
+          } else {
+            // 執行資料庫查詢，檢查是否有該資料
+            $sql = "
+            SELECT COUNT(*) AS total
+            FROM appointment a
+            LEFT JOIN people p ON a.people_id = p.people_id
+            WHERE p.name LIKE '%$search_name%'
+            ";
+            $result = mysqli_query($link, $sql);
+            $data = mysqli_fetch_assoc($result);
 
-              if ($data['total'] == 0) {
-                // 查無資料，顯示彈跳訊息
-                echo "<script>alert('查無此人！');</script>";
-              }
+            if ($data['total'] == 0) {
+              // 查無資料，顯示彈跳訊息
+              echo "<script>alert('查無此人！');</script>";
             }
           }
+        }
 
-          // 接收搜尋參數
-          $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
+        // 接收搜尋參數
+        $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
 
-          $page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
-          $records_per_page = 10; // 每頁顯示筆數
-          $offset = ($page - 1) * $records_per_page;
+        $page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
+        $records_per_page = 10; // 每頁顯示筆數
+        $offset = ($page - 1) * $records_per_page;
 
-          // 查詢條件
-          $where_clause = "1=1";
-          if ($search_name !== '') {
-            $where_clause .= " AND p.name LIKE '%" . mysqli_real_escape_string($link, $search_name) . "%'";
-          }
+        // 查詢條件
+        $where_clause = "1=1";
+        if ($search_name !== '') {
+          $where_clause .= " AND p.name LIKE '%" . mysqli_real_escape_string($link, $search_name) . "%'";
+        }
 
-          // 查詢總筆數
-          $count_sql = "
-      SELECT COUNT(*) AS total
-      FROM medicalrecord m
-      LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-      LEFT JOIN people p ON a.people_id = p.people_id
-      LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-      LEFT JOIN item i ON m.item_id = i.item_id
-      WHERE $where_clause
-  ";
-          $count_result = mysqli_query($link, $count_sql);
-          $total_records = mysqli_fetch_assoc($count_result)['total'];
-          $total_pages = max(ceil($total_records / $records_per_page), 1);
+        // 查詢總筆數
+        $count_sql = "
+    SELECT COUNT(*) AS total
+    FROM medicalrecord m
+    LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+    LEFT JOIN people p ON a.people_id = p.people_id
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN item i ON m.item_id = i.item_id
+    WHERE $where_clause
+    ";
+        $count_result = mysqli_query($link, $count_sql);
+        $total_records = mysqli_fetch_assoc($count_result)['total'];
+        $total_pages = max(ceil($total_records / $records_per_page), 1);
 
-          // 查詢資料
-          $sql = "
-      SELECT 
-          m.medicalrecord_id,
-          p.name AS patient_name,
-          p.gender_id,
-          p.birthday,
-          ds.date,
-          i.item,
-          i.price,
-          m.created_at
-      FROM medicalrecord m
-      LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-      LEFT JOIN people p ON a.people_id = p.people_id
-      LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-      LEFT JOIN item i ON m.item_id = i.item_id
-      WHERE $where_clause
-      ORDER BY ds.date
-      LIMIT $offset, $records_per_page
-  ";
-          $result = mysqli_query($link, $sql);
+        // 查詢資料
+        $sql = "
+    SELECT 
+        m.medicalrecord_id,
+        p.name AS patient_name,
+        p.gender_id,
+        p.birthday,
+        ds.date,
+        i.item,
+        i.price,
+        m.created_at
+    FROM medicalrecord m
+    LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+    LEFT JOIN people p ON a.people_id = p.people_id
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN item i ON m.item_id = i.item_id
+    WHERE $where_clause
+    ORDER BY ds.date
+    LIMIT $offset, $records_per_page
+    ";
+        $result = mysqli_query($link, $sql);
 
-          // 顯示表格
-          if (mysqli_num_rows($result) > 0) {
-            echo "<table style='border-collapse: collapse; width: 80%; text-align: center;'>";
-            echo "<thead>
+        // 顯示表格
+        if (mysqli_num_rows($result) > 0) {
+          echo "<table style='border-collapse: collapse; width: 80%; text-align: center; margin: 0 auto;'>";
+          echo "<thead>
           <tr>
               <th>編號</th>
               <th>姓名</th>
@@ -453,9 +455,9 @@ if (isset($_SESSION["帳號"])) {
               <th>建立時間</th>
           </tr>
       </thead>";
-            echo "<tbody>";
-            while ($row = mysqli_fetch_assoc($result)) {
-              echo "<tr>
+          echo "<tbody>";
+          while ($row = mysqli_fetch_assoc($result)) {
+            echo "<tr>
               <td>{$row['medicalrecord_id']}</td>
               <td>{$row['patient_name']}</td>
               <td>" . ($row['gender_id'] == 1 ? '男' : '女') . "</td>
@@ -465,39 +467,40 @@ if (isset($_SESSION["帳號"])) {
               <td>{$row['price']}</td>
               <td>{$row['created_at']}</td>
           </tr>";
-            }
-            echo "</tbody>";
-            echo "</table>";
+          }
+          echo "</tbody>";
+          echo "</table>";
+        } else {
+          echo "<p>目前無資料，請輸入條件進行搜尋。</p>";
+        }
+
+        // 顯示頁碼及總頁數資訊
+        echo "<div style='text-align: right; width: 80%; margin-top: 5px; font-size: 14px;'>";
+        echo "第 $page 頁 / 共 $total_pages 頁（共 $total_records 筆資料）";
+        echo "</div>";
+
+        // 顯示頁碼
+        echo "<div style='text-align: center; margin-top: 10px;'>";
+        if ($page > 1) {
+          echo "<a href='?page=" . ($page - 1) . "&search_name=" . urlencode($search_name) . "'>上一頁</a> ";
+        }
+        for ($i = 1; $i <= $total_pages; $i++) {
+          if ($i == $page) {
+            echo "<strong>$i</strong> ";
           } else {
-            echo "<p>目前無資料，請輸入條件進行搜尋。</p>";
+            echo "<a href='?page=$i&search_name=" . urlencode($search_name) . "'>$i</a> ";
           }
+        }
+        if ($page < $total_pages) {
+          echo "<a href='?page=" . ($page + 1) . "&search_name=" . urlencode($search_name) . "'>下一頁</a>";
+        }
+        echo "</div>";
 
-          // 顯示頁碼及總頁數資訊
-          echo "<div style='text-align: right; width: 80%; margin-top: 10px; font-size: 14px;'>";
-          echo "第 $page 頁 / 共 $total_pages 頁（共 $total_records 筆資料）";
-          echo "</div>";
-
-          // 顯示頁碼
-          echo "<div style='text-align: center; margin-top: 10px;'>";
-          if ($page > 1) {
-            echo "<a href='?page=" . ($page - 1) . "&search_name=" . urlencode($search_name) . "'>上一頁</a> ";
-          }
-          for ($i = 1; $i <= $total_pages; $i++) {
-            if ($i == $page) {
-              echo "<strong>$i</strong> ";
-            } else {
-              echo "<a href='?page=$i&search_name=" . urlencode($search_name) . "'>$i</a> ";
-            }
-          }
-          if ($page < $total_pages) {
-            echo "<a href='?page=" . ($page + 1) . "&search_name=" . urlencode($search_name) . "'>下一頁</a>";
-          }
-          echo "</div>";
-
-          mysqli_close($link);
-          ?>
-        </div>
+        mysqli_close($link);
+        ?>
+      </div>
     </section>
+
     <!--看診紀錄-->
 
     <!--頁尾-->
