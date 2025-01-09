@@ -52,6 +52,7 @@ if (isset($_SESSION["帳號"])) {
           </script>";
 	exit();
 }
+
 ?>
 
 
@@ -72,6 +73,41 @@ if (isset($_SESSION["帳號"])) {
 	<link rel="stylesheet" href="css/fonts.css">
 	<link rel="stylesheet" href="css/style.css">
 	<style>
+		/* 排班資訊樣式 */
+		.shift-info {
+			margin: 5px 0;
+			font-size: 14px;
+			color: #555;
+		}
+
+		/* 預約按鈕樣式 */
+		.shift-info button {
+			background-color: #008CBA;
+			color: white;
+			border: none;
+			padding: 5px 10px;
+			font-size: 12px;
+			cursor: pointer;
+			border-radius: 3px;
+		}
+
+		.shift-info button:hover {
+			background-color: #005f7f;
+		}
+
+		/* 無排班提示樣式 */
+		.no-schedule {
+			font-size: 18px;
+			color: #aaa;
+		}
+
+		/* 當前日期高亮樣式 */
+		.today {
+			background-color: #ffeb3b;
+		}
+
+
+
 		.ie-panel {
 			display: none;
 			background: #212121;
@@ -148,74 +184,31 @@ if (isset($_SESSION["帳號"])) {
 			box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
 		}
 
-		/* 預約 */
-		h1 {
-			margin-bottom: 20px;
-		}
-
-		/* 表單容器框線樣式 */
-		.form-container {
-			width: 400px;
-			margin: 30px auto;
-			padding: 20px;
-			border: 2px solid black;
-			border-radius: 10px;
-			text-align: left;
-			background-color: #f9f9f9;
-		}
-
-		label {
-			display: block;
-			margin: 10px 0 5px;
-			font-weight: bold;
-		}
-
-		input,
-		select,
-		textarea {
+		/* 醫生班表 */
+		.table-custom {
 			width: 100%;
-			padding: 8px;
-			margin-bottom: 15px;
-			border: 1px solid #ccc;
-			border-radius: 5px;
-			font-size: 14px;
+			border-collapse: collapse;
+			table-layout: fixed;
+		}
+
+		.table-custom th,
+		.table-custom td {
+			border: 1px solid #ddd;
 			text-align: left;
-			/* 輸入框內文字靠左 */
+			/* 文字靠左對齊 */
+			padding: 8px;
+			white-space: nowrap;
 		}
 
-		textarea {
-			resize: none;
+		.table-custom th {
+			background-color: #00a79d;
+			color: white;
+			text-align: center;
 		}
 
-		/* 按鈕樣式 */
-		button {
-			margin: 20px auto 0;
-			/* 距離表格的間距 */
-			display: block;
-			/* 讓按鈕居中 */
-			padding: 10px 20px;
-			font-size: 16px;
-			cursor: pointer;
-		}
-
-		/* 備註標籤位置調整 */
-		#note-label {
-			vertical-align: top;
-		}
-
-		/* 聯絡我們 */
-		.custom-link {
-			color: rgb(246, 247, 248);
-			/* 設定超連結顏色 */
-			text-decoration: none;
-			/* 移除超連結的下劃線 */
-		}
-
-		.custom-link:hover {
-			color: #0056b3;
-			/* 滑鼠懸停時的顏色，例如深藍色 */
-			text-decoration: underline;
-			/* 懸停時增加下劃線效果 */
+		.reservation-info {
+			color: red;
+			margin-top: 5px;
 		}
 	</style>
 </head>
@@ -393,57 +386,280 @@ if (isset($_SESSION["帳號"])) {
 		</div>
 		<!--標題-->
 
-		
+		<?php
+		include "../db.php";
+
+		// 查詢排班數據
+		$query = "
+SELECT 
+    d.doctor_id, 
+    d.doctor, 
+    ds.date, 
+    st1.shifttime AS go_time, 
+    st2.shifttime AS off_time
+FROM 
+    doctorshift ds
+JOIN 
+    doctor d ON ds.doctor_id = d.doctor_id
+JOIN 
+    shifttime st1 ON ds.go = st1.shifttime_id
+JOIN 
+    shifttime st2 ON ds.off = st2.shifttime_id
+ORDER BY ds.date, d.doctor_id";
+
+		$result = mysqli_query($link, $query);
+
+		$schedule = [];
+		while ($row = mysqli_fetch_assoc($result)) {
+			$date = $row['date'];
+			if (!isset($schedule[$date])) {
+				$schedule[$date] = [];
+			}
+			$schedule[$date][] = [
+				'doctor' => $row['doctor'],
+				'go_time' => $row['go_time'],
+				'off_time' => $row['off_time'],
+				'doctor_id' => $row['doctor_id'],
+			];
+		}
+
+		// 查詢請假數據
+		$query_leaves = "
+SELECT 
+    l.doctor_id, 
+    l.start_date, 
+    l.end_date
+FROM 
+    leaves l";
+
+		$result_leaves = mysqli_query($link, $query_leaves);
+
+		$leaves = [];
+		while ($row = mysqli_fetch_assoc($result_leaves)) {
+			$leaves[] = [
+				'doctor_id' => $row['doctor_id'],
+				'start_date' => $row['start_date'],
+				'end_date' => $row['end_date'],
+			];
+		}
+
+		// 輸出數據給前端
+		header('Content-Type: application/json');
+		// echo json_encode(['schedule' => $schedule, 'leaves' => $leaves], JSON_UNESCAPED_UNICODE);
+		?>
 
 
-		<footer class="section novi-bg novi-bg-img footer-simple">
-			<div class="container">
-				<div class="row row-40">
-					<div class="col-md-4">
-						<h4>關於我們</h4>
-						<ul class="list-inline" style="font-size: 40px; display: inline-block;color: #333333; ">
-							<li><a class="icon novi-icon icon-default icon-custom-facebook"
-									href="https://www.facebook.com/ReTurnYourBody/" target="_blank"></a></li>
-							<li><a class="icon novi-icon icon-default icon-custom-linkedin"
-									href="https://lin.ee/sUaUVMq" target="_blank"></a></li>
-							<li><a class="icon novi-icon icon-default icon-custom-instagram"
-									href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"
-									target="_blank"></a></li>
-						</ul>
+		<section class="section section-lg bg-default">
+			<div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
+				<label for="year">選擇年份：</label>
+				<select id="year"></select>
+				<label for="month">選擇月份：</label>
+				<select id="month"></select>
 
-					</div>
-					<div class="col-md-3">
-						<h4>快速連結</h4>
-						<ul class="list-marked">
-							<li><a href="u_index.php">首頁</a></li>
-							<li><a href="u_link.php.php">醫生介紹</a></li>
-							<li><a href="u_caseshare.php">個案分享</a></li>
-							<li><a href="u_body-knowledge.php">日常小知識</a></li>
-							<li><a href="u_reserve.php">預約</a></li>
-							<li><a href="u_reserve-record.php">查看預約資料</a></li>
-							<li><a href="u_reserve-time.php">查看預約時段</a></li>
-							<li><a href="u_history.php">歷史紀錄</a></li>
-							<li> <a href="u_profile.php">個人資料</a></li>
-							</a></li>
-						</ul>
-					</div>
+				<table class="table-custom">
+					<thead>
+						<tr>
+							<th>日</th>
+							<th>一</th>
+							<th>二</th>
+							<th>三</th>
+							<th>四</th>
+							<th>五</th>
+							<th>六</th>
+						</tr>
+					</thead>
+					<tbody id="calendar"></tbody>
+				</table>
+			</div>
 
-					<div class="col-md-4">
-						<h4>聯絡我們</h4>
-						<br />
-						<ul>
-							<li>📍 <strong>診療地點:</strong>大重仁骨科復健科診所</li><br />
-							<li>📍 <strong>地址:</strong>
-								<a href="https://maps.app.goo.gl/u3TojSMqjGmdx5Pt5" class="custom-link" target="_blank"
-									rel="noopener noreferrer">
-									241 新北市三重區重新路五段 592 號
-								</a>
-							</li>
+			<script>
+				const data = <?php echo json_encode(['schedule' => $schedule, 'leaves' => $leaves], JSON_UNESCAPED_UNICODE); ?>;
+				const calendarData = data.schedule; // 排班數據
+				const leaveData = data.leaves; // 請假數據
+				const today = new Date(); // 今天日期
+				const tomorrow = new Date(today); // 明天日期
+				tomorrow.setDate(today.getDate() + 1);
+
+				console.log("Calendar Data:", calendarData);
+				console.log("Leave Data:", leaveData);
+
+				/**
+				 * 調整排班時間，處理部分請假情況
+				 */
+				function adjustShiftTime(doctorId, date, startTime, endTime) {
+					const shiftStart = new Date(`${date}T${startTime}`);
+					const shiftEnd = new Date(`${date}T${endTime}`);
+
+					for (const leave of leaveData) {
+						const leaveStart = new Date(leave.start_date);
+						const leaveEnd = new Date(leave.end_date);
+
+						if (leave.doctor_id === doctorId) {
+							if (leaveStart <= shiftStart && leaveEnd >= shiftEnd) {
+								return null; // 整天請假
+							} else if (leaveStart <= shiftStart && leaveEnd > shiftStart && leaveEnd < shiftEnd) {
+								return { go_time: leaveEnd.toTimeString().slice(0, 5), off_time: endTime }; // 調整上班時間
+							} else if (leaveStart > shiftStart && leaveStart < shiftEnd && leaveEnd >= shiftEnd) {
+								return { go_time: startTime, off_time: leaveStart.toTimeString().slice(0, 5) }; // 調整下班時間
+							}
+						}
+					}
+					return { go_time: startTime, off_time: endTime }; // 無請假
+				}
+
+				/**
+				 * 生成日曆表格
+				 */
+				function generateCalendar() {
+					const year = parseInt(document.getElementById('year').value);
+					const month = parseInt(document.getElementById('month').value) - 1;
+
+					const calendarBody = document.getElementById('calendar');
+					calendarBody.innerHTML = '';
+
+					const firstDay = new Date(year, month, 1).getDay();
+					const lastDate = new Date(year, month + 1, 0).getDate();
+
+					let row = document.createElement('tr');
+					for (let i = 0; i < firstDay; i++) {
+						row.appendChild(document.createElement('td'));
+					}
+
+					for (let date = 1; date <= lastDate; date++) {
+						const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+						const cell = document.createElement('td');
+						cell.innerHTML = `<strong>${date}</strong>`;
+
+						const currentDate = new Date(year, month, date); // 當前渲染的日期
+
+						if (calendarData[fullDate]) {
+							calendarData[fullDate].forEach(shift => {
+								const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
+
+								const shiftDiv = document.createElement('div');
+								if (adjustedShift) {
+									shiftDiv.textContent = `${shift.doctor}: ${adjustedShift.go_time} - ${adjustedShift.off_time}`;
+
+									// 只為明天及以後的日期添加預約按鈕
+									if (currentDate >= tomorrow) {
+										const reserveButton = document.createElement('button');
+										reserveButton.textContent = '預約';
+										reserveButton.style.marginLeft = '10px';
+										reserveButton.onclick = () => alert(`預約成功！\n日期：${fullDate}\n醫生：${shift.doctor}`);
+										shiftDiv.appendChild(reserveButton);
+									}
+								} else {
+									shiftDiv.textContent = `${shift.doctor}: 請假`;
+									shiftDiv.style.color = 'red';
+								}
+
+								shiftDiv.className = 'shift-info';
+								cell.appendChild(shiftDiv);
+							});
+						} else {
+							const noSchedule = document.createElement('div');
+							noSchedule.textContent = '無排班';
+							noSchedule.className = 'no-schedule';
+							cell.appendChild(noSchedule);
+						}
+
+						row.appendChild(cell);
+
+						if (row.children.length === 7) {
+							calendarBody.appendChild(row);
+							row = document.createElement('tr');
+						}
+					}
+
+					while (row.children.length < 7) {
+						row.appendChild(document.createElement('td'));
+					}
+					calendarBody.appendChild(row);
+				}
+
+				/**
+				 * 初始化年份與月份選單
+				 */
+				function initSelectOptions() {
+					const yearSelect = document.getElementById('year');
+					const monthSelect = document.getElementById('month');
+
+					for (let year = 2020; year <= 2030; year++) {
+						const option = document.createElement('option');
+						option.value = year;
+						option.textContent = year;
+						if (year === today.getFullYear()) option.selected = true;
+						yearSelect.appendChild(option);
+					}
+
+					for (let month = 1; month <= 12; month++) {
+						const option = document.createElement('option');
+						option.value = month;
+						option.textContent = month;
+						if (month === today.getMonth() + 1) option.selected = true;
+						monthSelect.appendChild(option);
+					}
+
+					generateCalendar();
+				}
+
+				document.getElementById('year').addEventListener('change', generateCalendar);
+				document.getElementById('month').addEventListener('change', generateCalendar);
+
+				initSelectOptions();
+			</script>
+
+
+
+
+			<footer class="section novi-bg novi-bg-img footer-simple">
+				<div class="container">
+					<div class="row row-40">
+						<div class="col-md-4">
+							<h4>關於我們</h4>
+							<ul class="list-inline" style="font-size: 40px; display: inline-block;color: #333333; ">
+								<li><a class="icon novi-icon icon-default icon-custom-facebook"
+										href="https://www.facebook.com/ReTurnYourBody/" target="_blank"></a></li>
+								<li><a class="icon novi-icon icon-default icon-custom-linkedin"
+										href="https://lin.ee/sUaUVMq" target="_blank"></a></li>
+								<li><a class="icon novi-icon icon-default icon-custom-instagram"
+										href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"
+										target="_blank"></a></li>
+							</ul>
+
+						</div>
+						<div class="col-md-3">
+							<h4>快速連結</h4>
+							<ul class="list-marked">
+								<li><a href="u_index.php">首頁</a></li>
+								<li><a href="u_link.php.php">醫生介紹</a></li>
+								<li><a href="u_caseshare.php">個案分享</a></li>
+								<li><a href="u_body-knowledge.php">日常小知識</a></li>
+								<li><a href="u_reserve.php">預約</a></li>
+								<li><a href="u_reserve-record.php">查看預約資料</a></li>
+								<li><a href="u_reserve-time.php">查看預約時段</a></li>
+								<li><a href="u_history.php">歷史紀錄</a></li>
+								<li> <a href="u_profile.php">個人資料</a></li>
+								</a></li>
+							</ul>
+						</div>
+
+						<div class="col-md-4">
+							<h4>聯絡我們</h4>
 							<br />
-							<li>📍 <strong>電話:</strong>(02) 2995-8283</li>
-						</ul>
+							<ul>
+								<li>📍 <strong>診療地點:</strong>大重仁骨科復健科診所</li><br />
+								<li>📍 <strong>地址:</strong>
+									<a href="https://maps.app.goo.gl/u3TojSMqjGmdx5Pt5" class="custom-link"
+										target="_blank" rel="noopener noreferrer">
+										241 新北市三重區重新路五段 592 號
+									</a>
+								</li>
+								<br />
+								<li>📍 <strong>電話:</strong>(02) 2995-8283</li>
+							</ul>
 
-						<!-- <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global"
+							<!-- <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global"
 							data-form-type="subscribe" method="post" action="bat/rd-mailform.php">
 							<div class="form-wrap">
 								<input class="form-input" type="email" name="email" data-constraints="@Email @Required"
@@ -452,16 +668,16 @@ if (isset($_SESSION["帳號"])) {
 							</div>
 							<button class="form-button linearicons-paper-plane"></button>
 						</form> -->
+						</div>
 					</div>
 				</div>
-			</div>
-		</footer>
+			</footer>
 
-		<!-- Global Mailform Output-->
-		<div class="snackbars" id="form-output-global"></div>
-		<!-- Javascript-->
-		<script src="js/core.min.js"></script>
-		<script src="js/script.js"></script>
+			<!-- Global Mailform Output-->
+			<div class="snackbars" id="form-output-global"></div>
+			<!-- Javascript-->
+			<script src="js/core.min.js"></script>
+			<script src="js/script.js"></script>
 </body>
 
 </html>
