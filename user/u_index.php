@@ -403,6 +403,45 @@ if (isset($_SESSION["帳號"])) {
 			您好！目前任職於三重的「大重仁復健科診所」。由於治療師的上班時間每月不同，歡迎來電或留言詢問預約時段。感謝您的配合！
 		</marquee>
 
+		<!-- 天氣API -->
+		<?php
+		// 設定 OpenWeatherMap API 的金鑰和查詢 URL
+		$apiKey = "857208d7d30e1cacd0cfeebeb29f0f60";
+		$city = "Taipei"; // 查詢的城市名稱
+		$apiUrl = "https://api.openweathermap.org/data/2.5/weather?q={$city}&appid={$apiKey}&units=metric&lang=zh_tw";
+
+		// 使用 cURL 請求 API
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $apiUrl);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$response = curl_exec($ch);
+		curl_close($ch);
+
+		// 將返回的 JSON 數據轉換為 PHP 陣列
+		$weatherData = json_decode($response, true);
+
+		// 檢查是否成功獲取數據
+		if (isset($weatherData['cod']) && $weatherData['cod'] == 200) {
+			// 提取天氣信息
+			$cityName = $weatherData['name'];
+			$temperature = $weatherData['main']['temp'];
+			$weatherDescription = $weatherData['weather'][0]['description'];
+			$humidity = $weatherData['main']['humidity'];
+			$windSpeed = $weatherData['wind']['speed'];
+
+			// 顯示天氣資訊
+			echo "城市：{$cityName}<br>";
+			echo "溫度：{$temperature}°C<br>";
+			echo "天氣描述：{$weatherDescription}<br>";
+			echo "濕度：{$humidity}%<br>";
+			echo "風速：{$windSpeed} m/s<br>";
+		} else {
+			// 如果獲取數據失敗，顯示錯誤信息
+			echo "無法獲取天氣資訊，請檢查 API 設定或城市名稱。";
+		}
+		?>
+
+
 		<!--班表-->
 		<section class="section section-lg bg-default">
 			<h3 style="text-align: center;">治療師班表</h3>

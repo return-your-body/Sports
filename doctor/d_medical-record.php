@@ -254,7 +254,9 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_numberpeople.php">當天人數及時段</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假</a>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假申請</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave-query.php">請假資料查詢</a>
                     </li>
                   </ul>
                 </li>
@@ -503,6 +505,7 @@ if (isset($_SESSION["帳號"])) {
 
     <!--看診紀錄-->
 
+ 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
@@ -519,6 +522,8 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="d_appointment.php">預約</a></li>
               <li><a href="d_numberpeople.php">當天人數及時段</a></li>
               <li><a href="d_doctorshift.php">班表時段</a></li>
+              <li><a href="d_leave.php">請假申請</a></li>
+              <li><a href="d_leave-query.php"></a>請假資料查詢</li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
               <li><a href="d_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->

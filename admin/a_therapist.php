@@ -307,7 +307,16 @@ if (isset($_GET['fetch'])) {
 										</li>
 									</ul>
 								</li>
-
+								<li class="rd-nav-item"><a class="rd-nav-link" href="#">醫生管理</a>
+                                    <ul class="rd-menu rd-navbar-dropdown">
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_doctorlistadd.php">新增醫生資料</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_doctorlistmod.php">修改醫生資料</a>
+                                        </li>
+                                    </ul>
+                                </li>
 								<!-- 登出按鈕 -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
 										onclick="showLogoutBox()">登出</a>

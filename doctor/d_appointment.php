@@ -293,7 +293,9 @@ if (!$result_doctor) {
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_numberpeople.php">當天人數及時段</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假</a>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假申請</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave-query.php">請假資料查詢</a>
                     </li>
                   </ul>
                 </li>
@@ -439,6 +441,7 @@ if (!$result_doctor) {
     <!-- 預約-->
 
 
+ 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
@@ -455,9 +458,11 @@ if (!$result_doctor) {
               <li><a href="d_appointment.php">預約</a></li>
               <li><a href="d_numberpeople.php">當天人數及時段</a></li>
               <li><a href="d_doctorshift.php">班表時段</a></li>
+              <li><a href="d_leave.php">請假申請</a></li>
+              <li><a href="d_leave-query.php"></a>請假資料查詢</li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
-              <li> <a href="d_appointment-records.php">預約紀錄</a></li>
-              </a></li>
+              <li><a href="d_appointment-records.php">預約紀錄</a></li>
+              <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
             </ul>
           </div>
           <!-- <div class="col-md-5">
@@ -483,7 +488,6 @@ if (!$result_doctor) {
     </footer>
   </div>
   <!--頁尾-->
-
   <!-- Global Mailform Output-->
   <div class="snackbars" id="form-output-global"></div>
   <!-- Javascript-->

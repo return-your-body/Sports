@@ -78,12 +78,12 @@ mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 
 if ($row = mysqli_fetch_assoc($result)) {
-  $doctor_id = $row['doctor_id'];
-  $doctor_name = htmlspecialchars($row['doctor']);
+    $doctor_id = $row['doctor_id'];
+    $doctor_name = htmlspecialchars($row['doctor']);
 } else {
-  $doctor_id = '';
-  $doctor_name = '未知醫生';
-  error_log("未找到醫生資料，帳號: $帳號");
+    $doctor_id = '';
+    $doctor_name = '未知醫生';
+    error_log("未找到醫生資料，帳號: $帳號");
 }
 
 // 查詢排班資料（關聯 shifttime 表）
@@ -95,55 +95,56 @@ INNER JOIN shifttime st2 ON ds.off = st2.shifttime_id
 WHERE ds.doctor_id = ?
 ";
 
-// 查詢請假資料
+// 查詢請假資料（只包含通過的請假資訊）
 $leave_query = "
 SELECT start_date, end_date, reason
 FROM leaves
-WHERE doctor_id = ?
+WHERE doctor_id = ? AND is_approved = 1
 ";
 
 $shifts = []; // 用於存放排班資料
 $leaves = []; // 用於存放請假資料
 
 if (!empty($doctor_id)) {
-  // 查詢排班資料
-  $stmt_shift = mysqli_prepare($link, $shift_query);
-  mysqli_stmt_bind_param($stmt_shift, "i", $doctor_id);
-  mysqli_stmt_execute($stmt_shift);
-  $shift_result = mysqli_stmt_get_result($stmt_shift);
+    // 查詢排班資料
+    $stmt_shift = mysqli_prepare($link, $shift_query);
+    mysqli_stmt_bind_param($stmt_shift, "i", $doctor_id);
+    mysqli_stmt_execute($stmt_shift);
+    $shift_result = mysqli_stmt_get_result($stmt_shift);
 
-  while ($shift_row = mysqli_fetch_assoc($shift_result)) {
-    $shifts[$shift_row['date']] = [
-      'start_time' => $shift_row['start_time'],
-      'end_time' => $shift_row['end_time']
-    ];
-  }
-
-  // 查詢請假資料
-  $stmt_leave = mysqli_prepare($link, $leave_query);
-  mysqli_stmt_bind_param($stmt_leave, "i", $doctor_id);
-  mysqli_stmt_execute($stmt_leave);
-  $leave_result = mysqli_stmt_get_result($stmt_leave);
-
-  while ($leave_row = mysqli_fetch_assoc($leave_result)) {
-    $start_date = substr($leave_row['start_date'], 0, 10);
-    $end_date = substr($leave_row['end_date'], 0, 10);
-    $start_time = substr($leave_row['start_date'], 11, 5);
-    $end_time = substr($leave_row['end_date'], 11, 5);
-    $reason = $leave_row['reason'];
-
-    $current_date = $start_date;
-    while ($current_date <= $end_date) {
-      $leaves[$current_date] = [
-        'reason' => $reason,
-        'start_time' => $start_time,
-        'end_time' => $end_time
-      ];
-      $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
+    while ($shift_row = mysqli_fetch_assoc($shift_result)) {
+        $shifts[$shift_row['date']] = [
+            'start_time' => $shift_row['start_time'],
+            'end_time' => $shift_row['end_time']
+        ];
     }
-  }
+
+    // 查詢請假資料（只顯示審核通過的請假記錄）
+    $stmt_leave = mysqli_prepare($link, $leave_query);
+    mysqli_stmt_bind_param($stmt_leave, "i", $doctor_id);
+    mysqli_stmt_execute($stmt_leave);
+    $leave_result = mysqli_stmt_get_result($stmt_leave);
+
+    while ($leave_row = mysqli_fetch_assoc($leave_result)) {
+        $start_date = substr($leave_row['start_date'], 0, 10);
+        $end_date = substr($leave_row['end_date'], 0, 10);
+        $start_time = substr($leave_row['start_date'], 11, 5);
+        $end_time = substr($leave_row['end_date'], 11, 5);
+        $reason = $leave_row['reason'];
+
+        $current_date = $start_date;
+        while ($current_date <= $end_date) {
+            $leaves[$current_date] = [
+                'reason' => $reason,
+                'start_time' => $start_time,
+                'end_time' => $end_time
+            ];
+            $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
+        }
+    }
 }
 
+// 關閉查詢和資料庫連線
 mysqli_stmt_close($stmt_shift);
 mysqli_stmt_close($stmt_leave);
 mysqli_close($link);
@@ -302,7 +303,9 @@ mysqli_close($link);
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_numberpeople.php">當天人數及時段</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假</a>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假申請</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave-query.php">請假資料查詢</a>
                     </li>
                   </ul>
                 </li>
@@ -395,169 +398,170 @@ mysqli_close($link);
     <!-- 治療師班表 -->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
 
-      <!-- 選擇年份與月份 -->
-      <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
-        治療師姓名：<?php echo $doctor_name; ?> <br /> <!-- 顯示治療師姓名 -->
-        <label for="year">選擇年份：</label> <!-- 年份下拉選單標籤 -->
-        <select id="year"></select> <!-- 年份下拉選單 -->
-        <label for="month">選擇月份：</label> <!-- 月份下拉選單標籤 -->
-        <select id="month"></select> <!-- 月份下拉選單 -->
-      </div>
+<!-- 選擇年份與月份 -->
+<div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
+  治療師姓名：<?php echo $doctor_name; ?> <br /> <!-- 顯示治療師姓名 -->
+  <label for="year">選擇年份：</label> <!-- 年份下拉選單標籤 -->
+  <select id="year"></select> <!-- 年份下拉選單 -->
+  <label for="month">選擇月份：</label> <!-- 月份下拉選單標籤 -->
+  <select id="month"></select> <!-- 月份下拉選單 -->
+</div>
 
-      <!-- 滾動容器 -->
-      <div style="overflow-x: auto; white-space: nowrap; margin-top: 20px;">
-        <!-- 班表表格 -->
-        <table class="table-custom table-color-header table-custom-bordered" style="min-width: 600px;">
-          <thead>
-            <tr>
-              <th>日</th> <!-- 星期日 -->
-              <th>一</th> <!-- 星期一 -->
-              <th>二</th> <!-- 星期二 -->
-              <th>三</th> <!-- 星期三 -->
-              <th>四</th> <!-- 星期四 -->
-              <th>五</th> <!-- 星期五 -->
-              <th>六</th> <!-- 星期六 -->
-            </tr>
-          </thead>
-          <tbody id="calendar"></tbody> <!-- 日曆內容將動態生成 -->
-        </table>
-      </div>
+<!-- 滾動容器 -->
+<div style="overflow-x: auto; white-space: nowrap; margin-top: 20px;">
+  <!-- 班表表格 -->
+  <table class="table-custom table-color-header table-custom-bordered" style="min-width: 600px;">
+    <thead>
+      <tr>
+        <th>日</th> <!-- 星期日 -->
+        <th>一</th> <!-- 星期一 -->
+        <th>二</th> <!-- 星期二 -->
+        <th>三</th> <!-- 星期三 -->
+        <th>四</th> <!-- 星期四 -->
+        <th>五</th> <!-- 星期五 -->
+        <th>六</th> <!-- 星期六 -->
+      </tr>
+    </thead>
+    <tbody id="calendar"></tbody> <!-- 日曆內容將動態生成 -->
+  </table>
+</div>
 
-      <!-- JavaScript 日曆邏輯 -->
-      <script>
-        // 初始化班表與請假資料，從後端 PHP 傳遞資料
-        const shifts = <?php echo json_encode($shifts); ?>; // 班表資料
-        const leaves = <?php echo json_encode($leaves); ?>; // 請假資料
+<!-- JavaScript 日曆邏輯 -->
+<script>
+  // 初始化班表與請假資料，從後端 PHP 傳遞資料
+  const shifts = <?php echo json_encode($shifts); ?>; // 班表資料
+  const leaves = <?php echo json_encode($leaves); ?>; // 請假資料
 
-        const calendarBody = document.getElementById('calendar'); // 日曆內容容器
+  const calendarBody = document.getElementById('calendar'); // 日曆內容容器
 
-        // 生成日曆函數
-        function generateCalendar(year, month) {
-          calendarBody.innerHTML = ''; // 清空日曆內容
+  // 生成日曆函數
+  function generateCalendar(year, month) {
+    calendarBody.innerHTML = ''; // 清空日曆內容
 
-          const firstDay = new Date(year, month, 1).getDay(); // 當月第一天是星期幾
-          const lastDate = new Date(year, month + 1, 0).getDate(); // 當月最後一天是幾號
-          let row = document.createElement('tr'); // 建立一行
+    const firstDay = new Date(year, month, 1).getDay(); // 當月第一天是星期幾
+    const lastDate = new Date(year, month + 1, 0).getDate(); // 當月最後一天是幾號
+    let row = document.createElement('tr'); // 建立一行
 
-          // 填充月初的空白單元格
-          for (let i = 0; i < firstDay; i++) {
-            const emptyCell = document.createElement('td');
-            row.appendChild(emptyCell); // 插入空白單元格
-          }
+    // 填充月初的空白單元格
+    for (let i = 0; i < firstDay; i++) {
+      const emptyCell = document.createElement('td');
+      row.appendChild(emptyCell); // 插入空白單元格
+    }
 
-          // 填充日期
-          for (let date = 1; date <= lastDate; date++) {
-            const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`; // 格式化日期為 YYYY-MM-DD
-            const cell = document.createElement('td'); // 建立日期單元格
-            cell.textContent = date; // 設定單元格文字為日期
+    // 填充日期
+    for (let date = 1; date <= lastDate; date++) {
+      const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`; // 格式化日期為 YYYY-MM-DD
+      const cell = document.createElement('td'); // 建立日期單元格
+      cell.textContent = date; // 設定單元格文字為日期
 
-            // 判斷日期是否有班表或請假
-            if (leaves[fullDate] && shifts[fullDate]) {
-              // 同時有班表和請假
-              const { start_time: shiftStart, end_time: shiftEnd } = shifts[fullDate]; // 取得班表時間
-              const { start_time: leaveStart, end_time: leaveEnd } = leaves[fullDate]; // 取得請假時間
+      // 判斷日期是否有班表或請假
+      if (leaves[fullDate] && shifts[fullDate]) {
+        // 同時有班表和請假
+        const { start_time: shiftStart, end_time: shiftEnd } = shifts[fullDate]; // 取得班表時間
+        const { start_time: leaveStart, end_time: leaveEnd } = leaves[fullDate]; // 取得請假時間
 
-              if (shiftStart < leaveStart) {
-                // 請假前的上班時間
-                const workBeforeLeave = document.createElement('div');
-                workBeforeLeave.textContent = `上班: ${shiftStart}~${leaveStart}`;
-                workBeforeLeave.style.color = 'green'; // 設定文字顏色為綠色
-                cell.appendChild(workBeforeLeave); // 插入上班時間
-              }
-
-              // 請假時間
-              const leaveInfo = document.createElement('div');
-              leaveInfo.textContent = `請假: ${leaveStart}~${leaveEnd}`;
-              leaveInfo.style.color = 'blue'; // 設定文字顏色為藍色
-              cell.appendChild(leaveInfo); // 插入請假時間
-
-              if (leaveEnd < shiftEnd) {
-                // 請假後的上班時間
-                const workAfterLeave = document.createElement('div');
-                workAfterLeave.textContent = `上班: ${leaveEnd}~${shiftEnd}`;
-                workAfterLeave.style.color = 'green'; // 設定文字顏色為綠色
-                cell.appendChild(workAfterLeave); // 插入上班時間
-              }
-            } else if (shifts[fullDate]) {
-              // 只有班表
-              const { start_time, end_time } = shifts[fullDate]; // 取得班表時間
-              const shiftInfo = document.createElement('div');
-              shiftInfo.textContent = `上班: ${start_time}~${end_time}`;
-              shiftInfo.style.color = 'green'; // 設定文字顏色為綠色
-              cell.appendChild(shiftInfo); // 插入班表
-            } else if (leaves[fullDate]) {
-              // 只有請假
-              const { start_time, end_time } = leaves[fullDate]; // 取得請假時間
-              const leaveInfo = document.createElement('div');
-              leaveInfo.textContent = `請假: ${start_time}~${end_time}`;
-              leaveInfo.style.color = 'blue'; // 設定文字顏色為藍色
-              cell.appendChild(leaveInfo); // 插入請假
-            } else {
-              // 無班表也無請假，顯示休假
-              const noShiftInfo = document.createElement('div');
-              noShiftInfo.textContent = `休假`; // 顯示「休假」
-              noShiftInfo.style.color = 'red'; // 設定文字顏色為紅色
-              cell.appendChild(noShiftInfo); // 插入休假
-            }
-
-            row.appendChild(cell); // 插入單元格到行中
-
-            if (row.children.length === 7) {
-              // 當行滿 7 個單元格時，插入到日曆表格中
-              calendarBody.appendChild(row);
-              row = document.createElement('tr'); // 建立新行
-            }
-          }
-
-          // 填充月末的空白單元格
-          while (row.children.length < 7) {
-            const emptyCell = document.createElement('td');
-            row.appendChild(emptyCell); // 插入空白單元格
-          }
-          calendarBody.appendChild(row); // 插入最後一行
+        if (shiftStart < leaveStart) {
+          // 請假前的上班時間
+          const workBeforeLeave = document.createElement('div');
+          workBeforeLeave.textContent = `上班: ${shiftStart}~${leaveStart}`;
+          workBeforeLeave.style.color = 'green'; // 設定文字顏色為綠色
+          cell.appendChild(workBeforeLeave); // 插入上班時間
         }
 
-        // 初始化年份與月份的選擇功能
-        function initYearMonth() {
-          const currentDate = new Date(); // 取得當前日期
-          const currentYear = currentDate.getFullYear(); // 當前年份
-          const currentMonth = currentDate.getMonth(); // 當前月份
+        // 請假時間
+        const leaveInfo = document.createElement('div');
+        leaveInfo.textContent = `請假: ${leaveStart}~${leaveEnd}`;
+        leaveInfo.style.color = 'blue'; // 設定文字顏色為藍色
+        cell.appendChild(leaveInfo); // 插入請假時間
 
-          const yearSelect = document.getElementById('year'); // 年份下拉選單
-          const monthSelect = document.getElementById('month'); // 月份下拉選單
-
-          // 填充年份選單
-          for (let i = currentYear - 5; i <= currentYear + 5; i++) {
-            const option = document.createElement('option');
-            option.value = i; // 設定選項值為年份
-            option.textContent = i; // 設定選項文字為年份
-            if (i === currentYear) option.selected = true; // 預設當前年份為選中
-            yearSelect.appendChild(option); // 插入年份選項
-          }
-
-          // 填充月份選單
-          for (let i = 0; i < 12; i++) {
-            const option = document.createElement('option');
-            option.value = i; // 設定選項值為月份
-            option.textContent = i + 1; // 設定選項文字為月份（1~12）
-            if (i === currentMonth) option.selected = true; // 預設當前月份為選中
-            monthSelect.appendChild(option); // 插入月份選項
-          }
-
-          // 當年份或月份改變時，重新生成日曆
-          yearSelect.addEventListener('change', () => {
-            generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-          });
-          monthSelect.addEventListener('change', () => {
-            generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-          });
-
-          generateCalendar(currentYear, currentMonth); // 預設生成當前年月的日曆
+        if (leaveEnd < shiftEnd) {
+          // 請假後的上班時間
+          const workAfterLeave = document.createElement('div');
+          workAfterLeave.textContent = `上班: ${leaveEnd}~${shiftEnd}`;
+          workAfterLeave.style.color = 'green'; // 設定文字顏色為綠色
+          cell.appendChild(workAfterLeave); // 插入上班時間
         }
+      } else if (shifts[fullDate]) {
+        // 只有班表
+        const { start_time, end_time } = shifts[fullDate]; // 取得班表時間
+        const shiftInfo = document.createElement('div');
+        shiftInfo.textContent = `上班: ${start_time}~${end_time}`;
+        shiftInfo.style.color = 'green'; // 設定文字顏色為綠色
+        cell.appendChild(shiftInfo); // 插入班表
+      } else if (leaves[fullDate]) {
+        // 只有請假
+        const { start_time, end_time } = leaves[fullDate]; // 取得請假時間
+        const leaveInfo = document.createElement('div');
+        leaveInfo.textContent = `請假: ${start_time}~${end_time}`;
+        leaveInfo.style.color = 'blue'; // 設定文字顏色為藍色
+        cell.appendChild(leaveInfo); // 插入請假
+      } else {
+        // 無班表也無請假，顯示休假
+        const noShiftInfo = document.createElement('div');
+        noShiftInfo.textContent = `休假`; // 顯示「休假」
+        noShiftInfo.style.color = 'red'; // 設定文字顏色為紅色
+        cell.appendChild(noShiftInfo); // 插入休假
+      }
 
-        initYearMonth(); // 初始化年份與月份選擇
-      </script>
-    </section>
+      row.appendChild(cell); // 插入單元格到行中
+
+      if (row.children.length === 7) {
+        // 當行滿 7 個單元格時，插入到日曆表格中
+        calendarBody.appendChild(row);
+        row = document.createElement('tr'); // 建立新行
+      }
+    }
+
+    // 填充月末的空白單元格
+    while (row.children.length < 7) {
+      const emptyCell = document.createElement('td');
+      row.appendChild(emptyCell); // 插入空白單元格
+    }
+    calendarBody.appendChild(row); // 插入最後一行
+  }
+
+  // 初始化年份與月份的選擇功能
+  function initYearMonth() {
+    const currentDate = new Date(); // 取得當前日期
+    const currentYear = currentDate.getFullYear(); // 當前年份
+    const currentMonth = currentDate.getMonth(); // 當前月份
+
+    const yearSelect = document.getElementById('year'); // 年份下拉選單
+    const monthSelect = document.getElementById('month'); // 月份下拉選單
+
+    // 填充年份選單
+    for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+      const option = document.createElement('option');
+      option.value = i; // 設定選項值為年份
+      option.textContent = i; // 設定選項文字為年份
+      if (i === currentYear) option.selected = true; // 預設當前年份為選中
+      yearSelect.appendChild(option); // 插入年份選項
+    }
+
+    // 填充月份選單
+    for (let i = 0; i < 12; i++) {
+      const option = document.createElement('option');
+      option.value = i; // 設定選項值為月份
+      option.textContent = i + 1; // 設定選項文字為月份（1~12）
+      if (i === currentMonth) option.selected = true; // 預設當前月份為選中
+      monthSelect.appendChild(option); // 插入月份選項
+    }
+
+    // 當年份或月份改變時，重新生成日曆
+    yearSelect.addEventListener('change', () => {
+      generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+    });
+    monthSelect.addEventListener('change', () => {
+      generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+    });
+
+    generateCalendar(currentYear, currentMonth); // 預設生成當前年月的日曆
+  }
+
+  initYearMonth(); // 初始化年份與月份選擇
+</script>
+</section>
+
 
 
 
@@ -578,6 +582,8 @@ mysqli_close($link);
               <li><a href="d_appointment.php">預約</a></li>
               <li><a href="d_numberpeople.php">當天人數及時段</a></li>
               <li><a href="d_doctorshift.php">班表時段</a></li>
+              <li><a href="d_leave.php">請假申請</a></li>
+              <li><a href="d_leave-query.php"></a>請假資料查詢</li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
               <li><a href="d_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
