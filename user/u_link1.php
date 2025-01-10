@@ -349,24 +349,22 @@ if (isset($_SESSION["帳號"])) {
 		<!--醫生簡介-->
 		<section class="section section-lg bg-default novi-bg novi-bg-img">
 			<div class="container">
-				<div class="row row-30 align-items-center justify-content-xxl-between">
-					<div class="col-md-10">
+				<div class="row align-items-center">
+					<!-- 左側：醫生簡介 -->
+					<div class="col-md-6">
 						<h3 class="box-small-title">醫生簡介</h3>
-
 						<?php
-						require '../db.php';  // 載入資料庫連線設定
+						require '../db.php'; // 載入資料庫連線設定
 						
-						
-						$doctorName = isset($_GET['doctor']) ? $_GET['doctor'] : '';// 獲取 GET 傳遞的醫生姓名
-
+						$doctorName = isset($_GET['doctor']) ? $_GET['doctor'] : ''; // 獲取 GET 傳遞的醫生姓名
 						if (empty($doctorName)) {
 							die("未提供醫生姓名！");
 						}
 
-						$sql = "SELECT dp.*
-        FROM doctorprofile dp
-        INNER JOIN doctor d ON dp.doctor_id = d.doctor_id
-        WHERE d.doctor = ?";
+						$sql = "SELECT *
+                        FROM doctorprofile dp
+                        INNER JOIN doctor d ON dp.doctor_id = d.doctor_id
+                        WHERE d.doctor = ?";
 						$stmt = mysqli_prepare($link, $sql);
 
 						if (!$stmt) {
@@ -382,30 +380,46 @@ if (isset($_SESSION["帳號"])) {
 						}
 
 						$doctorProfile = mysqli_fetch_assoc($result);
-
 						mysqli_stmt_close($stmt);
 						mysqli_close($link);
 
 						// 顯示醫生資料
 						echo "<div class='doctor-profile'>";
-						echo "<h5>醫生姓名: " . htmlspecialchars($doctorName) . "</h5>";
+						echo "<p><strong>醫生姓名：</strong>" . htmlspecialchars($doctorName) . "</p>";
 						echo "<p><strong>學歷：</strong>" . nl2br(htmlspecialchars($doctorProfile['education'] ?? '無')) . "</p>";
 						echo "<p><strong>現任職務：</strong>" . nl2br(htmlspecialchars($doctorProfile['current_position'] ?? '無')) . "</p>";
 						echo "<p><strong>專長描述：</strong>" . nl2br(htmlspecialchars($doctorProfile['specialty'] ?? '無')) . "</p>";
 						echo "<p><strong>專業認證與進修課程：</strong>" . nl2br(htmlspecialchars($doctorProfile['certifications'] ?? '無')) . "</p>";
 						echo "<p><strong>治療理念：</strong>" . nl2br(htmlspecialchars($doctorProfile['treatment_concept'] ?? '無')) . "</p>";
-						// echo "<p><strong>創建時間：</strong>" . htmlspecialchars($doctorProfile['created_at'] ?? '無') . "</p>";
-						// echo "<p><strong>最後更新時間：</strong>" . htmlspecialchars($doctorProfile['updated_at'] ?? '無') . "</p>";
 						echo "</div>";
-						echo "</br>";
-						// 返回按鈕
-						echo '<button onclick="window.location.href=\'u_link.php\'" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">返回</button>';
+						echo '<button onclick="window.location.href=\'u_link.php\'" style="padding: 10px 20px; font-size: 16px; cursor: pointer; margin-top: 20px;">返回</button>';
 						?>
-
 					</div>
+
+					<!-- 右側：醫生圖片 -->
+					<!-- <div class="col-md-6 text-center">
+						<div class="doctor-image">
+							<?php
+							// 確認圖片路徑
+							if (!empty($doctorProfile['doctor_image'])) {
+								$imagePath = "../images/" . htmlspecialchars($doctorProfile['doctor_image']);
+								// 檢查圖片是否存在
+								if (file_exists($imagePath)) {
+									echo "<img src='$imagePath' alt='醫生照片' class='img-fluid' style='max-width: 100%; height: auto;'>";
+								} else {
+									echo "<p>圖片不存在，請確認檔案路徑。</p>";
+								}
+							} else {
+								echo "<p>此醫生未提供圖片。</p>";
+							}
+							?>
+						</div>
+					</div> -->
+
 				</div>
 			</div>
 		</section>
+
 
 		<footer class="section novi-bg novi-bg-img footer-simple">
 			<div class="container">
@@ -438,7 +452,7 @@ if (isset($_SESSION["帳號"])) {
 							</a></li>
 						</ul>
 					</div>
-					
+
 					<div class="col-md-4">
 						<h4>聯絡我們</h4>
 						<br />
