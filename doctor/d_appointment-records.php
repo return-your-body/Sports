@@ -398,75 +398,43 @@ if (isset($_SESSION["帳號"])) {
               <?php
               require '../db.php'; // 引入資料庫連接檔案
               
-              // 登入的帳號
-              $帳號 = $_SESSION['帳號'];
+              $帳號 = $_SESSION['帳號']; // 登入的帳號
+              $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
 
-              // 接收搜尋參數
-              $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
-
-              // 分頁設定
-              $records_per_page = 10;
-              $page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
-              $offset = ($page - 1) * $records_per_page;
-
-              // 計算總記錄數
-              $count_sql = "
-SELECT COUNT(*) AS total
-FROM appointment a
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN user u ON d.user_id = u.user_id
-WHERE u.account = '$帳號'
-AND p.name LIKE '%$search_name%'
-";
-
-              $count_result = mysqli_query($link, $count_sql);
-              $total_records = mysqli_fetch_assoc($count_result)['total'];
-              $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
-
-              // 查詢資料
-              $sql = "
-SELECT 
-    a.appointment_id AS id,
-    COALESCE(p.name, '未預約') AS name,
-    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
-    CONCAT(COALESCE(p.birthday, 'N/A'), 
-        ' (', 
+              // 防止 SQL 注入，使用參數化處理
+              $stmt = $link->prepare("
+    SELECT 
+        a.appointment_id AS id,
+        COALESCE(p.name, '未預約') AS name,
         CASE 
-            WHEN p.birthday IS NOT NULL THEN TIMESTAMPDIFF(YEAR, p.birthday, CURDATE())
-            ELSE 'N/A' 
-        END, '歲)') AS birthday,
-    DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date, 
-    CASE 
-        WHEN DAYOFWEEK(ds.date) = 1 THEN '星期日'
-        WHEN DAYOFWEEK(ds.date) = 2 THEN '星期一'
-        WHEN DAYOFWEEK(ds.date) = 3 THEN '星期二'
-        WHEN DAYOFWEEK(ds.date) = 4 THEN '星期三'
-        WHEN DAYOFWEEK(ds.date) = 5 THEN '星期四'
-        WHEN DAYOFWEEK(ds.date) = 6 THEN '星期五'
-        WHEN DAYOFWEEK(ds.date) = 7 THEN '星期六'
-    END AS appointment_weekday,
-    COALESCE(st.shifttime, 'N/A') AS shifttime,
-    COALESCE(a.note, '') AS note,
-    a.created_at
-FROM appointment a
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN user u ON d.user_id = u.user_id
-WHERE u.account = '$帳號'
-AND p.name LIKE '%$search_name%'
-ORDER BY ds.date, st.shifttime
-LIMIT $offset, $records_per_page;
-";
+            WHEN p.gender_id = 1 THEN '男' 
+            WHEN p.gender_id = 2 THEN '女' 
+            ELSE '未設定' 
+        END AS gender,
+        DATE_FORMAT(p.birthday, '%Y-%m-%d') AS birthday,
+        DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
+        st.shifttime AS shifttime,
+        COALESCE(a.note, '') AS note,
+        a.created_at AS created_at
+    FROM appointment a
+    LEFT JOIN people p ON a.people_id = p.people_id
+    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+    LEFT JOIN user u ON d.user_id = u.user_id
+    WHERE u.account = ?
+    AND p.name LIKE ?
+    ORDER BY ds.date, st.shifttime
+");
 
-              $result = mysqli_query($link, $sql);
+              // 處理參數
+              $search_param = '%' . $search_name . '%';
+              $stmt->bind_param('ss', $帳號, $search_param);
+              $stmt->execute();
+              $result = $stmt->get_result();
 
-              // 顯示表格
+              // 顯示結果
               ?>
-
               <table>
                 <thead>
                   <tr>
@@ -481,17 +449,14 @@ LIMIT $offset, $records_per_page;
                   </tr>
                 </thead>
                 <tbody>
-                  <?php if (mysqli_num_rows($result) > 0): ?>
-                    <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                  <?php if ($result->num_rows > 0): ?>
+                    <?php while ($row = $result->fetch_assoc()): ?>
                       <tr>
                         <td><?php echo htmlspecialchars($row['id']); ?></td>
                         <td><?php echo htmlspecialchars($row['name']); ?></td>
                         <td><?php echo htmlspecialchars($row['gender']); ?></td>
                         <td><?php echo htmlspecialchars($row['birthday']); ?></td>
-                        <td>
-                          <?php echo htmlspecialchars($row['appointment_date']); ?>
-                          (<?php echo htmlspecialchars($row['appointment_weekday']); ?>)
-                        </td>
+                        <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
                         <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
                         <td><?php echo htmlspecialchars($row['note']); ?></td>
                         <td><?php echo htmlspecialchars($row['created_at']); ?></td>
@@ -504,13 +469,14 @@ LIMIT $offset, $records_per_page;
                   <?php endif; ?>
                 </tbody>
               </table>
-
-              <?php mysqli_close($link); ?>
+              <?php
+              $stmt->close();
+              $link->close();
+              ?>
 
             </div>
           </div>
         </div>
-      </div>
     </section>
     <!--預約紀錄-->
 
