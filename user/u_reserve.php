@@ -106,6 +106,71 @@ if (isset($_SESSION["帳號"])) {
 			background-color: #ffeb3b;
 		}
 
+		/* 基本樣式調整 */
+		.table-custom {
+			width: 100%;
+			border-collapse: collapse;
+			table-layout: fixed;
+		}
+
+		.table-custom th,
+		.table-custom td {
+			border: 1px solid #ddd;
+			text-align: center;
+			vertical-align: middle;
+			padding: 10px;
+			word-wrap: break-word;
+			/* 避免文字超出格子 */
+		}
+
+		/* 手機設備響應式設計 */
+		@media (max-width: 768px) {
+			.table-custom {
+				display: block;
+				/* 將表格改為 block，允許水平滾動 */
+				overflow-x: auto;
+				/* 加入水平滾動 */
+				white-space: nowrap;
+				/* 禁止自動換行 */
+			}
+
+			.table-custom th,
+			.table-custom td {
+				font-size: 12px;
+				/* 縮小文字大小 */
+				padding: 5px;
+				/* 減小內邊距 */
+			}
+
+			.shift-info button {
+				font-size: 10px;
+				/* 縮小按鈕文字 */
+				padding: 5px;
+				/* 減小按鈕大小 */
+			}
+		}
+
+		/* 極小設備 (手機) */
+		@media (max-width: 480px) {
+
+			.table-custom th,
+			.table-custom td {
+				font-size: 10px;
+				padding: 3px;
+			}
+
+			.shift-info {
+				display: block;
+				font-size: 10px;
+			}
+
+			.shift-info button {
+				font-size: 9px;
+				padding: 3px;
+			}
+		}
+
+
 
 
 		.ie-panel {
@@ -456,20 +521,23 @@ FROM
 				<label for="month">選擇月份：</label>
 				<select id="month"></select>
 
-				<table class="table-custom">
-					<thead>
-						<tr>
-							<th>日</th>
-							<th>一</th>
-							<th>二</th>
-							<th>三</th>
-							<th>四</th>
-							<th>五</th>
-							<th>六</th>
-						</tr>
-					</thead>
-					<tbody id="calendar"></tbody>
-				</table>
+				<div style="overflow-x: auto; max-width: 100%;">
+					<table class="table-custom">
+						<thead>
+							<tr>
+								<th>日</th>
+								<th>一</th>
+								<th>二</th>
+								<th>三</th>
+								<th>四</th>
+								<th>五</th>
+								<th>六</th>
+							</tr>
+						</thead>
+						<tbody id="calendar"></tbody>
+					</table>
+				</div>
+
 			</div>
 
 			<script>
@@ -508,8 +576,8 @@ FROM
 				}
 
 				/**
-				 * 生成日曆表格
-				 */
+					* 生成日曆表格
+					*/
 				function generateCalendar() {
 					const year = parseInt(document.getElementById('year').value);
 					const month = parseInt(document.getElementById('month').value) - 1;
@@ -540,14 +608,22 @@ FROM
 								if (adjustedShift) {
 									shiftDiv.textContent = `${shift.doctor}: ${adjustedShift.go_time} - ${adjustedShift.off_time}`;
 
-									// 只為明天及以後的日期添加預約按鈕
-									if (currentDate >= tomorrow) {
+									// 只為今天及以後的日期添加預約按鈕
+									if (currentDate >= today) {
 										const reserveButton = document.createElement('button');
-										reserveButton.textContent = '預約';
+										reserveButton.textContent = '查看';
 										reserveButton.style.marginLeft = '10px';
-										reserveButton.onclick = () => alert(`預約成功！\n日期：${fullDate}\n醫生：${shift.doctor}`);
+
+										// 修改為調用 openModal 函數
+										reserveButton.onclick = () => {
+											const startTime = adjustedShift.go_time;
+											const endTime = adjustedShift.off_time;
+											openModal(shift.doctor, fullDate, startTime, endTime); // 呼叫彈窗函數
+										};
+
 										shiftDiv.appendChild(reserveButton);
 									}
+
 								} else {
 									shiftDiv.textContent = `${shift.doctor}: 請假`;
 									shiftDiv.style.color = 'red';
@@ -576,6 +652,7 @@ FROM
 					}
 					calendarBody.appendChild(row);
 				}
+
 
 				/**
 				 * 初始化年份與月份選單
@@ -609,6 +686,271 @@ FROM
 				initSelectOptions();
 			</script>
 
+			<!-- 新增彈窗的 HTML 結構 -->
+			<div id="appointment-modal" class="modal">
+				<div class="modal-content">
+					<!-- 彈窗右上角的關閉按鈕 -->
+					<span class="close">&times;</span>
+					<!-- 彈窗的標題，顯示醫生姓名與日期 -->
+					<h3 id="modal-title"></h3>
+					<!-- 動態生成的時間段和預約按鈕的容器 -->
+					<div id="time-slots"></div>
+				</div>
+			</div>
+
+			<style>
+				/* 彈窗樣式調整 */
+				.modal-content {
+					background-color: white;
+					margin: 10% auto;
+					/* 距離頂部 10%，水平居中 */
+					padding: 20px;
+					border-radius: 10px;
+					/* 圓角邊框 */
+					width: 60%;
+					/* 寬度調整為 60% */
+					box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+					/* 添加陰影效果 */
+				}
+
+				/* 標題樣式調整 (醫生和日期) */
+				#modal-title {
+					font-size: 18px;
+					/* 字體大小調整為 18px */
+					font-weight: normal;
+					/* 調整為普通字重 */
+					color: #333;
+					/* 深灰色文字 */
+					text-align: center;
+					/* 文字置中 */
+					margin-bottom: 20px;
+					/* 與時間段的距離 */
+				}
+
+				/* 時間段的容器，使用 grid 佈局 */
+				#time-slots {
+					display: grid;
+					grid-template-columns: repeat(6, 1fr);
+					/* 每行 6 列 */
+					gap: 15px;
+					/* 時間段之間的間距 */
+					justify-items: center;
+					/* 內容水平置中 */
+					align-items: center;
+					/* 垂直置中 */
+					margin-top: 20px;
+					/* 與標題的間距 */
+				}
+
+				/* 單個時間段卡片樣式 */
+				#time-slots div {
+					display: flex;
+					flex-direction: column;
+					/* 時間和按鈕上下排列 */
+					align-items: center;
+					/* 水平置中 */
+					padding: 10px;
+					/* 內邊距 */
+					border: 1px solid #ddd;
+					/* 邊框 */
+					border-radius: 5px;
+					/* 圓角 */
+					background-color: #f9f9f9;
+					/* 背景色 */
+					width: 80px;
+					/* 固定寬度 */
+					box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+					/* 添加陰影 */
+				}
+
+				/* 調整時間字體樣式 */
+				#time-slots span {
+					font-size: 14px;
+					/* 時間字體大小 */
+					color: #333;
+					/* 深灰色文字 */
+				}
+
+				/* 按鈕樣式調整 */
+				.reserve-btn {
+					background-color: #008CBA;
+					/* 按鈕背景色 */
+					color: white;
+					/* 按鈕文字顏色 */
+					border: none;
+					/* 無邊框 */
+					padding: 5px 10px;
+					/* 按鈕內邊距 */
+					font-size: 12px;
+					/* 字體大小 */
+					cursor: pointer;
+					/* 鼠標變為指針 */
+					border-radius: 3px;
+					/* 圓角邊框 */
+					margin-top: 5px;
+					/* 與時間的間距 */
+				}
+
+				.reserve-btn:hover {
+					background-color: #005f7f;
+					/* 按鈕懸停時的背景色 */
+				}
+
+				.reserve-btn:active {
+					background-color: #003f5c;
+					/* 按鈕點擊時的背景色 */
+				}
+
+				/* 手機樣式：每行 3 個時間段 */
+				@media (max-width: 768px) {
+					.modal-content {
+						width: 90%;
+						/* 手機螢幕時彈窗寬度調整為 90% */
+					}
+
+					#time-slots {
+						grid-template-columns: repeat(3, 1fr);
+						/* 每行 3 列 */
+						gap: 10px;
+						/* 時間段之間的間距調小 */
+					}
+
+					#time-slots div {
+						width: 70px;
+						/* 手機版每個時間卡片寬度縮小 */
+					}
+
+					#modal-title {
+						font-size: 16px;
+						/* 手機版字體再稍微縮小 */
+					}
+				}
+			</style>
+
+
+			<script>
+				// 取得彈窗相關元素
+				const modal = document.getElementById("appointment-modal"); // 彈窗主體
+				const modalTitle = document.getElementById("modal-title"); // 彈窗標題
+				const timeSlotsContainer = document.getElementById("time-slots"); // 時間段容器
+
+				/**
+				 * 打開彈窗
+				 * @param {string} doctor - 醫生名稱
+				 * @param {string} date - 日期 (YYYY-MM-DD 格式)
+				 * @param {string} startTime - 上班時間 (HH:mm 格式)
+				 * @param {string} endTime - 下班時間 (HH:mm 格式)
+				 */
+				function openModal(doctor, date, startTime, endTime) {
+					// 設置彈窗標題
+					modalTitle.textContent = `醫生：${doctor} 日期：${date}`;
+					timeSlotsContainer.innerHTML = ""; // 清空之前的時間段
+
+					// 將時間字串轉換為 Date 對象
+					let current = new Date(`${date}T${startTime}`);
+					const end = new Date(`${date}T${endTime}`);
+
+					// 動態生成每 20 分鐘的時間段
+					while (current < end) {
+						const timeSlot = current.toTimeString().slice(0, 5); // 格式化為 HH:mm
+						const slotElement = document.createElement("div"); // 每個時間段的容器
+						slotElement.innerHTML = `
+			<span>${timeSlot}</span>
+			<button class="reserve-btn" onclick="reserve('${doctor}', '${date}', '${timeSlot}')">預約</button>
+		`; // 顯示時間與預約按鈕
+						timeSlotsContainer.appendChild(slotElement); // 添加到容器中
+						current = new Date(current.getTime() + 20 * 60000); // 加 20 分鐘
+					}
+
+					modal.style.display = "block"; // 顯示彈窗
+				}
+
+				// 關閉彈窗功能
+				document.querySelector(".close").onclick = () => {
+					modal.style.display = "none"; // 隱藏彈窗
+				};
+
+				// 當用戶點擊彈窗外部時關閉彈窗
+				window.onclick = (event) => {
+					if (event.target === modal) {
+						modal.style.display = "none";
+					}
+				};
+
+				/**
+				 * 預約功能
+				 * @param {string} doctor - 醫生名稱
+				 * @param {string} date - 日期
+				 * @param {string} time - 時間
+				 */
+				function reserve(doctor, date, time) {
+					alert(`預約成功！\n醫生：${doctor}\n日期：${date}\n時間：${time}`); // 預約成功提示
+					modal.style.display = "none"; // 隱藏彈窗
+
+					// 這裡可以添加 AJAX 請求，將預約資訊存入資料庫
+				}
+
+			</script>
+
+			<script>
+				// 修改生成日曆時的查看按鈕功能
+				function generateCalendar() {
+					const year = parseInt(document.getElementById('year').value);
+					const month = parseInt(document.getElementById('month').value) - 1;
+
+					const calendarBody = document.getElementById('calendar');
+					calendarBody.innerHTML = '';
+
+					const firstDay = new Date(year, month, 1).getDay();
+					const lastDate = new Date(year, month + 1, 0).getDate();
+
+					let row = document.createElement('tr');
+					for (let i = 0; i < firstDay; i++) {
+						row.appendChild(document.createElement('td'));
+					}
+
+					for (let date = 1; date <= lastDate; date++) {
+						const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+						const cell = document.createElement('td');
+						cell.innerHTML = `<strong>${date}</strong>`;
+
+						if (calendarData[fullDate]) {
+							calendarData[fullDate].forEach(shift => {
+								const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
+
+								if (adjustedShift) {
+									const button = document.createElement('button');
+									button.textContent = '查看';
+									button.onclick = () => openModal(shift.doctor, fullDate, adjustedShift.go_time, adjustedShift.off_time);
+									cell.appendChild(button);
+								} else {
+									const noSchedule = document.createElement('div');
+									noSchedule.textContent = `${shift.doctor}: 請假`;
+									noSchedule.style.color = 'red';
+									cell.appendChild(noSchedule);
+								}
+							});
+						} else {
+							const noSchedule = document.createElement('div');
+							noSchedule.textContent = '無排班';
+							noSchedule.className = 'no-schedule';
+							cell.appendChild(noSchedule);
+						}
+
+						row.appendChild(cell);
+
+						if (row.children.length === 7) {
+							calendarBody.appendChild(row);
+							row = document.createElement('tr');
+						}
+					}
+
+					while (row.children.length < 7) {
+						row.appendChild(document.createElement('td'));
+					}
+					calendarBody.appendChild(row);
+				}
+			</script>
 
 
 
