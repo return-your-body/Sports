@@ -163,47 +163,62 @@ if (isset($_SESSION["帳號"])) {
 		}
 
 
-		/*醫生班表 */
+		/* 醫生班表 */
+		.table-container {
+			overflow-x: auto;
+			/* 啟用橫向滾動 */
+			margin-top: 10px;
+			border: 1px solid #ddd;
+			/* 外框加上分隔線 */
+		}
+
 		.table-custom {
 			width: 100%;
-			/* 表格寬度為 100% */
 			border-collapse: collapse;
-			/* 合併邊框，讓表格看起來更整齊 */
+			/* 合併邊框 */
 			table-layout: fixed;
-			/* 固定表格佈局，讓所有列均分寬度 */
+			/* 固定表格佈局，讓每列寬度均分 */
 		}
 
 		/* 表格內容 (單元格) 的樣式 */
 		.table-custom th,
 		.table-custom td {
 			border: 1px solid #ddd;
-			/* 單元格邊框設定 */
-			text-align: left;
-			/* 文字靠左對齊 */
+			text-align: center;
+			/* 文字置中 */
 			padding: 8px;
-			/* 單元格內部填充，增強可讀性 */
+			/* 增加內邊距 */
 			white-space: nowrap;
 			/* 禁止文字換行 */
+			overflow: hidden;
+			/* 隱藏超出部分 */
+			text-overflow: ellipsis;
+			/* 顯示省略號 */
 		}
 
 		/* 表格標題 (表頭) 的樣式 */
 		.table-custom th {
 			background-color: #00a79d;
-			/* 表頭背景色設定 */
 			color: white;
-			/* 表頭文字顏色設定為白色 */
+			font-weight: bold;
 			text-align: center;
-			/* 表頭文字置中 */
 		}
 
-		/* 預約資訊的文字樣式 */
-		.reservation-info {
-			color: red;
-			/* 文字顏色設定為紅色，用於突顯重要資訊 */
-			margin-top: 5px;
-			/* 與其他元素保持適當間距 */
+		/* 表格文字樣式 */
+		.table-custom td div {
+			font-size: 14px;
+			/* 調整字體大小 */
+			line-height: 1.5;
+			/* 增加行高 */
+			color: #333;
+			/* 文字顏色 */
 		}
 
+		/* 限制單元格最大寬度，讓內容不會太擁擠 */
+		.table-custom td {
+			max-width: 120px;
+			/* 調整單元格最大寬度 */
+		}
 
 		/* 聯絡我們 */
 		.custom-link {
@@ -405,77 +420,91 @@ if (isset($_SESSION["帳號"])) {
 
 		<!-- 天氣API -->
 		<script>
-			// 獲取用戶的地理位置
-			if (navigator.geolocation) {
-				navigator.geolocation.getCurrentPosition(success, error);
-			} else {
-				document.getElementById('weather').innerText = "瀏覽器不支援地理位置功能。";
-			}
+			document.addEventListener("DOMContentLoaded", function () {
+				const weatherInfoDiv = document.getElementById("weather-info");
 
-			// 獲取位置成功時的處理
-			function success(position) {
-				const latitude = position.coords.latitude;
-				const longitude = position.coords.longitude;
+				if (navigator.geolocation) {
+					navigator.geolocation.getCurrentPosition(
+						function (position) {
+							const latitude = position.coords.latitude;
+							const longitude = position.coords.longitude;
 
-				// 將經緯度傳遞給後端
-				fetch(`weather.php?lat=${latitude}&lon=${longitude}`)
-					.then(response => response.text())
-					.then(data => {
-						document.getElementById('weather').innerHTML = data;
-					})
-					.catch(err => {
-						document.getElementById('weather').innerText = "無法獲取天氣資訊，請重試。";
-					});
-			}
+							console.log("經緯度：", latitude, longitude); // 調試
 
-			// 獲取位置失敗時的處理
-			function error() {
-				document.getElementById('weather').innerText = "無法獲取地理位置。";
-			}
+							fetch(`?lat=${latitude}&lon=${longitude}`)
+								.then(response => response.text())
+								.then(data => {
+									console.log("伺服器返回數據：", data); // 調試
+									weatherInfoDiv.innerHTML = data;
+								})
+								.catch(error => {
+									console.error("天氣數據獲取失敗：", error);
+									weatherInfoDiv.innerHTML = "無法獲取天氣資訊，請稍後重試。";
+								});
+						},
+						function (error) {
+							switch (error.code) {
+								case error.PERMISSION_DENIED:
+									weatherInfoDiv.innerHTML = "您拒絕了地理位置存取，請允許後重試。";
+									break;
+								case error.POSITION_UNAVAILABLE:
+									weatherInfoDiv.innerHTML = "無法獲取地理位置信息，可能是設備的問題。";
+									break;
+								case error.TIMEOUT:
+									weatherInfoDiv.innerHTML = "獲取地理位置信息超時，請重試。";
+									break;
+								default:
+									weatherInfoDiv.innerHTML = "無法獲取經緯度，請檢查是否允許瀏覽器獲取位置。";
+									break;
+							}
+						}
+					);
+				} else {
+					weatherInfoDiv.innerHTML = "您的瀏覽器不支援地理定位功能。";
+				}
+			});
 		</script>
-		<?php
-		if (isset($_GET['lat']) && isset($_GET['lon'])) {
-			// 獲取經緯度
-			$latitude = $_GET['lat'];
-			$longitude = $_GET['lon'];
 
-			// 設定 OpenWeatherMap API
-			$apiKey = "857208d7d30e1cacd0cfeebeb29f0f60";
+		<div id="weather-info">正在載入天氣資訊...</div>
+
+		<?php
+		$apiKey = "857208d7d30e1cacd0cfeebeb29f0f60";
+		$latitude = isset($_GET['lat']) ? $_GET['lat'] : null;
+		$longitude = isset($_GET['lon']) ? $_GET['lon'] : null;
+
+		if ($latitude && $longitude) {
 			$apiUrl = "https://api.openweathermap.org/data/2.5/weather?lat={$latitude}&lon={$longitude}&appid={$apiKey}&units=metric&lang=zh_tw";
 
-			// 使用 cURL 請求 API
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $apiUrl);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 			$response = curl_exec($ch);
 			curl_close($ch);
 
-			// 將返回的 JSON 數據轉換為 PHP 陣列
 			$weatherData = json_decode($response, true);
 
-			// 檢查是否成功獲取數據
 			if (isset($weatherData['cod']) && $weatherData['cod'] == 200) {
-				// 提取天氣信息
 				$cityName = $weatherData['name'];
 				$temperature = $weatherData['main']['temp'];
 				$weatherDescription = $weatherData['weather'][0]['description'];
 				$humidity = $weatherData['main']['humidity'];
 				$windSpeed = $weatherData['wind']['speed'];
+				$cloudiness = $weatherData['clouds']['all'];
 
-				// 返回天氣資訊
+				echo "<h2>當前天氣資訊</h2>";
 				echo "城市：{$cityName}<br>";
 				echo "溫度：{$temperature}°C<br>";
 				echo "天氣描述：{$weatherDescription}<br>";
 				echo "濕度：{$humidity}%<br>";
 				echo "風速：{$windSpeed} m/s<br>";
+				echo "雲量：{$cloudiness}%<br>";
 			} else {
-				// 如果獲取數據失敗，顯示錯誤信息
-				echo "無法獲取天氣資訊，請檢查 API 設定或經緯度。";
+				echo "無法獲取天氣資訊，請檢查 API 設定或參數是否正確。";
 			}
-		} else {
-			echo "無法獲取經緯度，請確認是否傳遞正確的參數。";
+			exit;
 		}
 		?>
+
 
 
 
