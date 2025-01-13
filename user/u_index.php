@@ -404,42 +404,79 @@ if (isset($_SESSION["帳號"])) {
 		</marquee>
 
 		<!-- 天氣API -->
+		<script>
+			// 獲取用戶的地理位置
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(success, error);
+			} else {
+				document.getElementById('weather').innerText = "瀏覽器不支援地理位置功能。";
+			}
+
+			// 獲取位置成功時的處理
+			function success(position) {
+				const latitude = position.coords.latitude;
+				const longitude = position.coords.longitude;
+
+				// 將經緯度傳遞給後端
+				fetch(`weather.php?lat=${latitude}&lon=${longitude}`)
+					.then(response => response.text())
+					.then(data => {
+						document.getElementById('weather').innerHTML = data;
+					})
+					.catch(err => {
+						document.getElementById('weather').innerText = "無法獲取天氣資訊，請重試。";
+					});
+			}
+
+			// 獲取位置失敗時的處理
+			function error() {
+				document.getElementById('weather').innerText = "無法獲取地理位置。";
+			}
+		</script>
 		<?php
-		// 設定 OpenWeatherMap API 的金鑰和查詢 URL
-		$apiKey = "857208d7d30e1cacd0cfeebeb29f0f60";
-		$city = "Taipei"; // 查詢的城市名稱
-		$apiUrl = "https://api.openweathermap.org/data/2.5/weather?q={$city}&appid={$apiKey}&units=metric&lang=zh_tw";
+		if (isset($_GET['lat']) && isset($_GET['lon'])) {
+			// 獲取經緯度
+			$latitude = $_GET['lat'];
+			$longitude = $_GET['lon'];
 
-		// 使用 cURL 請求 API
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $apiUrl);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		$response = curl_exec($ch);
-		curl_close($ch);
+			// 設定 OpenWeatherMap API
+			$apiKey = "857208d7d30e1cacd0cfeebeb29f0f60";
+			$apiUrl = "https://api.openweathermap.org/data/2.5/weather?lat={$latitude}&lon={$longitude}&appid={$apiKey}&units=metric&lang=zh_tw";
 
-		// 將返回的 JSON 數據轉換為 PHP 陣列
-		$weatherData = json_decode($response, true);
+			// 使用 cURL 請求 API
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $apiUrl);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			$response = curl_exec($ch);
+			curl_close($ch);
 
-		// 檢查是否成功獲取數據
-		if (isset($weatherData['cod']) && $weatherData['cod'] == 200) {
-			// 提取天氣信息
-			$cityName = $weatherData['name'];
-			$temperature = $weatherData['main']['temp'];
-			$weatherDescription = $weatherData['weather'][0]['description'];
-			$humidity = $weatherData['main']['humidity'];
-			$windSpeed = $weatherData['wind']['speed'];
+			// 將返回的 JSON 數據轉換為 PHP 陣列
+			$weatherData = json_decode($response, true);
 
-			// 顯示天氣資訊
-			echo "城市：{$cityName}<br>";
-			echo "溫度：{$temperature}°C<br>";
-			echo "天氣描述：{$weatherDescription}<br>";
-			echo "濕度：{$humidity}%<br>";
-			echo "風速：{$windSpeed} m/s<br>";
+			// 檢查是否成功獲取數據
+			if (isset($weatherData['cod']) && $weatherData['cod'] == 200) {
+				// 提取天氣信息
+				$cityName = $weatherData['name'];
+				$temperature = $weatherData['main']['temp'];
+				$weatherDescription = $weatherData['weather'][0]['description'];
+				$humidity = $weatherData['main']['humidity'];
+				$windSpeed = $weatherData['wind']['speed'];
+
+				// 返回天氣資訊
+				echo "城市：{$cityName}<br>";
+				echo "溫度：{$temperature}°C<br>";
+				echo "天氣描述：{$weatherDescription}<br>";
+				echo "濕度：{$humidity}%<br>";
+				echo "風速：{$windSpeed} m/s<br>";
+			} else {
+				// 如果獲取數據失敗，顯示錯誤信息
+				echo "無法獲取天氣資訊，請檢查 API 設定或經緯度。";
+			}
 		} else {
-			// 如果獲取數據失敗，顯示錯誤信息
-			echo "無法獲取天氣資訊，請檢查 API 設定或城市名稱。";
+			echo "無法獲取經緯度，請確認是否傳遞正確的參數。";
 		}
 		?>
+
 
 
 		<!--班表-->
