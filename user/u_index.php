@@ -164,39 +164,39 @@ if (isset($_SESSION["帳號"])) {
 
 
 		/* 醫生班表 */
+		/* 電腦端樣式（保留原始設計） */
 		.table-container {
-			overflow-x: auto;
-			/* 啟用橫向滾動 */
+			overflow-x: hidden;
 			margin-top: 10px;
-			border: 1px solid #ddd;
-			/* 外框加上分隔線 */
 		}
 
-		.table-custom {
-			width: 100%;
-			border-collapse: collapse;
-			/* 合併邊框 */
-			table-layout: fixed;
-			/* 固定表格佈局，讓每列寬度均分 */
+		/* 手機端樣式（針對寬度小於768px的裝置） */
+		@media screen and (max-width: 768px) {
+			.table-container {
+				overflow-x: auto;
+				/* 啟用橫向滾動 */
+			}
+
+			.table-custom {
+				width: 1200px;
+				/* 設定寬度大於手機螢幕，讓用戶可以滑動 */
+				min-width: 768px;
+				/* 最小寬度，防止文字壓縮 */
+			}
+
+			.table-custom th,
+			.table-custom td {
+				white-space: nowrap;
+				/* 禁止文字換行 */
+				overflow: hidden;
+				/* 隱藏超出部分 */
+				text-overflow: ellipsis;
+				/* 顯示省略號 */
+			}
 		}
 
-		/* 表格內容 (單元格) 的樣式 */
-		.table-custom th,
-		.table-custom td {
-			border: 1px solid #ddd;
-			text-align: center;
-			/* 文字置中 */
-			padding: 8px;
-			/* 增加內邊距 */
-			white-space: nowrap;
-			/* 禁止文字換行 */
-			overflow: hidden;
-			/* 隱藏超出部分 */
-			text-overflow: ellipsis;
-			/* 顯示省略號 */
-		}
-
-		/* 表格標題 (表頭) 的樣式 */
+		
+		/* 表頭樣式 */
 		.table-custom th {
 			background-color: #00a79d;
 			color: white;
@@ -204,21 +204,8 @@ if (isset($_SESSION["帳號"])) {
 			text-align: center;
 		}
 
-		/* 表格文字樣式 */
-		.table-custom td div {
-			font-size: 14px;
-			/* 調整字體大小 */
-			line-height: 1.5;
-			/* 增加行高 */
-			color: #333;
-			/* 文字顏色 */
-		}
 
-		/* 限制單元格最大寬度，讓內容不會太擁擠 */
-		.table-custom td {
-			max-width: 120px;
-			/* 調整單元格最大寬度 */
-		}
+
 
 		/* 聯絡我們 */
 		.custom-link {
@@ -604,108 +591,109 @@ if (isset($_SESSION["帳號"])) {
 				<button id="searchButton" onclick="validateAndFetch()">搜尋</button>
 
 				<!-- 日曆表格 -->
-				<table class="table-custom">
-					<thead>
-						<tr>
-							<th>日</th>
-							<th>一</th>
-							<th>二</th>
-							<th>三</th>
-							<th>四</th>
-							<th>五</th>
-							<th>六</th>
-						</tr>
-					</thead>
-					<tbody id="calendar"></tbody>
-				</table>
-			</div>
-			<script>
-				const yearSelect = document.getElementById('year');
-				const monthSelect = document.getElementById('month');
-				const doctorSelect = document.getElementById('doctor');
-				const calendarBody = document.getElementById('calendar');
+				<div class="table-container">
+					<table class="table-custom">
+						<thead>
+							<tr>
+								<th>日</th>
+								<th>一</th>
+								<th>二</th>
+								<th>三</th>
+								<th>四</th>
+								<th>五</th>
+								<th>六</th>
+							</tr>
+						</thead>
+						<tbody id="calendar"></tbody>
+					</table>
+				</div>
+				<script>
+					const yearSelect = document.getElementById('year');
+					const monthSelect = document.getElementById('month');
+					const doctorSelect = document.getElementById('doctor');
+					const calendarBody = document.getElementById('calendar');
 
-				const workSchedule = <?php echo json_encode($work_schedule); ?>;
+					const workSchedule = <?php echo json_encode($work_schedule); ?>;
 
-				// 初始化年份和月份選單
-				function initSelectOptions() {
-					const currentYear = new Date().getFullYear();
-					yearSelect.innerHTML = '';
-					monthSelect.innerHTML = '';
+					// 初始化年份和月份選單
+					function initSelectOptions() {
+						const currentYear = new Date().getFullYear();
+						yearSelect.innerHTML = '';
+						monthSelect.innerHTML = '';
 
-					for (let year = currentYear - 5; year <= currentYear + 5; year++) {
-						yearSelect.innerHTML += `<option value="${year}" ${year == <?php echo $year; ?> ? 'selected' : ''}>${year}</option>`;
-					}
-
-					for (let month = 1; month <= 12; month++) {
-						monthSelect.innerHTML += `<option value="${month}" ${month == <?php echo $month; ?> ? 'selected' : ''}>${month}</option>`;
-					}
-				}
-
-				// 驗證選單並執行搜尋
-				function validateAndFetch() {
-					const doctor = doctorSelect.value;
-					const year = yearSelect.value;
-					const month = monthSelect.value;
-
-					if (doctor === "0") {
-						alert("請選擇治療師！");
-						return;
-					}
-					if (!year || !month) {
-						alert("請選擇年份和月份！");
-						return;
-					}
-
-					window.location.href = `?doctor_id=${doctor}&year=${year}&month=${month}`;
-				}
-
-				// 生成日曆
-				function generateCalendar() {
-					const year = yearSelect.value;
-					const month = monthSelect.value - 1;
-					calendarBody.innerHTML = '';
-
-					const firstDay = new Date(year, month, 1).getDay();
-					const lastDate = new Date(year, month + 1, 0).getDate();
-
-					let row = document.createElement('tr');
-					for (let i = 0; i < firstDay; i++) {
-						const emptyCell = document.createElement('td');
-						row.appendChild(emptyCell);
-					}
-
-					for (let date = 1; date <= lastDate; date++) {
-						const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-						const cell = document.createElement('td');
-						cell.textContent = date;
-
-						if (workSchedule[fullDate]) {
-							const workInfo = document.createElement('div');
-							workInfo.textContent = `${workSchedule[fullDate].start_time} - ${workSchedule[fullDate].end_time}`;
-							workInfo.style.color = 'gray'; // 時間設為灰色字
-							workInfo.style.fontSize = '18px'; // 字體大小稍微調整以區分
-							cell.appendChild(workInfo);
+						for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+							yearSelect.innerHTML += `<option value="${year}" ${year == <?php echo $year; ?> ? 'selected' : ''}>${year}</option>`;
 						}
 
-						row.appendChild(cell);
-						if (row.children.length === 7) {
-							calendarBody.appendChild(row);
-							row = document.createElement('tr');
+						for (let month = 1; month <= 12; month++) {
+							monthSelect.innerHTML += `<option value="${month}" ${month == <?php echo $month; ?> ? 'selected' : ''}>${month}</option>`;
 						}
 					}
 
-					while (row.children.length < 7) {
-						const emptyCell = document.createElement('td');
-						row.appendChild(emptyCell);
-					}
-					calendarBody.appendChild(row);
-				}
+					// 驗證選單並執行搜尋
+					function validateAndFetch() {
+						const doctor = doctorSelect.value;
+						const year = yearSelect.value;
+						const month = monthSelect.value;
 
-				// 初始化選單和日曆
-				initSelectOptions();
-				generateCalendar();
-			</script>
+						if (doctor === "0") {
+							alert("請選擇治療師！");
+							return;
+						}
+						if (!year || !month) {
+							alert("請選擇年份和月份！");
+							return;
+						}
+
+						window.location.href = `?doctor_id=${doctor}&year=${year}&month=${month}`;
+					}
+
+					// 生成日曆
+					function generateCalendar() {
+						const year = yearSelect.value;
+						const month = monthSelect.value - 1;
+						calendarBody.innerHTML = '';
+
+						const firstDay = new Date(year, month, 1).getDay();
+						const lastDate = new Date(year, month + 1, 0).getDate();
+
+						let row = document.createElement('tr');
+						for (let i = 0; i < firstDay; i++) {
+							const emptyCell = document.createElement('td');
+							row.appendChild(emptyCell);
+						}
+
+						for (let date = 1; date <= lastDate; date++) {
+							const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+							const cell = document.createElement('td');
+							cell.textContent = date;
+
+							if (workSchedule[fullDate]) {
+								const workInfo = document.createElement('div');
+								workInfo.textContent = `${workSchedule[fullDate].start_time} - ${workSchedule[fullDate].end_time}`;
+								workInfo.style.color = 'gray'; // 時間設為灰色字
+								workInfo.style.fontSize = '18px'; // 字體大小稍微調整以區分
+								cell.appendChild(workInfo);
+							}
+
+							row.appendChild(cell);
+							if (row.children.length === 7) {
+								calendarBody.appendChild(row);
+								row = document.createElement('tr');
+							}
+						}
+
+						while (row.children.length < 7) {
+							const emptyCell = document.createElement('td');
+							row.appendChild(emptyCell);
+						}
+						calendarBody.appendChild(row);
+					}
+
+					// 初始化選單和日曆
+					initSelectOptions();
+					generateCalendar();
+				</script>
 
 		</section>
 
