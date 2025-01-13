@@ -69,74 +69,6 @@ if (isset($_SESSION["帳號"])) {
 
 //班表
 
-require '../db.php';
-
-// 查詢所有醫生的資料供下拉選單使用
-$doctor_list_query = "
-SELECT d.doctor_id, d.doctor
-FROM doctor d
-INNER JOIN user u ON d.user_id = u.user_id
-WHERE u.grade_id = 2
-";
-$doctor_list_result = mysqli_query($link, $doctor_list_query);
-$doctor_list = [];
-while ($row = mysqli_fetch_assoc($doctor_list_result)) {
-	$doctor_list[] = $row;
-}
-
-// 取得 GET 參數
-$doctor_id = isset($_GET['doctor_id']) ? (int) $_GET['doctor_id'] : 0;
-$year = isset($_GET['year']) ? (int) $_GET['year'] : date('Y');
-$month = isset($_GET['month']) ? (int) $_GET['month'] : date('m');
-
-// 查詢該醫生的班表和預約數量
-$reservations = [];
-$leaves = []; // 用於存放請假資料
-if ($doctor_id > 0) {
-	// 查詢排班與預約資料
-	$reservation_query = "
-    SELECT ds.date, COUNT(a.appointment_id) AS people_count
-    FROM doctorshift ds
-    LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
-    WHERE ds.doctor_id = ? AND YEAR(ds.date) = ? AND MONTH(ds.date) = ?
-    GROUP BY ds.date
-    ";
-	$stmt = mysqli_prepare($link, $reservation_query);
-	mysqli_stmt_bind_param($stmt, "iii", $doctor_id, $year, $month);
-	mysqli_stmt_execute($stmt);
-	$result = mysqli_stmt_get_result($stmt);
-
-	while ($row = mysqli_fetch_assoc($result)) {
-		$reservations[$row['date']] = $row['people_count'];
-	}
-	mysqli_stmt_close($stmt);
-
-	// 查詢請假資料
-	$leave_query = "
-    SELECT start_date, end_date, reason
-    FROM leaves
-    WHERE doctor_id = ? AND (YEAR(start_date) = ? OR YEAR(end_date) = ?)
-    ";
-	$stmt_leave = mysqli_prepare($link, $leave_query);
-	mysqli_stmt_bind_param($stmt_leave, "iii", $doctor_id, $year, $year);
-	mysqli_stmt_execute($stmt_leave);
-	$leave_result = mysqli_stmt_get_result($stmt_leave);
-
-	while ($row = mysqli_fetch_assoc($leave_result)) {
-		$start_date = substr($row['start_date'], 0, 10);
-		$end_date = substr($row['end_date'], 0, 10);
-		$reason = $row['reason'];
-
-		$current_date = $start_date;
-		while ($current_date <= $end_date) {
-			$leaves[$current_date] = $reason;
-			$current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
-		}
-	}
-	mysqli_stmt_close($stmt_leave);
-}
-
-mysqli_close($link);
 ?>
 
 
@@ -232,7 +164,6 @@ mysqli_close($link);
 
 
 		/*醫生班表 */
-		/* 表格樣式設定 */
 		.table-custom {
 			width: 100%;
 			/* 表格寬度為 100% */
@@ -472,9 +403,117 @@ mysqli_close($link);
 			您好！目前任職於三重的「大重仁復健科診所」。由於治療師的上班時間每月不同，歡迎來電或留言詢問預約時段。感謝您的配合！
 		</marquee>
 
+		<!-- 天氣API -->
+		<?php
+		// 設定 OpenWeatherMap API 的金鑰和查詢 URL
+		$apiKey = "857208d7d30e1cacd0cfeebeb29f0f60";
+		$city = "Taipei"; // 查詢的城市名稱
+		$apiUrl = "https://api.openweathermap.org/data/2.5/weather?q={$city}&appid={$apiKey}&units=metric&lang=zh_tw";
+
+		// 使用 cURL 請求 API
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $apiUrl);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$response = curl_exec($ch);
+		curl_close($ch);
+
+		// 將返回的 JSON 數據轉換為 PHP 陣列
+		$weatherData = json_decode($response, true);
+
+		// 檢查是否成功獲取數據
+		if (isset($weatherData['cod']) && $weatherData['cod'] == 200) {
+			// 提取天氣信息
+			$cityName = $weatherData['name'];
+			$temperature = $weatherData['main']['temp'];
+			$weatherDescription = $weatherData['weather'][0]['description'];
+			$humidity = $weatherData['main']['humidity'];
+			$windSpeed = $weatherData['wind']['speed'];
+
+			// 顯示天氣資訊
+			echo "城市：{$cityName}<br>";
+			echo "溫度：{$temperature}°C<br>";
+			echo "天氣描述：{$weatherDescription}<br>";
+			echo "濕度：{$humidity}%<br>";
+			echo "風速：{$windSpeed} m/s<br>";
+		} else {
+			// 如果獲取數據失敗，顯示錯誤信息
+			echo "無法獲取天氣資訊，請檢查 API 設定或城市名稱。";
+		}
+		?>
+
+
 		<!--班表-->
 		<section class="section section-lg bg-default">
 			<h3 style="text-align: center;">治療師班表</h3>
+			<?php
+			require '../db.php';
+
+			// 查詢所有醫生的資料供下拉選單使用
+			$doctor_list_query = "
+        SELECT d.doctor_id, d.doctor
+        FROM doctor d
+        INNER JOIN user u ON d.user_id = u.user_id
+        WHERE u.grade_id = 2
+    ";
+			$doctor_list_result = mysqli_query($link, $doctor_list_query);
+			$doctor_list = [];
+			while ($row = mysqli_fetch_assoc($doctor_list_result)) {
+				$doctor_list[] = $row;
+			}
+
+			// 取得 GET 參數
+			$doctor_id = isset($_GET['doctor_id']) ? (int) $_GET['doctor_id'] : 0;
+			$year = isset($_GET['year']) ? (int) $_GET['year'] : date('Y');
+			$month = isset($_GET['month']) ? (int) $_GET['month'] : date('m');
+
+			// 初始化排班與請假資料
+			$work_schedule = [];
+			if ($doctor_id > 0) {
+				// 查詢排班資料
+				$query = "
+            SELECT ds.date, st1.shifttime AS start_time, st2.shifttime AS end_time
+            FROM doctorshift ds
+            INNER JOIN shifttime st1 ON ds.go = st1.shifttime_id
+            INNER JOIN shifttime st2 ON ds.off = st2.shifttime_id
+            WHERE ds.doctor_id = ? AND YEAR(ds.date) = ? AND MONTH(ds.date) = ?
+        ";
+				$stmt = mysqli_prepare($link, $query);
+				mysqli_stmt_bind_param($stmt, "iii", $doctor_id, $year, $month);
+				mysqli_stmt_execute($stmt);
+				$result = mysqli_stmt_get_result($stmt);
+
+				while ($row = mysqli_fetch_assoc($result)) {
+					$work_schedule[$row['date']] = ['start_time' => $row['start_time'], 'end_time' => $row['end_time']];
+				}
+				mysqli_stmt_close($stmt);
+
+				// 查詢請假資料
+				$leave_query = "
+            SELECT start_date, end_date
+            FROM leaves
+            WHERE doctor_id = ? AND (YEAR(start_date) = ? OR YEAR(end_date) = ?)
+        ";
+				$stmt_leave = mysqli_prepare($link, $leave_query);
+				mysqli_stmt_bind_param($stmt_leave, "iii", $doctor_id, $year, $year);
+				mysqli_stmt_execute($stmt_leave);
+				$leave_result = mysqli_stmt_get_result($stmt_leave);
+
+				while ($row = mysqli_fetch_assoc($leave_result)) {
+					$leave_date = substr($row['start_date'], 0, 10);
+					if (isset($work_schedule[$leave_date])) {
+						// 修改排班時間，排除請假的時段
+						if ($row['start_date'] > $leave_date . ' ' . $work_schedule[$leave_date]['start_time']) {
+							$work_schedule[$leave_date]['end_time'] = substr($row['start_date'], 11, 5);
+						} else {
+							unset($work_schedule[$leave_date]); // 完全被請假覆蓋的排班
+						}
+					}
+				}
+				mysqli_stmt_close($stmt_leave);
+			}
+
+			mysqli_close($link);
+			?>
 
 			<div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
 				<!-- 醫生選單 -->
@@ -514,20 +553,17 @@ mysqli_close($link);
 					<tbody id="calendar"></tbody>
 				</table>
 			</div>
-
 			<script>
-				const currentYear = new Date().getFullYear();
-				const currentMonth = new Date().getMonth();
 				const yearSelect = document.getElementById('year');
 				const monthSelect = document.getElementById('month');
 				const doctorSelect = document.getElementById('doctor');
 				const calendarBody = document.getElementById('calendar');
 
-				const reservations = <?php echo json_encode($reservations); ?>;
-				const leaves = <?php echo json_encode($leaves); ?>;
+				const workSchedule = <?php echo json_encode($work_schedule); ?>;
 
-				// 初始化選單
+				// 初始化年份和月份選單
 				function initSelectOptions() {
+					const currentYear = new Date().getFullYear();
 					yearSelect.innerHTML = '';
 					monthSelect.innerHTML = '';
 
@@ -540,7 +576,7 @@ mysqli_close($link);
 					}
 				}
 
-				// 驗證所有選單並執行搜尋
+				// 驗證選單並執行搜尋
 				function validateAndFetch() {
 					const doctor = doctorSelect.value;
 					const year = yearSelect.value;
@@ -550,21 +586,12 @@ mysqli_close($link);
 						alert("請選擇治療師！");
 						return;
 					}
-					if (!year) {
-						alert("請選擇年份！");
-						return;
-					}
-					if (!month) {
-						alert("請選擇月份！");
+					if (!year || !month) {
+						alert("請選擇年份和月份！");
 						return;
 					}
 
-					fetchSchedule(doctor, year, month);
-				}
-
-				// 搜尋並跳轉到指定參數的網址
-				function fetchSchedule(doctorId, year, month) {
-					window.location.href = `?doctor_id=${doctorId}&year=${year}&month=${month}`;
+					window.location.href = `?doctor_id=${doctor}&year=${year}&month=${month}`;
 				}
 
 				// 生成日曆
@@ -577,29 +604,22 @@ mysqli_close($link);
 					const lastDate = new Date(year, month + 1, 0).getDate();
 
 					let row = document.createElement('tr');
-					for (let i = 0; i < firstDay; i++) row.appendChild(document.createElement('td'));
+					for (let i = 0; i < firstDay; i++) {
+						const emptyCell = document.createElement('td');
+						row.appendChild(emptyCell);
+					}
 
 					for (let date = 1; date <= lastDate; date++) {
 						const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
 						const cell = document.createElement('td');
 						cell.textContent = date;
 
-						if (leaves[fullDate]) {
-							const leaveInfo = document.createElement('div');
-							leaveInfo.textContent = '休';
-							leaveInfo.style.color = 'blue';
-							leaveInfo.style.cursor = 'pointer';
-
-							leaveInfo.addEventListener('click', () => {
-								alert(`日期: ${fullDate}\n原因: ${leaves[fullDate]}`);
-							});
-
-							cell.appendChild(leaveInfo);
-						} else if (reservations[fullDate]) {
-							const info = document.createElement('div');
-							info.textContent = `預約: ${reservations[fullDate]} 人`;
-							info.className = 'reservation-info';
-							cell.appendChild(info);
+						if (workSchedule[fullDate]) {
+							const workInfo = document.createElement('div');
+							workInfo.textContent = `${workSchedule[fullDate].start_time} - ${workSchedule[fullDate].end_time}`;
+							workInfo.style.color = 'gray'; // 時間設為灰色字
+							workInfo.style.fontSize = '18px'; // 字體大小稍微調整以區分
+							cell.appendChild(workInfo);
 						}
 
 						row.appendChild(cell);
@@ -608,16 +628,22 @@ mysqli_close($link);
 							row = document.createElement('tr');
 						}
 					}
-					while (row.children.length < 7) row.appendChild(document.createElement('td'));
+
+					while (row.children.length < 7) {
+						const emptyCell = document.createElement('td');
+						row.appendChild(emptyCell);
+					}
 					calendarBody.appendChild(row);
 				}
 
-				// 初始化選單與日曆
+				// 初始化選單和日曆
 				initSelectOptions();
 				generateCalendar();
 			</script>
 
 		</section>
+
+
 		<!--班表-->
 
 		<footer class="section novi-bg novi-bg-img footer-simple">

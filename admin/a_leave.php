@@ -272,8 +272,7 @@ if (!$result) {
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_addds.php">新增治療師班表</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="">修改治療師班表</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">修改治療師班表</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_leave.php">請假申請</a>
@@ -292,6 +291,17 @@ if (!$result) {
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_blacklist.php">黑名單</a>
+										</li>
+									</ul>
+								</li>
+
+								<li class="rd-nav-item"><a class="rd-nav-link" href="#">醫生管理</a>
+									<ul class="rd-menu rd-navbar-dropdown">
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_doctorlistadd.php">新增醫生資料</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_doctorlistmod.php">修改醫生資料</a>
 										</li>
 									</ul>
 								</li>

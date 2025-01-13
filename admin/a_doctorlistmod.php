@@ -43,11 +43,11 @@ if (isset($_SESSION["帳號"])) {
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html class="wide wow-animation" lang="en">
 
 <head>
     <!-- Site Title-->
-    <title>Single course</title>
+    <title>Teachers</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -190,7 +190,7 @@ if (isset($_SESSION["帳號"])) {
                             <ul class="rd-navbar-nav">
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
                                 </li>
-                                <li class="rd-nav-item active"><a class="rd-nav-link" href="">關於治療師</a>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="">關於治療師</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="a_therapist.php">治療師時間表</a>
@@ -198,12 +198,14 @@ if (isset($_SESSION["帳號"])) {
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="a_addds.php">新增治療師班表</a>
                                         </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">修改治療師班表</a>
+                                        </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="a_leave.php">請假申請</a>
                                         </li>
                                     </ul>
                                 </li>
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
+                                <li class="rd-nav-item "><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
                                 </li>
                                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
@@ -211,7 +213,8 @@ if (isset($_SESSION["帳號"])) {
                                         </li>
                                     </ul>
                                 </li> -->
-                                <li class="rd-nav-item "><a class="rd-nav-link" href="">用戶管理</a>
+
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="">用戶管理</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="a_patient.php">用戶管理</a>
@@ -224,10 +227,18 @@ if (isset($_SESSION["帳號"])) {
                                         </li>
                                     </ul>
                                 </li>
+                             
 
-                                <li class="rd-nav-item active"><a class="rd-nav-link" href="a_doctorlist.php">醫生資料</a>
+                                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">醫生管理</a>
+                                    <ul class="rd-menu rd-navbar-dropdown">
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_doctorlistadd.php">新增醫生資料</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_doctorlistmod.php">修改醫生資料</a>
+                                        </li>
+                                    </ul>
                                 </li>
-
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                                         onclick="showLogoutBox()">登出</a>
@@ -286,135 +297,41 @@ if (isset($_SESSION["帳號"])) {
                 </nav>
             </div>
         </header>
+
         <!-- Page Header-->
         <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
             <!-- Breadcrumbs-->
             <section class="breadcrumbs-custom breadcrumbs-custom-svg">
                 <div class="container">
-                    <p class="heading-1 breadcrumbs-custom-title">管理醫生資料</p>
+                    <p class="heading-1 breadcrumbs-custom-title">醫生資料修改</p>
                     <ul class="breadcrumbs-custom-path">
                         <li><a href="a_index.php">首頁</a></li>
-                        <li><a href="">管理</a></li>
-                        <li class="active">管理醫生資料</li>
+                        <li><a href="">醫生資料</a></li>
+                        <li class="active">醫生資料修改</li>
                     </ul>
                 </div>
             </section>
-
         </div>
 
 
-        <?php
-        // 引入資料庫連線檔案
-        require '../db.php';
 
-        // 初始化變數
-        $doctorprofile_id = $doctor_id = $education = $current_position = $specialty = $certifications = $treatment_concept = "";
-
-        if (isset($_GET['edit_id'])) {
-            // 編輯模式：根據ID抓取資料
-            $edit_id = $_GET['edit_id'];
-            $query = "SELECT * FROM doctorprofile WHERE doctorprofile_id = $edit_id";
-            $result = mysqli_query($link, $query);
-
-            if ($result && $row = mysqli_fetch_assoc($result)) {
-                $doctorprofile_id = $row['doctorprofile_id'];
-                $doctor_id = $row['doctor_id'];
-                $education = $row['education'];
-                $current_position = $row['current_position'];
-                $specialty = $row['specialty'];
-                $certifications = $row['certifications'];
-                $treatment_concept = $row['treatment_concept'];
-            }
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // 處理表單提交
-            $doctor_id = $_POST['doctor_id'];
-            $education = $_POST['education'];
-            $current_position = $_POST['current_position'];
-            $specialty = $_POST['specialty'];
-            $certifications = $_POST['certifications'];
-            $treatment_concept = $_POST['treatment_concept'];
-
-            if (isset($_POST['doctorprofile_id']) && !empty($_POST['doctorprofile_id'])) {
-                // 更新資料
-                $doctorprofile_id = $_POST['doctorprofile_id'];
-                $query = "UPDATE doctorprofile SET doctor_id='$doctor_id', education='$education', current_position='$current_position', 
-                      specialty='$specialty', certifications='$certifications', treatment_concept='$treatment_concept', updated_at=NOW() 
-                      WHERE doctorprofile_id=$doctorprofile_id";
-            } else {
-                // 新增資料
-                $query = "INSERT INTO doctorprofile (doctor_id, education, current_position, specialty, certifications, treatment_concept, created_at, updated_at) 
-                      VALUES ('$doctor_id', '$education', '$current_position', '$specialty', '$certifications', '$treatment_concept', NOW(), NOW())";
-            }
-
-            if (mysqli_query($link, $query)) {
-                echo "<p>資料成功保存！</p>";
-            } else {
-                echo "<p>錯誤: " . mysqli_error($link) . "</p>";
-            }
-        }
-        ?>
-
-        <form method="POST" action="">
-            <input type="hidden" name="doctorprofile_id" value="<?php echo $doctorprofile_id; ?>">
-
-            <label for="doctor_id">醫生 ID:</label><br>
-            <input type="text" name="doctor_id" id="doctor_id" value="<?php echo $doctor_id; ?>" required><br><br>
-
-            <label for="education">學歷:</label><br>
-            <textarea name="education" id="education"><?php echo $education; ?></textarea><br><br>
-
-            <label for="current_position">目前職位:</label><br>
-            <textarea name="current_position" id="current_position"><?php echo $current_position; ?></textarea><br><br>
-
-            <label for="specialty">專長:</label><br>
-            <textarea name="specialty" id="specialty"><?php echo $specialty; ?></textarea><br><br>
-
-            <label for="certifications">證書:</label><br>
-            <textarea name="certifications" id="certifications"><?php echo $certifications; ?></textarea><br><br>
-
-            <label for="treatment_concept">治療理念:</label><br>
-            <textarea name="treatment_concept"
-                id="treatment_concept"><?php echo $treatment_concept; ?></textarea><br><br>
-
-            <button type="submit">保存</button>
-        </form>
-
-        <h3>現有資料</h3>
-        <table border="1">
-            <tr>
-                <th>ID</th>
-                <th>醫生 ID</th>
-                <th>學歷</th>
-                <th>目前職位</th>
-                <th>專長</th>
-                <th>證書</th>
-                <th>治療理念</th>
-                <th>操作</th>
-            </tr>
-            <?php
-            // 抓取所有資料
-            $query = "SELECT * FROM doctorprofile";
-            $result = mysqli_query($link, $query);
-
-            if ($result) {
-                while ($row = mysqli_fetch_assoc($result)) {
-                    echo "<tr>";
-                    echo "<td>" . $row['doctorprofile_id'] . "</td>";
-                    echo "<td>" . $row['doctor_id'] . "</td>";
-                    echo "<td>" . $row['education'] . "</td>";
-                    echo "<td>" . $row['current_position'] . "</td>";
-                    echo "<td>" . $row['specialty'] . "</td>";
-                    echo "<td>" . $row['certifications'] . "</td>";
-                    echo "<td>" . $row['treatment_concept'] . "</td>";
-                    echo "<td><a href='?edit_id=" . $row['doctorprofile_id'] . "'>編輯</a></td>";
-                    echo "</tr>";
-                }
-            }
-            ?>
-        </table>
-
+        <!-- <section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
+            <div class="fullwidth-page-inner">
+                <div class="section-md text-center">
+                    <div class="container">
+                        <p class="breadcrumbs-custom-subtitle">您所點選的頁面尚未開放，敬請期待～！</p>
+                        <p class="heading-1 breadcrumbs-custom-title">Error 404</p>
+                        <p>The page you selected is not yet open, please stay tuned.</p>
+                    </div>
+                </div>
+            </div>
+        </section> -->
+    </div>
+    <!-- Global Mailform Output-->
+    <div class="snackbars" id="form-output-global"></div>
+    <!-- Javascript-->
+    <script src="js/core.min.js"></script>
+    <script src="js/script.js"></script>
 </body>
 
 </html>

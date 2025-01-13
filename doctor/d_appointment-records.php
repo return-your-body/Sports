@@ -248,7 +248,9 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_numberpeople.php">當天人數及時段</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假</a>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假申請</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave-query.php">請假資料查詢</a>
                     </li>
                   </ul>
                 </li>
@@ -517,10 +519,10 @@ LIMIT $offset, $records_per_page;
       <div class="container">
         <div class="row row-40">
           <!-- <div class="col-md-4">
-          <h4>關於我們</h4>
-          <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
-            professional knowledge using innovative approach.</p>
-        </div> -->
+            <h4>關於我們</h4>
+            <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
+              professional knowledge using innovative approach.</p>
+          </div> -->
           <div class="col-md-3">
             <h4>快速連結</h4>
             <ul class="list-marked">
@@ -528,24 +530,27 @@ LIMIT $offset, $records_per_page;
               <li><a href="d_appointment.php">預約</a></li>
               <li><a href="d_numberpeople.php">當天人數及時段</a></li>
               <li><a href="d_doctorshift.php">班表時段</a></li>
+              <li><a href="d_leave.php">請假申請</a></li>
+              <li><a href="d_leave-query.php"></a>請假資料查詢</li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
-              <li> <a href="d_appointment-records.php">預約紀錄</a></li>
-              </a></li>
+              <li><a href="d_appointment-records.php">預約紀錄</a></li>
+              <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
             </ul>
           </div>
           <!-- <div class="col-md-5">
-          <h4>聯絡我們</h4>
-          <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
-            courses we offer.</p>
-          <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global" data-form-type="subscribe"
-            method="post" action="bat/rd-mailform.php">
-            <div class="form-wrap">
-              <input class="form-input" type="email" name="email" data-constraints="@Email @Required" id="footer-mail">
-              <label class="form-label" for="footer-mail">Enter your e-mail</label>
-            </div>
-            <button class="form-button linearicons-paper-plane"></button>
-          </form>
-        </div> -->
+            <h4>聯絡我們</h4>
+            <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
+              courses we offer.</p>
+            <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global" data-form-type="subscribe"
+              method="post" action="bat/rd-mailform.php">
+              <div class="form-wrap">
+                <input class="form-input" type="email" name="email" data-constraints="@Email @Required"
+                  id="footer-mail">
+                <label class="form-label" for="footer-mail">Enter your e-mail</label>
+              </div>
+              <button class="form-button linearicons-paper-plane"></button>
+            </form>
+          </div> -->
         </div>
         <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights

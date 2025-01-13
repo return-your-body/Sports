@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
+
 <?php
 session_start();
 
@@ -62,52 +63,13 @@ if (isset($_SESSION["帳號"])) {
 }
 
 
-//當天人數
+//請假查詢
 
-$帳號 = $_SESSION['帳號'];
-
-// 取得登入醫生資訊
-$query_doctor = "SELECT doctor_id, doctor 
-         FROM doctor 
-         WHERE user_id = (SELECT user_id FROM user WHERE account = '$帳號')";
-$result_doctor = mysqli_query($link, $query_doctor);
-
-if ($row = mysqli_fetch_assoc($result_doctor)) {
-  $doctor_id = $row['doctor_id'];
-  $doctor_name = htmlspecialchars($row['doctor']);
-} else {
-  die("找不到醫生資訊");
-}
-
-// 設定下拉選單的預設值
-$current_year = date('Y');
-$current_month = date('m');
-$current_day = date('d');
-
-// 接收 GET 參數
-$selected_year = isset($_GET['year']) ? $_GET['year'] : $current_year;
-$selected_month = isset($_GET['month']) ? $_GET['month'] : $current_month;
-$selected_day = isset($_GET['day']) ? $_GET['day'] : $current_day;
-
-$selected_date = "$selected_year-$selected_month-$selected_day";
-
-// 查詢當天所有預約的資料
-$query_appointments = "
-SELECT st.shifttime, p.name, a.appointment_id
-FROM doctorshift ds
-JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
-LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
-LEFT JOIN people p ON a.people_id = p.people_id
-WHERE ds.date = '$selected_date' AND ds.doctor_id = '$doctor_id'
-";
-$result_appointments = mysqli_query($link, $query_appointments);
 ?>
-
-
 
 <head>
   <!-- Site Title-->
-  <title>醫生-當天人數時段</title>
+  <title>運動筋膜放鬆</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -133,8 +95,7 @@ $result_appointments = mysqli_query($link, $query_appointments);
     html.lt-ie-10 .ie-panel {
       display: block;
     }
-  </style>
-  <style>
+
     /* 登出確認視窗 - 初始隱藏 */
     .logout-box {
       display: none;
@@ -195,30 +156,47 @@ $result_appointments = mysqli_query($link, $query_appointments);
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
 
-    /* 當天時段 */
+
+    /* 請假查詢 */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      margin: 20px 0;
     }
 
     th,
     td {
       border: 1px solid #ddd;
-      text-align: center;
       padding: 8px;
+      text-align: center;
     }
 
     th {
-      background-color: #f2f2f2;
+      background-color: #f4f4f4;
+      font-weight: bold;
     }
 
-    form {
+    .approved {
+      color: green;
+    }
+
+    .rejected {
+      color: red;
+    }
+
+    .pagination {
       text-align: center;
-      margin-bottom: 20px;
+      margin: 20px 0;
+    }
+
+    .total-info {
+      text-align: right;
+      margin: 10px 0;
+      font-size: 14px;
+      color: #555;
     }
   </style>
-  </style>
+
 </head>
 
 <body>
@@ -273,18 +251,20 @@ $result_appointments = mysqli_query($link, $query_appointments);
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a>
                 </li>
+
                 <li class="rd-nav-item active"><a class="rd-nav-link" href="#">班表</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_doctorshift.php">每月班表</a>
                     </li>
-                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
-                        href="d_numberpeople.php">當天人數及時段</a>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_numberpeople.php">當天人數及時段</a>
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假申請</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave-query.php">請假資料查詢</a>
+                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="d_leave-query.php">請假資料查詢</a>
                     </li>
                   </ul>
+                </li>
+
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
@@ -294,6 +274,8 @@ $result_appointments = mysqli_query($link, $query_appointments);
                     </li>
                   </ul>
                 </li>
+
+                <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
                 </li>
@@ -326,6 +308,7 @@ $result_appointments = mysqli_query($link, $query_appointments);
                     document.getElementById('logoutBox').style.display = 'none';
                   }
                 </script>
+
               </ul>
             </div>
             <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span></div>
@@ -355,103 +338,130 @@ $result_appointments = mysqli_query($link, $query_appointments);
     </header>
     <!--標題列-->
 
+
     <!--標題-->
     <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
       <!-- Breadcrumbs-->
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <!-- <p class="breadcrumbs-custom-subtitle">Who We Are</p> -->
-          <p class="heading-1 breadcrumbs-custom-title">當天看診人數</p>
+          <!-- <p class="breadcrumbs-custom-subtitle">What We Offer</p> -->
+          <p class="heading-1 breadcrumbs-custom-title">請假資料查詢</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="d_index.php">首頁</a></li>
-            <li class="active">當天時段人數</li>
+            <li><a href="#">班表</a></li>
+            <li class="active">請假資料查詢</li>
           </ul>
         </div>
       </section>
     </div>
-    <!--標題-->
 
-    <section class="section section-lg bg-default novi-bg novi-bg-img">
-      <div class="container">
-        <!-- <h3 style="text-align: center;">當天時段</h3> -->
 
-        <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px;text-align: center;">
-          治療師姓名：<?php echo $doctor_name; ?>
+    <!-- 請假查詢資料 -->
+    <?php
+    // 引入資料庫連線
+    require '../db.php';
 
-          <!-- 日期選擇下拉選單 -->
-          <form method="GET" action="">
-            <label for="year">選擇年份：</label>
-            <select id="year" name="year">
+    // 分頁邏輯
+    $limit = 10; // 每頁顯示的資料筆數
+    $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int) $_GET['page'] : 1;
+    $offset = ($page - 1) * $limit;
+
+    // 計算總資料筆數
+    $total_query = "SELECT COUNT(*) AS total FROM leaves";
+    $total_result = mysqli_query($link, $total_query);
+    $total_row = mysqli_fetch_assoc($total_result);
+    $total_records = $total_row['total'];
+    $total_pages = ceil($total_records / $limit);
+
+    // 查詢分頁資料
+    $query = "
+    SELECT 
+        l.leaves_id, 
+        d.doctor AS doctor_name, 
+        l.leave_type, 
+        l.leave_type_other, 
+        l.start_date, 
+        l.end_date, 
+        l.reason, 
+        l.is_approved, 
+        l.rejection_reason
+    FROM leaves l
+    LEFT JOIN doctor d ON l.doctor_id = d.doctor_id
+    LIMIT $limit OFFSET $offset
+";
+
+    $result = mysqli_query($link, $query);
+    if (!$result) {
+      die("資料查詢失敗：" . mysqli_error($link));
+    }
+    ?>
+
+    <!-- 顯示表格 -->
+    <h2 style="text-align: center;">請假記錄</h2>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <thead>
+        <tr>
+          <th>請假編號</th>
+          <th>治療師姓名</th>
+          <th>請假類型</th>
+          <th>其他請假類型</th>
+          <th>開始時間</th>
+          <th>結束時間</th>
+          <th>請假原因</th>
+          <th>審核狀態</th>
+          <th>駁回原因</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php while ($row = mysqli_fetch_assoc($result)): ?>
+          <tr>
+            <td><?php echo htmlspecialchars($row['leaves_id']); ?></td>
+            <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
+            <td><?php echo htmlspecialchars($row['leave_type']); ?></td>
+            <td><?php echo htmlspecialchars($row['leave_type_other'] ?? ''); ?></td>
+            <td><?php echo htmlspecialchars($row['start_date']); ?></td>
+            <td><?php echo htmlspecialchars($row['end_date']); ?></td>
+            <td><?php echo htmlspecialchars($row['reason']); ?></td>
+            <td>
               <?php
-              for ($year = $current_year - 5; $year <= $current_year + 5; $year++) {
-                $selected = ($year == $selected_year) ? 'selected' : '';
-                echo "<option value='$year' $selected>$year</option>";
-              }
-              ?>
-            </select>
-
-            <label for="month">選擇月份：</label>
-            <select id="month" name="month">
-              <?php
-              for ($month = 1; $month <= 12; $month++) {
-                $month_padded = str_pad($month, 2, '0', STR_PAD_LEFT);
-                $selected = ($month_padded == $selected_month) ? 'selected' : '';
-                echo "<option value='$month_padded' $selected>$month</option>";
-              }
-              ?>
-            </select>
-
-            <label for="day">選擇日期：</label>
-            <select id="day" name="day">
-              <?php
-              for ($day = 1; $day <= 31; $day++) {
-                $day_padded = str_pad($day, 2, '0', STR_PAD_LEFT);
-                $selected = ($day_padded == $selected_day) ? 'selected' : '';
-                echo "<option value='$day_padded' $selected>$day</option>";
-              }
-              ?>
-            </select>
-
-            <button type="submit">
-              查詢
-            </button>
-          </form>
-        </div>
-        <!-- 顯示預約時段和姓名 -->
-        <table border="1" style="width: 100%; text-align: center; border-collapse: collapse; margin-top: 20px;">
-          <tr style="background-color: #f2f2f2;">
-            <th>時段</th>
-            <th>姓名</th>
-          </tr>
-          <?php
-          if (mysqli_num_rows($result_appointments) > 0) {
-            while ($row = mysqli_fetch_assoc($result_appointments)) {
-              $shifttime = htmlspecialchars($row['shifttime']);
-              $name = isset($row['name']) ? htmlspecialchars($row['name']) : '未預約';
-              $appointment_id = $row['appointment_id'];
-
-              echo "<tr>
-                    <td>{$shifttime}</td>
-                    <td>";
-              if ($appointment_id) {
-                echo "<a href='d_appointment_details.php?id={$appointment_id}'>{$name}</a>";
+              if ($row['is_approved'] === '1') {
+                echo "<span style='color: green;'>已通過</span>";
+              } elseif ($row['is_approved'] === '0') {
+                echo "<span style='color: red;'>未通過</span>";
               } else {
-                echo $name;
+                echo "<span style='color: gray;'>待審核</span>";
               }
-              echo "</td></tr>";
-            }
-          } else {
-            echo "<tr><td colspan='2'>當天無時段資料</td></tr>";
-          }
-          ?>
-        </table>
+              ?>
+            </td>
+            <td><?php echo htmlspecialchars($row['rejection_reason'] ?? ''); ?></td>
+          </tr>
+        <?php endwhile; ?>
+      </tbody>
+    </table>
 
-        <?php mysqli_close($link); ?>
-      </div>
-  </div>
-  </section>
+    <!-- 分頁 -->
+    <div style="text-align: center; margin: 20px 0;">
+      <?php for ($p = 1; $p <= $total_pages; $p++): ?>
+        <a href="?page=<?php echo $p; ?>"
+          style="margin: 0 5px; text-decoration: none; <?php echo $p === $page ? 'font-weight: bold;' : ''; ?>">
+          <?php echo $p; ?>
+        </a>
+      <?php endfor; ?>
+    </div>
 
- 
+    <!-- 頁碼資訊 -->
+    <div style="text-align: right; margin: 20px 0;">
+      第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁 (總共 <?php echo $total_records; ?> 筆資料)
+    </div>
+
+    <?php
+    // 關閉資料庫連線
+    mysqli_close($link);
+    ?>
+
+
+
+
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
