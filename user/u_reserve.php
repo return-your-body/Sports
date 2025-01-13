@@ -73,6 +73,20 @@ if (isset($_SESSION["帳號"])) {
 	<link rel="stylesheet" href="css/fonts.css">
 	<link rel="stylesheet" href="css/style.css">
 	<style>
+		/* 禁用按鈕樣式 */
+		button.disabled {
+			background-color: #ccc;
+			/* 灰色背景 */
+			color: #666;
+			/* 灰色文字 */
+			border: 1px solid #999;
+			/* 灰色邊框 */
+			cursor: not-allowed;
+			/* 禁用鼠標樣式 */
+			pointer-events: none;
+			/* 禁止所有事件 */
+		}
+
 		/* 排班資訊樣式 */
 		.shift-info {
 			margin: 5px 0;
@@ -835,12 +849,12 @@ FROM
 				const timeSlotsContainer = document.getElementById("time-slots"); // 時間段容器
 
 				/**
-				 * 打開彈窗
-				 * @param {string} doctor - 醫生名稱
-				 * @param {string} date - 日期 (YYYY-MM-DD 格式)
-				 * @param {string} startTime - 上班時間 (HH:mm 格式)
-				 * @param {string} endTime - 下班時間 (HH:mm 格式)
-				 */
+					* 打開彈窗，顯示時間段
+					* @param {string} doctor - 醫生名稱
+					* @param {string} date - 預約日期 (YYYY-MM-DD)
+					* @param {string} startTime - 上班時間 (HH:mm 格式)
+					* @param {string} endTime - 下班時間 (HH:mm 格式)
+					*/
 				function openModal(doctor, date, startTime, endTime) {
 					// 設置彈窗標題
 					modalTitle.textContent = `醫生：${doctor} 日期：${date}`;
@@ -856,14 +870,58 @@ FROM
 						const slotElement = document.createElement("div"); // 每個時間段的容器
 						slotElement.innerHTML = `
 			<span>${timeSlot}</span>
-			<button class="reserve-btn" onclick="reserve('${doctor}', '${date}', '${timeSlot}')">預約</button>
-		`; // 顯示時間與預約按鈕
-						timeSlotsContainer.appendChild(slotElement); // 添加到容器中
-						current = new Date(current.getTime() + 20 * 60000); // 加 20 分鐘
+			<button class="reserve-btn" id="btn-${timeSlot.replace(':', '-')}" disabled>檢查中...</button>
+		`;
+
+						// 添加到容器中
+						timeSlotsContainer.appendChild(slotElement);
+
+						// 檢查是否該時段已被預約
+						checkAvailability(doctor, date, timeSlot);
+
+						// 加 20 分鐘
+						current = new Date(current.getTime() + 20 * 60000);
 					}
 
 					modal.style.display = "block"; // 顯示彈窗
 				}
+
+				/**
+				 * 檢查某個時間段是否已被預約
+				 * @param {string} doctor - 醫生名稱
+				 * @param {string} date - 預約日期
+				 * @param {string} timeSlot - 時間段 (格式: HH:mm)
+				 */
+				function checkAvailability(doctor, date, timeSlot) {
+					const xhr = new XMLHttpRequest();
+					xhr.open("POST", "檢查預約.php", true);
+					xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+					xhr.onreadystatechange = function () {
+						if (xhr.readyState === 4 && xhr.status === 200) {
+							const response = JSON.parse(xhr.responseText);
+							const button = document.getElementById(`btn-${timeSlot.replace(':', '-')}`);
+
+							if (response.available) {
+								// 如果該時間段可用，顯示「預約」按鈕
+								button.textContent = "預約";
+								button.disabled = false;
+								button.onclick = () => reserve(doctor, date, timeSlot); // 綁定預約函數
+							} else {
+								// 如果該時間段已滿，更新按鈕為「額滿」
+								button.textContent = "額滿";
+								button.disabled = true; // 禁用按鈕
+								button.classList.add("disabled"); // 添加禁用樣式
+								button.style.cursor = "not-allowed"; // 設置鼠標樣式為不可用
+							}
+						}
+					};
+
+					// 發送請求檢查該時段
+					const params = `doctor=${encodeURIComponent(doctor)}&date=${date}&time=${timeSlot}`;
+					xhr.send(params);
+				}
+
 
 				// 關閉彈窗功能
 				document.querySelector(".close").onclick = () => {
@@ -878,21 +936,51 @@ FROM
 				};
 
 				/**
-				 * 預約功能
-				 * @param {string} doctor - 醫生名稱
-				 * @param {string} date - 日期
-				 * @param {string} time - 時間
-				 */
+					* 預約功能，將醫生、日期和時間的資訊發送到伺服器進行處理
+					* @param {string} doctor - 醫生名稱
+					* @param {string} date - 預約日期 (格式: YYYY-MM-DD)
+					* @param {string} time - 預約時間 (格式: HH:mm)
+					*/
 				function reserve(doctor, date, time) {
-					alert(`預約成功！\n醫生：${doctor}\n日期：${date}\n時間：${time}`); // 預約成功提示
-					modal.style.display = "none"; // 隱藏彈窗
+					// 彈出確認提示，讓使用者確認是否要進行該預約
+					if (confirm(`確定要預約？\n醫生：${doctor}\n日期：${date}\n時間：${time}`)) {
+						// 創建一個新的 AJAX 請求對象
+						const xhr = new XMLHttpRequest();
 
-					// 這裡可以添加 AJAX 請求，將預約資訊存入資料庫
+						// 設置 HTTP 請求方法為 POST，目標 URL 為 預約.php，並將其設置為非同步請求
+						xhr.open("POST", "預約.php", true);
+
+						// 設置請求標頭，告訴伺服器資料的傳遞格式為 URL 編碼形式
+						xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+						// 定義請求完成後要執行的回調函數
+						xhr.onreadystatechange = function () {
+							// 檢查請求是否已完成 (readyState === 4) 並且伺服器已成功回應 (status === 200)
+							if (xhr.readyState === 4 && xhr.status === 200) {
+								// 將伺服器返回的 JSON 字串解析為 JavaScript 對象
+								const response = JSON.parse(xhr.responseText);
+
+								// 檢查伺服器回應的 success 狀態
+								if (response.success) {
+									// 如果成功，彈出成功訊息
+									alert(response.message);
+									modal.style.display = "none"; // 關閉彈窗
+								} else {
+									// 如果失敗，顯示伺服器回傳的錯誤訊息
+									alert(response.message);
+								}
+							}
+						};
+
+						// 將要傳遞的參數組合成 URL 編碼字串
+						const params = `doctor=${encodeURIComponent(doctor)}&date=${date}&time=${time}`;
+
+						// 發送請求到伺服器，並將參數作為請求的主體內容
+						xhr.send(params);
+					}
 				}
 
-			</script>
 
-			<script>
 				// 修改生成日曆時的查看按鈕功能
 				function generateCalendar() {
 					const year = parseInt(document.getElementById('year').value);
