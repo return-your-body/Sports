@@ -50,71 +50,8 @@ if (isset($_SESSION["帳號"])) {
 	exit();
 }
 
-// 查詢該用戶的所有預約歷史資料
-$query_history = "
-SELECT 
-    a.appointment_id,
-    p.name AS patient_name,
-    g.gender AS gender,
-    p.birthday AS birthday,
-    ds.date AS appointment_date,
-    st.shifttime AS shifttime,
-    a.note AS note
-FROM appointment a
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN gender g ON p.gender_id = g.gender_id
-LEFT JOIN user u ON p.user_id = u.user_id
-WHERE u.account = ?
-ORDER BY ds.date DESC, st.shifttime ASC
-";
 
-$stmt = mysqli_prepare($link, $query_history);
-mysqli_stmt_bind_param($stmt, "s", $帳號);
-mysqli_stmt_execute($stmt);
-$result_history = mysqli_stmt_get_result($stmt);
 
-// 如果查詢失敗
-if (!$result_history) {
-	echo "<script>
-            alert('發生錯誤：" . mysqli_error($link) . "');
-            window.history.back();
-          </script>";
-	exit;
-}
-
-// 準備歷史資料陣列
-$appointments = [];
-while ($row = mysqli_fetch_assoc($result_history)) {
-	$appointments[] = $row;
-}
-
-// 查詢詳細資料函數
-function getAppointmentDetails($link, $appointment_id)
-{
-	$query_details = "
-    SELECT 
-        d.doctor AS doctor_name,
-        i.item AS treatment_item,
-        i.price AS treatment_price,
-        mr.created_at AS created_time
-    FROM medicalrecord mr
-    LEFT JOIN appointment a ON mr.appointment_id = a.appointment_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN item i ON mr.item_id = i.item_id
-    WHERE mr.appointment_id = ?;
-    ";
-
-	$stmt = mysqli_prepare($link, $query_details);
-	mysqli_stmt_bind_param($stmt, "i", $appointment_id);
-	mysqli_stmt_execute($stmt);
-	$result = mysqli_stmt_get_result($stmt);
-	return mysqli_fetch_assoc($result);
-}
-
-mysqli_close($link);
 ?>
 
 
@@ -280,38 +217,60 @@ mysqli_close($link);
 		}
 
 		/* 歷史資料(預約+看診紀錄) */
-		table {
-			width: 90%;
-			margin: 30px auto;
-			border-collapse: collapse;
+		/* 彈跳視窗背景遮罩 */
+		#popup-overlay {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.5);
+			z-index: 999;
+		}
+
+	
+
+		/* 彈跳視窗標題 */
+		#popup h2 {
+			margin-top: 0;
 			text-align: center;
+			font-size: 1.5em;
+			color: #333;
 		}
 
-		th,
-		td {
-			padding: 10px;
-			border: 1px solid #ddd;
+		/* 表格樣式 */
+		#popup table {
+			width: 100%;
+			border-collapse: collapse;
 		}
 
-		th {
-			background-color: #f2f2f2;
+		#popup table th,
+		#popup table td {
+			text-align: left;
+			padding: 8px;
+			border-bottom: 1px solid #ddd;
 		}
 
-		.btn {
-			padding: 5px 10px;
+		#popup table th {
+			color: #555;
+		}
+
+		/* 關閉按鈕 */
+		.close-btn {
+			display: block;
+			margin: 20px auto 0;
+			padding: 10px 20px;
 			background-color: #007bff;
 			color: white;
-			text-decoration: none;
+			border: none;
 			border-radius: 5px;
+			font-size: 1em;
+			cursor: pointer;
 		}
 
-		.btn:hover {
+		.close-btn:hover {
 			background-color: #0056b3;
-		}
-
-		p {
-			text-align: center;
-			margin-top: 20px;
 		}
 
 
@@ -505,60 +464,104 @@ mysqli_close($link);
 			</section>
 		</div>
 
-		<!--預約紀錄-->
+		<!--歷史預約紀錄-->
 		<!-- <h3 style="text-align: center; margin-top: 20px;">歷史預約紀錄</h3> -->
+		<?php
+		// 引入資料庫連接檔案
+		require '../db.php';
 
-		<?php if (count($appointments) > 0): ?>
-			<table>
-				<thead>
+		// 確保使用者已登入
+		if (!isset($_SESSION['帳號'])) {
+			echo "<p style='text-align: center;'>請先登入後再查看資料。</p>";
+			exit;
+		}
+
+		// 取得使用者帳號
+		$帳號 = $_SESSION['帳號'];
+
+		// 查詢歷史記錄
+		$query_history = "
+SELECT 
+    a.appointment_id,
+    COALESCE(p.name, '未知') AS patient_name,
+    COALESCE(g.gender, '未知') AS gender,
+    COALESCE(p.birthday, '未知') AS birthday,
+    COALESCE(ds.date, '未知') AS appointment_date,
+    COALESCE(st.shifttime, '未知') AS shifttime,
+    COALESCE(a.note, '無備註') AS note
+FROM appointment a
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN gender g ON p.gender_id = g.gender_id
+LEFT JOIN user u ON p.user_id = u.user_id
+WHERE u.account = ?
+ORDER BY ds.date DESC, st.shifttime ASC
+";
+
+		$stmt = mysqli_prepare($link, $query_history);
+		if (!$stmt) {
+			die("<p style='text-align: center;'>SQL 錯誤：" . htmlspecialchars(mysqli_error($link)) . "</p>");
+		}
+
+		mysqli_stmt_bind_param($stmt, "s", $帳號);
+		mysqli_stmt_execute($stmt);
+		$result_history = mysqli_stmt_get_result($stmt);
+
+		// 若查詢失敗或結果為空
+		if (!$result_history || mysqli_num_rows($result_history) === 0) {
+			echo "<p style='text-align: center;'>目前沒有歷史資料。</p>";
+			exit;
+		}
+		?>
+		<table border="1" style="width: 100%; text-align: center; border-collapse: collapse;">
+			<thead>
+				<tr>
+					<th>預約日期</th>
+					<th>預約時段</th>
+					<th>備註</th>
+					<th>詳細資料</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php while ($appointment = mysqli_fetch_assoc($result_history)): ?>
 					<tr>
-						<th>預約日期</th>
-						<th>預約時段</th>
-						<th>備註</th>
-						<th>詳細資料</th>
+						<td><?php echo htmlspecialchars($appointment['appointment_date']); ?></td>
+						<td><?php echo htmlspecialchars($appointment['shifttime']); ?></td>
+						<td><?php echo htmlspecialchars($appointment['note']); ?></td>
+						<td>
+							<button
+								onclick="openPopup(<?php echo htmlspecialchars($appointment['appointment_id']); ?>)">查看</button>
+						</td>
 					</tr>
-				</thead>
-				<tbody>
-					<?php foreach ($appointments as $appointment): ?>
-						<tr>
-							<td><?php echo htmlspecialchars($appointment['appointment_date']); ?></td>
-							<td><?php echo htmlspecialchars($appointment['shifttime']); ?></td>
-							<td><?php echo htmlspecialchars($appointment['note']); ?></td>
-							<td>
-								<button class="btn"
-									onclick="openPopup(<?php echo $appointment['appointment_id']; ?>)">查看</button>
-							</td>
-						</tr>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
-		<?php else: ?>
-			<p style="text-align: center;">目前沒有預約歷史資料。</p>
-		<?php endif; ?>
+				<?php endwhile; ?>
+			</tbody>
+		</table>
 
 		<!-- 彈跳視窗 -->
-		<div id="popup" class="popup">
+		<div id="popup" class="popup"
+			style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid black; z-index: 1000;">
 			<div class="popup-content">
 				<h2>詳細資料</h2>
 				<table>
 					<tr>
 						<th>醫生姓名</th>
-						<td id="popup-doctor-name"></td>
+						<td id="popup-doctor-name">無資料</td>
 					</tr>
 					<tr>
 						<th>治療項目</th>
-						<td id="popup-treatment-item"></td>
+						<td id="popup-treatment-item">無資料</td>
 					</tr>
 					<tr>
 						<th>治療費用</th>
-						<td id="popup-treatment-price"></td>
+						<td id="popup-treatment-price">無資料</td>
 					</tr>
 					<tr>
 						<th>建立時間</th>
-						<td id="popup-created-time"></td>
+						<td id="popup-created-time">無資料</td>
 					</tr>
 				</table>
-				<button class="close-btn" onclick="closePopup()">關閉</button>
+				<button onclick="closePopup()">關閉</button>
 			</div>
 		</div>
 
@@ -567,20 +570,31 @@ mysqli_close($link);
 				fetch(`處理詳細資料.php?id=${appointment_id}`)
 					.then(response => response.json())
 					.then(data => {
-						document.getElementById('popup-doctor-name').innerText = data.doctor_name || '無資料';
-						document.getElementById('popup-treatment-item').innerText = data.treatment_item || '無資料';
-						document.getElementById('popup-treatment-price').innerText = data.treatment_price || '無資料';
-						document.getElementById('popup-created-time').innerText = data.created_time || '無資料';
-
-						document.getElementById('popup').style.display = 'flex';
+						if (data.error || !data.doctor_name) {
+							alert('目前無看診資料！');
+						} else {
+							document.getElementById('popup-doctor-name').textContent = data.doctor_name || '無資料';
+							document.getElementById('popup-treatment-item').textContent = data.treatment_item || '無資料';
+							document.getElementById('popup-treatment-price').textContent = data.treatment_price || '無資料';
+							document.getElementById('popup-created-time').textContent = data.created_time || '無資料';
+							document.getElementById('popup').style.display = 'block';
+						}
 					})
-					.catch(error => console.error('無法獲取資料：', error));
+					.catch(error => {
+						console.error('獲取詳細資料失敗：', error);
+						alert('無法加載詳細資料，請稍後再試！');
+					});
 			}
 
 			function closePopup() {
 				document.getElementById('popup').style.display = 'none';
 			}
 		</script>
+
+
+
+
+
 
 		<footer class="section novi-bg novi-bg-img footer-simple">
 			<div class="container">
