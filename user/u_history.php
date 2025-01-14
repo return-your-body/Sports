@@ -229,7 +229,7 @@ if (isset($_SESSION["帳號"])) {
 			z-index: 999;
 		}
 
-	
+
 
 		/* 彈跳視窗標題 */
 		#popup h2 {
@@ -479,7 +479,7 @@ if (isset($_SESSION["帳號"])) {
 		// 取得使用者帳號
 		$帳號 = $_SESSION['帳號'];
 
-		// 查詢歷史記錄
+		// 查詢歷史記錄，根據日期和時間升序排序
 		$query_history = "
 SELECT 
     a.appointment_id,
@@ -496,7 +496,7 @@ LEFT JOIN people p ON a.people_id = p.people_id
 LEFT JOIN gender g ON p.gender_id = g.gender_id
 LEFT JOIN user u ON p.user_id = u.user_id
 WHERE u.account = ?
-ORDER BY ds.date DESC, st.shifttime ASC
+ORDER BY ds.date ASC, st.shifttime ASC
 ";
 
 		$stmt = mysqli_prepare($link, $query_history);
@@ -537,6 +537,7 @@ ORDER BY ds.date DESC, st.shifttime ASC
 				<?php endwhile; ?>
 			</tbody>
 		</table>
+
 
 		<!-- 彈跳視窗 -->
 		<div id="popup" class="popup"
