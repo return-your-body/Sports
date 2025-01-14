@@ -221,34 +221,54 @@ if (isset($_SESSION["帳號"])) {
 			/* 懸停時增加下劃線效果 */
 		}
 
-		.weather-info {
-			position: absolute;
-			top: 10px;
-			right: 20px;
-			display: flex;
-			align-items: center;
-			background: rgba(255, 255, 255, 0.8);
-			padding: 5px 10px;
+		/* 天氣API */
+
+		.weather-container {
+			max-width: 600px;
+			margin: 0 auto;
+			background: white;
+			padding: 20px;
 			border-radius: 10px;
-			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-			font-family: Arial, sans-serif;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 		}
 
-		.weather-info img {
-			width: 40px;
-			height: 40px;
-			margin-right: 8px;
-		}
-
-		.weather-temp {
-			font-size: 18px;
-			font-weight: bold;
+		.weather-container h1 {
+			text-align: center;
 			color: #333;
 		}
 
-		.weather-error {
+		.weather-container p {
+			margin: 10px 0;
+			color: #555;
+		}
+
+		.advice {
+			margin-top: 20px;
+			padding: 15px;
+			background: #f9f9f9;
+			border-left: 5px solid #007bff;
+			border-radius: 5px;
+		}
+
+		.advice h2 {
+			margin: 0;
+			font-size: 18px;
+			color: #007bff;
+		}
+
+		.advice ul {
+			list-style: none;
+			padding: 0;
+			margin: 10px 0;
+		}
+
+		.advice ul li {
+			margin: 5px 0;
+		}
+
+		.error {
 			color: red;
-			font-size: 16px;
+			text-align: center;
 		}
 	</style>
 </head>
@@ -429,93 +449,94 @@ if (isset($_SESSION["帳號"])) {
 			</div>
 		</section>
 		<!--Welcome back doctor-->
+		<div>
+			<marquee>
+				您好！目前任職於三重的「大重仁復健科診所」。由於治療師的上班時間每月不同，歡迎來電或留言詢問預約時段。感謝您的配合！
+			</marquee>
+		</div>
 
-		<marquee>
-			您好！目前任職於三重的「大重仁復健科診所」。由於治療師的上班時間每月不同，歡迎來電或留言詢問預約時段。感謝您的配合！
-		</marquee>
+		<br />
 
 		<!-- 天氣API -->
+		<div class="weather-container">
+			<?php
+			$apiKey = "857208d7d30e1cacd0cfeebeb29f0f60";
+			$city = "Taipei";
+			$apiUrl = "https://api.openweathermap.org/data/2.5/weather?q={$city}&appid={$apiKey}&units=metric&lang=zh_tw";
 
-		<?php
-		// 設定 OpenWeatherMap API 的金鑰和查詢 URL
-		$apiKey = "857208d7d30e1cacd0cfeebeb29f0f60";
-		$city = "Taipei"; // 查詢的城市名稱
-		$apiUrl = "https://api.openweathermap.org/data/2.5/weather?q={$city}&appid={$apiKey}&units=metric&lang=zh_tw";
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $apiUrl);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			$response = curl_exec($ch);
+			curl_close($ch);
 
-		// 使用 cURL 請求 API
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $apiUrl);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		$response = curl_exec($ch);
-		curl_close($ch);
+			$weatherData = json_decode($response, true);
 
-		// 將返回的 JSON 數據轉換為 PHP 陣列
-		$weatherData = json_decode($response, true);
+			if (isset($weatherData['cod']) && $weatherData['cod'] == 200) {
+				$cityName = $weatherData['name'];
+				$temperature = $weatherData['main']['temp'];
+				$weatherDescription = $weatherData['weather'][0]['description'];
+				$humidity = $weatherData['main']['humidity'];
+				$windSpeed = $weatherData['wind']['speed'];
+				?>
 
-		// 檢查是否成功獲取數據
-		if (isset($weatherData['cod']) && $weatherData['cod'] == 200) {
-			// 提取天氣信息
-			$cityName = $weatherData['name'];
-			$temperature = $weatherData['main']['temp'];
-			$weatherDescription = $weatherData['weather'][0]['description'];
-			$humidity = $weatherData['main']['humidity'];
-			$windSpeed = $weatherData['wind']['speed'];
+				 <h3 style="text-align: center;">今日天氣</h3><!--<?php echo $cityName; ?> -->
+				<p>溫度：<strong><?php echo $temperature; ?>°C</strong></p>
+				<p>天氣狀況：<strong><?php echo $weatherDescription; ?></strong></p>
+				<p>濕度：<strong><?php echo $humidity; ?>%</strong></p>
+				<p>風速：<strong><?php echo $windSpeed; ?> m/s</strong></p>
 
-			// 顯示天氣資訊
-			echo "城市：{$cityName}<br>";
-			echo "溫度：{$temperature}°C<br>";
-			echo "天氣描述：{$weatherDescription}<br>";
-			echo "濕度：{$humidity}%<br>";
-			echo "風速：{$windSpeed} m/s<br><br>";
+				<div class="advice">
+					<h2>筋膜按摩建議</h2>
+					<ul>
+						<?php
+						// 按溫度條件
+						if ($temperature < 15) {
+							echo "- 天氣寒冷，建議先使用暖身墊加熱肩頸和下背部，再進行深層筋膜按摩。<br>";
+							echo "- 可重點放鬆膝關節周圍的筋膜，預防僵硬。<br>";
+							echo "- 按摩後穿著保暖衣物，避免按摩後肌肉受寒。<br>";
+						} elseif ($temperature >= 15 && $temperature < 25) {
+							echo "- 涼爽天氣，適合進行全身筋膜放鬆，搭配深層呼吸放鬆效果更佳。<br>";
+							echo "- 建議針對腿部和小腿，進行滾筒按摩，改善長時間靜止的僵硬感。<br>";
+							echo "- 可加入簡單的伸展運動，例如貓式伸展配合按摩。<br>";
+						} elseif ($temperature >= 25) {
+							echo "- 溫暖天氣，適合使用筋膜槍進行局部放鬆，例如肩膀和手臂。<br>";
+							echo "- 建議搭配步行或簡單運動後按摩效果更佳。<br>";
+							echo "- 注意補充水分，提升筋膜按摩的代謝效果。<br>";
+						}
 
-			// 根據天氣條件生成按摩建議
-			echo "今日筋膜按摩建議：<br>";
+						// 按濕度條件
+						if ($humidity > 70) {
+							echo "- 濕度較高，容易感到疲勞，建議加強背部和肩頸的筋膜按摩。<br>";
+							echo "- 可搭配精油進行放鬆按摩，有助於緩解濕重的不適感。<br>";
+						} elseif ($humidity < 50) {
+							echo "- 濕度偏低，建議加強補水，搭配滾筒按摩改善筋膜的彈性。<br>";
+						}
 
-			// 按溫度條件
-			if ($temperature < 15) {
-				echo "- 天氣寒冷，建議先使用暖身墊加熱肩頸和下背部，再進行深層筋膜按摩。<br>";
-				echo "- 可重點放鬆膝關節周圍的筋膜，預防僵硬。<br>";
-				echo "- 按摩後穿著保暖衣物，避免按摩後肌肉受寒。<br>";
-			} elseif ($temperature >= 15 && $temperature < 25) {
-				echo "- 涼爽天氣，適合進行全身筋膜放鬆，搭配深層呼吸放鬆效果更佳。<br>";
-				echo "- 建議針對腿部和小腿，進行滾筒按摩，改善長時間靜止的僵硬感。<br>";
-				echo "- 可加入簡單的伸展運動，例如貓式伸展配合按摩。<br>";
-			} elseif ($temperature >= 25) {
-				echo "- 溫暖天氣，適合使用筋膜槍進行局部放鬆，例如肩膀和手臂。<br>";
-				echo "- 建議搭配步行或簡單運動後按摩效果更佳。<br>";
-				echo "- 注意補充水分，提升筋膜按摩的代謝效果。<br>";
-			}
+						// 按天氣描述
+						if (strpos($weatherDescription, "雨") !== false) {
+							echo "- 下雨天建議在室內進行全身放鬆按摩，重點針對下背部和膝關節。<br>";
+							echo "- 可使用熱敷配合滾筒，減少潮濕對肌肉的影響。<br>";
+						} elseif (strpos($weatherDescription, "晴") !== false) {
+							echo "- 晴天適合搭配戶外運動後進行筋膜放鬆，重點舒緩腿部肌群。<br>";
+							echo "- 使用筋膜槍針對運動後的僵硬部位，例如小腿和大腿外側。<br>";
+						} elseif (strpos($weatherDescription, "雲") !== false) {
+							echo "- 多雲天建議針對肩頸進行適度的深層按摩，放鬆緊繃感。<br>";
+						}
 
-			// 按濕度條件
-			if ($humidity > 70) {
-				echo "- 濕度較高，容易感到疲勞，建議加強背部和肩頸的筋膜按摩。<br>";
-				echo "- 可搭配精油進行放鬆按摩，有助於緩解濕重的不適感。<br>";
-			} elseif ($humidity < 50) {
-				echo "- 濕度偏低，建議加強補水，搭配滾筒按摩改善筋膜的彈性。<br>";
-			}
-
-			// 按天氣描述
-			if (strpos($weatherDescription, "雨") !== false) {
-				echo "- 下雨天建議在室內進行全身放鬆按摩，重點針對下背部和膝關節。<br>";
-				echo "- 可使用熱敷配合滾筒，減少潮濕對肌肉的影響。<br>";
-			} elseif (strpos($weatherDescription, "晴") !== false) {
-				echo "- 晴天適合搭配戶外運動後進行筋膜放鬆，重點舒緩腿部肌群。<br>";
-				echo "- 使用筋膜槍針對運動後的僵硬部位，例如小腿和大腿外側。<br>";
-			} elseif (strpos($weatherDescription, "雲") !== false) {
-				echo "- 多雲天建議針對肩頸進行適度的深層按摩，放鬆緊繃感。<br>";
-			}
-
-			// 按風速條件
-			if ($windSpeed > 10) {
-				echo "- 大風天氣可能增加肩頸緊繃感，建議重點按摩肩膀和上背部。<br>";
-				echo "- 可使用滾筒進行輕壓，配合熱敷效果更佳。<br>";
-			}
-		} else {
-			// 如果獲取數據失敗，顯示錯誤信息
-			echo "無法獲取天氣資訊，請檢查 API 設定或城市名稱。";
-		}
-		?>
-
+						// 按風速條件
+						if ($windSpeed > 10) {
+							echo "- 大風天氣可能增加肩頸緊繃感，建議重點按摩肩膀和上背部。<br>";
+							echo "- 可使用滾筒進行輕壓，配合熱敷效果更佳。<br>";
+						}
+					} else {
+						// 如果獲取數據失敗，顯示錯誤信息
+						echo "無法獲取天氣資訊，請檢查 API 設定或城市名稱。";
+					}
+						?>
+				</ul>
+			</div>
+		</div>
 
 
 
