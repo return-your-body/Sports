@@ -547,14 +547,16 @@ if (isset($_SESSION["帳號"])) {
                 $appointment_id = $row['appointment_id'];
 
                 echo "<tr>
-                            <td>{$shifttime}</td>
-                            <td>";
+              <td>{$shifttime}</td>
+              <td>";
                 if ($appointment_id) {
-                  echo "<a href='#' onclick='showAppointmentDetails({$appointment_id})'>{$name}</a>";
+                  // 修改成點擊跳轉到 `d_appointment_details.php` 頁面
+                  echo "<a href='d_appointment_details.php?id={$appointment_id}'>{$name}</a>";
                 } else {
                   echo $name;
                 }
-                echo "</td></tr>";
+                echo "</td>
+            </tr>";
               }
             } else {
               echo "<tr><td colspan='2'>當天無時段資料</td></tr>";
@@ -562,18 +564,8 @@ if (isset($_SESSION["帳號"])) {
             ?>
           </table>
 
-          <!-- 彈跳視窗模板 -->
-          <div id="appointmentModal">
-            <h3>預約詳情</h3>
-            <div id="appointmentContent">
-              <!-- 預約內容將通過 JavaScript 動態插入 -->
-            </div>
-            <button onclick="closeModal()">關閉</button>
-          </div>
-          <div id="modalOverlay" onclick="closeModal()"></div>
-        </div>
 
-      </div>
+        </div>
     </section>
 
 
