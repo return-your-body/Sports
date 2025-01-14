@@ -64,50 +64,6 @@ if (isset($_SESSION["帳號"])) {
 }
 
 //列印預約單
-require '../db.php'; // 引入資料庫連接
-                
-// 檢查是否有傳入 id
-if (!isset($_GET['id']) || empty($_GET['id'])) {
-  die("未傳入有效的預約 ID");
-}
-
-$appointment_id = mysqli_real_escape_string($link, $_GET['id']);
-
-// SQL 查詢
-$sql = "
-SELECT 
-a.appointment_id,
-p.name AS people_name,
-p.birthday AS people_birthday,
-CASE 
-WHEN p.gender_id = 1 THEN '男' 
-WHEN p.gender_id = 2 THEN '女' 
-ELSE '未設定' 
-END AS people_gender,
-ds.date AS appointment_date,
-st.shifttime AS appointment_time,
-d.doctor AS doctor_name
-FROM appointment a
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-WHERE a.appointment_id = '$appointment_id'
-";
-
-$result = mysqli_query($link, $sql);
-
-if (!$result || mysqli_num_rows($result) === 0) {
-  die("找不到對應的預約單資料");
-}
-
-// 取得查詢結果
-$data = mysqli_fetch_assoc($result);
-
-// 輸出結果進行調試
-// echo "<pre>";
-// print_r($data);
-// echo "</pre>";
 ?>
 
 
@@ -501,7 +457,52 @@ $data = mysqli_fetch_assoc($result);
             <!-- Bootstrap collapse-->
             <div class="accordion-custom-group accordion-custom-group-custom accordion-custom-group-corporate"
               id="accordion1" role="tablist" aria-multiselectable="false">
+
+
               <dl class="list-terms">
+                <?php
+                require '../db.php'; // 引入資料庫連接
+                
+                if (!isset($_GET['id']) || empty($_GET['id'])) {
+                  die("未傳入有效的預約 ID");
+                }
+
+                $appointment_id = mysqli_real_escape_string($link, $_GET['id']);
+
+                // SQL 查詢
+                $sql = "
+SELECT 
+    a.appointment_id,
+    p.name AS people_name,
+    p.birthday AS people_birthday,
+    CASE 
+        WHEN p.gender_id = 1 THEN '男' 
+        WHEN p.gender_id = 2 THEN '女' 
+        ELSE '未設定' 
+    END AS people_gender,
+    ds.date AS appointment_date,
+    st.shifttime AS appointment_time,
+    d.doctor AS doctor_name
+FROM appointment a
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN shifttime st ON ds.go = st.shifttime_id -- 確保欄位正確
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+WHERE a.appointment_id = '$appointment_id';
+";
+
+                $result = mysqli_query($link, $sql);
+
+                if (!$result) {
+                  die("SQL 執行錯誤: " . mysqli_error($link));
+                }
+
+                if (mysqli_num_rows($result) === 0) {
+                  die("沒有對應的資料");
+                }
+
+                $data = mysqli_fetch_assoc($result);
+                ?>
 
                 <div id="print-area">
                   <h1>預約單</h1>
@@ -514,10 +515,14 @@ $data = mysqli_fetch_assoc($result);
                   <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
                 </div>
                 <div class="button-container">
-                <button onclick="window.print()">列印預約單</button>
-                <button onclick="location.href='h_appointment-records.php'">返回</button>
+                  <button onclick="window.print()">列印預約單</button>
+                  <button onclick="location.href='h_appointment-records.php'">返回</button>
                 </div>
+
+
               </dl>
+
+
             </div>
           </div>
         </div>

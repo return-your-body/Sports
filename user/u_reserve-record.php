@@ -385,26 +385,32 @@ if (isset($_SESSION["帳號"])) {
 				<div class="row row-30 align-items-center justify-content-xxl-between">
 					<div class="col-md-10">
 						<?php
-						//查看預約資料
-						require '../db.php'; // 引入資料庫連接檔案
+						require '../db.php'; // 引入資料庫連接
 						
-						$帳號 = $_SESSION['帳號'];	// 取得登入帳號
+						if (!isset($_SESSION['帳號'])) {
+							die("請先登入");
+						}
+
+						$帳號 = $_SESSION['帳號']; // 取得登入帳號
 						
 						// 查詢該使用者的所有預約資料
 						$query = "
 SELECT 
     a.appointment_id, 
     COALESCE(p.name, '未知') AS patient_name, -- 患者姓名
-    COALESCE(g.gender, '未知') AS gender, -- 性別
+    CASE 
+        WHEN p.gender_id = 1 THEN '男' 
+        WHEN p.gender_id = 2 THEN '女' 
+        ELSE '未知' 
+    END AS gender, -- 性別
     COALESCE(p.birthday, '未知') AS birthday, -- 生日
     COALESCE(ds.date, '未知') AS appointment_date, -- 預約日期
-    COALESCE(st.shifttime, '未知') AS shifttime, -- 預約時段
+    COALESCE(st.shifttime, '未設定') AS shifttime, -- 預約時間段
     COALESCE(a.note, '無備註') AS note -- 備註
 FROM appointment a
 LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id -- 關聯班表
-LEFT JOIN shifttime st ON ds.shifttime_id = st.shifttime_id -- 關聯時段
+LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id -- 關聯時段
 LEFT JOIN people p ON a.people_id = p.people_id -- 關聯患者
-LEFT JOIN gender g ON p.gender_id = g.gender_id -- 關聯性別
 LEFT JOIN user u ON p.user_id = u.user_id -- 關聯使用者
 WHERE u.account = ?
 ORDER BY a.appointment_id DESC
@@ -441,7 +447,7 @@ ORDER BY a.appointment_id DESC
 										<td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
 									</tr>
 									<tr>
-										<th>預約時段</th>
+										<th>預約時間段</th>
 										<td><?php echo htmlspecialchars($row['shifttime']); ?></td>
 									</tr>
 									<tr>
@@ -453,6 +459,8 @@ ORDER BY a.appointment_id DESC
 						<?php else: ?>
 							<p style="text-align: center;">目前無預約記錄</p>
 						<?php endif; ?>
+
+
 
 					</div>
 				</div>

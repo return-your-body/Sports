@@ -365,8 +365,7 @@ if (isset($_SESSION["帳號"])) {
     <!-- 當天預約時段 -->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
-        <!-- <h3 style="text-align: center;">當天時段</h3> -->
-
+        <h3 style="text-align: center;">當天時段</h3>
         <?php
         session_start();
         require '../db.php';
@@ -395,143 +394,88 @@ if (isset($_SESSION["帳號"])) {
         $selected_year = isset($_GET['year']) ? $_GET['year'] : $current_year;
         $selected_month = isset($_GET['month']) ? $_GET['month'] : $current_month;
         $selected_day = isset($_GET['day']) ? $_GET['day'] : $current_day;
+        $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
 
         $selected_date = "$selected_year-$selected_month-$selected_day";
 
-        // 處理 AJAX 請求返回預約詳情
-        if (isset($_GET['appointment_id'])) {
-          // 設定 Content-Type 為 JSON
-          header('Content-Type: application/json');
+        // 每頁顯示筆數
+        $limit = 10;
+        $offset = ($page - 1) * $limit;
 
-          // 確保 appointment_id 是整數
-          $appointment_id = intval($_GET['appointment_id']);
-          error_log("Received Appointment ID: $appointment_id"); // 調試用
-        
-          // 資料庫查詢
-          $query = "
-        SELECT 
-            a.appointment_id, 
-            p.name, 
-            st.shifttime, 
-            a.note, 
-            a.created_at
-        FROM 
-            appointment a
-        LEFT JOIN 
-            people p ON a.people_id = p.people_id
-        LEFT JOIN 
-            shifttime st ON a.shifttime_id = st.shifttime_id
-        WHERE 
-            a.appointment_id = $appointment_id
-    ";
-          $result = mysqli_query($link, $query);
-
-          if ($result && $row = mysqli_fetch_assoc($result)) {
-            echo json_encode($row); // 返回 JSON 資料
-          } else {
-            echo json_encode(['error' => '找不到資料']); // 返回錯誤訊息
-          }
-          exit;
-        }
+        // 查詢總人數
+        $query_count = "
+        SELECT COUNT(*) AS total
+        FROM shifttime st
+        LEFT JOIN appointment a ON st.shifttime_id = a.shifttime_id
+        LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+        WHERE ds.date = '$selected_date'
+        AND ds.doctor_id = '$doctor_id'";
+        $result_count = mysqli_query($link, $query_count);
+        $total_rows = mysqli_fetch_assoc($result_count)['total'];
+        $total_pages = ceil($total_rows / $limit);
 
         // 查詢當天所有預約的資料
         $query_appointments = "
-    SELECT 
-        st.shifttime AS 時段,
-        IFNULL(p.name, '未預約') AS 預約人姓名,
-        a.appointment_id
-    FROM 
-        shifttime st
-    LEFT JOIN 
-        appointment a ON st.shifttime_id = a.shifttime_id
-    LEFT JOIN 
-        people p ON a.people_id = p.people_id
-    LEFT JOIN 
-        doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    WHERE 
-        ds.date = '$selected_date'
-        AND ds.doctor_id = '$doctor_id'
-";
+        SELECT 
+            st.shifttime AS 時段,
+            IFNULL(p.name, '未預約') AS 預約人姓名,
+            a.appointment_id
+        FROM 
+            shifttime st
+        LEFT JOIN 
+            appointment a ON st.shifttime_id = a.shifttime_id
+        LEFT JOIN 
+            people p ON a.people_id = p.people_id
+        LEFT JOIN 
+            doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+        WHERE 
+            ds.date = '$selected_date'
+            AND ds.doctor_id = '$doctor_id'
+        LIMIT $offset, $limit";
         $result_appointments = mysqli_query($link, $query_appointments);
         ?>
-        <script>
-          function showAppointmentDetails(appointmentId) {
-            console.log("Appointment ID:", appointmentId); // 調試用
-            fetch(`d_numberpeople.php?appointment_id=${appointmentId}`)
-              .then(response => {
-                if (!response.ok) {
-                  throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-              })
-              .then(data => {
-                console.log("Response Data:", data); // 調試用
-                const contentDiv = document.getElementById('appointmentContent');
-                if (data.error) {
-                  contentDiv.innerHTML = `<p>${data.error}</p>`;
-                } else {
-                  contentDiv.innerHTML = `
-                            <p>預約 ID：${data.appointment_id}</p>
-                            <p>姓名：${data.name}</p>
-                            <p>時段：${data.shifttime}</p>
-                            <p>備註：${data.note || '無'}</p>
-                            <p>建立時間：${data.created_at}</p>
-                        `;
-                }
-              })
-              .catch(error => {
-                console.error("Error fetching appointment:", error);
-                document.getElementById('appointmentContent').innerHTML = '無法獲取資料。';
-              });
-          }
-
-          function closeModal() {
-            document.getElementById('appointmentModal').style.display = 'none';
-            document.getElementById('modalOverlay').style.display = 'none';
-          }
-        </script>
 
         <div class="container">
-          <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px;text-align: center;">
-            治療師姓名：<?php echo $doctor_name; ?>
+          <!-- 日期選擇與查詢 -->
+          <form method="GET" action="" style="text-align: center; margin-bottom: 20px;">
+            <label for="year">年份：</label>
+            <select id="year" name="year">
+              <?php for ($year = $current_year - 5; $year <= $current_year + 5; $year++): ?>
+                <option value="<?php echo $year; ?>" <?php if ($year == $selected_year)
+                     echo 'selected'; ?>>
+                  <?php echo $year; ?>
+                </option>
+              <?php endfor; ?>
+            </select>
 
-            <!-- 日期選擇下拉選單 -->
-            <form method="GET" action="">
-              <label for="year">選擇年份：</label>
-              <select id="year" name="year">
-                <?php
-                for ($year = $current_year - 5; $year <= $current_year + 5; $year++) {
-                  $selected = ($year == $selected_year) ? 'selected' : '';
-                  echo "<option value='$year' $selected>$year</option>";
-                }
-                ?>
-              </select>
+            <label for="month">月份：</label>
+            <select id="month" name="month">
+              <?php for ($month = 1; $month <= 12; $month++): ?>
+                <option value="<?php echo str_pad($month, 2, '0', STR_PAD_LEFT); ?>" <?php if ($month == $selected_month)
+                        echo 'selected'; ?>>
+                  <?php echo $month; ?>
+                </option>
+              <?php endfor; ?>
+            </select>
 
-              <label for="month">選擇月份：</label>
-              <select id="month" name="month">
-                <?php
-                for ($month = 1; $month <= 12; $month++) {
-                  $month_padded = str_pad($month, 2, '0', STR_PAD_LEFT);
-                  $selected = ($month_padded == $selected_month) ? 'selected' : '';
-                  echo "<option value='$month_padded' $selected>$month</option>";
-                }
-                ?>
-              </select>
+            <label for="day">日期：</label>
+            <select id="day" name="day">
+              <?php for ($day = 1; $day <= 31; $day++): ?>
+                <option value="<?php echo str_pad($day, 2, '0', STR_PAD_LEFT); ?>" <?php if ($day == $selected_day)
+                        echo 'selected'; ?>>
+                  <?php echo $day; ?>
+                </option>
+              <?php endfor; ?>
+            </select>
 
-              <label for="day">選擇日期：</label>
-              <select id="day" name="day">
-                <?php
-                for ($day = 1; $day <= 31; $day++) {
-                  $day_padded = str_pad($day, 2, '0', STR_PAD_LEFT);
-                  $selected = ($day_padded == $selected_day) ? 'selected' : '';
-                  echo "<option value='$day_padded' $selected>$day</option>";
-                }
-                ?>
-              </select>
+            <button type="submit">查詢</button>
+          </form>
 
-              <button type="submit">查詢</button>
-            </form>
+          <!-- 總人數顯示 -->
+          <div style="text-align: center; margin-bottom: 10px;">
+            <strong>總人數：<?php echo $total_rows; ?></strong>
           </div>
+
 
           <!-- 顯示預約時段和姓名 -->
           <table border="1" style="width: 100%; text-align: center; border-collapse: collapse; margin-top: 20px;">
@@ -547,14 +491,15 @@ if (isset($_SESSION["帳號"])) {
                 $appointment_id = $row['appointment_id'];
 
                 echo "<tr>
-                            <td>{$shifttime}</td>
-                            <td>";
+                                <td>{$shifttime}</td>
+                                <td>";
                 if ($appointment_id) {
-                  echo "<a href='#' onclick='showAppointmentDetails({$appointment_id})'>{$name}</a>";
+                  echo "<a href='d_appointment_details.php?id={$appointment_id}'>{$name}</a>";
                 } else {
                   echo $name;
                 }
-                echo "</td></tr>";
+                echo "</td>
+                              </tr>";
               }
             } else {
               echo "<tr><td colspan='2'>當天無時段資料</td></tr>";
@@ -562,19 +507,22 @@ if (isset($_SESSION["帳號"])) {
             ?>
           </table>
 
-          <!-- 彈跳視窗模板 -->
-          <div id="appointmentModal">
-            <h3>預約詳情</h3>
-            <div id="appointmentContent">
-              <!-- 預約內容將通過 JavaScript 動態插入 -->
-            </div>
-            <button onclick="closeModal()">關閉</button>
+          <!-- 分頁按鈕 -->
+          <div style="text-align: center; margin-top: 20px;">
+            <?php if ($page > 1): ?>
+              <a
+                href="?year=<?php echo $selected_year; ?>&month=<?php echo $selected_month; ?>&day=<?php echo $selected_day; ?>&page=<?php echo $page - 1; ?>">上一頁</a>
+            <?php endif; ?>
+            <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁</span>
+            <?php if ($page < $total_pages): ?>
+              <a
+                href="?year=<?php echo $selected_year; ?>&month=<?php echo $selected_month; ?>&day=<?php echo $selected_day; ?>&page=<?php echo $page + 1; ?>">下一頁</a>
+            <?php endif; ?>
           </div>
-          <div id="modalOverlay" onclick="closeModal()"></div>
         </div>
-
       </div>
     </section>
+
 
 
     <!--頁尾-->
