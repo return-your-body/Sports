@@ -221,6 +221,36 @@ if (isset($_SESSION["帳號"])) {
 			text-decoration: underline;
 			/* 懸停時增加下劃線效果 */
 		}
+
+		.weather-info {
+			position: absolute;
+			top: 10px;
+			right: 20px;
+			display: flex;
+			align-items: center;
+			background: rgba(255, 255, 255, 0.8);
+			padding: 5px 10px;
+			border-radius: 10px;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			font-family: Arial, sans-serif;
+		}
+
+		.weather-info img {
+			width: 40px;
+			height: 40px;
+			margin-right: 8px;
+		}
+
+		.weather-temp {
+			font-size: 18px;
+			font-weight: bold;
+			color: #333;
+		}
+
+		.weather-error {
+			color: red;
+			font-size: 16px;
+		}
 	</style>
 </head>
 
@@ -437,7 +467,50 @@ if (isset($_SESSION["帳號"])) {
 			echo "溫度：{$temperature}°C<br>";
 			echo "天氣描述：{$weatherDescription}<br>";
 			echo "濕度：{$humidity}%<br>";
-			echo "風速：{$windSpeed} m/s<br>";
+			echo "風速：{$windSpeed} m/s<br><br>";
+
+			// 根據天氣條件生成按摩建議
+			echo "今日筋膜按摩建議：<br>";
+
+			// 按溫度條件
+			if ($temperature < 15) {
+				echo "- 天氣寒冷，建議先使用暖身墊加熱肩頸和下背部，再進行深層筋膜按摩。<br>";
+				echo "- 可重點放鬆膝關節周圍的筋膜，預防僵硬。<br>";
+				echo "- 按摩後穿著保暖衣物，避免按摩後肌肉受寒。<br>";
+			} elseif ($temperature >= 15 && $temperature < 25) {
+				echo "- 涼爽天氣，適合進行全身筋膜放鬆，搭配深層呼吸放鬆效果更佳。<br>";
+				echo "- 建議針對腿部和小腿，進行滾筒按摩，改善長時間靜止的僵硬感。<br>";
+				echo "- 可加入簡單的伸展運動，例如貓式伸展配合按摩。<br>";
+			} elseif ($temperature >= 25) {
+				echo "- 溫暖天氣，適合使用筋膜槍進行局部放鬆，例如肩膀和手臂。<br>";
+				echo "- 建議搭配步行或簡單運動後按摩效果更佳。<br>";
+				echo "- 注意補充水分，提升筋膜按摩的代謝效果。<br>";
+			}
+
+			// 按濕度條件
+			if ($humidity > 70) {
+				echo "- 濕度較高，容易感到疲勞，建議加強背部和肩頸的筋膜按摩。<br>";
+				echo "- 可搭配精油進行放鬆按摩，有助於緩解濕重的不適感。<br>";
+			} elseif ($humidity < 50) {
+				echo "- 濕度偏低，建議加強補水，搭配滾筒按摩改善筋膜的彈性。<br>";
+			}
+
+			// 按天氣描述
+			if (strpos($weatherDescription, "雨") !== false) {
+				echo "- 下雨天建議在室內進行全身放鬆按摩，重點針對下背部和膝關節。<br>";
+				echo "- 可使用熱敷配合滾筒，減少潮濕對肌肉的影響。<br>";
+			} elseif (strpos($weatherDescription, "晴") !== false) {
+				echo "- 晴天適合搭配戶外運動後進行筋膜放鬆，重點舒緩腿部肌群。<br>";
+				echo "- 使用筋膜槍針對運動後的僵硬部位，例如小腿和大腿外側。<br>";
+			} elseif (strpos($weatherDescription, "雲") !== false) {
+				echo "- 多雲天建議針對肩頸進行適度的深層按摩，放鬆緊繃感。<br>";
+			}
+
+			// 按風速條件
+			if ($windSpeed > 10) {
+				echo "- 大風天氣可能增加肩頸緊繃感，建議重點按摩肩膀和上背部。<br>";
+				echo "- 可使用滾筒進行輕壓，配合熱敷效果更佳。<br>";
+			}
 		} else {
 			// 如果獲取數據失敗，顯示錯誤信息
 			echo "無法獲取天氣資訊，請檢查 API 設定或城市名稱。";
