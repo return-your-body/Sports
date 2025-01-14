@@ -479,11 +479,6 @@ if (isset($_SESSION["帳號"])) {
       </div>
     </section>
 
-    <?php
-    $stmt->close();
-    $count_stmt->close();
-    $link->close();
-    ?>
 
     <!--預約紀錄-->
 

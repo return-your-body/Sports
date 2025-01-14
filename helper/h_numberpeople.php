@@ -360,7 +360,7 @@ if (isset($_SESSION["帳號"])) {
           exit;
         }
 
-        // 查詢醫生列表（使用預備語句防止SQL注入）
+        // 查詢醫生列表
         $doctor_list_query = "
         SELECT d.doctor_id, d.doctor
         FROM doctor d
@@ -379,14 +379,35 @@ if (isset($_SESSION["帳號"])) {
         $current_day = date('d');
 
         // 接收 GET 參數並進行基本驗證
-        $selected_year = isset($_GET['year']) && is_numeric($_GET['year']) ? $_GET['year'] : $current_year;
-        $selected_month = isset($_GET['month']) && is_numeric($_GET['month']) ? str_pad($_GET['month'], 2, '0', STR_PAD_LEFT) : $current_month;
-        $selected_day = isset($_GET['day']) && is_numeric($_GET['day']) ? str_pad($_GET['day'], 2, '0', STR_PAD_LEFT) : $current_day;
-        $doctor_id = isset($_GET['doctor_id']) && is_numeric($_GET['doctor_id']) ? $_GET['doctor_id'] : 0;
-
+        $selected_year = isset($_GET['year']) ? $_GET['year'] : $current_year;
+        $selected_month = isset($_GET['month']) ? $_GET['month'] : $current_month;
+        $selected_day = isset($_GET['day']) ? $_GET['day'] : $current_day;
+        $doctor_id = isset($_GET['doctor_id']) ? $_GET['doctor_id'] : 0;
         $selected_date = "$selected_year-$selected_month-$selected_day";
 
-        // 查詢當天時段與預約
+        // 分頁處理
+        $limit = 10; // 每頁顯示筆數
+        $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+        if ($page < 1)
+          $page = 1;
+        $offset = ($page - 1) * $limit;
+
+        // 查詢總人數統計
+        $count_query = "
+        SELECT COUNT(*) AS total
+        FROM shifttime st
+        LEFT JOIN appointment a ON st.shifttime_id = a.shifttime_id
+        LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+        WHERE ds.date = ? AND ds.doctor_id = ?";
+        $stmt = mysqli_prepare($link, $count_query);
+        mysqli_stmt_bind_param($stmt, 'si', $selected_date, $doctor_id);
+        mysqli_stmt_execute($stmt);
+        $count_result = mysqli_stmt_get_result($stmt);
+        $total_rows = mysqli_fetch_assoc($count_result)['total'];
+        $total_pages = ceil($total_rows / $limit);
+        mysqli_stmt_close($stmt);
+
+        // 查詢當天時段與預約資料（分頁）
         $query_appointments = "
         SELECT 
             st.shifttime AS 時段, 
@@ -397,10 +418,10 @@ if (isset($_SESSION["帳號"])) {
         LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
         LEFT JOIN people p ON a.people_id = p.people_id
         WHERE ds.date = ? AND ds.doctor_id = ?
-        ORDER BY st.shifttime;
-        ";
+        ORDER BY st.shifttime
+        LIMIT ?, ?";
         $stmt = mysqli_prepare($link, $query_appointments);
-        mysqli_stmt_bind_param($stmt, 'si', $selected_date, $doctor_id);
+        mysqli_stmt_bind_param($stmt, 'siii', $selected_date, $doctor_id, $offset, $limit);
         mysqli_stmt_execute($stmt);
         $result_appointments = mysqli_stmt_get_result($stmt);
         ?>
@@ -451,6 +472,11 @@ if (isset($_SESSION["帳號"])) {
           <button type="submit">查詢</button>
         </form>
 
+        <!-- 總人數顯示 -->
+        <div style="text-align: center; margin-bottom: 10px;">
+          <strong>總人數：<?php echo $total_rows; ?></strong>
+        </div>
+
         <!-- 顯示預約資料 -->
         <table border="1" style="width: 100%; text-align: center; margin-top: 20px; border-collapse: collapse;">
           <tr style="background-color: #f2f2f2;">
@@ -478,10 +504,24 @@ if (isset($_SESSION["帳號"])) {
             </tr>
           <?php endif; ?>
         </table>
+        
+        <!-- 分頁按鈕 -->
+        <div style="text-align: center; margin-top: 20px;">
+          <?php if ($page > 1): ?>
+            <a
+              href="?year=<?php echo $selected_year; ?>&month=<?php echo $selected_month; ?>&day=<?php echo $selected_day; ?>&page=<?php echo $page - 1; ?>">上一頁</a>
+          <?php endif; ?>
+          <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁</span>
+          <?php if ($page < $total_pages): ?>
+            <a
+              href="?year=<?php echo $selected_year; ?>&month=<?php echo $selected_month; ?>&day=<?php echo $selected_day; ?>&page=<?php echo $page + 1; ?>">下一頁</a>
+          <?php endif; ?>
+        </div>
 
         <?php mysqli_close($link); ?>
       </div>
     </section>
+
 
 
 
