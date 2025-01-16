@@ -427,6 +427,7 @@ if (isset($_GET['fetch'])) {
 			</select>
 
 			<a href="">數據</a>
+			<!-- <a href="a_therapist2.php">預約用戶資料</a> -->
 
 		</div>
 		<table class="table-custom table-color-header table-custom-bordered">
@@ -514,14 +515,14 @@ if (isset($_GET['fetch'])) {
 
 					// 保留你的判斷邏輯，並填入預約人數
 					if (isToday) {
-						// bookingInfo.textContent = `目前總人數：${appointments[cellDate] || 0}`;
-						bookingInfo.innerHTML = `<span class="highlight-red">目前總人數：${appointments[cellDate] || 0}</span>`;
+						bookingInfo.innerHTML = `<a href="a_therapist2.php?date=${cellDate}&type=today" class="highlight-red">目前總人數：${appointments[cellDate] || 0}</a>`;
 					} else if (isFuture) {
-						// bookingInfo.innerHTML = `<span class="highlight-red">目前預約人數：${appointments[cellDate] || 0}</span>`;
-						bookingInfo.textContent = `目前預約人數：${appointments[cellDate] || 0}`;
+						bookingInfo.innerHTML = `<a href="a_therapist2.php?date=${cellDate}&type=future">目前預約人數：${appointments[cellDate] || 0}</a>`;
 					} else {
-						bookingInfo.textContent = `總人數：${appointments[cellDate] || 0}`;
+						bookingInfo.innerHTML = `<a href="a_therapist2.php?date=${cellDate}&type=past">總人數：${appointments[cellDate] || 0}</a>`;
 					}
+
+
 
 					dateCell.appendChild(dateText);
 					dateCell.appendChild(bookingInfo);
@@ -553,7 +554,7 @@ if (isset($_GET['fetch'])) {
 			generateCalendar(currentYear, currentMonth);
 
 		</script>
-		
+
 
 		<!-- Global Mailform Output-->
 		<div class="snackbars" id="form-output-global"></div>
