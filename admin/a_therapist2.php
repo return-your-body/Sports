@@ -310,63 +310,31 @@ if (isset($_SESSION["帳號"])) {
 			</section>
 		</div>
 
-		<!-- Bordered Row Table -->
-		<section class="section section-lg bg-default text-center">
-			<div class="container">
-				<div class="row justify-content-sm-center">
-					<div class="col-md-10 col-xl-8">
-						<!-- 搜尋框與按鈕區塊 -->
-						<form class="search-form" method="GET" action="a_patient.php"
-							style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; width: 100%;">
-							<div style="flex: 4;">
-								<input class="form-input" type="text" name="search"
-									value="<?php echo htmlspecialchars($search); ?>" placeholder="請輸入醫生姓名" style="
-											padding: 10px 15px;          
-											font-size: 16px;             
-											width: 100%;                 
-											border: 1px solid #ccc;      
-											border-radius: 4px;          
-											outline: none;               
-											box-sizing: border-box;      
-										">
-							</div>
-							<div style="flex: 1;">
-								<button class="" type="submit" style="
-											padding: 10px 15px;           
-											font-size: 16px;              
-											width: 100%;                  
-											border: none;                 
-											border-radius: 4px;           
-											background-color: #00A896;    
-											color: white;                 
-											cursor: pointer;              
-											box-sizing: border-box;       
-											display: flex;                
-											align-items: center;          
-											justify-content: center;      
-											gap: 5px;                     
-										">
-									<span class="icon mdi mdi-magnify"></span>搜尋
-								</button>
-							</div>
-							<div style="flex: 1;">
-								<select name="rowsPerPage" onchange="this.form.submit()"
-									style="padding: 10px 15px; font-size: 16px; width: 100%; border: 1px solid #ccc; border-radius: 4px;">
-									<option value="3" <?php echo $rowsPerPage == 3 ? 'selected' : ''; ?>>3筆/頁</option>
-									<option value="5" <?php echo $rowsPerPage == 5 ? 'selected' : ''; ?>>5筆/頁</option>
-									<option value="10" <?php echo $rowsPerPage == 10 ? 'selected' : ''; ?>>10筆/頁</option>
-									<option value="20" <?php echo $rowsPerPage == 20 ? 'selected' : ''; ?>>20筆/頁</option>
-									<option value="25" <?php echo $rowsPerPage == 25 ? 'selected' : ''; ?>>25筆/頁</option>
-									<option value="50" <?php echo $rowsPerPage == 50 ? 'selected' : ''; ?>>50筆/頁</option>
-								</select>
-							</div>
-						</form>
+		<?php
+		// 引入資料庫連線檔案
+		require '../db.php';
 
-						<?php
-						require '../db.php'; // 引入資料庫連線檔案
-						
-						// 查詢資料庫中的預約資料，按照日期和時間排序
-						$query = "
+		// 接收前端傳遞的日期和治療師參數，並設置默認值
+		$filter_date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d'); // 默認為今日日期
+		$filter_doctor = isset($_GET['doctor_id']) ? $_GET['doctor_id'] : 'all'; // 默認為「所有治療師」
+		
+		// 構建查詢條件
+		$where_conditions = "1=1"; // 起始條件為 1=1，保證 SQL 查詢語法正確
+		
+		// 如果有日期參數，將其加入查詢條件，並防止 SQL 注入
+		if (!empty($filter_date)) {
+			$filter_date = mysqli_real_escape_string($link, $filter_date);
+			$where_conditions .= " AND doctorshift.date = '$filter_date'";
+		}
+
+		// 如果選擇了特定的治療師，將其加入查詢條件
+		if ($filter_doctor !== 'all') {
+			$filter_doctor = mysqli_real_escape_string($link, $filter_doctor);
+			$where_conditions .= " AND doctorshift.doctor_id = '$filter_doctor'";
+		}
+
+		// 組合 SQL 查詢語句
+		$query = "
     SELECT
         doctorshift.date AS visit_date,        -- 看診日期
         shifttime.shifttime AS visit_time,    -- 看診時間
@@ -383,25 +351,101 @@ if (isset($_SESSION["帳號"])) {
         doctorshift ON appointment.doctorshift_id = doctorshift.doctorshift_id
     JOIN
         doctor ON doctorshift.doctor_id = doctor.doctor_id
+    WHERE
+        $where_conditions
     ORDER BY
         doctorshift.date ASC,               -- 按日期升序排序
         shifttime.shifttime ASC             -- 按時間升序排序
 ";
 
-						$result = mysqli_query($link, $query);
-						if (!$result) {
-							die("查詢失敗：" . mysqli_error($link));
-						}
+		// 執行 SQL 查詢，並檢查是否有錯誤
+		$result = mysqli_query($link, $query);
+		if (!$result) {
+			die("查詢失敗：" . mysqli_error($link)); // 如果查詢失敗，輸出錯誤訊息
+		}
 
-						$appointments = [];
-						while ($row = mysqli_fetch_assoc($result)) {
-							$appointments[] = $row;
-						}
+		// 初始化一個空的陣列來存儲查詢結果
+		$appointments = [];
+		while ($row = mysqli_fetch_assoc($result)) {
+			$appointments[] = $row; // 將每一行數據添加到陣列中
+		}
 
-						mysqli_free_result($result);
-						?>
+		// 釋放查詢結果資源
+		mysqli_free_result($result);
 
-						<!-- 表格區域 -->
+		?>
+
+
+		<!-- Bordered Row Table -->
+		<section class="section section-lg bg-default text-center">
+			<div class="container">
+				<div class="row justify-content-sm-center">
+					<div class="col-md-10 col-xl-8">
+						<!-- 搜尋框與按鈕區塊 -->
+						<form class="search-form" method="GET" action="a_therapist2.php"
+							style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; width: 100%;">
+							<!-- 回到上一頁按鈕 -->
+
+							<a href="a_therapist.php" class="button button-xs button-primary button-nina">返回上一頁</a>
+
+							<label for="year">年份:</label>
+							<select id="year" name="year" onchange="filterByDate()"></select>
+
+							<label for="month">月份:</label>
+							<select id="month" name="month" onchange="filterByDate()"></select>
+
+							<label for="day">日期:</label>
+							<select id="day" name="day" onchange="filterByDate()"></select>
+							<!-- 選擇治療師 -->
+							<label for="the">治療師:</label>
+							<select id="the" name="doctor_id">
+								<!-- 新增「所有治療師」選項 -->
+								<option value="all">所有治療師</option>
+								<?php
+								include '../db.php'; // 引入資料庫連線檔案
+								
+								// 查詢等級為「醫生」的資料
+								$query = "
+        SELECT d.doctor_id, d.doctor
+        FROM doctor d
+        INNER JOIN user u ON d.user_id = u.user_id
+        INNER JOIN grade g ON u.grade_id = g.grade_id
+        WHERE g.grade_id = 2
+    ";
+								$result = mysqli_query($link, $query);
+
+								// 檢查查詢結果
+								if (!$result) {
+									echo "Error fetching doctor data: " . mysqli_error($link);
+									exit;
+								}
+
+								// 輸出查詢結果到下拉選單
+								while ($row = mysqli_fetch_assoc($result)) {
+									echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
+								}
+								?>
+							</select>
+
+
+							<div style="flex: 1;">
+								<select name="rowsPerPage" onchange="this.form.submit()"
+									style="padding: 10px 15px; font-size: 16px; width: 100%; border: 1px solid #ccc; border-radius: 4px;">
+									<option value="3" <?php echo $rowsPerPage == 3 ? 'selected' : ''; ?>>3筆/頁</option>
+									<option value="5" <?php echo $rowsPerPage == 5 ? 'selected' : ''; ?>>5筆/頁</option>
+									<option value="10" <?php echo $rowsPerPage == 10 ? 'selected' : ''; ?>>10筆/頁</option>
+									<option value="20" <?php echo $rowsPerPage == 20 ? 'selected' : ''; ?>>20筆/頁</option>
+									<option value="25" <?php echo $rowsPerPage == 25 ? 'selected' : ''; ?>>25筆/頁</option>
+									<option value="50" <?php echo $rowsPerPage == 50 ? 'selected' : ''; ?>>50筆/頁</option>
+								</select>
+							</div>
+						</form>
+
+
+
+
+
+						<!-- 表格渲染區域 -->
 						<div class="table-novi table-custom-responsive" style="font-size: 16px; overflow-x: auto;">
 							<table class="table-custom table-custom-bordered"
 								style="width: 100%; border-collapse: collapse;">
@@ -412,7 +456,7 @@ if (isset($_SESSION["帳號"])) {
 										<th style="padding: 10px; text-align: left;">患者姓名</th>
 										<th style="padding: 10px; text-align: left;">治療師姓名</th>
 										<th style="padding: 10px; text-align: left;">預約時間</th>
-										<th style="padding: 10px; text-align: left;">選項</th>
+										<th style="padding: 10px; text-align: center;">選項</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -420,15 +464,20 @@ if (isset($_SESSION["帳號"])) {
 										<?php foreach ($appointments as $appointment): ?>
 											<tr>
 												<td style="padding: 10px;">
-													<?php echo htmlspecialchars($appointment['visit_date']); ?></td>
+													<?php echo htmlspecialchars($appointment['visit_date']); ?>
+												</td>
 												<td style="padding: 10px;">
-													<?php echo htmlspecialchars($appointment['visit_time']); ?></td>
+													<?php echo htmlspecialchars($appointment['visit_time']); ?>
+												</td>
 												<td style="padding: 10px;">
-													<?php echo htmlspecialchars($appointment['patient_name']); ?></td>
+													<?php echo htmlspecialchars($appointment['patient_name']); ?>
+												</td>
 												<td style="padding: 10px;">
-													<?php echo htmlspecialchars($appointment['doctor_name']); ?></td>
+													<?php echo htmlspecialchars($appointment['doctor_name']); ?>
+												</td>
 												<td style="padding: 10px;">
-													<?php echo htmlspecialchars($appointment['appointment_time']); ?></td>
+													<?php echo htmlspecialchars($appointment['appointment_time']); ?>
+												</td>
 												<td style="padding: 10px; text-align: center;">
 													<button
 														style="padding: 6px 12px; font-size: 12px; border: none; background-color: #00A896; color: white; cursor: pointer; border-radius: 4px;">
@@ -439,12 +488,104 @@ if (isset($_SESSION["帳號"])) {
 										<?php endforeach; ?>
 									<?php else: ?>
 										<tr>
-											<td colspan="6" style="padding: 10px; text-align: center;">沒有找到符合條件的資料</td>
+											<td colspan="6" style="padding: 10px; text-align: center; color: #999;">
+												沒有找到符合條件的資料</td>
 										</tr>
 									<?php endif; ?>
 								</tbody>
 							</table>
 						</div>
+
+
+						<script>
+							const yearSelect = document.getElementById('year');
+							const monthSelect = document.getElementById('month');
+							const daySelect = document.getElementById('day');
+							const doctorSelect = document.getElementById('the'); // 治療師篩選
+
+							// 初始化 URL 參數
+							const urlParams = new URLSearchParams(window.location.search);
+							const selectedDate = urlParams.get('date') || new Date().toISOString().split('T')[0];
+							const selectedDoctor = urlParams.get('doctor_id') || 'all';
+							const [currentYear, currentMonth, currentDay] = selectedDate.split('-').map(Number);
+
+							// 初始化年份選單
+							for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+								const option = document.createElement('option');
+								option.value = year;
+								option.textContent = year;
+								if (year === currentYear) option.selected = true;
+								yearSelect.appendChild(option);
+							}
+
+							// 初始化月份選單
+							for (let month = 1; month <= 12; month++) {
+								const option = document.createElement('option');
+								option.value = String(month).padStart(2, '0');
+								option.textContent = String(month).padStart(2, '0');
+								if (month === currentMonth) option.selected = true;
+								monthSelect.appendChild(option);
+							}
+
+							// 更新日期選單
+							function updateDays() {
+								const year = parseInt(yearSelect.value);
+								const month = parseInt(monthSelect.value);
+								const daysInMonth = new Date(year, month, 0).getDate();
+
+								daySelect.innerHTML = '';
+								for (let day = 1; day <= daysInMonth; day++) {
+									const option = document.createElement('option');
+									option.value = String(day).padStart(2, '0');
+									option.textContent = String(day).padStart(2, '0');
+									if (day === currentDay && year === currentYear && month === currentMonth) {
+										option.selected = true;
+									}
+									daySelect.appendChild(option);
+								}
+							}
+
+							// 篩選功能
+							function filterByDate() {
+								const selectedYear = document.getElementById('year').value;
+								const selectedMonth = document.getElementById('month').value.padStart(2, '0');
+								const selectedDay = document.getElementById('day').value.padStart(2, '0');
+								const selectedDate = `${selectedYear}-${selectedMonth}-${selectedDay}`;
+								const selectedDoctor = document.getElementById('the').value;
+
+								// 重定向到新 URL，帶有篩選參數
+								window.location.href = `a_therapist2.php?date=${selectedDate}&doctor_id=${selectedDoctor}`;
+							}
+
+
+
+							// 初始化治療師選單
+							if (doctorSelect) {
+								Array.from(doctorSelect.options).forEach((option) => {
+									if (option.value === selectedDoctor) {
+										option.selected = true;
+									}
+								});
+							}
+
+							// 綁定事件
+							yearSelect.addEventListener('change', () => {
+								updateDays();
+								filterByDate();
+							});
+
+							monthSelect.addEventListener('change', () => {
+								updateDays();
+								filterByDate();
+							});
+
+							daySelect.addEventListener('change', filterByDate);
+							doctorSelect.addEventListener('change', filterByDate);
+
+							// 初始化日期選單
+							updateDays();
+						</script>
+
 
 						<!-- 分頁顯示區域 -->
 						<div id="pagination"
