@@ -793,29 +793,14 @@ WHERE
       <!-- 彈窗結構 -->
       <div id="appointment-modal" class="modal">
         <div class="modal-content">
-          <!-- 彈窗右上角的關閉按鈕 -->
-          <span class="close" onclick="closeModal()">&times;</span>
-          <!-- 彈窗的標題 -->
+          <span class="close">&times;</span>
           <h3 id="modal-title"></h3>
-          <!-- 時間段容器 -->
           <div id="time-slots"></div>
         </div>
       </div>
 
-
+      <!-- CSS 樣式 -->
       <style>
-        /* 彈窗樣式 */
-        .modal {
-          display: none;
-          position: fixed;
-          z-index: 1000;
-          left: 0;
-          top: 0;
-          width: 100%;
-          height: 100%;
-          background-color: rgba(0, 0, 0, 0.4);
-        }
-
         .modal-content {
           background-color: white;
           margin: 10% auto;
@@ -825,14 +810,10 @@ WHERE
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
 
-        .close {
-          float: right;
-          font-size: 24px;
-          cursor: pointer;
-        }
-
         #modal-title {
           font-size: 18px;
+          font-weight: normal;
+          color: #333;
           text-align: center;
           margin-bottom: 20px;
         }
@@ -840,172 +821,132 @@ WHERE
         #time-slots {
           display: grid;
           grid-template-columns: repeat(6, 1fr);
-          gap: 10px;
+          gap: 15px;
+          justify-items: center;
+          align-items: center;
+          margin-top: 20px;
         }
 
         #time-slots div {
-          text-align: center;
-          border: 1px solid #ddd;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
           padding: 10px;
+          border: 1px solid #ddd;
           border-radius: 5px;
+          background-color: #f9f9f9;
+          width: 80px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #time-slots span {
+          font-size: 14px;
+          color: #333;
         }
 
         .reserve-btn {
-          background-color: #008cba;
+          background-color: #008CBA;
           color: white;
-          padding: 5px 10px;
           border: none;
-          border-radius: 3px;
+          padding: 5px 10px;
+          font-size: 12px;
           cursor: pointer;
+          border-radius: 3px;
+          margin-top: 5px;
         }
 
-        .reserve-btn.disabled {
-          background-color: #ccc;
+        .reserve-btn[disabled] {
+          background-color: #ddd;
           cursor: not-allowed;
+        }
+
+        .reserve-btn:hover:not([disabled]) {
+          background-color: #005f7f;
         }
       </style>
 
-
+      <!-- JavaScript -->
       <script>
-        // 取得彈窗相關元素
-        const modal = document.getElementById("appointment-modal"); // 彈窗主體
-        const modalTitle = document.getElementById("modal-title"); // 彈窗標題
-        const timeSlotsContainer = document.getElementById("time-slots"); // 時間段容器
+        const modal = document.getElementById("appointment-modal");
+        const modalTitle = document.getElementById("modal-title");
+        const timeSlotsContainer = document.getElementById("time-slots");
 
         /**
-         * 打開彈窗，顯示時間段
-         * @param {string} doctor - 醫生名稱
-         * @param {string} date - 預約日期 (YYYY-MM-DD)
-         * @param {string} startTime - 上班時間 (HH:mm 格式)
-         * @param {string} endTime - 下班時間 (HH:mm 格式)
+         * 打開彈窗並顯示時間段
+         * @param {number} doctorId 醫生 ID
+         * @param {string} date 日期 (格式：YYYY-MM-DD)
          */
-        function openModal(doctor, date, startTime, endTime) {
-          if (!doctor || !date || !startTime || !endTime) {
-            console.error("缺少必要參數，無法生成時間段");
-            return;
-          }
+        function openModal(doctorId, date) {
+          modalTitle.textContent = `醫生：${doctorId} 日期：${date}`;
+          timeSlotsContainer.innerHTML = "";
 
-          // 設置彈窗標題
-          modalTitle.textContent = `醫生：${doctor} 日期：${date}`;
-          timeSlotsContainer.innerHTML = ""; // 清空之前的時間段
+          fetch("檢查預約.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `doctor_id=${doctorId}&date=${date}`
+          })
+            .then(response => response.json())
+            .then(data => {
+              console.log("伺服器返回的時段資料：", data);
+              if (data.success) {
+                data.timeslots.forEach(slot => {
+                  const slotElement = document.createElement("div");
+                  const button = document.createElement("button");
+                  button.className = "reserve-btn";
+                  button.textContent = slot.status;
 
-          // 將時間字串轉換為 Date 對象
-          let current = new Date(`${date}T${startTime}`);
-          const end = new Date(`${date}T${endTime}`);
-
-          if (current >= end) {
-            console.error("開始時間必須小於結束時間");
-            return;
-          }
-
-          // 動態生成每 20 分鐘的時間段
-          while (current < end) {
-            const timeSlot = current.toTimeString().slice(0, 5); // 格式化為 HH:mm
-            const slotElement = document.createElement("div"); // 每個時間段的容器
-            slotElement.innerHTML = `
-            <span>${timeSlot}</span>
-            <button class="reserve-btn" id="btn-${timeSlot.replace(':', '-')}" disabled>檢查中...</button>
-        `;
-
-            // 添加到容器中
-            timeSlotsContainer.appendChild(slotElement);
-
-            // 檢查是否該時段已被預約
-            checkAvailability(doctor, date, timeSlot);
-
-            // 加 20 分鐘
-            current = new Date(current.getTime() + 20 * 60000);
-          }
-
-          modal.style.display = "block"; // 顯示彈窗
-        }
-
-        /**
-         * 檢查某個時間段是否已被預約
-         * @param {string} doctor - 醫生名稱
-         * @param {string} date - 預約日期
-         * @param {string} timeSlot - 時間段 (格式: HH:mm)
-         */
-        function checkAvailability(doctor, date, timeSlot) {
-          const xhr = new XMLHttpRequest();
-          xhr.open("POST", "檢查預約.php", true);
-          xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-
-          xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-              const button = document.getElementById(`btn-${timeSlot.replace(':', '-')}`);
-              if (xhr.status === 200) {
-                try {
-                  const response = JSON.parse(xhr.responseText);
-                  if (response.available) {
-                    button.textContent = "預約";
-                    button.disabled = false;
-                    button.onclick = () => reserve(doctor, date, timeSlot);
-                  } else {
-                    button.textContent = "額滿";
+                  // 根據 status 設置按鈕狀態
+                  if (slot.status === "額滿") {
                     button.disabled = true;
-                    button.style.cursor = "not-allowed";
+                    button.style.backgroundColor = "#ddd"; // 額滿按鈕樣式
+                  } else {
+                    button.addEventListener("click", () => reserve(doctorId, date, slot.time));
                   }
-                } catch (error) {
-                  console.error("JSON 解析錯誤：", error);
-                  button.textContent = "錯誤";
-                  button.disabled = true;
-                }
-              } else {
-                console.error("伺服器錯誤：", xhr.status, xhr.statusText);
-                button.textContent = "錯誤";
-                button.disabled = true;
-              }
-            }
-          };
 
-          const params = `doctor=${encodeURIComponent(doctor)}&date=${date}&time=${timeSlot}`;
-          xhr.send(params);
+                  slotElement.innerHTML = `<span>${slot.time}</span>`;
+                  slotElement.appendChild(button);
+                  timeSlotsContainer.appendChild(slotElement);
+                });
+              } else {
+                alert(data.message);
+              }
+            })
+            .catch(error => console.error("錯誤：", error));
+
+          modal.style.display = "block";
         }
 
         /**
-         * 預約功能，將醫生、日期和時間的資訊發送到伺服器進行處理
-         * @param {string} doctor - 醫生名稱
-         * @param {string} date - 預約日期 (格式: YYYY-MM-DD)
-         * @param {string} time - 預約時間 (格式: HH:mm)
+         * 預約操作
+         * @param {number} doctorId 醫生 ID
+         * @param {string} date 日期
+         * @param {string} time 時間
          */
-        function reserve(doctor, date, time) {
-          if (confirm(`確定要預約？\n醫生：${doctor}\n日期：${date}\n時間：${time}`)) {
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", "預約.php", true);
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-
-            xhr.onreadystatechange = function () {
-              if (xhr.readyState === 4 && xhr.status === 200) {
-                try {
-                  const response = JSON.parse(xhr.responseText);
-                  if (response.success) {
-                    alert(response.message);
-                    modal.style.display = "none"; // 關閉彈窗
-                  } else {
-                    alert(response.message);
-                  }
-                } catch (error) {
-                  console.error("JSON 解析錯誤：", error);
-                  alert("伺服器回應錯誤，請稍後再試。");
+        function reserve(doctorId, date, time) {
+          if (confirm(`確定要預約 ${date} ${time} 時段？`)) {
+            fetch("預約處理.php", {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: `doctor_id=${doctorId}&date=${date}&time=${time}`
+            })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  alert(data.message);
+                  openModal(doctorId, date); // 刷新按鈕狀態
+                } else {
+                  alert(data.message); // 顯示錯誤信息
                 }
-              } else if (xhr.readyState === 4) {
-                console.error("伺服器錯誤：", xhr.status, xhr.statusText);
-                alert("伺服器錯誤，請稍後再試。");
-              }
-            };
-
-            const params = `doctor=${encodeURIComponent(doctor)}&date=${date}&time=${time}`;
-            xhr.send(params);
+              })
+              .catch(error => console.error("錯誤：", error));
           }
         }
 
-        // 關閉彈窗功能
         document.querySelector(".close").onclick = () => {
-          modal.style.display = "none"; // 隱藏彈窗
+          modal.style.display = "none";
         };
 
-        window.onclick = (event) => {
+        window.onclick = event => {
           if (event.target === modal) {
             modal.style.display = "none";
           }
@@ -1013,8 +954,6 @@ WHERE
 
 
       </script>
-
-
 
 
       <!-- 預約-->
