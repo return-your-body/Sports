@@ -60,29 +60,6 @@ if (isset($_SESSION["帳號"])) {
 }
 
 //預約
-// 查詢姓名 (people)
-$query_people = "SELECT people_id, name FROM people";
-$result_people = mysqli_query($link, $query_people);
-if (!$result_people) {
-  die("查詢姓名失敗: " . mysqli_error($link));
-}
-
-// 查詢預約時間 (shifttime)
-$query_shifttime = "SELECT shifttime_id, shifttime FROM shifttime";
-$result_shifttime = mysqli_query($link, $query_shifttime);
-if (!$result_shifttime) {
-  die("查詢時間失敗: " . mysqli_error($link));
-}
-
-// 查詢醫生姓名 (doctor)
-$query_doctor = "SELECT doctor.doctor_id, doctor.doctor 
-     FROM doctor
-     INNER JOIN user ON doctor.user_id = user.user_id
-     WHERE user.grade_id = 2";
-$result_doctor = mysqli_query($link, $query_doctor);
-if (!$result_doctor) {
-  die("查詢醫生失敗: " . mysqli_error($link));
-}
 ?>
 
 <!DOCTYPE html>
@@ -291,31 +268,66 @@ if (!$result_doctor) {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
 
-    /* 醫生班表 */
-    .table-custom {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
+
+
+    /* 預約 */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
     }
 
-    .table-custom th,
-    .table-custom td {
+    .form-container {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-label {
+      font-weight: bold;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .form-control,
+    .form-select {
       border: 1px solid #ddd;
-      text-align: left;
-      /* 文字靠左對齊 */
-      padding: 8px;
-      white-space: nowrap;
+      border-radius: 5px;
+      padding: 10px;
+      font-size: 14px;
+      width: 100%;
+      background-color: #f9f9f9;
+      box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.1);
     }
 
-    .table-custom th {
-      background-color: #00a79d;
-      color: white;
+    .form-control:focus,
+    .form-select:focus {
+      border-color: #007bff;
+      outline: none;
+      box-shadow: 0px 0px 5px rgba(0, 123, 255, 0.5);
+    }
+
+    textarea.form-control {
+      resize: none;
+    }
+
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+
+    .text-center {
       text-align: center;
-    }
-
-    .reservation-info {
-      color: red;
-      margin-top: 5px;
     }
   </style>
 </head>
@@ -369,7 +381,15 @@ if (!$result_doctor) {
             <div class="rd-navbar-nav-wrap">
               <ul class="rd-navbar-nav">
                 <li class="rd-nav-item"><a class="rd-nav-link" href="d_index.php">首頁</a></li>
-                <li class="rd-nav-item active"><a class="rd-nav-link" href="d_appointment.php">預約</a></li>
+
+                <li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
+                  <ul class="rd-menu rd-navbar-dropdown">
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_people.php">使用者資料</a>
+                    </li>
+                  </ul>
+                </li>
+
+                <!-- <li class="rd-nav-item active"><a class="rd-nav-link" href="d_appointment.php">預約</a></li> -->
 
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">班表</a>
                   <ul class="rd-menu rd-navbar-dropdown">
@@ -472,518 +492,153 @@ if (!$result_doctor) {
     </div>
     <!--標題-->
 
-    <!-- 預約-->
-    <!-- <section class="section section-lg novi-bg novi-bg-img bg-default">
+    <!-- 預約 -->
+    <?php
+    session_start();
+    require '../db.php'; // 引入資料庫連線
+    
+    // 驗證參數
+    if (!isset($_GET['id']) || empty($_GET['id'])) {
+      die("無效的使用者 ID");
+    }
+    $user_id = intval($_GET['id']);
+
+    // 查詢使用者資料
+    $query = "SELECT * FROM `people` WHERE `user_id` = ?";
+    $stmt = $link->prepare($query);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows == 0) {
+      die("找不到使用者資料");
+    }
+    $user = $result->fetch_assoc();
+    $_SESSION['user_name'] = $user['name'];
+
+    ?>
+    <section class="section section-lg novi-bg novi-bg-img bg-default">
       <div class="container">
-        <div class="row row-40 row-lg-50">
-          <div class="form-container">
-            <h3 style="text-align: center;">預約表單</h3>
+        <div class="row justify-content-center">
+          <div class="col-lg-6 col-md-8">
+            <div class="form-container shadow-lg p-4 rounded bg-light">
+              <h3 class="text-center mb-4">預約表單</h3>
+              <form action="預約.php" method="post">
+                <!-- 使用者姓名 -->
+                <div class="form-group mb-3">
+                  <label for="people_name" class="form-label">姓名：</label>
+                  <input type="text" id="people_name" name="people_name" class="form-control"
+                    value="<?= htmlspecialchars($_SESSION['user_name']); ?>" readonly required />
+                </div>
 
-            <form action="預約.php" method="post">
-              <label for="people_id">姓名：</label>
-              <select id="people_id" name="people_id" required>
-                <option value="">請選擇姓名</option>
-                <?php while ($row = mysqli_fetch_assoc($result_people)): ?>
-                  <option value="<?= htmlspecialchars($row['people_id']); ?>">
-                    <?= htmlspecialchars($row['name']); ?>
-                  </option>
-                <?php endwhile; ?>
-              </select>
+                <!-- 醫生姓名 -->
+                <div class="form-group mb-3">
+                  <label for="doctor_name" class="form-label">醫生姓名：</label>
+                  <input type="text" id="doctor_name" name="doctor_name" class="form-control" value="吳孟軒" readonly
+                    required />
+                </div>
 
-              <label for="date">預約日期：</label>
-              <input type="date" id="date" name="date" required min="<?= date('Y-m-d'); ?>">
+                <!-- 預約日期 -->
+                <div class="form-group mb-3">
+                  <label for="date" class="form-label">預約日期：</label>
+                  <input type="date" id="date" name="date" class="form-control" onchange="fetchAvailableTimes()"
+                    required min="<?= date('Y-m-d'); ?>" max="<?= date('Y-m-d', strtotime('+30 days')); ?>" />
+                </div>
 
-              <label for="time">預約時間：</label>
-              <select id="time" name="time" required>
-                <option value="">請選擇時間</option>
-                <?php while ($row = mysqli_fetch_assoc($result_shifttime)): ?>
-                  <option value="<?= htmlspecialchars($row['shifttime_id']); ?>">
-                    <?= htmlspecialchars($row['shifttime']); ?>
-                  </option>
-                <?php endwhile; ?>
-              </select>
+                <!-- 預約時間 -->
+                <div class="form-group mb-3">
+                  <label for="time" class="form-label">預約時間：</label>
+                  <select id="time" name="time" class="form-select" required>
+                    <option value="">請選擇時間</option>
+                  </select>
+                </div>
 
-              <label for="doctor">醫生姓名：</label>
-              <select id="doctor" name="doctor" required>
-                <option value="">請選擇醫生</option>
-                <?php while ($row = mysqli_fetch_assoc($result_doctor)): ?>
-                  <option value="<?= htmlspecialchars($row['doctor_id']); ?>">
-                    <?= htmlspecialchars($row['doctor']); ?>
-                  </option>
-                <?php endwhile; ?>
-              </select>
+                <!-- 備註 -->
+                <div class="form-group mb-4">
+                  <label for="note" class="form-label">備註：</label>
+                  <textarea id="note" name="note" class="form-control" rows="4" maxlength="200"
+                    placeholder="請輸入備註，最多200字"></textarea>
+                </div>
 
-              <label for="note">備註：</label>
-              <textarea id="note" name="note" rows="4" maxlength="200" placeholder="請輸入備註，最多200字"></textarea>
-
-              <button type="submit">提交預約</button>
-            </form>
+                <!-- 提交按鈕 -->
+                <div class="text-center">
+                  <button type="submit" class="btn btn-primary px-4 py-2">
+                    提交預約
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>
-    </section> -->
+    </section>
 
-    <?php
-    include "../db.php";
+    <script>
+      function fetchAvailableTimes() {
+        const date = document.getElementById("date").value;
+        const timeSelect = document.getElementById("time");
+        timeSelect.innerHTML = '<option value="">加載中...</option>';
 
-    // 確保使用者已登入
-    if (!isset($_SESSION['帳號'])) {
-      echo "請先登入後再查看排班資料。";
-      exit;
-    }
-
-    // 取得登入使用者的帳號
-    $帳號 = $_SESSION['帳號'];
-
-    // 查詢排班數據，僅顯示與登入帳號對應的資料
-    $query = "
-SELECT 
-    d.doctor_id, 
-    d.doctor, 
-    ds.date, 
-    st1.shifttime AS go_time, 
-    st2.shifttime AS off_time
-FROM 
-    doctorshift ds
-JOIN 
-    doctor d ON ds.doctor_id = d.doctor_id
-JOIN 
-    shifttime st1 ON ds.go = st1.shifttime_id
-JOIN 
-    shifttime st2 ON ds.off = st2.shifttime_id
-JOIN 
-    user u ON d.user_id = u.user_id
-WHERE 
-    u.account = ?
-ORDER BY 
-    ds.date, d.doctor_id";
-
-    $stmt = mysqli_prepare($link, $query);
-    if (!$stmt) {
-      die("SQL 錯誤：" . mysqli_error($link));
-    }
-
-    mysqli_stmt_bind_param($stmt, "s", $帳號);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-
-    // 將查詢結果儲存為陣列
-    $schedule = [];
-    while ($row = mysqli_fetch_assoc($result)) {
-      $date = $row['date'];
-      if (!isset($schedule[$date])) {
-        $schedule[$date] = [];
-      }
-      $schedule[$date][] = [
-        'doctor' => $row['doctor'],
-        'go_time' => $row['go_time'],
-        'off_time' => $row['off_time'],
-        'doctor_id' => $row['doctor_id'],
-      ];
-    }
-
-    // 查詢請假數據，僅顯示與登入帳號相關的資料
-    $query_leaves = "
-SELECT 
-    l.doctor_id, 
-    l.start_date, 
-    l.end_date
-FROM 
-    leaves l
-JOIN 
-    doctor d ON l.doctor_id = d.doctor_id
-JOIN 
-    user u ON d.user_id = u.user_id
-WHERE 
-    u.account = ?";
-
-    $stmt_leaves = mysqli_prepare($link, $query_leaves);
-    mysqli_stmt_bind_param($stmt_leaves, "s", $帳號);
-    mysqli_stmt_execute($stmt_leaves);
-    $result_leaves = mysqli_stmt_get_result($stmt_leaves);
-
-    $leaves = [];
-    while ($row = mysqli_fetch_assoc($result_leaves)) {
-      $leaves[] = [
-        'doctor_id' => $row['doctor_id'],
-        'start_date' => $row['start_date'],
-        'end_date' => $row['end_date'],
-      ];
-    }
-
-    // 將資料輸出給前端
-    header('Content-Type: application/json');
-    // echo json_encode(['schedule' => $schedule, 'leaves' => $leaves], JSON_UNESCAPED_UNICODE);
-    ?>
-
-
-
-    <section class="section section-lg bg-default">
-      <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
-        <label for="year">選擇年份：</label>
-        <select id="year"></select>
-        <label for="month">選擇月份：</label>
-        <select id="month"></select>
-
-        <div style="overflow-x: auto; max-width: 100%;">
-          <table class="table-custom">
-            <thead>
-              <tr>
-                <th>日</th>
-                <th>一</th>
-                <th>二</th>
-                <th>三</th>
-                <th>四</th>
-                <th>五</th>
-                <th>六</th>
-              </tr>
-            </thead>
-            <tbody id="calendar"></tbody>
-          </table>
-        </div>
-
-      </div>
-
-      <script>
-        const data = <?php echo json_encode(['schedule' => $schedule, 'leaves' => $leaves], JSON_UNESCAPED_UNICODE); ?>;
-        const calendarData = data.schedule; // 排班數據
-        const leaveData = data.leaves; // 請假數據
-        const today = new Date(); // 今天日期
-        const tomorrow = new Date(today); // 明天日期
-        tomorrow.setDate(today.getDate() + 1);
-
-        console.log("Calendar Data:", calendarData);
-        console.log("Leave Data:", leaveData);
-
-        /**
-         * 調整排班時間，處理部分請假情況
-         */
-        function adjustShiftTime(doctorId, date, startTime, endTime) {
-          const shiftStart = new Date(`${date}T${startTime}`);
-          const shiftEnd = new Date(`${date}T${endTime}`);
-
-          for (const leave of leaveData) {
-            const leaveStart = new Date(leave.start_date);
-            const leaveEnd = new Date(leave.end_date);
-
-            if (leave.doctor_id === doctorId) {
-              if (leaveStart <= shiftStart && leaveEnd >= shiftEnd) {
-                return null; // 整天請假
-              } else if (leaveStart <= shiftStart && leaveEnd > shiftStart && leaveEnd < shiftEnd) {
-                return { go_time: leaveEnd.toTimeString().slice(0, 5), off_time: endTime }; // 調整上班時間
-              } else if (leaveStart > shiftStart && leaveStart < shiftEnd && leaveEnd >= shiftEnd) {
-                return { go_time: startTime, off_time: leaveStart.toTimeString().slice(0, 5) }; // 調整下班時間
-              }
-            }
-          }
-          return { go_time: startTime, off_time: endTime }; // 無請假
-        }
-
-        /**
-          * 生成日曆表格
-          */
-        function generateCalendar() {
-          const year = parseInt(document.getElementById('year').value);
-          const month = parseInt(document.getElementById('month').value) - 1;
-
-          const calendarBody = document.getElementById('calendar');
-          calendarBody.innerHTML = '';
-
-          const firstDay = new Date(year, month, 1).getDay();
-          const lastDate = new Date(year, month + 1, 0).getDate();
-
-          let row = document.createElement('tr');
-          for (let i = 0; i < firstDay; i++) {
-            row.appendChild(document.createElement('td'));
-          }
-
-          for (let date = 1; date <= lastDate; date++) {
-            const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-            const cell = document.createElement('td');
-            cell.innerHTML = `<strong>${date}</strong>`;
-
-            const currentDate = new Date(year, month, date); // 當前渲染的日期
-
-            if (calendarData[fullDate]) {
-              calendarData[fullDate].forEach(shift => {
-                const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
-
-                const shiftDiv = document.createElement('div');
-                if (adjustedShift) {
-                  shiftDiv.textContent = `${adjustedShift.go_time} - ${adjustedShift.off_time}`;
-
-                  // 只為今天及以後的日期添加預約按鈕
-                  if (currentDate >= today) {
-                    const reserveButton = document.createElement('button');
-                    reserveButton.textContent = '查看';
-                    reserveButton.style.marginLeft = '10px';
-
-                    // 修改為調用 openModal 函數
-                    reserveButton.onclick = () => {
-                      const startTime = adjustedShift.go_time;
-                      const endTime = adjustedShift.off_time;
-                      openModal(shift.doctor, fullDate, startTime, endTime); // 呼叫彈窗函數
-                    };
-
-                    shiftDiv.appendChild(reserveButton);
-                  }
-
-                } else {
-                  shiftDiv.textContent = `${shift.doctor}: 請假`;
-                  shiftDiv.style.color = 'red';
-                }
-
-                shiftDiv.className = 'shift-info';
-                cell.appendChild(shiftDiv);
-              });
-            } else {
-              const noSchedule = document.createElement('div');
-              noSchedule.textContent = '無排班';
-              noSchedule.className = 'no-schedule';
-              cell.appendChild(noSchedule);
-            }
-
-            row.appendChild(cell);
-
-            if (row.children.length === 7) {
-              calendarBody.appendChild(row);
-              row = document.createElement('tr');
-            }
-          }
-
-          while (row.children.length < 7) {
-            row.appendChild(document.createElement('td'));
-          }
-          calendarBody.appendChild(row);
-        }
-
-
-        /**
-         * 初始化年份與月份選單
-         */
-        function initSelectOptions() {
-          const yearSelect = document.getElementById('year');
-          const monthSelect = document.getElementById('month');
-
-          for (let year = 2020; year <= 2030; year++) {
-            const option = document.createElement('option');
-            option.value = year;
-            option.textContent = year;
-            if (year === today.getFullYear()) option.selected = true;
-            yearSelect.appendChild(option);
-          }
-
-          for (let month = 1; month <= 12; month++) {
-            const option = document.createElement('option');
-            option.value = month;
-            option.textContent = month;
-            if (month === today.getMonth() + 1) option.selected = true;
-            monthSelect.appendChild(option);
-          }
-
-          generateCalendar();
-        }
-
-        document.getElementById('year').addEventListener('change', generateCalendar);
-        document.getElementById('month').addEventListener('change', generateCalendar);
-
-        initSelectOptions();
-      </script>
-
-      <!-- 彈窗結構 -->
-      <div id="appointment-modal" class="modal">
-        <div class="modal-content">
-          <span class="close">&times;</span>
-          <h3 id="modal-title"></h3>
-          <div id="time-slots"></div>
-        </div>
-      </div>
-
-      <!-- CSS 樣式 -->
-      <style>
-        .modal-content {
-          background-color: white;
-          margin: 10% auto;
-          padding: 20px;
-          border-radius: 10px;
-          width: 60%;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        #modal-title {
-          font-size: 18px;
-          font-weight: normal;
-          color: #333;
-          text-align: center;
-          margin-bottom: 20px;
-        }
-
-        #time-slots {
-          display: grid;
-          grid-template-columns: repeat(6, 1fr);
-          gap: 15px;
-          justify-items: center;
-          align-items: center;
-          margin-top: 20px;
-        }
-
-        #time-slots div {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 10px;
-          border: 1px solid #ddd;
-          border-radius: 5px;
-          background-color: #f9f9f9;
-          width: 80px;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        #time-slots span {
-          font-size: 14px;
-          color: #333;
-        }
-
-        .reserve-btn {
-          background-color: #008CBA;
-          color: white;
-          border: none;
-          padding: 5px 10px;
-          font-size: 12px;
-          cursor: pointer;
-          border-radius: 3px;
-          margin-top: 5px;
-        }
-
-        .reserve-btn[disabled] {
-          background-color: #ddd;
-          cursor: not-allowed;
-        }
-
-        .reserve-btn:hover:not([disabled]) {
-          background-color: #005f7f;
-        }
-      </style>
-
-      <!-- JavaScript -->
-      <script>
-        const modal = document.getElementById("appointment-modal");
-        const modalTitle = document.getElementById("modal-title");
-        const timeSlotsContainer = document.getElementById("time-slots");
-
-        /**
-         * 打開彈窗並顯示時間段
-         * @param {number} doctorId 醫生 ID
-         * @param {string} date 日期 (格式：YYYY-MM-DD)
-         */
-        function openModal(doctorId, date) {
-          modalTitle.textContent = `醫生：${doctorId} 日期：${date}`;
-          timeSlotsContainer.innerHTML = "";
-
+        if (date) {
           fetch("檢查預約.php", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `doctor_id=${doctorId}&date=${date}`
+            body: `date=${date}&doctor_id=1`,
           })
-            .then(response => response.json())
-            .then(data => {
-              console.log("伺服器返回的時段資料：", data);
+            .then((response) => response.json())
+            .then((data) => {
               if (data.success) {
-                data.timeslots.forEach(slot => {
-                  const slotElement = document.createElement("div");
-                  const button = document.createElement("button");
-                  button.className = "reserve-btn";
-                  button.textContent = slot.status;
-
-                  // 根據 status 設置按鈕狀態
-                  if (slot.status === "額滿") {
-                    button.disabled = true;
-                    button.style.backgroundColor = "#ddd"; // 額滿按鈕樣式
-                  } else {
-                    button.addEventListener("click", () => reserve(doctorId, date, slot.time));
-                  }
-
-                  slotElement.innerHTML = `<span>${slot.time}</span>`;
-                  slotElement.appendChild(button);
-                  timeSlotsContainer.appendChild(slotElement);
+                timeSelect.innerHTML = '<option value="">請選擇時間</option>';
+                data.times.forEach((time) => {
+                  const option = document.createElement("option");
+                  option.value = time.shifttime_id;
+                  option.textContent = time.shifttime;
+                  timeSelect.appendChild(option);
                 });
               } else {
-                alert(data.message);
+                timeSelect.innerHTML = '<option value="">無可用時段</option>';
               }
             })
-            .catch(error => console.error("錯誤：", error));
-
-          modal.style.display = "block";
+            .catch((error) => {
+              console.error("錯誤：", error);
+              timeSelect.innerHTML = '<option value="">無法加載時段</option>';
+            });
+        } else {
+          timeSelect.innerHTML = '<option value="">請選擇日期</option>';
         }
-
-        /**
-         * 預約操作
-         * @param {number} doctorId 醫生 ID
-         * @param {string} date 日期
-         * @param {string} time 時間
-         */
-        function reserve(doctorId, date, time) {
-          if (confirm(`確定要預約 ${date} ${time} 時段？`)) {
-            fetch("預約處理.php", {
-              method: "POST",
-              headers: { "Content-Type": "application/x-www-form-urlencoded" },
-              body: `doctor_id=${doctorId}&date=${date}&time=${time}`
-            })
-              .then(response => response.json())
-              .then(data => {
-                if (data.success) {
-                  alert(data.message);
-                  openModal(doctorId, date); // 刷新按鈕狀態
-                } else {
-                  alert(data.message); // 顯示錯誤信息
-                }
-              })
-              .catch(error => console.error("錯誤：", error));
-          }
-        }
-
-        document.querySelector(".close").onclick = () => {
-          modal.style.display = "none";
-        };
-
-        window.onclick = event => {
-          if (event.target === modal) {
-            modal.style.display = "none";
-          }
-        };
-
-
-      </script>
-
-
-      <!-- 預約-->
+      }
+    </script>
 
 
 
-      <!--頁尾-->
-      <footer class="section novi-bg novi-bg-img footer-simple">
-        <div class="container">
-          <div class="row row-40">
-            <!-- <div class="col-md-4">
+    <!-- 預約-->
+
+
+
+    <!--頁尾-->
+    <footer class="section novi-bg novi-bg-img footer-simple">
+      <div class="container">
+        <div class="row row-40">
+          <!-- <div class="col-md-4">
             <h4>關於我們</h4>
             <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
               professional knowledge using innovative approach.</p>
           </div> -->
-            <div class="col-md-3">
-              <h4>快速連結</h4>
-              <ul class="list-marked">
-                <li><a href="d_index.php">首頁</a></li>
-                <li><a href="d_appointment.php">預約</a></li>
-                <li><a href="d_numberpeople.php">當天人數及時段</a></li>
-                <li><a href="d_doctorshift.php">班表時段</a></li>
-                <li><a href="d_leave.php">請假申請</a></li>
-                <li><a href="d_leave-query.php"></a>請假資料查詢</li>
-                <li><a href="d_medical-record.php">看診紀錄</a></li>
-                <li><a href="d_appointment-records.php">預約紀錄</a></li>
-                <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
-              </ul>
-            </div>
-            <!-- <div class="col-md-5">
+          <div class="col-md-3">
+            <h4>快速連結</h4>
+            <ul class="list-marked">
+              <li><a href="d_index.php">首頁</a></li>
+              <li><a href="d_appointment.php">預約</a></li>
+              <li><a href="d_numberpeople.php">當天人數及時段</a></li>
+              <li><a href="d_doctorshift.php">班表時段</a></li>
+              <li><a href="d_leave.php">請假申請</a></li>
+              <li><a href="d_leave-query.php"></a>請假資料查詢</li>
+              <li><a href="d_medical-record.php">看診紀錄</a></li>
+              <li><a href="d_appointment-records.php">預約紀錄</a></li>
+              <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
+            </ul>
+          </div>
+          <!-- <div class="col-md-5">
             <h4>聯絡我們</h4>
             <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
               courses we offer.</p>
@@ -997,13 +652,13 @@ WHERE
               <button class="form-button linearicons-paper-plane"></button>
             </form>
           </div> -->
-          </div>
-          <!-- <p class="rights"><span>&copy;&nbsp;</span><span
+        </div>
+        <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
             Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank"
             href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p> -->
-        </div>
-      </footer>
+      </div>
+    </footer>
   </div>
   <!--頁尾-->
   <!-- Global Mailform Output-->

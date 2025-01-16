@@ -50,6 +50,7 @@ if (isset($_SESSION["帳號"])) {
               </script>";
     exit();
   }
+
 } else {
   echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
@@ -58,8 +59,7 @@ if (isset($_SESSION["帳號"])) {
   exit();
 }
 
-//預約紀錄
-
+//預約
 ?>
 
 <!DOCTYPE html>
@@ -67,7 +67,7 @@ if (isset($_SESSION["帳號"])) {
 
 <head>
   <!-- Site Title-->
-  <title>醫生-預約紀錄</title>
+  <title>醫生-預約</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -78,6 +78,120 @@ if (isset($_SESSION["帳號"])) {
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/style.css">
   <style>
+    /* 禁用按鈕樣式 */
+    button.disabled {
+      background-color: #ccc;
+      /* 灰色背景 */
+      color: #666;
+      /* 灰色文字 */
+      border: 1px solid #999;
+      /* 灰色邊框 */
+      cursor: not-allowed;
+      /* 禁用鼠標樣式 */
+      pointer-events: none;
+      /* 禁止所有事件 */
+    }
+
+    /* 排班資訊樣式 */
+    .shift-info {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #555;
+    }
+
+    /* 預約按鈕樣式 */
+    .shift-info button {
+      background-color: #008CBA;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    .shift-info button:hover {
+      background-color: #005f7f;
+    }
+
+    /* 無排班提示樣式 */
+    .no-schedule {
+      font-size: 18px;
+      color: #aaa;
+    }
+
+    /* 當前日期高亮樣式 */
+    .today {
+      background-color: #ffeb3b;
+    }
+
+    /* 基本樣式調整 */
+    .table-custom {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .table-custom th,
+    .table-custom td {
+      border: 1px solid #ddd;
+      text-align: center;
+      vertical-align: middle;
+      padding: 10px;
+      word-wrap: break-word;
+      /* 避免文字超出格子 */
+    }
+
+    /* 手機設備響應式設計 */
+    @media (max-width: 768px) {
+      .table-custom {
+        display: block;
+        /* 將表格改為 block，允許水平滾動 */
+        overflow-x: auto;
+        /* 加入水平滾動 */
+        white-space: nowrap;
+        /* 禁止自動換行 */
+      }
+
+      .table-custom th,
+      .table-custom td {
+        font-size: 12px;
+        /* 縮小文字大小 */
+        padding: 5px;
+        /* 減小內邊距 */
+      }
+
+      .shift-info button {
+        font-size: 10px;
+        /* 縮小按鈕文字 */
+        padding: 5px;
+        /* 減小按鈕大小 */
+      }
+    }
+
+    /* 極小設備 (手機) */
+    @media (max-width: 480px) {
+
+      .table-custom th,
+      .table-custom td {
+        font-size: 10px;
+        padding: 3px;
+      }
+
+      .shift-info {
+        display: block;
+        font-size: 10px;
+      }
+
+      .shift-info button {
+        font-size: 9px;
+        padding: 3px;
+      }
+    }
+
+
+
+
     .ie-panel {
       display: none;
       background: #212121;
@@ -93,8 +207,7 @@ if (isset($_SESSION["帳號"])) {
     html.lt-ie-10 .ie-panel {
       display: block;
     }
-  </style>
-  <style>
+
     /* 登出確認視窗 - 初始隱藏 */
     .logout-box {
       display: none;
@@ -154,39 +267,6 @@ if (isset($_SESSION["帳號"])) {
     .button-shadow {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
-
-    /*預約紀錄 */
-    table {
-      width: auto;
-      /* 讓表格寬度根據內容自動調整 */
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-
-    .search-container {
-      text-align: right;
-      margin-bottom: 10px;
-    }
-
-    th,
-    td {
-      padding: 8px;
-      text-align: center;
-      border: 1px solid #ddd;
-      white-space: nowrap;
-      /* 防止文字換行，保持欄位寬度符合文字 */
-    }
-
-    th {
-      background-color: #f2f2f2;
-    }
-
-    table th,
-    table td {
-      text-align: center;
-      vertical-align: middle;
-      /* 垂直置中 */
-    }
   </style>
 </head>
 
@@ -211,7 +291,7 @@ if (isset($_SESSION["帳號"])) {
     </div>
   </div>
 
-  <!--標題列-->
+  <!--標籤列-->
   <div class="page">
     <header class="section page-header">
       <!-- RD Navbar-->
@@ -230,7 +310,7 @@ if (isset($_SESSION["帳號"])) {
               <button class="rd-navbar-toggle" data-rd-navbar-toggle=".rd-navbar-nav-wrap"><span></span></button>
               <!-- RD Navbar Brand-->
               <div class="rd-navbar-brand">
-                <!--Brand--><a class="brand-name" href="d_index.php"><img class="logo-default"
+                <!--Brand--><a class="brand-name" href="d_index.html"><img class="logo-default"
                     src="images/logo-default-172x36.png" alt="" width="86" height="18" loading="lazy" /><img
                     class="logo-inverse" src="images/logo-inverse-172x36.png" alt="" width="86" height="18"
                     loading="lazy" /></a>
@@ -238,17 +318,16 @@ if (isset($_SESSION["帳號"])) {
             </div>
             <div class="rd-navbar-nav-wrap">
               <ul class="rd-navbar-nav">
-                <li class="rd-nav-item"><a class="rd-nav-link" href="d_index.php">首頁</a>
-                </li>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="d_index.php">首頁</a></li>
 
-                <li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
+                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">預約</a>
                   <ul class="rd-menu rd-navbar-dropdown">
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_people.php">使用者資料</a>
+                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="d_people.php">使用者資料</a>
                     </li>
                   </ul>
                 </li>
+                <!-- <li class="rd-nav-item active"><a class="rd-nav-link" href="d_appointment.php">預約</a></li> -->
 
-                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a></li> -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">班表</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_doctorshift.php">每月班表</a>
@@ -261,21 +340,19 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
-                </li>
-                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">紀錄</a>
+
+                <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_medical-record.php">看診紀錄</a>
                     </li>
-                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
-                        href="d_appointment-records.php">預約紀錄</a>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_appointment-records.php">預約紀錄</a>
                     </li>
                   </ul>
                 </li>
 
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
-                    onclick="showLogoutBox()">登出</a>
-                </li>
+                    onclick="showLogoutBox()">登出</a></li>
 
                 <!-- 自訂登出確認視窗 -->
                 <div id="logoutBox" class="logout-box">
@@ -333,161 +410,81 @@ if (isset($_SESSION["帳號"])) {
         </nav>
       </div>
     </header>
-    <!--標題列-->
+    <!--標籤列-->
+
 
     <!--標題-->
     <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
       <!-- Breadcrumbs-->
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <!-- <p class="breadcrumbs-custom-subtitle">Terms of Use</p> -->
-          <p class="heading-1 breadcrumbs-custom-title">預約紀錄</p>
+          <!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
+          <p class="heading-1 breadcrumbs-custom-title">預約</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="d_index.php">首頁</a></li>
-            <li><a href="#">紀錄</a></li>
-            <li class="active">預約紀錄</li>
+            <li class="active">使用者資料</li>
           </ul>
         </div>
       </section>
     </div>
     <!--標題-->
 
-    <!--預約紀錄-->
-    <?php
-    session_start();
-    if (!isset($_SESSION['帳號'])) {
-      die('未登入或 Session 已失效，請重新登入。');
-    }
-
-    require '../db.php';
-
-    $帳號 = $_SESSION['帳號'];
-    $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
-
-    // 分頁參數
-    $records_per_page = 10;
-    $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int) $_GET['page'] : 1;
-    $offset = ($page - 1) * $records_per_page;
-
-    // 總筆數計算
-    $count_stmt = $link->prepare("
-    SELECT COUNT(*) AS total
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE u.account = ?
-    AND p.name LIKE CONCAT('%', ?, '%')
-");
-    $count_stmt->bind_param('ss', $帳號, $search_name);
-    $count_stmt->execute();
-    $count_result = $count_stmt->get_result();
-    $total_records = $count_result->fetch_assoc()['total'];
-    $total_pages = ceil($total_records / $records_per_page);
-
-    // 查詢分頁資料
-    $stmt = $link->prepare("
-    SELECT 
-        a.appointment_id AS id,
-        COALESCE(p.name, '未預約') AS name,
-        CASE 
-            WHEN p.gender_id = 1 THEN '男' 
-            WHEN p.gender_id = 2 THEN '女' 
-            ELSE '未設定' 
-        END AS gender,
-        DATE_FORMAT(p.birthday, '%Y-%m-%d') AS birthday,
-        DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
-        st.shifttime AS shifttime,
-        COALESCE(a.note, '無') AS note,
-        a.created_at AS created_at
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE u.account = ?
-    AND p.name LIKE CONCAT('%', ?, '%')
-    ORDER BY ds.date, st.shifttime
-    LIMIT ?, ?
-");
-    $stmt->bind_param('ssii', $帳號, $search_name, $offset, $records_per_page);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    ?>
-
-    <section class="section section-lg bg-default novi-bg novi-bg-img">
+    <!-- 使用者資料-->
+    <section class="section section-lg novi-bg novi-bg-img bg-default">
       <div class="container">
-        <div class="row row-50 justify-content-lg-center">
-          <div class="col-lg-10 col-xl-8">
-            <div id="accordion1" role="tablist" aria-multiselectable="false">
-              <div class="search-container">
-                <form method="GET" action="">
-                  <input type="hidden" name="is_search" value="1">
-                  <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
-                    value="<?php echo htmlspecialchars($search_name); ?>">
-                  <button type="submit">搜尋</button>
-                </form>
-              </div>
+        <div class="row row-40 row-lg-50">
+          <div class="form-container">
 
-              <!-- 顯示查詢結果 -->
-              <table>
-                <thead>
-                  <tr>
-                    <th>編號</th>
-                    <th>姓名</th>
-                    <th>性別</th>
-                    <th>生日 (年齡)</th>
-                    <th>看診日期</th>
-                    <th>看診時間</th>
-                    <th>備註</th>
-                    <th>建立時間</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php if ($result->num_rows > 0): ?>
-                    <?php while ($row = $result->fetch_assoc()): ?>
-                      <tr>
-                        <td><?php echo htmlspecialchars($row['id']); ?></td>
-                        <td><?php echo htmlspecialchars($row['name']); ?></td>
-                        <td><?php echo htmlspecialchars($row['gender']); ?></td>
-                        <td><?php echo htmlspecialchars($row['birthday']); ?></td>
-                        <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
-                        <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
-                        <td><?php echo htmlspecialchars($row['note']); ?></td>
-                        <td><?php echo htmlspecialchars($row['created_at']); ?></td>
-                      </tr>
-                    <?php endwhile; ?>
-                  <?php else: ?>
-                    <tr>
-                      <td colspan="8">目前無資料</td>
-                    </tr>
-                  <?php endif; ?>
-                </tbody>
-              </table>
-              <!-- 總數顯示 -->
-              <div style="text-align: right; margin: 20px 0;">
-                <?php echo "第 $page 頁 / 共 $total_pages 頁 (總共 $total_records 筆資料)"; ?>
-              </div>
-              <!-- 分頁顯示 -->
-              <div style="text-align: center; margin: 20px 0;">
-                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                  <a href="?page=<?php echo $i; ?>&search_name=<?php echo urlencode($search_name); ?>"
-                    style="margin: 0 5px; <?php echo $i == $page ? 'font-weight: bold;' : ''; ?>">
-                    <?php echo $i; ?>
-                  </a>
-                <?php endfor; ?>
-              </div>
+            <?php
+            session_start();
+            require '../db.php'; // 引入資料庫連線
+            
+            // 查詢資料
+            $sql = "SELECT * FROM `people`";
+            $result = $link->query($sql);
 
-            </div>
+            // 顯示資料
+            if ($result->num_rows > 0) {
+              echo "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>";
+              echo "<tr>
+            <th>編號</th>
+            <th>姓名</th>
+            <th>性別</th>
+            <th>生日</th>
+            <th>身分證</th>
+            <th>選項</th>
+          </tr>";
+              while ($row = $result->fetch_assoc()) {
+                echo "<tr>
+                <td>" . $row["user_id"] . "</td>
+                <td>" . $row["name"] . "</td>
+                <td>" . ($row["gender_id"] == 1 ? '男性' : '女性') . "</td>
+                <td>" . $row["birthday"] . "</td>
+                <td>" . $row["idcard"] . "</td>
+                <td>
+                    <a href='d_appointment.php?id=" . urlencode($row['user_id']) . "' target='_blank'>
+                        <button type='button'>預約</button>
+                    </a>
+                </td>
+              </tr>";
+              }
+              echo "</table>";
+            } else {
+              echo "查無資料";
+            }
+
+            // 關閉連線
+            $link->close();
+            ?>
+
+
           </div>
         </div>
       </div>
     </section>
+    <!-- 使用者資料-->
 
 
-    <!--預約紀錄-->
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
@@ -535,13 +532,11 @@ if (isset($_SESSION["帳號"])) {
     </footer>
   </div>
   <!--頁尾-->
-
   <!-- Global Mailform Output-->
   <div class="snackbars" id="form-output-global"></div>
   <!-- Javascript-->
   <script src="js/core.min.js"></script>
   <script src="js/script.js"></script>
-  <!-- coded by Himic-->
 </body>
 
 </html>

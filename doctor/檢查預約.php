@@ -1,54 +1,44 @@
 <?php
-session_start();
+require '../db.php'; // 引入資料庫連線
 
-if (!isset($_SESSION["登入狀態"])) {
-    echo json_encode(['success' => false, 'message' => '未登入，請先登入後操作。']);
-    exit;
-}
-
-require '../db.php';
-
-if (!isset($_POST['doctor_id'], $_POST['date'])) {
-    echo json_encode(['success' => false, 'message' => '缺少必要參數。']);
-    exit;
-}
-
+// 接收參數
+$date = mysqli_real_escape_string($link, $_POST['date']);
 $doctor_id = intval($_POST['doctor_id']);
-$date = $_POST['date'];
 
+// 檢查必要參數
+if (empty($date) || empty($doctor_id)) {
+    echo json_encode(['success' => false, 'message' => '參數缺失']);
+    exit;
+}
+
+// 查詢醫生排班和可用時段
 $query = "
-    SELECT st.shifttime, 
-           CASE 
-               WHEN a.appointment_id IS NOT NULL THEN '額滿' 
-               ELSE '預約' 
-           END AS status
-    FROM shifttime st
-    LEFT JOIN doctorshift ds 
-      ON ds.go <= st.shifttime_id 
-      AND ds.off >= st.shifttime_id 
-      AND ds.doctor_id = ? 
-      AND ds.date = ?
-    LEFT JOIN appointment a 
-      ON a.shifttime_id = st.shifttime_id 
-      AND a.doctorshift_id = ds.doctorshift_id
-    WHERE st.shifttime >= '07:00' AND st.shifttime <= '16:00'
-    ORDER BY st.shifttime ASC
+  SELECT st.shifttime_id, st.shifttime
+  FROM shifttime st
+  JOIN doctorshift ds ON ds.go <= st.shifttime_id AND ds.off >= st.shifttime_id
+  WHERE ds.doctor_id = '$doctor_id' 
+    AND ds.date = '$date'
+    AND NOT EXISTS (
+      SELECT 1 
+      FROM appointment a
+      WHERE a.doctorshift_id = ds.doctorshift_id 
+        AND a.shifttime_id = st.shifttime_id
+    )
+  ORDER BY st.shifttime_id ASC
 ";
 
-$stmt = $link->prepare($query);
-$stmt->bind_param('is', $doctor_id, $date);
-$stmt->execute();
-$result = $stmt->get_result();
+$result = mysqli_query($link, $query);
 
-$timeslots = [];
-while ($row = $result->fetch_assoc()) {
-    $timeslots[] = [
-        'time' => $row['shifttime'],
-        'status' => $row['status'],
-    ];
+if ($result) {
+    $times = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $times[] = $row; // 收集時段資料
+    }
+    echo json_encode(['success' => true, 'times' => $times]); // 返回成功訊息和時段資料
+} else {
+    echo json_encode(['success' => false, 'message' => '無法取得時段']);
 }
 
-// 返回 JSON
-echo json_encode(['success' => true, 'timeslots' => $timeslots]);
-$link->close();
+// 關閉連線
+mysqli_close($link);
 ?>
