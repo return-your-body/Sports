@@ -310,31 +310,37 @@ if (isset($_SESSION["帳號"])) {
 			</section>
 		</div>
 
-
 		<?php
-		// 接收傳遞的日期參數
-		$filter_date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
+		// 引入資料庫連線檔案
+		require '../db.php';
 
-		// 檢查是否有效的日期格式
-		if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $filter_date)) {
-			$filter_date = date('Y-m-d');
+		// 接收前端傳遞的日期和治療師參數，並設置默認值
+		$filter_date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d'); // 默認為今日日期
+		$filter_doctor = isset($_GET['doctor_id']) ? $_GET['doctor_id'] : 'all'; // 默認為「所有治療師」
+		
+		// 構建查詢條件
+		$where_conditions = "1=1"; // 起始條件為 1=1，保證 SQL 查詢語法正確
+		
+		// 如果有日期參數，將其加入查詢條件，並防止 SQL 注入
+		if (!empty($filter_date)) {
+			$filter_date = mysqli_real_escape_string($link, $filter_date);
+			$where_conditions .= " AND doctorshift.date = '$filter_date'";
 		}
 
-		// 分割日期參數為年份、月份、日期
-		$filter_year = date('Y', strtotime($filter_date));
-		$filter_month = date('m', strtotime($filter_date)); // 保證兩位數月份
-		$filter_day = date('d', strtotime($filter_date)); // 保證兩位數日期
-		
-		require '../db.php'; // 引入資料庫連線檔案
-		
-		// 查詢資料庫中的預約資料，按照「看診日期」篩選
+		// 如果選擇了特定的治療師，將其加入查詢條件
+		if ($filter_doctor !== 'all') {
+			$filter_doctor = mysqli_real_escape_string($link, $filter_doctor);
+			$where_conditions .= " AND doctorshift.doctor_id = '$filter_doctor'";
+		}
+
+		// 組合 SQL 查詢語句
 		$query = "
     SELECT
-        doctorshift.date AS visit_date,
-        shifttime.shifttime AS visit_time,
-        people.name AS patient_name,
-        doctor.doctor AS doctor_name,
-        appointment.created_at AS appointment_time
+        doctorshift.date AS visit_date,        -- 看診日期
+        shifttime.shifttime AS visit_time,    -- 看診時間
+        people.name AS patient_name,         -- 患者姓名
+        doctor.doctor AS doctor_name,        -- 治療師姓名
+        appointment.created_at AS appointment_time -- 預約時間
     FROM
         appointment
     JOIN
@@ -346,26 +352,28 @@ if (isset($_SESSION["帳號"])) {
     JOIN
         doctor ON doctorshift.doctor_id = doctor.doctor_id
     WHERE
-        doctorshift.date = '$filter_date'
+        $where_conditions
     ORDER BY
-        doctorshift.date ASC,
-        shifttime.shifttime ASC
+        doctorshift.date ASC,               -- 按日期升序排序
+        shifttime.shifttime ASC             -- 按時間升序排序
 ";
 
+		// 執行 SQL 查詢，並檢查是否有錯誤
 		$result = mysqli_query($link, $query);
 		if (!$result) {
-			die("查詢失敗：" . mysqli_error($link));
+			die("查詢失敗：" . mysqli_error($link)); // 如果查詢失敗，輸出錯誤訊息
 		}
 
+		// 初始化一個空的陣列來存儲查詢結果
 		$appointments = [];
 		while ($row = mysqli_fetch_assoc($result)) {
-			$appointments[] = $row;
+			$appointments[] = $row; // 將每一行數據添加到陣列中
 		}
 
+		// 釋放查詢結果資源
 		mysqli_free_result($result);
+
 		?>
-
-
 
 
 		<!-- Bordered Row Table -->
@@ -380,62 +388,16 @@ if (isset($_SESSION["帳號"])) {
 
 							<a href="a_therapist.php" class="button button-xs button-primary button-nina">返回上一頁</a>
 
-							<div style="flex: 4;">
-								<input class="form-input" type="text" name="search"
-									value="<?php echo htmlspecialchars($search); ?>" placeholder="請輸入醫生姓名" style="
-											padding: 10px 15px;          
-											font-size: 16px;             
-											width: 100%;                 
-											border: 1px solid #ccc;      
-											border-radius: 4px;          
-											outline: none;               
-											box-sizing: border-box;      
-										">
-							</div>
-							<div style="flex: 1;">
-								<button class="" type="submit" style="
-											padding: 10px 15px;           
-											font-size: 16px;              
-											width: 100%;                  
-											border: none;                 
-											border-radius: 4px;           
-											background-color: #00A896;    
-											color: white;                 
-											cursor: pointer;              
-											box-sizing: border-box;       
-											display: flex;                
-											align-items: center;          
-											justify-content: center;      
-											gap: 5px;                     
-										">
-									<span class="icon mdi mdi-magnify"></span>搜尋
-								</button>
-							</div>
-							<div style="flex: 1;">
-								<select name="rowsPerPage" onchange="this.form.submit()"
-									style="padding: 10px 15px; font-size: 16px; width: 100%; border: 1px solid #ccc; border-radius: 4px;">
-									<option value="3" <?php echo $rowsPerPage == 3 ? 'selected' : ''; ?>>3筆/頁</option>
-									<option value="5" <?php echo $rowsPerPage == 5 ? 'selected' : ''; ?>>5筆/頁</option>
-									<option value="10" <?php echo $rowsPerPage == 10 ? 'selected' : ''; ?>>10筆/頁</option>
-									<option value="20" <?php echo $rowsPerPage == 20 ? 'selected' : ''; ?>>20筆/頁</option>
-									<option value="25" <?php echo $rowsPerPage == 25 ? 'selected' : ''; ?>>25筆/頁</option>
-									<option value="50" <?php echo $rowsPerPage == 50 ? 'selected' : ''; ?>>50筆/頁</option>
-								</select>
-							</div>
-						</form>
-
-
-						<div>
-							<label for="year">選擇年份：</label>
+							<label for="year">年份:</label>
 							<select id="year" name="year" onchange="filterByDate()"></select>
 
-							<label for="month">選擇月份：</label>
+							<label for="month">月份:</label>
 							<select id="month" name="month" onchange="filterByDate()"></select>
 
-							<label for="day">選擇日期：</label>
+							<label for="day">日期:</label>
 							<select id="day" name="day" onchange="filterByDate()"></select>
 							<!-- 選擇治療師 -->
-							<label for="the">選擇治療師：</label>
+							<label for="the">治療師:</label>
 							<select id="the" name="doctor_id">
 								<!-- 新增「所有治療師」選項 -->
 								<option value="all">所有治療師</option>
@@ -465,48 +427,25 @@ if (isset($_SESSION["帳號"])) {
 								?>
 							</select>
 
-						</div>
 
-						<?php
-						require '../db.php'; // 引入資料庫連線檔案
-						
-						// 查詢資料庫中的預約資料，按照日期和時間排序
-						$query = "
-    SELECT
-        doctorshift.date AS visit_date,        -- 看診日期
-        shifttime.shifttime AS visit_time,    -- 看診時間
-        people.name AS patient_name,         -- 患者姓名
-        doctor.doctor AS doctor_name,        -- 治療師姓名
-        appointment.created_at AS appointment_time -- 預約時間
-    FROM
-        appointment
-    JOIN
-        shifttime ON appointment.shifttime_id = shifttime.shifttime_id
-    JOIN
-        people ON appointment.people_id = people.people_id
-    JOIN
-        doctorshift ON appointment.doctorshift_id = doctorshift.doctorshift_id
-    JOIN
-        doctor ON doctorshift.doctor_id = doctor.doctor_id
-    ORDER BY
-        doctorshift.date ASC,               -- 按日期升序排序
-        shifttime.shifttime ASC             -- 按時間升序排序
-";
+							<div style="flex: 1;">
+								<select name="rowsPerPage" onchange="this.form.submit()"
+									style="padding: 10px 15px; font-size: 16px; width: 100%; border: 1px solid #ccc; border-radius: 4px;">
+									<option value="3" <?php echo $rowsPerPage == 3 ? 'selected' : ''; ?>>3筆/頁</option>
+									<option value="5" <?php echo $rowsPerPage == 5 ? 'selected' : ''; ?>>5筆/頁</option>
+									<option value="10" <?php echo $rowsPerPage == 10 ? 'selected' : ''; ?>>10筆/頁</option>
+									<option value="20" <?php echo $rowsPerPage == 20 ? 'selected' : ''; ?>>20筆/頁</option>
+									<option value="25" <?php echo $rowsPerPage == 25 ? 'selected' : ''; ?>>25筆/頁</option>
+									<option value="50" <?php echo $rowsPerPage == 50 ? 'selected' : ''; ?>>50筆/頁</option>
+								</select>
+							</div>
+						</form>
 
-						$result = mysqli_query($link, $query);
-						if (!$result) {
-							die("查詢失敗：" . mysqli_error($link));
-						}
 
-						$appointments = [];
-						while ($row = mysqli_fetch_assoc($result)) {
-							$appointments[] = $row;
-						}
 
-						mysqli_free_result($result);
-						?>
 
-						<!-- 表格區域 -->
+
+						<!-- 表格渲染區域 -->
 						<div class="table-novi table-custom-responsive" style="font-size: 16px; overflow-x: auto;">
 							<table class="table-custom table-custom-bordered"
 								style="width: 100%; border-collapse: collapse;">
@@ -517,7 +456,7 @@ if (isset($_SESSION["帳號"])) {
 										<th style="padding: 10px; text-align: left;">患者姓名</th>
 										<th style="padding: 10px; text-align: left;">治療師姓名</th>
 										<th style="padding: 10px; text-align: left;">預約時間</th>
-										<th style="padding: 10px; text-align: left;">選項</th>
+										<th style="padding: 10px; text-align: center;">選項</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -549,22 +488,28 @@ if (isset($_SESSION["帳號"])) {
 										<?php endforeach; ?>
 									<?php else: ?>
 										<tr>
-											<td colspan="6" style="padding: 10px; text-align: center;">沒有找到符合條件的資料</td>
+											<td colspan="6" style="padding: 10px; text-align: center; color: #999;">
+												沒有找到符合條件的資料</td>
 										</tr>
 									<?php endif; ?>
 								</tbody>
 							</table>
 						</div>
+
+
 						<script>
-							// 初始化年份、月份、日期選單
 							const yearSelect = document.getElementById('year');
 							const monthSelect = document.getElementById('month');
 							const daySelect = document.getElementById('day');
+							const doctorSelect = document.getElementById('the'); // 治療師篩選
 
+							// 初始化 URL 參數
 							const urlParams = new URLSearchParams(window.location.search);
 							const selectedDate = urlParams.get('date') || new Date().toISOString().split('T')[0];
+							const selectedDoctor = urlParams.get('doctor_id') || 'all';
 							const [currentYear, currentMonth, currentDay] = selectedDate.split('-').map(Number);
 
+							// 初始化年份選單
 							for (let year = currentYear - 5; year <= currentYear + 5; year++) {
 								const option = document.createElement('option');
 								option.value = year;
@@ -573,14 +518,16 @@ if (isset($_SESSION["帳號"])) {
 								yearSelect.appendChild(option);
 							}
 
+							// 初始化月份選單
 							for (let month = 1; month <= 12; month++) {
 								const option = document.createElement('option');
-								option.value = String(month).padStart(2, '0'); // 保證兩位數月份
+								option.value = String(month).padStart(2, '0');
 								option.textContent = String(month).padStart(2, '0');
 								if (month === currentMonth) option.selected = true;
 								monthSelect.appendChild(option);
 							}
 
+							// 更新日期選單
 							function updateDays() {
 								const year = parseInt(yearSelect.value);
 								const month = parseInt(monthSelect.value);
@@ -589,7 +536,7 @@ if (isset($_SESSION["帳號"])) {
 								daySelect.innerHTML = '';
 								for (let day = 1; day <= daysInMonth; day++) {
 									const option = document.createElement('option');
-									option.value = String(day).padStart(2, '0'); // 保證兩位數日期
+									option.value = String(day).padStart(2, '0');
 									option.textContent = String(day).padStart(2, '0');
 									if (day === currentDay && year === currentYear && month === currentMonth) {
 										option.selected = true;
@@ -598,24 +545,47 @@ if (isset($_SESSION["帳號"])) {
 								}
 							}
 
-							yearSelect.addEventListener('change', updateDays);
-							monthSelect.addEventListener('change', updateDays);
-
-							updateDays();
-
-
-
+							// 篩選功能
 							function filterByDate() {
-								const selectedYear = yearSelect.value;
-								const selectedMonth = monthSelect.value.padStart(2, '0'); // 保證兩位數月份
-								const selectedDay = daySelect.value.padStart(2, '0'); // 保證兩位數日期
+								const selectedYear = document.getElementById('year').value;
+								const selectedMonth = document.getElementById('month').value.padStart(2, '0');
+								const selectedDay = document.getElementById('day').value.padStart(2, '0');
 								const selectedDate = `${selectedYear}-${selectedMonth}-${selectedDay}`;
+								const selectedDoctor = document.getElementById('the').value;
 
-								// 更新當前頁面的 URL 並刷新資料
-								window.location.href = `a_therapist2.php?date=${selectedDate}`;
+								// 重定向到新 URL，帶有篩選參數
+								window.location.href = `a_therapist2.php?date=${selectedDate}&doctor_id=${selectedDoctor}`;
 							}
 
+
+
+							// 初始化治療師選單
+							if (doctorSelect) {
+								Array.from(doctorSelect.options).forEach((option) => {
+									if (option.value === selectedDoctor) {
+										option.selected = true;
+									}
+								});
+							}
+
+							// 綁定事件
+							yearSelect.addEventListener('change', () => {
+								updateDays();
+								filterByDate();
+							});
+
+							monthSelect.addEventListener('change', () => {
+								updateDays();
+								filterByDate();
+							});
+
+							daySelect.addEventListener('change', filterByDate);
+							doctorSelect.addEventListener('change', filterByDate);
+
+							// 初始化日期選單
+							updateDays();
 						</script>
+
 
 						<!-- 分頁顯示區域 -->
 						<div id="pagination"
