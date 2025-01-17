@@ -384,7 +384,7 @@ if (isset($_SESSION["帳號"])) {
 
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
                   <ul class="rd-menu rd-navbar-dropdown">
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_people.php">使用者資料</a>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_people.php">用戶資料</a>
                     </li>
                   </ul>
                 </li>

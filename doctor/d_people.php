@@ -253,7 +253,7 @@ if (isset($_SESSION["帳號"])) {
 
                 <li class="rd-nav-item active"><a class="rd-nav-link" href="#">預約</a>
                   <ul class="rd-menu rd-navbar-dropdown">
-                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="d_people.php">使用者資料</a>
+                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="d_people.php">用戶資料</a>
                     </li>
                   </ul>
                 </li>
@@ -353,7 +353,7 @@ if (isset($_SESSION["帳號"])) {
           <p class="heading-1 breadcrumbs-custom-title">預約</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="d_index.php">首頁</a></li>
-            <li class="active">使用者資料</li>
+            <li class="active">用戶資料</li>
           </ul>
         </div>
       </section>
@@ -397,18 +397,19 @@ if (isset($_SESSION["帳號"])) {
             $result = $stmt->get_result();
 
             // 搜尋表單
-            echo "<form method='GET' action='' class='mb-4'>
-                    <input type='text' name='search_name' placeholder='請輸入姓名' value='" . htmlspecialchars($search_name) . "' />
-                    <button type='submit' class='popup-btn'>搜尋</button>
-                    <select name='per_page' onchange='this.form.submit()' class='popup-btn'>
-                        <option value='3'" . ($records_per_page == 3 ? ' selected' : '') . ">3筆/頁</option>
-                        <option value='5'" . ($records_per_page == 5 ? ' selected' : '') . ">5筆/頁</option>
-                        <option value='10'" . ($records_per_page == 10 ? ' selected' : '') . ">10筆/頁</option>
-                        <option value='20'" . ($records_per_page == 20 ? ' selected' : '') . ">20筆/頁</option>
-                        <option value='25'" . ($records_per_page == 25 ? ' selected' : '') . ">25筆/頁</option>
-                        <option value='50'" . ($records_per_page == 50 ? ' selected' : '') . ">50筆/頁</option>
-                    </select>
-                </form>";
+            echo "<form method='GET' action='' class='mb-4' style='text-align: right; margin-bottom: 20px;'>
+            <input type='text' name='search_name' placeholder='請輸入姓名' value='" . htmlspecialchars($search_name) . "' style='padding: 5px; margin-right: 10px;' />
+            <button type='submit' class='popup-btn' style='padding: 5px 10px; margin-right: 10px;'>搜尋</button>
+            <select name='per_page' onchange='this.form.submit()' class='popup-btn' style='padding: 5px;'>
+                <option value='3'" . ($records_per_page == 3 ? ' selected' : '') . ">3筆/頁</option>
+                <option value='5'" . ($records_per_page == 5 ? ' selected' : '') . ">5筆/頁</option>
+                <option value='10'" . ($records_per_page == 10 ? ' selected' : '') . ">10筆/頁</option>
+                <option value='20'" . ($records_per_page == 20 ? ' selected' : '') . ">20筆/頁</option>
+                <option value='25'" . ($records_per_page == 25 ? ' selected' : '') . ">25筆/頁</option>
+                <option value='50'" . ($records_per_page == 50 ? ' selected' : '') . ">50筆/頁</option>
+            </select>
+        </form>";
+
 
             // 顯示資料表格
             if ($result->num_rows > 0) {
