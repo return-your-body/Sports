@@ -433,7 +433,7 @@ if (isset($_SESSION["帳號"])) {
         <td>" . (!empty($row["birthday"]) ? $row["birthday"] : '無資料') . "</td>
         <td>" . (!empty($row["idcard"]) ? $row["idcard"] : '無資料') . "</td>
         <td>
-            <a href='d_appointment.php?id=" . urlencode($row['user_id']) . "' target='_blank'>
+            <a href='d_appointment.php?id=" . urlencode($row['people_id']) . "' target='_blank'>
                 <button type='button' class='popup-btn'>預約</button>
             </a>
         </td>

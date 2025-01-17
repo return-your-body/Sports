@@ -1,66 +1,54 @@
 <?php
 session_start();
+require '../db.php';
 
-if (!isset($_SESSION["登入狀態"])) {
-  header("Location: ../index.html");
+// 確保用戶已登錄並傳入必要的參數
+if (!isset($_SESSION['登入狀態']) || !isset($_GET['id']) || empty($_GET['id'])) {
+  echo "<script>alert('請先登入！');window.location.href='../index.html';</script>";
   exit;
 }
 
-// 防止頁面被瀏覽器緩存
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
-header("Pragma: no-cache");
+// 獲取 GET 參數
+$people_id = intval($_GET['id']);
+$_SESSION['people_id'] = $people_id;
 
-// 檢查 "帳號" 是否存在於 $_SESSION 中
-if (isset($_SESSION["帳號"])) {
-  // 獲取用戶帳號
-  $帳號 = $_SESSION['帳號'];
+// 查詢 People 表以獲取使用者資料
+$query_people = "SELECT name FROM people WHERE people_id = ?";
+$stmt_people = $link->prepare($query_people);
+$stmt_people->bind_param("i", $people_id);
+$stmt_people->execute();
+$result_people = $stmt_people->get_result();
 
-  // 資料庫連接
-  require '../db.php';
-
-  // 查詢該帳號的詳細資料
-  $sql = "SELECT user.account, doctor.doctor AS name 
-            FROM user 
-            JOIN doctor ON user.user_id = doctor.user_id 
-            WHERE user.account = ?";
-  $stmt = mysqli_prepare($link, $sql);
-  mysqli_stmt_bind_param($stmt, "s", $帳號);
-  mysqli_stmt_execute($stmt);
-  $result = mysqli_stmt_get_result($stmt);
-
-  if (mysqli_num_rows($result) > 0) {
-    // 抓取對應姓名
-    $row = mysqli_fetch_assoc($result);
-    $姓名 = $row['name'];
-    $帳號名稱 = $row['account'];
-
-    // 顯示帳號和姓名
-    // echo "歡迎您！<br>";
-    // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-    // echo "姓名：" . htmlspecialchars($姓名);
-    // echo "<script>
-    //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-    // </script>";
-  } else {
-    // 如果資料不存在，提示用戶重新登入
-    echo "<script>
-                alert('找不到對應的帳號資料，請重新登入。');
-                window.location.href = '../index.html';
-              </script>";
-    exit();
-  }
-
+if ($result_people->num_rows > 0) {
+  $data_people = $result_people->fetch_assoc();
+  $_SESSION['user_name'] = $data_people['name'];
 } else {
-  echo "<script>
-            alert('會話過期或資料遺失，請重新登入。');
-            window.location.href = '../index.html';
-          </script>";
-  exit();
+  echo "<script>alert('無法找到對應的使用者資料！');window.location.href='d_people.php';</script>";
+  exit;
 }
 
-//預約
+// 查詢當前登入醫生的資料
+$user_account = $_SESSION['帳號'];
+$query_doctor = "
+    SELECT doctor_id, doctor AS 醫生姓名 
+    FROM doctor 
+    JOIN user ON doctor.user_id = user.user_id
+    WHERE user.account = ? AND user.grade_id = 2";
+$stmt_doctor = $link->prepare($query_doctor);
+$stmt_doctor->bind_param("s", $user_account);
+$stmt_doctor->execute();
+$result_doctor = $stmt_doctor->get_result();
+
+if ($result_doctor->num_rows > 0) {
+  $data_doctor = $result_doctor->fetch_assoc();
+  $_SESSION['doctor_id'] = $data_doctor['doctor_id'];
+  $_SESSION['doctor_name'] = $data_doctor['醫生姓名'];
+} else {
+  echo "<script>alert('無法找到醫生資料！');window.location.href='d_people.php';</script>";
+  exit;
+}
 ?>
+
 
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
@@ -467,7 +455,8 @@ if (isset($_SESSION["帳號"])) {
             <?php
             echo "歡迎 ~ ";
             // 顯示姓名
-            echo $姓名;
+            echo $_SESSION['doctor_name'];
+            ;
             ?>
           </div>
         </nav>
@@ -493,31 +482,6 @@ if (isset($_SESSION["帳號"])) {
     <!--標題-->
 
     <!-- 預約 -->
-    <?php
-    session_start();
-    require '../db.php'; // 引入資料庫連線
-    
-    // 驗證參數
-    if (!isset($_GET['id']) || empty($_GET['id'])) {
-      die("無效的使用者 ID");
-    }
-    $user_id = intval($_GET['id']);
-
-    // 查詢使用者資料
-    $query = "SELECT * FROM `people` WHERE `user_id` = ?";
-    $stmt = $link->prepare($query);
-    $stmt->bind_param("i", $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows == 0) {
-      die("找不到使用者資料");
-    }
-    $user = $result->fetch_assoc();
-    $_SESSION['user_name'] = $user['name'];
-    $_SESSION['user_id'] = $user_id; // 保存 session 用於預約提交
-    ?>
-
     <section class="section section-lg novi-bg novi-bg-img bg-default">
       <div class="container">
         <div class="row justify-content-center">
@@ -535,9 +499,10 @@ if (isset($_SESSION["帳號"])) {
                 <!-- 醫生姓名 -->
                 <div class="form-group mb-3">
                   <label for="doctor_name" class="form-label">醫生姓名：</label>
-                  <input type="text" id="doctor_name" name="doctor_name" class="form-control" value="吳孟軒" readonly
-                    required />
+                  <input type="text" id="doctor_name" name="doctor_name" class="form-control"
+                    value="<?= htmlspecialchars($_SESSION['doctor_name']); ?>" readonly required />
                 </div>
+
 
                 <!-- 預約日期 -->
                 <div class="form-group mb-3">
@@ -584,7 +549,7 @@ if (isset($_SESSION["帳號"])) {
           fetch("檢查預約.php", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `date=${date}&doctor_id=1`,
+            body: `date=${date}&doctor_id=<?= $_SESSION['doctor_id']; ?>`,
           })
             .then(response => response.json())
             .then(data => {
