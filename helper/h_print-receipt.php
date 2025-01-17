@@ -364,7 +364,13 @@ WHERE m.medicalrecord_id = $id
               <ul class="rd-navbar-nav">
                 <li class="rd-nav-item"><a class="rd-nav-link" href="h_index.php">首頁</a>
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a></li>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
+                  <ul class="rd-menu rd-navbar-dropdown">
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_people.php">用戶資料</a>
+                    </li>
+                  </ul>
+                </li>
+                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a></li> -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">醫生班表</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_doctorshift.php">治療師班表</a>
@@ -532,7 +538,8 @@ WHERE m.medicalrecord_id = $id
             <h4>快速連結</h4>
             <ul class="list-marked">
               <li><a href="h_index.php">首頁</a></li>
-              <li><a href="h_appointment.php">預約</a></li>
+              <li><a href="h_people.php">用戶資料</a></li>
+              <!-- <li><a href="h_appointment.php">預約</a></li> -->
               <li><a href="h_numberpeople.php">當天人數及時段</a></li>
               <li><a href="h_doctorshift.php">班表時段</a></li>
               <!-- <li><a href="h_print-receipt.php">列印收據</a></li>

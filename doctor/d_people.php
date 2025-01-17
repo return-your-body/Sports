@@ -172,17 +172,7 @@ if (isset($_SESSION["帳號"])) {
       background-color: #007f6e;
     }
 
-    /* 黑名單切換樣式 */
-    .blacklist-toggle {
-      font-size: 14px;
-      color: #333;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-    }
-
-
-
+  
     .ie-panel {
       display: none;
       background: #212121;
@@ -484,7 +474,8 @@ if (isset($_SESSION["帳號"])) {
             <h4>快速連結</h4>
             <ul class="list-marked">
               <li><a href="d_index.php">首頁</a></li>
-              <li><a href="d_appointment.php">預約</a></li>
+              <li><a href="d_people.php">用戶資料</a></li>
+              <!-- <li><a href="d_appointment.php">預約</a></li> -->
               <li><a href="d_numberpeople.php">當天人數及時段</a></li>
               <li><a href="d_doctorshift.php">班表時段</a></li>
               <li><a href="d_leave.php">請假申請</a></li>
