@@ -515,8 +515,9 @@ if (isset($_SESSION["帳號"])) {
     }
     $user = $result->fetch_assoc();
     $_SESSION['user_name'] = $user['name'];
-
+    $_SESSION['user_id'] = $user_id; // 保存 session 用於預約提交
     ?>
+
     <section class="section section-lg novi-bg novi-bg-img bg-default">
       <div class="container">
         <div class="row justify-content-center">
@@ -562,9 +563,9 @@ if (isset($_SESSION["帳號"])) {
 
                 <!-- 提交按鈕 -->
                 <div class="text-center">
-                  <button type="submit" class="btn btn-primary px-4 py-2">
-                    提交預約
-                  </button>
+                  <button type="submit" class="btn btn-primary px-4 py-2">提交預約</button>
+                  <button type="button" onclick="location.href='d_people.php'"
+                    class="btn btn-secondary px-4 py-2">返回</button>
                 </div>
               </form>
             </div>
@@ -585,11 +586,11 @@ if (isset($_SESSION["帳號"])) {
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: `date=${date}&doctor_id=1`,
           })
-            .then((response) => response.json())
-            .then((data) => {
+            .then(response => response.json())
+            .then(data => {
               if (data.success) {
                 timeSelect.innerHTML = '<option value="">請選擇時間</option>';
-                data.times.forEach((time) => {
+                data.times.forEach(time => {
                   const option = document.createElement("option");
                   option.value = time.shifttime_id;
                   option.textContent = time.shifttime;
@@ -599,7 +600,7 @@ if (isset($_SESSION["帳號"])) {
                 timeSelect.innerHTML = '<option value="">無可用時段</option>';
               }
             })
-            .catch((error) => {
+            .catch(error => {
               console.error("錯誤：", error);
               timeSelect.innerHTML = '<option value="">無法加載時段</option>';
             });

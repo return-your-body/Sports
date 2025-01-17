@@ -78,120 +78,6 @@ if (isset($_SESSION["帳號"])) {
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/style.css">
   <style>
-    /* 禁用按鈕樣式 */
-    button.disabled {
-      background-color: #ccc;
-      /* 灰色背景 */
-      color: #666;
-      /* 灰色文字 */
-      border: 1px solid #999;
-      /* 灰色邊框 */
-      cursor: not-allowed;
-      /* 禁用鼠標樣式 */
-      pointer-events: none;
-      /* 禁止所有事件 */
-    }
-
-    /* 排班資訊樣式 */
-    .shift-info {
-      margin: 5px 0;
-      font-size: 14px;
-      color: #555;
-    }
-
-    /* 預約按鈕樣式 */
-    .shift-info button {
-      background-color: #008CBA;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      font-size: 12px;
-      cursor: pointer;
-      border-radius: 3px;
-    }
-
-    .shift-info button:hover {
-      background-color: #005f7f;
-    }
-
-    /* 無排班提示樣式 */
-    .no-schedule {
-      font-size: 18px;
-      color: #aaa;
-    }
-
-    /* 當前日期高亮樣式 */
-    .today {
-      background-color: #ffeb3b;
-    }
-
-    /* 基本樣式調整 */
-    .table-custom {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-    }
-
-    .table-custom th,
-    .table-custom td {
-      border: 1px solid #ddd;
-      text-align: center;
-      vertical-align: middle;
-      padding: 10px;
-      word-wrap: break-word;
-      /* 避免文字超出格子 */
-    }
-
-    /* 手機設備響應式設計 */
-    @media (max-width: 768px) {
-      .table-custom {
-        display: block;
-        /* 將表格改為 block，允許水平滾動 */
-        overflow-x: auto;
-        /* 加入水平滾動 */
-        white-space: nowrap;
-        /* 禁止自動換行 */
-      }
-
-      .table-custom th,
-      .table-custom td {
-        font-size: 12px;
-        /* 縮小文字大小 */
-        padding: 5px;
-        /* 減小內邊距 */
-      }
-
-      .shift-info button {
-        font-size: 10px;
-        /* 縮小按鈕文字 */
-        padding: 5px;
-        /* 減小按鈕大小 */
-      }
-    }
-
-    /* 極小設備 (手機) */
-    @media (max-width: 480px) {
-
-      .table-custom th,
-      .table-custom td {
-        font-size: 10px;
-        padding: 3px;
-      }
-
-      .shift-info {
-        display: block;
-        font-size: 10px;
-      }
-
-      .shift-info button {
-        font-size: 9px;
-        padding: 3px;
-      }
-    }
-
-
-
-
     .ie-panel {
       display: none;
       background: #212121;
@@ -207,6 +93,8 @@ if (isset($_SESSION["帳號"])) {
     html.lt-ie-10 .ie-panel {
       display: block;
     }
+
+
 
     /* 登出確認視窗 - 初始隱藏 */
     .logout-box {
@@ -266,6 +154,49 @@ if (isset($_SESSION["帳號"])) {
 
     .button-shadow {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    /* 按鈕樣式 */
+    .popup-btn {
+      background-color: #00A896;
+      color: white;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+
+    .popup-btn:hover {
+      background-color: #007f6e;
+    }
+
+    /* 黑名單切換樣式 */
+    .blacklist-toggle {
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+    }
+
+
+
+    .ie-panel {
+      display: none;
+      background: #212121;
+      padding: 10px 0;
+      box-shadow: 3px 3px 5px 0 rgba(0, 0, 0, .3);
+      clear: both;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    html.ie-10 .ie-panel,
+    html.lt-ie-10 .ie-panel {
+      display: block;
     }
   </style>
 </head>
@@ -439,49 +370,101 @@ if (isset($_SESSION["帳號"])) {
             session_start();
             require '../db.php'; // 引入資料庫連線
             
-            // 查詢資料
-            $sql = "SELECT * FROM `people`";
-            $result = $link->query($sql);
+            // 預設分頁與顯示筆數
+            $records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 3;
+            $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+            $search_name = isset($_GET['search_name']) ? $_GET['search_name'] : '';
 
-            // 顯示資料
+            // 計算總筆數
+            $sql_total = "SELECT COUNT(*) AS total FROM `people` WHERE `name` LIKE ?";
+            $stmt_total = $link->prepare($sql_total);
+            $like_search = "%$search_name%";
+            $stmt_total->bind_param("s", $like_search);
+            $stmt_total->execute();
+            $result_total = $stmt_total->get_result();
+            $row_total = $result_total->fetch_assoc();
+            $total_records = $row_total['total'];
+
+            // 計算總頁數
+            $total_pages = ceil($total_records / $records_per_page);
+            $offset = ($current_page - 1) * $records_per_page;
+
+            // 查詢分頁資料
+            $sql = "SELECT * FROM `people` WHERE `name` LIKE ? LIMIT ?, ?";
+            $stmt = $link->prepare($sql);
+            $stmt->bind_param("sii", $like_search, $offset, $records_per_page);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            // 搜尋表單
+            echo "<form method='GET' action='' class='mb-4'>
+                    <input type='text' name='search_name' placeholder='請輸入姓名' value='" . htmlspecialchars($search_name) . "' />
+                    <button type='submit' class='popup-btn'>搜尋</button>
+                    <select name='per_page' onchange='this.form.submit()' class='popup-btn'>
+                        <option value='3'" . ($records_per_page == 3 ? ' selected' : '') . ">3筆/頁</option>
+                        <option value='5'" . ($records_per_page == 5 ? ' selected' : '') . ">5筆/頁</option>
+                        <option value='10'" . ($records_per_page == 10 ? ' selected' : '') . ">10筆/頁</option>
+                        <option value='20'" . ($records_per_page == 20 ? ' selected' : '') . ">20筆/頁</option>
+                        <option value='25'" . ($records_per_page == 25 ? ' selected' : '') . ">25筆/頁</option>
+                        <option value='50'" . ($records_per_page == 50 ? ' selected' : '') . ">50筆/頁</option>
+                    </select>
+                </form>";
+
+            // 顯示資料表格
             if ($result->num_rows > 0) {
-              echo "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>";
-              echo "<tr>
-            <th>編號</th>
-            <th>姓名</th>
-            <th>性別</th>
-            <th>生日</th>
-            <th>身分證</th>
-            <th>選項</th>
-          </tr>";
+              echo "<table style='width: 100%; border-collapse: collapse; text-align: center;'>
+                        <thead style='background-color: #f5f5f5;'>
+                            <tr>
+                                <th>#</th>
+                                <th>姓名</th>
+                                <th>性別</th>
+                                <th>生日</th>
+                                <th>身分證</th>
+                                <th>選項</th>
+                            </tr>
+                        </thead>
+                        <tbody>";
               while ($row = $result->fetch_assoc()) {
                 echo "<tr>
-                <td>" . $row["user_id"] . "</td>
-                <td>" . $row["name"] . "</td>
-                <td>" . ($row["gender_id"] == 1 ? '男性' : '女性') . "</td>
-                <td>" . $row["birthday"] . "</td>
-                <td>" . $row["idcard"] . "</td>
-                <td>
-                    <a href='d_appointment.php?id=" . urlencode($row['user_id']) . "' target='_blank'>
-                        <button type='button'>預約</button>
-                    </a>
-                </td>
-              </tr>";
+                            <td>" . $row["people_id"] . "</td>
+                            <td>" . $row["name"] . "</td>
+                            <td>" . ($row["gender_id"] == 1 ? '男性' : '女性') . "</td>
+                            <td>" . $row["birthday"] . "</td>
+                            <td>" . ($row["idcard"] ? $row["idcard"] : '無資料') . "</td>
+                            <td>
+                                <a href='d_appointment.php?id=" . urlencode($row['user_id']) . "' target='_blank'>
+                                    <button type='button' class='popup-btn'>預約</button>
+                                </a>
+                            </td>
+                        </tr>";
               }
-              echo "</table>";
+              echo "</tbody></table>";
+
+              // 分頁導航
+              echo "<div style='text-align: center; margin-top: 20px;'>";
+              for ($i = 1; $i <= $total_pages; $i++) {
+                echo "<a href='?search_name=" . urlencode($search_name) . "&per_page=$records_per_page&page=$i' 
+                            style='margin: 0 5px; text-decoration: none; " . ($i == $current_page ? "font-weight: bold;" : "") . "'>
+                            $i
+                        </a>";
+              }
+              echo "</div>";
             } else {
-              echo "查無資料";
+              echo "<p style='text-align: center;'>查無資料</p>";
             }
 
             // 關閉連線
+            $stmt->close();
+            $stmt_total->close();
             $link->close();
             ?>
-
 
           </div>
         </div>
       </div>
     </section>
+
+
     <!-- 使用者資料-->
 
 

@@ -37,7 +37,7 @@ if ($row = mysqli_fetch_assoc($result_shift)) {
     ";
 
     if (mysqli_query($link, $insert_query)) {
-        echo "<script>alert('預約成功！');window.location.href='d_appointment.php';</script>";
+        echo "<script>alert('預約成功！');window.location.href='d_people.php';</script>";
     } else {
         echo "<script>alert('預約失敗，請稍後再試！');window.history.back();</script>";
     }
