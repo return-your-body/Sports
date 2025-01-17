@@ -423,22 +423,23 @@ if (isset($_SESSION["帳號"])) {
                                 <th>選項</th>
                             </tr>
                         </thead>
-                        <tbody>";
+               <tbody>";
               while ($row = $result->fetch_assoc()) {
                 echo "<tr>
-                            <td>" . $row["people_id"] . "</td>
-                            <td>" . $row["name"] . "</td>
-                            <td>" . ($row["gender_id"] == 1 ? '男性' : '女性') . "</td>
-                            <td>" . $row["birthday"] . "</td>
-                            <td>" . ($row["idcard"] ? $row["idcard"] : '無資料') . "</td>
-                            <td>
-                                <a href='d_appointment.php?id=" . urlencode($row['user_id']) . "' target='_blank'>
-                                    <button type='button' class='popup-btn'>預約</button>
-                                </a>
-                            </td>
-                        </tr>";
+        <td>" . $row["people_id"] . "</td>
+        <td>" . $row["name"] . "</td>
+        <td>" . ($row["gender_id"] == 1 ? '男性' : '女性') . "</td>
+        <td>" . (!empty($row["birthday"]) ? $row["birthday"] : '無資料') . "</td>
+        <td>" . (!empty($row["idcard"]) ? $row["idcard"] : '無資料') . "</td>
+        <td>
+            <a href='d_appointment.php?id=" . urlencode($row['user_id']) . "' target='_blank'>
+                <button type='button' class='popup-btn'>預約</button>
+            </a>
+        </td>
+    </tr>";
               }
-              echo "</tbody></table>";
+              echo "</tbody>";
+              echo "</table>";
 
               // 分頁導航
               echo "<div style='text-align: center; margin-top: 20px;'>";
