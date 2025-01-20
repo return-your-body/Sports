@@ -155,38 +155,6 @@ if (isset($_SESSION["帳號"])) {
 			box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
 		}
 
-		/* 預約資料 */
-
-		body {
-			font-family: Arial, sans-serif;
-			background-color: #f9f9f9;
-		}
-
-		table {
-			width: 60%;
-			margin: auto;
-			border-collapse: collapse;
-			margin-top: 30px;
-			background-color: #fff;
-			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-		}
-
-		th,
-		td {
-			border: 1px solid #ddd;
-			padding: 10px;
-			text-align: center;
-		}
-
-		th {
-			background-color: #f4f4f4;
-			font-weight: bold;
-		}
-
-		h2 {
-			text-align: center;
-			margin-top: 20px;
-		}
 
 		/* 聯絡我們 */
 		.custom-link {
@@ -202,7 +170,76 @@ if (isset($_SESSION["帳號"])) {
 			text-decoration: underline;
 			/* 懸停時增加下劃線效果 */
 		}
+
+		/* 歷史紀錄 */
+		body {
+			font-family: Arial, sans-serif;
+			background-color: #f9f9f9;
+			margin: 0;
+			padding: 0;
+		}
+
+		h2 {
+			text-align: center;
+			margin-top: 20px;
+		}
+
+		table {
+			width: 80%;
+			margin: 20px auto;
+			border-collapse: collapse;
+			background-color: #fff;
+			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+			overflow-x: auto;
+		}
+
+		th,
+		td {
+			border: 1px solid #ddd;
+			padding: 10px;
+			text-align: center;
+			white-space: nowrap;
+		}
+
+		th {
+			background-color: #f4f4f4;
+			font-weight: bold;
+		}
+
+		p {
+			text-align: center;
+			margin-top: 20px;
+			color: #555;
+		}
+
+		/* 響應式樣式 */
+		@media (max-width: 768px) {
+			table {
+				width: 100%;
+				font-size: 14px;
+			}
+
+			th,
+			td {
+				padding: 8px;
+				font-size: 12px;
+				white-space: normal;
+				/* 允許文字換行 */
+			}
+		}
+
+		@media (max-width: 480px) {
+			table {
+				font-size: 12px;
+			}
+
+			th,
+			td {
+				padding: 6px;
+			}
+		}
 	</style>
+
 </head>
 
 <body>
@@ -395,26 +432,25 @@ if (isset($_SESSION["帳號"])) {
 						
 						// 查詢該使用者的所有預約資料
 						$query = "
-SELECT 
-    a.appointment_id, 
-    COALESCE(p.name, '未知') AS patient_name, -- 患者姓名
-    CASE 
-        WHEN p.gender_id = 1 THEN '男' 
-        WHEN p.gender_id = 2 THEN '女' 
-        ELSE '未知' 
-    END AS gender, -- 性別
-    COALESCE(p.birthday, '未知') AS birthday, -- 生日
-    COALESCE(ds.date, '未知') AS appointment_date, -- 預約日期
-    COALESCE(st.shifttime, '未設定') AS shifttime, -- 預約時間段
-    COALESCE(a.note, '無備註') AS note -- 備註
-FROM appointment a
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id -- 關聯班表
-LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id -- 關聯時段
-LEFT JOIN people p ON a.people_id = p.people_id -- 關聯患者
-LEFT JOIN user u ON p.user_id = u.user_id -- 關聯使用者
-WHERE u.account = ?
-ORDER BY a.appointment_id DESC
-";
+						SELECT 
+							a.appointment_id, 
+							COALESCE(p.name, '未知') AS patient_name, -- 患者姓名
+							CASE 
+								WHEN p.gender_id = 1 THEN '男' 
+								WHEN p.gender_id = 2 THEN '女' 
+								ELSE '未知' 
+							END AS gender, -- 性別
+							COALESCE(p.birthday, '未知') AS birthday, -- 生日
+							COALESCE(ds.date, '未知') AS appointment_date, -- 預約日期
+							COALESCE(st.shifttime, '未設定') AS shifttime, -- 預約時間段
+							COALESCE(a.note, '無備註') AS note -- 備註
+						FROM appointment a
+						LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id -- 關聯班表
+						LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id -- 關聯時段
+						LEFT JOIN people p ON a.people_id = p.people_id -- 關聯患者
+						LEFT JOIN user u ON p.user_id = u.user_id -- 關聯使用者
+						WHERE u.account = ?
+						ORDER BY a.appointment_id DESC";
 
 						$stmt = mysqli_prepare($link, $query);
 						if (!$stmt) {
@@ -425,7 +461,6 @@ ORDER BY a.appointment_id DESC
 						mysqli_stmt_bind_param($stmt, 's', $帳號);
 						mysqli_stmt_execute($stmt);
 						$result = mysqli_stmt_get_result($stmt);
-
 						?>
 						<?php if (mysqli_num_rows($result) > 0): ?>
 							<?php while ($row = mysqli_fetch_assoc($result)): ?>
@@ -457,13 +492,11 @@ ORDER BY a.appointment_id DESC
 								</table>
 							<?php endwhile; ?>
 						<?php else: ?>
-							<p style="text-align: center;">目前無預約記錄</p>
+							<p>目前無預約記錄</p>
 						<?php endif; ?>
-
-
-
 					</div>
 				</div>
+			</div>
 		</section>
 
 		<footer class="section novi-bg novi-bg-img footer-simple">

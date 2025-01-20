@@ -160,30 +160,44 @@ if (isset($_SESSION["帳號"])) {
 
 
     /* 醫生班表 */
-    .table-custom {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
+    /* 電腦端樣式（保留原始設計） */
+    .table-container {
+      overflow-x: hidden;
+      margin-top: 10px;
     }
 
-    .table-custom th,
-    .table-custom td {
-      border: 1px solid #ddd;
-      text-align: left;
-      /* 文字靠左對齊 */
-      padding: 8px;
-      white-space: nowrap;
+    /* 手機端樣式（針對寬度小於768px的裝置） */
+    @media screen and (max-width: 768px) {
+      .table-container {
+        overflow-x: auto;
+        /* 啟用橫向滾動 */
+      }
+
+      .table-custom {
+        width: 1200px;
+        /* 設定寬度大於手機螢幕，讓用戶可以滑動 */
+        min-width: 768px;
+        /* 最小寬度，防止文字壓縮 */
+      }
+
+      .table-custom th,
+      .table-custom td {
+        white-space: nowrap;
+        /* 禁止文字換行 */
+        overflow: hidden;
+        /* 隱藏超出部分 */
+        text-overflow: ellipsis;
+        /* 顯示省略號 */
+      }
     }
 
+
+    /* 表頭樣式 */
     .table-custom th {
       background-color: #00a79d;
       color: white;
+      font-weight: bold;
       text-align: center;
-    }
-
-    .reservation-info {
-      color: red;
-      margin-top: 5px;
     }
   </style>
 
@@ -551,7 +565,10 @@ if (isset($_SESSION["帳號"])) {
           initSelectOptions();
           generateCalendar();
         </script>
+
     </section>
+
+
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">

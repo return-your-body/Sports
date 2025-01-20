@@ -488,8 +488,6 @@ if (isset($_SESSION["帳號"])) {
                 </a>
               <?php endfor; ?>
             </div>
-
-
             <?php mysqli_close($link); ?>
           </div>
         </div>

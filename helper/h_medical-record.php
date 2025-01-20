@@ -219,16 +219,21 @@ $result = mysqli_query($link, $sql);
 
 
         /* 看診紀錄 */
-        table {
-            width: auto;
-            /* 讓表格寬度根據內容自動調整 */
-            border-collapse: collapse;
+        .table-container {
+            overflow-x: auto;
+            /* 啟用橫向滾動 */
             margin-top: 20px;
+            border: 1px solid #ddd;
+            /* 為表格容器加邊框 */
         }
 
-        .search-container {
-            text-align: right;
-            margin-bottom: 10px;
+        table {
+            width: 100%;
+            /* 寬度自適應 */
+            border-collapse: collapse;
+            margin-top: 20px;
+            table-layout: auto;
+            /* 允許自適應內容寬度 */
         }
 
         th,
@@ -236,19 +241,31 @@ $result = mysqli_query($link, $sql);
             padding: 8px;
             text-align: center;
             border: 1px solid #ddd;
+            /* 單元格邊框 */
             white-space: nowrap;
-            /* 防止文字換行，保持欄位寬度符合文字 */
+            /* 防止文字換行 */
+            font-size: 14px;
+            /* 調整字體大小 */
+            vertical-align: middle;
+            /* 垂直置中 */
         }
 
         th {
             background-color: #f2f2f2;
+            color: #333;
         }
 
-        table th,
-        table td {
-            text-align: center;
-            vertical-align: middle;
-            /* 垂直置中 */
+        @media (max-width: 768px) {
+            table {
+                font-size: 12px;
+                /* 在小屏設備上縮小字體 */
+            }
+
+            th,
+            td {
+                padding: 6px;
+                /* 減少內邊距 */
+            }
         }
     </style>
 
@@ -433,50 +450,18 @@ $result = mysqli_query($link, $sql);
             <div class="container">
                 <div class="row row-50 justify-content-lg-center">
                     <div class="col-lg-10 col-xl-8">
-                        <!-- Bootstrap collapse-->
-                        <div class="accordion-custom-group accordion-custom-group-custom accordion-custom-group-corporate"
-                            id="accordion1" role="tablist" aria-multiselectable="false">
+                        <!-- 搜尋框 -->
+                        <div class="search-container">
+                            <form method="GET" action="">
+                                <input type="hidden" name="is_search" value="1">
+                                <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
+                                    value="<?php echo isset($_GET['search_name']) ? htmlspecialchars($_GET['search_name']) : ''; ?>">
+                                <button type="submit">搜尋</button>
+                            </form>
+                        </div>
 
-                            <!-- 搜尋框 -->
-                            <div class="search-container">
-                                <form method="GET" action="">
-                                    <!-- 隱藏的狀態標誌，用於檢測是否按下搜尋按鈕 -->
-                                    <input type="hidden" name="is_search" value="1">
-                                    <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
-                                        value="<?php echo isset($_GET['search_name']) ? htmlspecialchars($_GET['search_name']) : ''; ?>">
-                                    <button type="submit">搜尋</button>
-                                </form>
-                            </div>
-
-                            <?php
-                            require '../db.php'; // 引入資料庫連接檔案
-                            
-                            // 檢查是否由搜尋按鈕提交
-                            if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['is_search'])) {
-                                $search_name = trim($_GET['search_name']);
-
-                                if ($search_name === '') {
-                                    // 如果搜尋姓名為空，顯示彈跳訊息
-                                    echo "<script>alert('請輸入搜尋姓名！');</script>";
-                                } else {
-                                    // 執行資料庫查詢，檢查是否有該資料
-                                    $sql = "
-        SELECT COUNT(*) AS total
-        FROM medicalrecord a
-        LEFT JOIN people p ON a.people_id = p.people_id
-        WHERE p.name LIKE '%$search_name%'
-        ";
-                                    $result = mysqli_query($link, $sql);
-                                    $data = mysqli_fetch_assoc($result);
-
-                                    if ($data['total'] == 0) {
-                                        // 查無資料，顯示彈跳訊息
-                                        echo "<script>alert('查無此人！');</script>";
-                                    }
-                                }
-                            }
-                            ?>
-
+                        <!-- 表格容器 -->
+                        <div class="table-container">
                             <table>
                                 <thead>
                                     <tr>
@@ -484,7 +469,7 @@ $result = mysqli_query($link, $sql);
                                         <th>姓名</th>
                                         <th>性別</th>
                                         <th>生日 (年齡)</th>
-                                        <th>看診日期(星期)</th>
+                                        <th>看診日期 (星期)</th>
                                         <th>醫生</th>
                                         <th>治療項目</th>
                                         <th>治療費用</th>
@@ -502,11 +487,10 @@ $result = mysqli_query($link, $sql);
                                                 <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
                                                 <td>
                                                     <?php
-                                                    // 顯示看診日期和星期
-                                                    $consultation_date = htmlspecialchars($row['consultation_date']); // 日期
-                                                    $timestamp = strtotime($consultation_date); // 將日期轉為時間戳記
-                                                    $weekdays = ['日', '一', '二', '三', '四', '五', '六']; // 中文星期對應
-                                                    $weekday = $weekdays[date('w', $timestamp)]; // 獲取星期數字對應的中文
+                                                    $consultation_date = htmlspecialchars($row['consultation_date']);
+                                                    $timestamp = strtotime($consultation_date);
+                                                    $weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+                                                    $weekday = $weekdays[date('w', $timestamp)];
                                                     echo $consultation_date . ' (星期' . $weekday . ')';
                                                     ?>
                                                 </td>
@@ -529,46 +513,44 @@ $result = mysqli_query($link, $sql);
                                     <?php endif; ?>
                                 </tbody>
                             </table>
-
-                            <!-- 分頁 -->
-                            <div style="text-align: right; margin-top: 10px; margin-bottom: 10px;">
-                                <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（共
-                                    <?php echo $total_records; ?>
-                                    筆資料）</span>
-                            </div>
-
-                            <div style="text-align: center; margin-top: 20px;">
-                                <?php if ($page > 1): ?>
-                                    <a
-                                        href="?page=<?php echo $page - 1; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
-                                <?php endif; ?>
-
-                                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                                    <?php if ($i == $page): ?>
-                                        <strong><?php echo $i; ?></strong>
-                                    <?php else: ?>
-                                        <a
-                                            href="?page=<?php echo $i; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
-                                    <?php endif; ?>
-                                <?php endfor; ?>
-
-                                <?php if ($page < $total_pages): ?>
-                                    <a
-                                        href="?page=<?php echo $page + 1; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
-                                <?php endif; ?>
-                            </div>
-
-                            <?php
-                            // 釋放結果並關閉連線
-                            mysqli_free_result($result);
-                            mysqli_close($link);
-                            ?>
-
                         </div>
+
+                        <!-- 分頁 -->
+                        <div style="text-align: right; margin-top: 10px; margin-bottom: 10px;">
+                            <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（共
+                                <?php echo $total_records; ?> 筆資料）</span>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 20px;">
+                            <?php if ($page > 1): ?>
+                                <a
+                                    href="?page=<?php echo $page - 1; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
+                            <?php endif; ?>
+
+                            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                                <?php if ($i == $page): ?>
+                                    <strong><?php echo $i; ?></strong>
+                                <?php else: ?>
+                                    <a
+                                        href="?page=<?php echo $i; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
+                                <?php endif; ?>
+                            <?php endfor; ?>
+
+                            <?php if ($page < $total_pages): ?>
+                                <a
+                                    href="?page=<?php echo $page + 1; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
+                            <?php endif; ?>
+                        </div>
+
+                        <?php
+                        mysqli_free_result($result);
+                        mysqli_close($link);
+                        ?>
                     </div>
                 </div>
             </div>
         </section>
+
         <!--看診紀錄-->
 
         <!--頁尾-->
