@@ -157,44 +157,7 @@ if (isset($_SESSION["帳號"])) {
     }
 
 
-    /* 請假查詢 */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-    }
-
-    th,
-    td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: center;
-    }
-
-    th {
-      background-color: #f4f4f4;
-      font-weight: bold;
-    }
-
-    .approved {
-      color: green;
-    }
-
-    .rejected {
-      color: red;
-    }
-
-    .pagination {
-      text-align: center;
-      margin: 20px 0;
-    }
-
-    .total-info {
-      text-align: right;
-      margin: 10px 0;
-      font-size: 14px;
-      color: #555;
-    }
+    /* 請假查詢表格樣式 */
   </style>
 
 </head>
@@ -364,108 +327,174 @@ if (isset($_SESSION["帳號"])) {
 
 
     <!-- 請假查詢資料 -->
-    <?php
-    // 引入資料庫連線
-    require '../db.php';
+    <style>
+      /* 表格樣式 */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0;
+      }
 
-    // 分頁邏輯
-    $limit = 10; // 每頁顯示的資料筆數
-    $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int) $_GET['page'] : 1;
-    $offset = ($page - 1) * $limit;
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 6px;
+        text-align: center;
+      }
 
-    // 計算總資料筆數
-    $total_query = "SELECT COUNT(*) AS total FROM leaves";
-    $total_result = mysqli_query($link, $total_query);
-    $total_row = mysqli_fetch_assoc($total_result);
-    $total_records = $total_row['total'];
-    $total_pages = ceil($total_records / $limit);
+      th {
+        background-color: #f4f4f4;
+        font-weight: bold;
+      }
 
-    // 查詢分頁資料
-    $query = "
-    SELECT 
-        l.leaves_id, 
-        d.doctor AS doctor_name, 
-        l.leave_type, 
-        l.leave_type_other, 
-        l.start_date, 
-        l.end_date, 
-        l.reason, 
-        l.is_approved, 
-        l.rejection_reason
-    FROM leaves l
-    LEFT JOIN doctor d ON l.doctor_id = d.doctor_id
-    LIMIT $limit OFFSET $offset
-";
+      /* 審核狀態樣式 */
+      .approved {
+        color: green;
+      }
 
-    $result = mysqli_query($link, $query);
-    if (!$result) {
-      die("資料查詢失敗：" . mysqli_error($link));
-    }
-    ?>
+      .rejected {
+        color: red;
+      }
 
-    <!-- 顯示表格 -->
-    <h2 style="text-align: center;">請假記錄</h2>
-    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-      <thead>
-        <tr>
-          <th>請假編號</th>
-          <th>治療師姓名</th>
-          <th>請假類型</th>
-          <th>其他請假類型</th>
-          <th>開始時間</th>
-          <th>結束時間</th>
-          <th>請假原因</th>
-          <th>審核狀態</th>
-          <th>駁回原因</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php while ($row = mysqli_fetch_assoc($result)): ?>
-          <tr>
-            <td><?php echo htmlspecialchars($row['leaves_id']); ?></td>
-            <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
-            <td><?php echo htmlspecialchars($row['leave_type']); ?></td>
-            <td><?php echo htmlspecialchars($row['leave_type_other'] ?? ''); ?></td>
-            <td><?php echo htmlspecialchars($row['start_date']); ?></td>
-            <td><?php echo htmlspecialchars($row['end_date']); ?></td>
-            <td><?php echo htmlspecialchars($row['reason']); ?></td>
-            <td>
-              <?php
-              if ($row['is_approved'] === '1') {
-                echo "<span style='color: green;'>已通過</span>";
-              } elseif ($row['is_approved'] === '0') {
-                echo "<span style='color: red;'>未通過</span>";
-              } else {
-                echo "<span style='color: gray;'>待審核</span>";
-              }
-              ?>
-            </td>
-            <td><?php echo htmlspecialchars($row['rejection_reason'] ?? ''); ?></td>
-          </tr>
-        <?php endwhile; ?>
-      </tbody>
-    </table>
+      /* 分頁樣式 */
+      .pagination {
+        text-align: center;
+        margin: 10px 0;
+      }
 
-    <!-- 分頁 -->
-    <div style="text-align: center; margin: 20px 0;">
-      <?php for ($p = 1; $p <= $total_pages; $p++): ?>
-        <a href="?page=<?php echo $p; ?>"
-          style="margin: 0 5px; text-decoration: none; <?php echo $p === $page ? 'font-weight: bold;' : ''; ?>">
-          <?php echo $p; ?>
-        </a>
-      <?php endfor; ?>
-    </div>
+      /* 總資訊樣式 */
+      .total-info {
+        text-align: right;
+        margin: 5px 0;
+        font-size: 14px;
+        color: #555;
+      }
 
-    <!-- 頁碼資訊 -->
-    <div style="text-align: right; margin: 20px 0;">
-      第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁 (總共 <?php echo $total_records; ?> 筆資料)
-    </div>
+      /* 響應式樣式 */
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
 
-    <?php
-    // 關閉資料庫連線
-    mysqli_close($link);
-    ?>
+      @media (max-width: 768px) {
+        table {
+          font-size: 12px;
+        }
 
+        th,
+        td {
+          padding: 4px;
+        }
+      }
+    </style>
+
+    <section class="section section-lg novi-bg novi-bg-img bg-default">
+      <div class="container">
+        <div class="row row-40 row-lg-50">
+          <div class="form-container">
+            <?php
+            // 引入資料庫連線
+            require '../db.php';
+
+            // 分頁邏輯
+            $limit = 10; // 每頁顯示的資料筆數
+            $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int) $_GET['page'] : 1;
+            $offset = ($page - 1) * $limit;
+
+            // 計算總資料筆數
+            $total_query = "SELECT COUNT(*) AS total FROM leaves";
+            $total_result = mysqli_query($link, $total_query);
+            $total_row = mysqli_fetch_assoc($total_result);
+            $total_records = $total_row['total'];
+            $total_pages = ceil($total_records / $limit);
+
+            // 查詢分頁資料
+            $query = "
+          SELECT 
+            l.leaves_id, 
+            d.doctor AS doctor_name, 
+            l.leave_type, 
+            l.leave_type_other, 
+            l.start_date, 
+            l.end_date, 
+            l.reason, 
+            l.is_approved, 
+            l.rejection_reason
+          FROM leaves l
+          LEFT JOIN doctor d ON l.doctor_id = d.doctor_id
+          LIMIT $limit OFFSET $offset";
+
+            $result = mysqli_query($link, $query);
+            if (!$result) {
+              die("資料查詢失敗：" . mysqli_error($link));
+            }
+            ?>
+
+            <!-- 表格外容器 -->
+            <div class="table-responsive">
+              <!-- 顯示表格 -->
+              <table>
+                <thead>
+                  <tr>
+                    <th>請假編號</th>
+                    <th>治療師姓名</th>
+                    <th>請假類型</th>
+                    <th>其他請假類型</th>
+                    <th>開始時間</th>
+                    <th>結束時間</th>
+                    <th>請假原因</th>
+                    <th>審核狀態</th>
+                    <th>駁回原因</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                    <tr>
+                      <td><?php echo htmlspecialchars($row['leaves_id']); ?></td>
+                      <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
+                      <td><?php echo htmlspecialchars($row['leave_type']); ?></td>
+                      <td><?php echo htmlspecialchars($row['leave_type_other'] ?? ''); ?></td>
+                      <td><?php echo htmlspecialchars($row['start_date']); ?></td>
+                      <td><?php echo htmlspecialchars($row['end_date']); ?></td>
+                      <td><?php echo htmlspecialchars($row['reason']); ?></td>
+                      <td>
+                        <?php
+                        if ($row['is_approved'] === '1') {
+                          echo "<span class='approved'>已通過</span>";
+                        } elseif ($row['is_approved'] === '0') {
+                          echo "<span class='rejected'>未通過</span>";
+                        } else {
+                          echo "<span style='color: gray;'>待審核</span>";
+                        }
+                        ?>
+                      </td>
+                      <td><?php echo htmlspecialchars($row['rejection_reason'] ?? ''); ?></td>
+                    </tr>
+                  <?php endwhile; ?>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 頁碼資訊 -->
+            <div class="total-info">
+              第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁 (總共 <?php echo $total_records; ?> 筆資料)
+            </div>
+
+            <!-- 分頁 -->
+            <div class="pagination" style="text-align: right; margin: 10px 0;">
+              <?php for ($p = 1; $p <= $total_pages; $p++): ?>
+                <a href="?page=<?php echo $p; ?>" style="<?php echo $p === $page ? 'font-weight: bold;' : ''; ?>">
+                  <?php echo $p; ?>
+                </a>
+              <?php endfor; ?>
+            </div>
+
+
+            <?php mysqli_close($link); ?>
+          </div>
+        </div>
+      </div>
+    </section>
 
 
 
@@ -487,7 +516,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="d_numberpeople.php">當天人數及時段</a></li>
               <li><a href="d_doctorshift.php">班表時段</a></li>
               <li><a href="d_leave.php">請假申請</a></li>
-              <li><a href="d_leave-query.php"></a>請假資料查詢</li>
+              <li><a href="d_leave-query.php">請假資料查詢</a></li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
               <li><a href="d_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->

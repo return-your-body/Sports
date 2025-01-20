@@ -69,7 +69,7 @@ if (isset($_SESSION["帳號"])) {
 
 <head>
     <!-- Site Title-->
-    <title>助手-看診紀錄</title>
+    <title>助手-預約</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -277,9 +277,9 @@ if (isset($_SESSION["帳號"])) {
                                     </ul>
                                 </li> -->
 
-                                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">紀錄</a>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="h_medical-record.php">看診紀錄</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
@@ -397,8 +397,21 @@ if (isset($_SESSION["帳號"])) {
                         $total_pages = ceil($total_records / $records_per_page);
                         $offset = ($current_page - 1) * $records_per_page;
 
-                        // 查詢分頁資料
-                        $sql = "SELECT * FROM `people` WHERE `name` LIKE ? LIMIT ?, ?";
+                        // 查詢分頁資料，計算年齡
+                        $sql = "
+          SELECT 
+            people_id, 
+            name, 
+            gender_id, 
+            birthday, 
+            idcard,
+            CASE 
+              WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday) / 365.25), ' 歲)')
+              ELSE '無資料'
+            END AS birthday_with_age
+          FROM `people`
+          WHERE `name` LIKE ?
+          LIMIT ?, ?";
                         $stmt = $link->prepare($sql);
                         $stmt->bind_param("sii", $like_search, $offset, $records_per_page);
                         $stmt->execute();
@@ -406,57 +419,52 @@ if (isset($_SESSION["帳號"])) {
 
                         // 搜尋表單
                         echo "<form method='GET' action='' class='mb-4' style='text-align: right; margin-bottom: 20px;'>
-            <input type='text' name='search_name' placeholder='請輸入姓名' value='" . htmlspecialchars($search_name) . "' style='padding: 5px; margin-right: 10px;' />
-            <button type='submit' class='popup-btn' style='padding: 5px 10px; margin-right: 10px;'>搜尋</button>
-            <select name='per_page' onchange='this.form.submit()' class='popup-btn' style='padding: 5px;'>
-                <option value='3'" . ($records_per_page == 3 ? ' selected' : '') . ">3筆/頁</option>
-                <option value='5'" . ($records_per_page == 5 ? ' selected' : '') . ">5筆/頁</option>
-                <option value='10'" . ($records_per_page == 10 ? ' selected' : '') . ">10筆/頁</option>
-                <option value='20'" . ($records_per_page == 20 ? ' selected' : '') . ">20筆/頁</option>
-                <option value='25'" . ($records_per_page == 25 ? ' selected' : '') . ">25筆/頁</option>
-                <option value='50'" . ($records_per_page == 50 ? ' selected' : '') . ">50筆/頁</option>
-            </select>
+          <input type='text' name='search_name' placeholder='請輸入姓名' value='" . htmlspecialchars($search_name) . "' style='padding: 5px; margin-right: 10px;' />
+          <button type='submit' class='popup-btn' style='padding: 5px 10px; margin-right: 10px;'>搜尋</button>
+          <select name='per_page' onchange='this.form.submit()' class='popup-btn' style='padding: 5px;'>
+              <option value='3'" . ($records_per_page == 3 ? ' selected' : '') . ">3筆/頁</option>
+              <option value='5'" . ($records_per_page == 5 ? ' selected' : '') . ">5筆/頁</option>
+              <option value='10'" . ($records_per_page == 10 ? ' selected' : '') . ">10筆/頁</option>
+          </select>
         </form>";
-
 
                         // 顯示資料表格
                         if ($result->num_rows > 0) {
-                            echo "<table style='width: 100%; border-collapse: collapse; text-align: center;'>
-                        <thead style='background-color: #f5f5f5;'>
-                            <tr>
-                                <th>#</th>
-                                <th>姓名</th>
-                                <th>性別</th>
-                                <th>生日</th>
-                                <th>身分證</th>
-                                <th>選項</th>
-                            </tr>
-                        </thead>
-               <tbody>";
+                            echo "<table style='width: 100%; text-align: center; border: 1px solid #ddd;'>
+            <thead style='background-color: #f5f5f5; border: 1px solid #ddd;'>
+              <tr>
+                <th>#</th>
+                <th>姓名</th>
+                <th>性別</th>
+                <th>生日 (年齡)</th>
+                <th>身分證</th>
+                <th>選項</th>
+              </tr>
+            </thead>
+            <tbody style='border: 1px solid #ddd;'>";
                             while ($row = $result->fetch_assoc()) {
                                 echo "<tr>
-        <td>" . $row["people_id"] . "</td>
-        <td>" . $row["name"] . "</td>
-        <td>" . ($row["gender_id"] == 1 ? '男性' : '女性') . "</td>
-        <td>" . (!empty($row["birthday"]) ? $row["birthday"] : '無資料') . "</td>
-        <td>" . (!empty($row["idcard"]) ? $row["idcard"] : '無資料') . "</td>
-        <td>
-            <a href='h_appointment.php?id=" . urlencode($row['people_id']) . "' target='_blank'>
-                <button type='button' class='popup-btn'>預約</button>
-            </a>
-        </td>
-    </tr>";
+              <td style='border: 1px solid #ddd;'>" . $row["people_id"] . "</td>
+              <td style='border: 1px solid #ddd;'>" . htmlspecialchars($row["name"]) . "</td>
+              <td style='border: 1px solid #ddd;'>" . ($row["gender_id"] == 1 ? '男' : ($row["gender_id"] == 2 ? '女' : '無資料')) . "</td>
+              <td style='border: 1px solid #ddd;'>" . htmlspecialchars($row["birthday_with_age"]) . "</td>
+              <td style='border: 1px solid #ddd;'>" . (!empty($row["idcard"]) ? htmlspecialchars($row["idcard"]) : '無資料') . "</td>
+              <td style='border: 1px solid #ddd;'>
+                <a href='h_appointment.php?id=" . urlencode($row['people_id']) . "' target='_blank'>
+                  <button type='button' class='popup-btn'>預約</button>
+                </a>
+              </td>
+            </tr>";
                             }
-                            echo "</tbody>";
-                            echo "</table>";
+                            echo "</tbody></table>";
 
                             // 分頁導航
                             echo "<div style='text-align: center; margin-top: 20px;'>";
                             for ($i = 1; $i <= $total_pages; $i++) {
                                 echo "<a href='?search_name=" . urlencode($search_name) . "&per_page=$records_per_page&page=$i' 
-                            style='margin: 0 5px; text-decoration: none; " . ($i == $current_page ? "font-weight: bold;" : "") . "'>
-                            $i
-                        </a>";
+                  style='margin: 0 5px; text-decoration: none; " . ($i == $current_page ? "font-weight: bold;" : "") . "'>
+                  $i
+              </a>";
                             }
                             echo "</div>";
                         } else {

@@ -269,7 +269,6 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
-
                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a>
                 </li> -->
 
@@ -279,9 +278,9 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_numberpeople.php">當天人數及時段</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave.php">請假申請</a>
+                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="d_leave.php">請假申請</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_leave-query.php">請假資料查詢</a>
+                    <li class="rd-dropdown-item "><a class="rd-dropdown-link" href="d_leave-query.php">請假資料查詢</a>
                     </li>
                   </ul>
                 </li>
@@ -379,10 +378,12 @@ if (isset($_SESSION["帳號"])) {
     <!-- 請假單 -->
     <div class="form-container">
       <h3 style="text-align: center;">請假單</h3>
-      <form action="請假.php" method="post">
+      <form id="leave-form" action="請假.php" method="post">
+        <!-- 申請人姓名 -->
         <label for="name">申請人姓名：</label>
         <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($姓名); ?>" readonly>
 
+        <!-- 請假類別 -->
         <label for="leave-type">請假類別：</label>
         <select id="leave-type" name="leave-type" required>
           <option value="" disabled selected>請選擇請假類別</option>
@@ -393,14 +394,17 @@ if (isset($_SESSION["帳號"])) {
           <option value="其他">其他</option>
         </select>
         <input type="text" id="leave-type-other" name="leave-type-other" placeholder="若選擇其他，請填寫原因"
-          style="display: none;">
+          style="display: none;" />
 
+        <!-- 上班區間請假起始時間 -->
         <label for="start-date">請假起始日期與時間：</label>
-        <input type="datetime-local" id="start-date" name="start-date" required>
+        <input type="datetime-local" id="start-date" name="start-date" required />
 
+        <!-- 上班區間請假結束時間 -->
         <label for="end-date">請假結束日期與時間：</label>
-        <input type="datetime-local" id="end-date" name="end-date" required>
+        <input type="datetime-local" id="end-date" name="end-date" required />
 
+        <!-- 請假原因 -->
         <label for="reason">請假原因：</label>
         <textarea id="reason" name="reason" rows="4" placeholder="請輸入請假原因" required></textarea>
 
@@ -409,66 +413,68 @@ if (isset($_SESSION["帳號"])) {
     </div>
 
     <script>
-      const leaveTypeSelect = document.getElementById('leave-type');
-      const leaveTypeOther = document.getElementById('leave-type-other');
-      const form = document.getElementById('leave-form');
+      document.addEventListener('DOMContentLoaded', function () {
+        const leaveTypeSelect = document.getElementById('leave-type');
+        const leaveTypeOther = document.getElementById('leave-type-other');
+        const form = document.getElementById('leave-form');
 
-      // 顯示或隱藏「其他」文字框
-      leaveTypeSelect.addEventListener('change', function () {
-        if (this.value === '其他') {
-          leaveTypeOther.style.display = 'block';
-          leaveTypeOther.setAttribute('required', 'required');
-        } else {
-          leaveTypeOther.style.display = 'none';
-          leaveTypeOther.removeAttribute('required');
-          leaveTypeOther.value = '';
-        }
-      });
-
-      // 防呆功能檢查
-      form.addEventListener('submit', function (e) {
-        const startDate = document.getElementById('start-date').value;
-        const endDate = document.getElementById('end-date').value;
-
-        // 確保起始時間早於結束時間
-        if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-          alert('請假結束時間必須晚於起始時間！');
-          e.preventDefault();
-          return;
+        // 顯示或隱藏「其他」文字框
+        if (leaveTypeSelect && leaveTypeOther) {
+          leaveTypeSelect.addEventListener('change', function () {
+            if (this.value === '其他') {
+              leaveTypeOther.style.display = 'block';
+              leaveTypeOther.setAttribute('required', 'required');
+            } else {
+              leaveTypeOther.style.display = 'none';
+              leaveTypeOther.removeAttribute('required');
+              leaveTypeOther.value = '';
+            }
+          });
         }
 
-        alert('表單提交成功！');
+        // 防呆功能檢查
+        if (form) {
+          form.addEventListener('submit', function (e) {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+
+            // 確保起始時間早於結束時間
+            if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+              alert('請假結束時間必須晚於起始時間！');
+              e.preventDefault();
+              return;
+            }
+          });
+        }
       });
     </script>
-  </div>
 
 
-
-  <!--頁尾-->
-  <footer class="section novi-bg novi-bg-img footer-simple">
-    <div class="container">
-      <div class="row row-40">
-        <!-- <div class="col-md-4">
+    <!--頁尾-->
+    <footer class="section novi-bg novi-bg-img footer-simple">
+      <div class="container">
+        <div class="row row-40">
+          <!-- <div class="col-md-4">
             <h4>關於我們</h4>
             <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
               professional knowledge using innovative approach.</p>
           </div> -->
-        <div class="col-md-3">
-          <h4>快速連結</h4>
-          <ul class="list-marked">
-            <li><a href="d_index.php">首頁</a></li>
-            <li><a href="d_people.php">用戶資料</a></li>
-            <!-- <li><a href="d_appointment.php">預約</a></li> -->
-            <li><a href="d_numberpeople.php">當天人數及時段</a></li>
-            <li><a href="d_doctorshift.php">班表時段</a></li>
-            <li><a href="d_leave.php">請假申請</a></li>
-            <li><a href="d_leave-query.php"></a>請假資料查詢</li>
-            <li><a href="d_medical-record.php">看診紀錄</a></li>
-            <li><a href="d_appointment-records.php">預約紀錄</a></li>
-            <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
-          </ul>
-        </div>
-        <!-- <div class="col-md-5">
+          <div class="col-md-3">
+            <h4>快速連結</h4>
+            <ul class="list-marked">
+              <li><a href="d_index.php">首頁</a></li>
+              <li><a href="d_people.php">用戶資料</a></li>
+              <!-- <li><a href="d_appointment.php">預約</a></li> -->
+              <li><a href="d_numberpeople.php">當天人數及時段</a></li>
+              <li><a href="d_doctorshift.php">班表時段</a></li>
+              <li><a href="d_leave.php">請假申請</a></li>
+              <li><a href="d_leave-query.php">請假資料查詢</a></li>
+              <li><a href="d_medical-record.php">看診紀錄</a></li>
+              <li><a href="d_appointment-records.php">預約紀錄</a></li>
+              <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
+            </ul>
+          </div>
+          <!-- <div class="col-md-5">
             <h4>聯絡我們</h4>
             <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
               courses we offer.</p>
@@ -482,13 +488,13 @@ if (isset($_SESSION["帳號"])) {
               <button class="form-button linearicons-paper-plane"></button>
             </form>
           </div> -->
-      </div>
-      <!-- <p class="rights"><span>&copy;&nbsp;</span><span
+        </div>
+        <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
             Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank"
             href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p> -->
-    </div>
-  </footer>
+      </div>
+    </footer>
   </div>
   <!--頁尾-->
 
