@@ -700,17 +700,165 @@ FROM
 				initSelectOptions();
 			</script>
 
-			<!-- 新增彈窗的 HTML 結構 -->
+			<!-- 預約時間段的主彈窗 -->
 			<div id="appointment-modal" class="modal">
 				<div class="modal-content">
-					<!-- 彈窗右上角的關閉按鈕 -->
 					<span class="close">&times;</span>
-					<!-- 彈窗的標題，顯示醫生姓名與日期 -->
 					<h3 id="modal-title"></h3>
-					<!-- 動態生成的時間段和預約按鈕的容器 -->
 					<div id="time-slots"></div>
 				</div>
 			</div>
+
+			<style>
+				/* 通用的彈窗背景 */
+				.modal {
+					display: none;
+					/* 預設隱藏 */
+					position: fixed;
+					/* 固定位置 */
+					z-index: 1000;
+					/* 顯示在最上層 */
+					left: 0;
+					top: 0;
+					width: 100%;
+					/* 占滿螢幕寬度 */
+					height: 100%;
+					/* 占滿螢幕高度 */
+					overflow: auto;
+					/* 當內容過多時允許滾動 */
+					background-color: rgba(0, 0, 0, 0.4);
+					/* 半透明背景 */
+				}
+
+				/* 備註彈窗內容區域 */
+				.note-modal-content {
+					background-color: #fff;
+					/* 背景顏色 */
+					margin: 10% auto;
+					/* 垂直置中，上下距離10%，水平居中 */
+					padding: 20px;
+					/* 內邊距 */
+					border-radius: 10px;
+					/* 圓角邊框 */
+					width: 40%;
+					/* 寬度調整為40% */
+					box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+					/* 添加陰影效果 */
+					animation: fadeIn 0.3s ease-in-out;
+					/* 彈窗淡入動畫 */
+				}
+
+				/* 關閉按鈕 */
+				.close-note {
+					float: right;
+					/* 靠右對齊 */
+					font-size: 20px;
+					/* 字體大小 */
+					font-weight: bold;
+					/* 加粗字體 */
+					color: #aaa;
+					/* 字體顏色 */
+					cursor: pointer;
+					/* 鼠標變為指針 */
+					transition: color 0.3s;
+					/* 顏色變化過渡 */
+				}
+
+				.close-note:hover {
+					color: #000;
+					/* 懸停時變為黑色 */
+				}
+
+				/* 標題樣式 */
+				.note-modal-content h3 {
+					font-size: 22px;
+					/* 標題字體大小 */
+					font-weight: bold;
+					/* 加粗 */
+					text-align: center;
+					/* 置中對齊 */
+					color: #333;
+					/* 深灰色文字 */
+					margin-bottom: 20px;
+					/* 與內容間距 */
+				}
+
+				/* 備註輸入框 */
+				.note-modal-content textarea {
+					width: 100%;
+					/* 全寬度 */
+					height: 100px;
+					/* 高度調整 */
+					font-size: 16px;
+					/* 字體大小 */
+					padding: 10px;
+					/* 內邊距 */
+					border: 1px solid #ddd;
+					/* 灰色邊框 */
+					border-radius: 5px;
+					/* 圓角 */
+					box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+					/* 內陰影 */
+					resize: none;
+					/* 禁止調整大小 */
+				}
+
+				/* 提交按鈕 */
+				.note-modal-content button {
+					display: block;
+					/* 占滿一行 */
+					margin: 20px auto 0;
+					/* 垂直置中 */
+					padding: 10px 20px;
+					/* 按鈕內邊距 */
+					background-color: #008CBA;
+					/* 按鈕背景顏色 */
+					color: #fff;
+					/* 按鈕文字顏色 */
+					font-size: 16px;
+					/* 字體大小 */
+					font-weight: bold;
+					/* 字體加粗 */
+					border: none;
+					/* 無邊框 */
+					border-radius: 5px;
+					/* 圓角邊框 */
+					cursor: pointer;
+					/* 鼠標變為指針 */
+					transition: background-color 0.3s ease;
+					/* 背景色過渡效果 */
+				}
+
+				.note-modal-content button:hover {
+					background-color: #005f7f;
+					/* 懸停時顏色變深 */
+				}
+
+				/* 彈窗淡入動畫 */
+				@keyframes fadeIn {
+					from {
+						opacity: 0;
+					}
+
+					to {
+						opacity: 1;
+					}
+				}
+			</style>
+
+
+			<!-- 備註輸入的獨立彈窗 -->
+			<div id="note-modal" class="modal">
+				<div class="modal-content note-modal-content">
+					<span class="close-note">&times;</span>
+					<h3>填寫備註</h3>
+					<textarea id="note" rows="5" cols="40" placeholder="請輸入備註內容"></textarea>
+					<button id="submit-note">送出</button>
+				</div>
+			</div>
+
+
+
 
 			<style>
 				/* 彈窗樣式調整 */
@@ -843,10 +991,16 @@ FROM
 
 
 			<script>
-				// 取得彈窗相關元素
-				const modal = document.getElementById("appointment-modal"); // 彈窗主體
-				const modalTitle = document.getElementById("modal-title"); // 彈窗標題
-				const timeSlotsContainer = document.getElementById("time-slots"); // 時間段容器
+				// 取得兩個彈窗的相關元素
+				const modal = document.getElementById("appointment-modal"); // 主彈窗
+				const noteModal = document.getElementById("note-modal"); // 備註彈窗
+				const modalTitle = document.getElementById("modal-title"); // 主彈窗標題
+				const timeSlotsContainer = document.getElementById("time-slots"); // 時間段按鈕容器
+				const noteTextarea = document.getElementById("note"); // 備註輸入框
+				const submitNoteButton = document.getElementById("submit-note"); // 備註送出按鈕
+
+				// 全局變數，用於記錄當前預約的資訊
+				let currentReservation = {};
 
 				/**
 					* 打開彈窗，顯示時間段
@@ -856,43 +1010,74 @@ FROM
 					* @param {string} endTime - 下班時間 (HH:mm 格式)
 					*/
 				function openModal(doctor, date, startTime, endTime) {
-					// 設置彈窗標題
 					modalTitle.textContent = `醫生：${doctor} 日期：${date}`;
-					timeSlotsContainer.innerHTML = ""; // 清空之前的時間段
+					timeSlotsContainer.innerHTML = "";
 
-					// 將時間字串轉換為 Date 對象
 					let current = new Date(`${date}T${startTime}`);
 					const end = new Date(`${date}T${endTime}`);
 
-					// 動態生成每 20 分鐘的時間段
 					while (current < end) {
-						const timeSlot = current.toTimeString().slice(0, 5); // 格式化為 HH:mm
-						const slotElement = document.createElement("div"); // 每個時間段的容器
+						const timeSlot = current.toTimeString().slice(0, 5);
+						const slotElement = document.createElement("div");
 						slotElement.innerHTML = `
 			<span>${timeSlot}</span>
-			<button class="reserve-btn" id="btn-${timeSlot.replace(':', '-')}" disabled>檢查中...</button>
+			<button class="reserve-btn" disabled>檢查中...</button>
 		`;
 
-						// 添加到容器中
+						const button = slotElement.querySelector(".reserve-btn");
+						// 檢查該時間段的可用性
+						checkAvailability(doctor, date, timeSlot, button);
+
 						timeSlotsContainer.appendChild(slotElement);
 
-						// 檢查是否該時段已被預約
-						checkAvailability(doctor, date, timeSlot);
-
-						// 加 20 分鐘
 						current = new Date(current.getTime() + 20 * 60000);
 					}
 
-					modal.style.display = "block"; // 顯示彈窗
+					modal.style.display = "block";
 				}
+
+
+				// 打開備註彈窗
+				function openNoteModal(doctor, date, time) {
+					currentReservation = { doctor, date, time }; // 記錄當前預約資訊
+					noteModal.style.display = "block"; // 顯示備註彈窗
+				}
+
+				// 關閉主彈窗
+				document.querySelector(".close").onclick = () => {
+					modal.style.display = "none";
+				};
+
+				// 關閉備註彈窗
+				document.querySelector(".close-note").onclick = () => {
+					noteModal.style.display = "none";
+				};
+
+				// 當用戶點擊備註彈窗的送出按鈕時
+				submitNoteButton.onclick = () => {
+					const note = noteTextarea.value; // 獲取用戶輸入的備註
+					reserve(currentReservation.doctor, currentReservation.date, currentReservation.time, note); // 呼叫預約函數
+					noteModal.style.display = "none"; // 關閉備註彈窗
+					noteTextarea.value = ""; // 清空備註輸入框
+				};
+
+				// 關閉彈窗功能：點擊彈窗外部關閉
+				window.onclick = (event) => {
+					if (event.target === modal) {
+						modal.style.display = "none";
+					} else if (event.target === noteModal) {
+						noteModal.style.display = "none";
+					}
+				};
 
 				/**
 				 * 檢查某個時間段是否已被預約
 				 * @param {string} doctor - 醫生名稱
 				 * @param {string} date - 預約日期
 				 * @param {string} timeSlot - 時間段 (格式: HH:mm)
+				 * @param {HTMLElement} button - 預約按鈕
 				 */
-				function checkAvailability(doctor, date, timeSlot) {
+				function checkAvailability(doctor, date, timeSlot, button) {
 					const xhr = new XMLHttpRequest();
 					xhr.open("POST", "檢查預約.php", true);
 					xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -900,27 +1085,27 @@ FROM
 					xhr.onreadystatechange = function () {
 						if (xhr.readyState === 4 && xhr.status === 200) {
 							const response = JSON.parse(xhr.responseText);
-							const button = document.getElementById(`btn-${timeSlot.replace(':', '-')}`);
 
 							if (response.available) {
-								// 如果該時間段可用，顯示「預約」按鈕
+								// 如果時段可用，啟用按鈕並設置為「預約」
 								button.textContent = "預約";
 								button.disabled = false;
-								button.onclick = () => reserve(doctor, date, timeSlot); // 綁定預約函數
+								button.onclick = () => openNoteModal(doctor, date, timeSlot); // 點擊時開啟備註彈窗
 							} else {
-								// 如果該時間段已滿，更新按鈕為「額滿」
+								// 如果時段已滿，設置為「額滿」並禁用按鈕
 								button.textContent = "額滿";
-								button.disabled = true; // 禁用按鈕
-								button.classList.add("disabled"); // 添加禁用樣式
-								button.style.cursor = "not-allowed"; // 設置鼠標樣式為不可用
+								button.disabled = true;
+								button.classList.add("disabled");
+								button.style.cursor = "not-allowed";
 							}
 						}
 					};
 
-					// 發送請求檢查該時段
 					const params = `doctor=${encodeURIComponent(doctor)}&date=${date}&time=${timeSlot}`;
 					xhr.send(params);
 				}
+
+
 
 
 				// 關閉彈窗功能
@@ -935,15 +1120,19 @@ FROM
 					}
 				};
 
+
 				/**
-					* 預約功能，將醫生、日期和時間的資訊發送到伺服器進行處理
-					* @param {string} doctor - 醫生名稱
-					* @param {string} date - 預約日期 (格式: YYYY-MM-DD)
-					* @param {string} time - 預約時間 (格式: HH:mm)
-					*/
+				* 預約功能，將醫生、日期、時間和備註資訊發送到伺服器進行處理
+				* @param {string} doctor - 醫生名稱
+				* @param {string} date - 預約日期 (格式: YYYY-MM-DD)
+				* @param {string} time - 預約時間 (格式: HH:mm)
+				*/
 				function reserve(doctor, date, time) {
+					// 獲取備註內容
+					const note = document.getElementById("note").value;
+
 					// 彈出確認提示，讓使用者確認是否要進行該預約
-					if (confirm(`確定要預約？\n醫生：${doctor}\n日期：${date}\n時間：${time}`)) {
+					if (confirm(`確定要預約？\n醫生：${doctor}\n日期：${date}\n時間：${time}\n備註：${note}`)) {
 						// 創建一個新的 AJAX 請求對象
 						const xhr = new XMLHttpRequest();
 
@@ -957,28 +1146,26 @@ FROM
 						xhr.onreadystatechange = function () {
 							// 檢查請求是否已完成 (readyState === 4) 並且伺服器已成功回應 (status === 200)
 							if (xhr.readyState === 4 && xhr.status === 200) {
-								// 將伺服器返回的 JSON 字串解析為 JavaScript 對象
 								const response = JSON.parse(xhr.responseText);
 
-								// 檢查伺服器回應的 success 狀態
+								// 根據伺服器回應處理
 								if (response.success) {
-									// 如果成功，彈出成功訊息
-									alert(response.message);
+									alert(response.message); // 顯示成功訊息
 									modal.style.display = "none"; // 關閉彈窗
 								} else {
-									// 如果失敗，顯示伺服器回傳的錯誤訊息
-									alert(response.message);
+									alert(response.message); // 顯示錯誤訊息
 								}
 							}
 						};
 
 						// 將要傳遞的參數組合成 URL 編碼字串
-						const params = `doctor=${encodeURIComponent(doctor)}&date=${date}&time=${time}`;
+						const params = `doctor=${encodeURIComponent(doctor)}&date=${date}&time=${time}&note=${encodeURIComponent(note)}`;
 
 						// 發送請求到伺服器，並將參數作為請求的主體內容
 						xhr.send(params);
 					}
 				}
+
 
 
 				// 修改生成日曆時的查看按鈕功能
