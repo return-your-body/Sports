@@ -298,7 +298,7 @@ mysqli_close($link);
 
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
                   <ul class="rd-menu rd-navbar-dropdown">
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_people.php">使用者資料</a>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_people.php">用戶資料</a>
                     </li>
                   </ul>
                 </li>
@@ -587,7 +587,8 @@ mysqli_close($link);
             <h4>快速連結</h4>
             <ul class="list-marked">
               <li><a href="d_index.php">首頁</a></li>
-              <li><a href="d_appointment.php">預約</a></li>
+              <li><a href="d_people.php">用戶資料</a></li>
+              <!-- <li><a href="d_appointment.php">預約</a></li> -->
               <li><a href="d_numberpeople.php">當天人數及時段</a></li>
               <li><a href="d_doctorshift.php">班表時段</a></li>
               <li><a href="d_leave.php">請假申請</a></li>

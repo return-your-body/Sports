@@ -13,32 +13,39 @@ if (empty($date) || empty($doctor_id)) {
 
 // 查詢醫生排班和可用時段
 $query = "
-  SELECT st.shifttime_id, st.shifttime
-  FROM shifttime st
-  JOIN doctorshift ds ON ds.go <= st.shifttime_id AND ds.off >= st.shifttime_id
-  WHERE ds.doctor_id = '$doctor_id' 
-    AND ds.date = '$date'
-    AND NOT EXISTS (
-      SELECT 1 
-      FROM appointment a
-      WHERE a.doctorshift_id = ds.doctorshift_id 
-        AND a.shifttime_id = st.shifttime_id
-    )
-  ORDER BY st.shifttime_id ASC
+    SELECT st.shifttime_id, st.shifttime
+    FROM shifttime st
+    JOIN doctorshift ds ON ds.go <= st.shifttime_id AND ds.off >= st.shifttime_id
+    WHERE ds.doctor_id = ? 
+      AND ds.date = ?
+      AND NOT EXISTS (
+          SELECT 1 
+          FROM appointment a
+          WHERE a.doctorshift_id = ds.doctorshift_id 
+            AND a.shifttime_id = st.shifttime_id
+      )
+    ORDER BY st.shifttime_id ASC
 ";
-
-$result = mysqli_query($link, $query);
+$stmt = $link->prepare($query);
+$stmt->bind_param("is", $doctor_id, $date); // 綁定參數
+$stmt->execute();
+$result = $stmt->get_result();
 
 if ($result) {
     $times = [];
-    while ($row = mysqli_fetch_assoc($result)) {
+    while ($row = $result->fetch_assoc()) {
         $times[] = $row; // 收集時段資料
     }
-    echo json_encode(['success' => true, 'times' => $times]); // 返回成功訊息和時段資料
+    if (count($times) > 0) {
+        echo json_encode(['success' => true, 'times' => $times]); // 返回成功訊息和時段資料
+    } else {
+        echo json_encode(['success' => false, 'message' => '無可用時段']);
+    }
 } else {
-    echo json_encode(['success' => false, 'message' => '無法取得時段']);
+    echo json_encode(['success' => false, 'message' => '查詢失敗']);
 }
 
 // 關閉連線
-mysqli_close($link);
+$stmt->close();
+$link->close();
 ?>

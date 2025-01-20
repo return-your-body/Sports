@@ -64,66 +64,6 @@ if (isset($_SESSION["帳號"])) {
 }
 
 
-//看診紀錄
-$帳號 = $_SESSION['帳號'];  // 取得當前登入的帳號
-
-require '../db.php'; // 引入資料庫連接檔案
-
-// 分頁設定
-$records_per_page = 10; // 每頁顯示的記錄數
-$page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1; // 當前頁碼，預設為第1頁
-$offset = ($page - 1) * $records_per_page; // 計算記錄的起始位置
-
-// 搜尋條件
-$search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, $_GET['search_name']) : '';
-
-// 計算總記錄數
-$count_sql = "
-SELECT COUNT(*) AS total
-FROM medicalrecord m
-LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN item i ON m.item_id = i.item_id
-WHERE 1=1
-" . ($search_name ? "AND p.name LIKE '%$search_name%'" : "");
-
-$count_result = mysqli_query($link, $count_sql);
-$total_records = mysqli_fetch_assoc($count_result)['total'];
-$total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
-
-// 查詢資料
-$sql = "
-SELECT 
-m.medicalrecord_id,
-a.appointment_id,
-p.name AS patient_name,
-CASE 
-WHEN p.gender_id = 1 THEN '男'
-WHEN p.gender_id = 2 THEN '女'
-ELSE '未設定'
-END AS gender,
-CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') AS birthday_with_age,
-d.doctor AS doctor_name,
-i.item AS treatment_item,
-i.price AS treatment_price,
-DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
-DAYNAME(ds.date) AS consultation_weekday,
-m.created_at
-FROM medicalrecord m
-LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN item i ON m.item_id = i.item_id
-WHERE 1=1
-" . ($search_name ? "AND p.name LIKE '%$search_name%'" : "") . "
-LIMIT $offset, $records_per_page";
-
-$result = mysqli_query($link, $sql);
-
-
 ?>
 
 
@@ -155,8 +95,9 @@ $result = mysqli_query($link, $sql);
         html.lt-ie-10 .ie-panel {
             display: block;
         }
-    </style>
-    <style>
+
+
+
         /* 登出確認視窗 - 初始隱藏 */
         .logout-box {
             display: none;
@@ -217,38 +158,37 @@ $result = mysqli_query($link, $sql);
             box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
         }
 
-
-        /* 看診紀錄 */
-        table {
-            width: auto;
-            /* 讓表格寬度根據內容自動調整 */
-            border-collapse: collapse;
-            margin-top: 20px;
+        /* 按鈕樣式 */
+        .popup-btn {
+            background-color: #00A896;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
         }
 
-        .search-container {
-            text-align: right;
-            margin-bottom: 10px;
+        .popup-btn:hover {
+            background-color: #007f6e;
         }
 
-        th,
-        td {
-            padding: 8px;
+
+        .ie-panel {
+            display: none;
+            background: #212121;
+            padding: 10px 0;
+            box-shadow: 3px 3px 5px 0 rgba(0, 0, 0, .3);
+            clear: both;
             text-align: center;
-            border: 1px solid #ddd;
-            white-space: nowrap;
-            /* 防止文字換行，保持欄位寬度符合文字 */
+            position: relative;
+            z-index: 1;
         }
 
-        th {
-            background-color: #f2f2f2;
-        }
-
-        table th,
-        table td {
-            text-align: center;
-            vertical-align: middle;
-            /* 垂直置中 */
+        html.ie-10 .ie-panel,
+        html.lt-ie-10 .ie-panel {
+            display: block;
         }
     </style>
 
@@ -308,9 +248,9 @@ $result = mysqli_query($link, $sql);
                             <ul class="rd-navbar-nav">
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="h_index.php">首頁</a>
                                 </li>
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
+                                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">預約</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
                                                 href="h_people.php">用戶資料</a>
                                         </li>
                                     </ul>
@@ -417,159 +357,125 @@ $result = mysqli_query($link, $sql);
             <section class="breadcrumbs-custom breadcrumbs-custom-svg">
                 <div class="container">
                     <!-- <p class="breadcrumbs-custom-subtitle">Ask us</p> -->
-                    <p class="heading-1 breadcrumbs-custom-title">看診紀錄</p>
+                    <p class="heading-1 breadcrumbs-custom-title">用戶資料</p>
                     <ul class="breadcrumbs-custom-path">
                         <li><a href="h_index.php">首頁</a></li>
                         <li><a href="#">紀錄</a></li>
-                        <li class="active">看診紀錄</li>
+                        <li class="active">用戶資料</li>
                     </ul>
                 </div>
             </section>
         </div>
         <!--標題-->
 
-        <!--看診紀錄-->
-        <section class="section section-lg bg-default text-center">
+        <!-- 使用者資料-->
+        <section class="section section-lg novi-bg novi-bg-img bg-default">
             <div class="container">
-                <div class="row row-50 justify-content-lg-center">
-                    <div class="col-lg-10 col-xl-8">
-                        <!-- Bootstrap collapse-->
-                        <div class="accordion-custom-group accordion-custom-group-custom accordion-custom-group-corporate"
-                            id="accordion1" role="tablist" aria-multiselectable="false">
+                <div class="row row-40 row-lg-50">
+                    <div class="form-container">
 
-                            <!-- 搜尋框 -->
-                            <div class="search-container">
-                                <form method="GET" action="">
-                                    <!-- 隱藏的狀態標誌，用於檢測是否按下搜尋按鈕 -->
-                                    <input type="hidden" name="is_search" value="1">
-                                    <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
-                                        value="<?php echo isset($_GET['search_name']) ? htmlspecialchars($_GET['search_name']) : ''; ?>">
-                                    <button type="submit">搜尋</button>
-                                </form>
-                            </div>
+                        <?php
+                        session_start();
+                        require '../db.php'; // 引入資料庫連線
+                        
+                        // 預設分頁與顯示筆數
+                        $records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 3;
+                        $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+                        $search_name = isset($_GET['search_name']) ? $_GET['search_name'] : '';
 
-                            <?php
-                            require '../db.php'; // 引入資料庫連接檔案
-                            
-                            // 檢查是否由搜尋按鈕提交
-                            if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['is_search'])) {
-                                $search_name = trim($_GET['search_name']);
+                        // 計算總筆數
+                        $sql_total = "SELECT COUNT(*) AS total FROM `people` WHERE `name` LIKE ?";
+                        $stmt_total = $link->prepare($sql_total);
+                        $like_search = "%$search_name%";
+                        $stmt_total->bind_param("s", $like_search);
+                        $stmt_total->execute();
+                        $result_total = $stmt_total->get_result();
+                        $row_total = $result_total->fetch_assoc();
+                        $total_records = $row_total['total'];
 
-                                if ($search_name === '') {
-                                    // 如果搜尋姓名為空，顯示彈跳訊息
-                                    echo "<script>alert('請輸入搜尋姓名！');</script>";
-                                } else {
-                                    // 執行資料庫查詢，檢查是否有該資料
-                                    $sql = "
-        SELECT COUNT(*) AS total
-        FROM medicalrecord a
-        LEFT JOIN people p ON a.people_id = p.people_id
-        WHERE p.name LIKE '%$search_name%'
-        ";
-                                    $result = mysqli_query($link, $sql);
-                                    $data = mysqli_fetch_assoc($result);
+                        // 計算總頁數
+                        $total_pages = ceil($total_records / $records_per_page);
+                        $offset = ($current_page - 1) * $records_per_page;
 
-                                    if ($data['total'] == 0) {
-                                        // 查無資料，顯示彈跳訊息
-                                        echo "<script>alert('查無此人！');</script>";
-                                    }
-                                }
+                        // 查詢分頁資料
+                        $sql = "SELECT * FROM `people` WHERE `name` LIKE ? LIMIT ?, ?";
+                        $stmt = $link->prepare($sql);
+                        $stmt->bind_param("sii", $like_search, $offset, $records_per_page);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+
+                        // 搜尋表單
+                        echo "<form method='GET' action='' class='mb-4' style='text-align: right; margin-bottom: 20px;'>
+            <input type='text' name='search_name' placeholder='請輸入姓名' value='" . htmlspecialchars($search_name) . "' style='padding: 5px; margin-right: 10px;' />
+            <button type='submit' class='popup-btn' style='padding: 5px 10px; margin-right: 10px;'>搜尋</button>
+            <select name='per_page' onchange='this.form.submit()' class='popup-btn' style='padding: 5px;'>
+                <option value='3'" . ($records_per_page == 3 ? ' selected' : '') . ">3筆/頁</option>
+                <option value='5'" . ($records_per_page == 5 ? ' selected' : '') . ">5筆/頁</option>
+                <option value='10'" . ($records_per_page == 10 ? ' selected' : '') . ">10筆/頁</option>
+                <option value='20'" . ($records_per_page == 20 ? ' selected' : '') . ">20筆/頁</option>
+                <option value='25'" . ($records_per_page == 25 ? ' selected' : '') . ">25筆/頁</option>
+                <option value='50'" . ($records_per_page == 50 ? ' selected' : '') . ">50筆/頁</option>
+            </select>
+        </form>";
+
+
+                        // 顯示資料表格
+                        if ($result->num_rows > 0) {
+                            echo "<table style='width: 100%; border-collapse: collapse; text-align: center;'>
+                        <thead style='background-color: #f5f5f5;'>
+                            <tr>
+                                <th>#</th>
+                                <th>姓名</th>
+                                <th>性別</th>
+                                <th>生日</th>
+                                <th>身分證</th>
+                                <th>選項</th>
+                            </tr>
+                        </thead>
+               <tbody>";
+                            while ($row = $result->fetch_assoc()) {
+                                echo "<tr>
+        <td>" . $row["people_id"] . "</td>
+        <td>" . $row["name"] . "</td>
+        <td>" . ($row["gender_id"] == 1 ? '男性' : '女性') . "</td>
+        <td>" . (!empty($row["birthday"]) ? $row["birthday"] : '無資料') . "</td>
+        <td>" . (!empty($row["idcard"]) ? $row["idcard"] : '無資料') . "</td>
+        <td>
+            <a href='h_appointment.php?id=" . urlencode($row['people_id']) . "' target='_blank'>
+                <button type='button' class='popup-btn'>預約</button>
+            </a>
+        </td>
+    </tr>";
                             }
-                            ?>
+                            echo "</tbody>";
+                            echo "</table>";
 
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>編號</th>
-                                        <th>姓名</th>
-                                        <th>性別</th>
-                                        <th>生日 (年齡)</th>
-                                        <th>看診日期(星期)</th>
-                                        <th>醫生</th>
-                                        <th>治療項目</th>
-                                        <th>治療費用</th>
-                                        <th>建立時間</th>
-                                        <th>選項</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (mysqli_num_rows($result) > 0): ?>
-                                        <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                                            <tr>
-                                                <td><?php echo htmlspecialchars($row['medicalrecord_id']); ?></td>
-                                                <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
-                                                <td><?php echo htmlspecialchars($row['gender']); ?></td>
-                                                <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
-                                                <td>
-                                                    <?php
-                                                    // 顯示看診日期和星期
-                                                    $consultation_date = htmlspecialchars($row['consultation_date']); // 日期
-                                                    $timestamp = strtotime($consultation_date); // 將日期轉為時間戳記
-                                                    $weekdays = ['日', '一', '二', '三', '四', '五', '六']; // 中文星期對應
-                                                    $weekday = $weekdays[date('w', $timestamp)]; // 獲取星期數字對應的中文
-                                                    echo $consultation_date . ' (星期' . $weekday . ')';
-                                                    ?>
-                                                </td>
-                                                <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
-                                                <td><?php echo htmlspecialchars($row['treatment_item']); ?></td>
-                                                <td><?php echo htmlspecialchars($row['treatment_price']); ?></td>
-                                                <td><?php echo htmlspecialchars($row['created_at']); ?></td>
-                                                <td>
-                                                    <a href="h_print-receipt.php?id=<?php echo $row['medicalrecord_id']; ?>"
-                                                        target="_blank">
-                                                        <button type="button">列印收據</button>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        <?php endwhile; ?>
-                                    <?php else: ?>
-                                        <tr>
-                                            <td colspan="10">目前無資料</td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
+                            // 分頁導航
+                            echo "<div style='text-align: center; margin-top: 20px;'>";
+                            for ($i = 1; $i <= $total_pages; $i++) {
+                                echo "<a href='?search_name=" . urlencode($search_name) . "&per_page=$records_per_page&page=$i' 
+                            style='margin: 0 5px; text-decoration: none; " . ($i == $current_page ? "font-weight: bold;" : "") . "'>
+                            $i
+                        </a>";
+                            }
+                            echo "</div>";
+                        } else {
+                            echo "<p style='text-align: center;'>查無資料</p>";
+                        }
 
-                            <!-- 分頁 -->
-                            <div style="text-align: right; margin-top: 10px; margin-bottom: 10px;">
-                                <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（共
-                                    <?php echo $total_records; ?>
-                                    筆資料）</span>
-                            </div>
+                        // 關閉連線
+                        $stmt->close();
+                        $stmt_total->close();
+                        $link->close();
+                        ?>
 
-                            <div style="text-align: center; margin-top: 20px;">
-                                <?php if ($page > 1): ?>
-                                    <a
-                                        href="?page=<?php echo $page - 1; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
-                                <?php endif; ?>
-
-                                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                                    <?php if ($i == $page): ?>
-                                        <strong><?php echo $i; ?></strong>
-                                    <?php else: ?>
-                                        <a
-                                            href="?page=<?php echo $i; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
-                                    <?php endif; ?>
-                                <?php endfor; ?>
-
-                                <?php if ($page < $total_pages): ?>
-                                    <a
-                                        href="?page=<?php echo $page + 1; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
-                                <?php endif; ?>
-                            </div>
-
-                            <?php
-                            // 釋放結果並關閉連線
-                            mysqli_free_result($result);
-                            mysqli_close($link);
-                            ?>
-
-                        </div>
                     </div>
                 </div>
             </div>
         </section>
-        <!--看診紀錄-->
+
+
+        <!-- 使用者資料-->
 
         <!--頁尾-->
         <footer class="section novi-bg novi-bg-img footer-simple">
@@ -584,8 +490,7 @@ $result = mysqli_query($link, $sql);
                         <h4>快速連結</h4>
                         <ul class="list-marked">
                             <li><a href="h_index.php">首頁</a></li>
-                            <li><a href="h_people.php">用戶資料</a></li>
-                            <!-- <li><a href="h_appointment.php">預約</a></li> -->
+                            <li><a href="h_appointment.php">預約</a></li>
                             <li><a href="h_numberpeople.php">當天人數及時段</a></li>
                             <li><a href="h_doctorshift.php">班表時段</a></li>
                             <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
