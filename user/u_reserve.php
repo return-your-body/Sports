@@ -503,13 +503,7 @@ ORDER BY ds.date, d.doctor_id";
 		}
 
 		// 查詢請假數據
-		$query_leaves = "
-SELECT 
-    l.doctor_id, 
-    l.start_date, 
-    l.end_date
-FROM 
-    leaves l";
+		$query_leaves = "SELECT l.doctor_id, l.start_date, l.end_date FROM leaves l WHERE l.is_approved = 1";
 
 		$result_leaves = mysqli_query($link, $query_leaves);
 
