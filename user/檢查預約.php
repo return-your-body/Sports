@@ -4,20 +4,22 @@ session_start();
 
 // 如果用戶未登入，返回錯誤訊息
 if (!isset($_SESSION["登入狀態"])) {
-    echo json_encode(['success' => false, 'message' => '未登入，請先登入後操作。']);
-    exit;
+    // 回傳 JSON 格式的錯誤訊息，指示未登入狀態
+    echo json_encode(['available' => false, 'message' => '未登入，請先登入後操作。']);
+    exit; // 終止腳本執行
 }
 
 // 載入資料庫連接設定
 require '../db.php';
 
-// 確認是否接收到前端傳來的參數
+// 檢查是否接收到前端傳遞的必要參數（醫生名稱、日期、時間）
 if (isset($_POST['doctor'], $_POST['date'], $_POST['time'])) {
+    // 接收前端傳遞的參數
     $doctor = $_POST['doctor']; // 醫生名稱
     $date = $_POST['date'];     // 預約日期
     $time = $_POST['time'];     // 預約時間
 
-    // 檢查該醫生、日期和時間段是否已被預約
+    // 建立查詢語句，檢查該醫生在指定日期與時間段是否已有預約
     $check_query = "
         SELECT a.appointment_id 
         FROM appointment a
@@ -26,40 +28,31 @@ if (isset($_POST['doctor'], $_POST['date'], $_POST['time'])) {
         JOIN doctor d ON ds.doctor_id = d.doctor_id
         WHERE d.doctor = ? AND ds.date = ? AND st.shifttime = ?
     ";
+
+    // 準備查詢語句以防止 SQL 注入
     $stmt = mysqli_prepare($link, $check_query);
+
+    // 綁定參數到查詢語句
     mysqli_stmt_bind_param($stmt, "sss", $doctor, $date, $time);
+
+    // 執行查詢語句
     mysqli_stmt_execute($stmt);
+
+    // 獲取查詢結果
     $check_result = mysqli_stmt_get_result($stmt);
 
-    // 如果資料庫中已有記錄，返回錯誤訊息
+    // 如果查詢結果中已有記錄，表示該時段已被預約
     if (mysqli_num_rows($check_result) > 0) {
-        echo json_encode(['success' => false, 'message' => '此時段已有預約，請重新嘗試。']);
-        exit;
+        // 回傳 JSON 格式的結果，表示該時段不可用
+        echo json_encode(['available' => false, 'message' => '此時段已有預約。']);
+        exit; // 終止腳本執行
     }
 
-    // 如果該時段無預約，插入預約資料
-    $insert_query = "
-        INSERT INTO appointment (people_id, doctorshift_id, shifttime_id, created_at) 
-        VALUES (
-            (SELECT people_id FROM user JOIN people ON user.user_id = people.user_id WHERE user.account = ?),
-            (SELECT ds.doctorshift_id FROM doctorshift ds JOIN doctor d ON ds.doctor_id = d.doctor_id WHERE d.doctor = ? AND ds.date = ?),
-            (SELECT st.shifttime_id FROM shifttime st WHERE st.shifttime = ?),
-            NOW()
-        )
-    ";
-    $stmt_insert = mysqli_prepare($link, $insert_query);
-    mysqli_stmt_bind_param($stmt_insert, "ssss", $_SESSION['帳號'], $doctor, $date, $time);
-
-    // 執行插入操作
-    if (mysqli_stmt_execute($stmt_insert)) {
-        // 插入成功返回成功訊息
-        echo json_encode(['success' => true, 'message' => '預約成功！']);
-    } else {
-        // 插入失敗返回錯誤訊息
-        echo json_encode(['success' => false, 'message' => '無法完成預約，請稍後再試。']);
-    }
+    // 如果沒有記錄，表示該時段可用
+    // 回傳 JSON 格式的結果，表示該時段可用
+    echo json_encode(['available' => true, 'message' => '此時段可用。']);
 } else {
     // 如果缺少必要的參數，返回錯誤訊息
-    echo json_encode(['success' => false, 'message' => '缺少必要的參數']);
+    echo json_encode(['available' => false, 'message' => '缺少必要的參數']);
 }
 ?>
