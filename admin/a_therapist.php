@@ -69,6 +69,14 @@ if (isset($_GET['fetch'])) {
 	exit;
 }
 
+// 查詢尚未審核的請假申請數量
+$pendingCountResult = $link->query(
+	"SELECT COUNT(*) as pending_count 
+     FROM leaves 
+     WHERE is_approved IS NULL"
+);
+$pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
+
 ?>
 
 
@@ -88,6 +96,16 @@ if (isset($_GET['fetch'])) {
 	<link rel="stylesheet" href="css/fonts.css">
 	<link rel="stylesheet" href="css/style.css">
 	<style>
+		.rd-dropdown-link span {
+			background-color: red;
+			color: white;
+			font-size: 12px;
+			border-radius: 50%;
+			padding: 2px 6px;
+			margin-left: 5px;
+			display: inline-block;
+		}
+
 		.highlight-red {
 			color: red;
 			font-weight: bold;
@@ -288,8 +306,23 @@ if (isset($_GET['fetch'])) {
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">修改治療師班表</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_leave.php">請假申請</a>
+										<li class="rd-dropdown-item">
+											<a class="rd-dropdown-link" href="a_leave.php">
+												請假申請
+												<?php if ($pendingCount > 0): ?>
+													<span style="
+						background-color: red;
+						color: white;
+						font-size: 12px;
+						border-radius: 50%;
+						padding: 2px 6px;
+						margin-left: 5px;
+						display: inline-block;
+					">
+														<?php echo $pendingCount; ?>
+													</span>
+												<?php endif; ?>
+											</a>
 										</li>
 									</ul>
 								</li>
