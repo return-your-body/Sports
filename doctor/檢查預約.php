@@ -11,7 +11,7 @@ if (empty($date) || empty($doctor_id)) {
     exit;
 }
 
-// 查詢醫生排班和可用時段
+// 查詢醫生排班和可用時段，過濾掉請假時間
 $query = "
     SELECT st.shifttime_id, st.shifttime
     FROM shifttime st
@@ -23,6 +23,13 @@ $query = "
           FROM appointment a
           WHERE a.doctorshift_id = ds.doctorshift_id 
             AND a.shifttime_id = st.shifttime_id
+      )
+      AND NOT EXISTS (
+          SELECT 1
+          FROM leaves l
+          WHERE l.doctor_id = ds.doctor_id
+            AND l.start_date <= CONCAT(ds.date, ' ', st.shifttime)
+            AND l.end_date >= CONCAT(ds.date, ' ', st.shifttime)
       )
     ORDER BY st.shifttime_id ASC
 ";

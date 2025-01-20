@@ -63,31 +63,7 @@ if (isset($_SESSION["帳號"])) {
 
 
 //預約
-include "../db.php"; // 引入資料庫連線
 
-// 查詢姓名 (people)
-$query_people = "SELECT people_id, name FROM people";
-$result_people = mysqli_query($link, $query_people);
-if (!$result_people) {
-  die("查詢姓名失敗: " . mysqli_error($link));
-}
-
-// 查詢預約時間 (shifttime)
-$query_shifttime = "SELECT shifttime_id, shifttime FROM shifttime";
-$result_shifttime = mysqli_query($link, $query_shifttime);
-if (!$result_shifttime) {
-  die("查詢時間失敗: " . mysqli_error($link));
-}
-
-// 查詢治療師姓名 (doctor)
-$query_doctor = "SELECT doctor.doctor_id, doctor.doctor 
-     FROM doctor
-     INNER JOIN user ON doctor.user_id = user.user_id
-     WHERE user.grade_id = 2";
-$result_doctor = mysqli_query($link, $query_doctor);
-if (!$result_doctor) {
-  die("查詢治療師失敗: " . mysqli_error($link));
-}
 ?>
 
 <!DOCTYPE html>
@@ -489,59 +465,110 @@ if (!$result_doctor) {
     </div>
     <!--標題-->
 
-    <!-- 預約-->
+    <!-- 預約 -->
+    <?php
+    require '../db.php';
+    session_start();
+
+    // 確認登入角色
+    $user_role = $_SESSION['role']; // 'helper' 或其他角色
+    
+    // 初始化醫生列表
+    $doctors = [];
+
+    if ($user_role === 'helper') {
+      // 如果是助手登入，顯示所有醫生（grade_id=2 代表醫生）
+      $query = "SELECT d.doctor_id, d.doctor 
+              FROM doctor d
+              INNER JOIN user u ON d.user_id = u.user_id
+              WHERE u.grade_id = 2"; // 排除非醫生
+      $result = mysqli_query($link, $query);
+      if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+          $doctors[] = $row;
+        }
+      }
+    }
+
+    // 如果沒有醫生
+    if (empty($doctors)) {
+      $doctors[] = ['doctor_id' => '', 'doctor' => '目前無醫生可供選擇'];
+    }
+
+    // 顯示患者資料
+    $people_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+    $query_people = "SELECT name FROM people WHERE people_id = ?";
+    $stmt_people = $link->prepare($query_people);
+    $stmt_people->bind_param("i", $people_id);
+    $stmt_people->execute();
+    $result_people = $stmt_people->get_result();
+    $person = $result_people->fetch_assoc();
+
+    // 關閉資料庫連線
+    $stmt_people->close();
+    $link->close();
+    ?>
+
     <section class="section section-lg novi-bg novi-bg-img bg-default">
       <div class="container">
-        <div class="row row-40 row-lg-50">
-          <div class="form-container">
-            <h3 style="text-align: center;">預約表單</h3>
+        <div class="form-container shadow-lg p-4 rounded bg-light">
+          <h3 class="text-center mb-4">預約表單</h3>
+          <form action="預約.php" method="post">
+            <!-- 使用者姓名 -->
+            <div class="form-group mb-3">
+              <label for="people_name" class="form-label">姓名：</label>
+              <input type="text" id="people_name" name="people_name" class="form-control"
+                value="<?= htmlspecialchars($person['name'] ?? '未知患者'); ?>" readonly required />
+            </div>
 
-            <form action="預約.php" method="post">
-
-              <label for="people_id">姓名：</label>
-              <select id="people_id" name="people_id" required>
-                <option value="">請選擇姓名</option>
-                <?php while ($row = mysqli_fetch_assoc($result_people)): ?>
-                  <option value="<?= htmlspecialchars($row['people_id']); ?>">
-                    <?= htmlspecialchars($row['name']); ?>
+            <!-- 醫生姓名 -->
+            <div class="form-group mb-3">
+              <label for="doctor_id" class="form-label">醫生姓名：</label>
+              <select id="doctor_id" name="doctor_id" class="form-select" required>
+                <option value="">請選擇醫生</option>
+                <?php foreach ($doctors as $doctor): ?>
+                  <option value="<?= htmlspecialchars($doctor['doctor_id']); ?>">
+                    <?= htmlspecialchars($doctor['doctor']); ?>
                   </option>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
               </select>
+            </div>
 
-              <label for="date">預約日期：</label>
-              <input type="date" id="date" name="date" required min="<?= date('Y-m-d'); ?>">
+            <!-- 預約日期 -->
+            <div class="form-group mb-3">
+              <label for="date" class="form-label">預約日期：</label>
+              <input type="date" id="date" name="date" class="form-control" required min="<?= date('Y-m-d'); ?>"
+                max="<?= date('Y-m-d', strtotime('+30 days')); ?>" />
+            </div>
 
-              <label for="time">預約時間：</label>
-              <select id="time" name="time" required>
+            <!-- 預約時間 -->
+            <div class="form-group mb-3">
+              <label for="time" class="form-label">預約時間：</label>
+              <select id="time" name="time" class="form-select" required>
                 <option value="">請選擇時間</option>
-                <?php while ($row = mysqli_fetch_assoc($result_shifttime)): ?>
-                  <option value="<?= htmlspecialchars($row['shifttime_id']); ?>">
-                    <?= htmlspecialchars($row['shifttime']); ?>
-                  </option>
-                <?php endwhile; ?>
               </select>
+            </div>
 
-              <label for="doctor">治療師姓名：</label>
-              <select id="doctor" name="doctor" required>
-                <option value="">請選擇治療師</option>
-                <?php while ($row = mysqli_fetch_assoc($result_doctor)): ?>
-                  <option value="<?= htmlspecialchars($row['doctor_id']); ?>">
-                    <?= htmlspecialchars($row['doctor']); ?>
-                  </option>
-                <?php endwhile; ?>
-              </select>
+            <!-- 備註 -->
+            <div class="form-group mb-4">
+              <label for="note" class="form-label">備註：</label>
+              <textarea id="note" name="note" class="form-control" rows="4" maxlength="200"
+                placeholder="請輸入備註，最多200字"></textarea>
+            </div>
 
-              <label for="note">備註：</label>
-              <textarea id="note" name="note" rows="4" maxlength="200" placeholder="請輸入備註，最多200字"></textarea>
-
-              <button type="submit">提交預約</button>
-            </form>
-          </div>
+            <!-- 提交按鈕 -->
+            <div class="text-center">
+              <button type="submit" class="btn btn-primary px-4 py-2">提交預約</button>
+              <button type="button" onclick="location.href='h_people.php'"
+                class="btn btn-secondary px-4 py-2">返回</button>
+            </div>
+          </form>
         </div>
       </div>
     </section>
 
-    <!-- 預約-->
+
+
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">

@@ -1,54 +1,39 @@
 <?php
-// 啟動會話，檢查用戶是否已登入
-session_start();
+require '../db.php';
 
-// 如果用戶未登入，返回錯誤訊息
-if (!isset($_SESSION["登入狀態"])) {
-    echo json_encode(['success' => false, 'message' => '未登入，請先登入後操作。']);
+$doctor_id = intval($_POST['doctor_id']);
+$date = mysqli_real_escape_string($link, $_POST['date']);
+
+if (empty($doctor_id) || empty($date)) {
+    echo json_encode(['success' => false, 'message' => '參數缺失']);
     exit;
 }
 
-// 載入資料庫連接設定
-require '../db.php';
+$query = "
+  SELECT st.shifttime_id, st.shifttime
+  FROM shifttime st
+  JOIN doctorshift ds ON ds.go <= st.shifttime_id AND ds.off >= st.shifttime_id
+  WHERE ds.doctor_id = ? AND ds.date = ? 
+  AND NOT EXISTS (
+      SELECT 1 FROM appointment a WHERE a.doctorshift_id = ds.doctorshift_id AND a.shifttime_id = st.shifttime_id
+  )
+";
+$stmt = $link->prepare($query);
+$stmt->bind_param("is", $doctor_id, $date);
+$stmt->execute();
+$result = $stmt->get_result();
 
-// 確認是否接收到前端傳來的參數
-if (isset($_POST['doctorShiftId'], $_POST['shiftTimeId'])) {
-    $doctorShiftId = $_POST['doctorShiftId']; // 醫生班表 ID
-    $shiftTimeId = $_POST['shiftTimeId'];     // 時段 ID
-
-    // 調試輸出檢查接收到的參數
-    error_log("Received doctorShiftId: $doctorShiftId, shiftTimeId: $shiftTimeId");
-
-    // 檢查該班表和時間段是否已被預約
-    $check_query = "
-        SELECT COUNT(*) AS count
-        FROM appointment
-        WHERE doctorshift_id = ? AND shifttime_id = ?
-    ";
-
-    $stmt = $link->prepare($check_query);
-    $stmt->bind_param('ii', $doctorShiftId, $shiftTimeId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $data = $result->fetch_assoc();
-
-    // 調試輸出 SQL 查詢和結果
-    error_log("SQL Query: $check_query");
-    error_log("Query Result: " . json_encode($data));
-
-    // 如果查詢結果大於 0，表示該時間段已滿
-    if ($data['count'] > 0) {
-        echo json_encode(['available' => false]);
-    } else {
-        echo json_encode(['available' => true]);
-    }
-
-    $stmt->close();
-} else {
-    // 缺少必要的參數
-    echo json_encode(['success' => false, 'message' => '缺少必要的參數。']);
-    error_log("Missing parameters: " . json_encode($_POST));
+$times = [];
+while ($row = $result->fetch_assoc()) {
+    $times[] = $row;
 }
 
+if ($times) {
+    echo json_encode(['success' => true, 'times' => $times]);
+} else {
+    echo json_encode(['success' => false, 'message' => '無可用時段']);
+}
+
+$stmt->close();
 $link->close();
 ?>

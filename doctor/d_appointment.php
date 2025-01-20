@@ -503,7 +503,6 @@ if ($result_doctor->num_rows > 0) {
                     value="<?= htmlspecialchars($_SESSION['doctor_name']); ?>" readonly required />
                 </div>
 
-
                 <!-- 預約日期 -->
                 <div class="form-group mb-3">
                   <label for="date" class="form-label">預約日期：</label>
@@ -576,7 +575,6 @@ if ($result_doctor->num_rows > 0) {
     </script>
 
 
-
     <!-- 預約-->
 
 
@@ -599,7 +597,7 @@ if ($result_doctor->num_rows > 0) {
               <li><a href="d_numberpeople.php">當天人數及時段</a></li>
               <li><a href="d_doctorshift.php">班表時段</a></li>
               <li><a href="d_leave.php">請假申請</a></li>
-              <li><a href="d_leave-query.php"></a>請假資料查詢</li>
+              <li><a href="d_leave-query.php">請假資料查詢</a></li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
               <li><a href="d_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->

@@ -160,10 +160,57 @@ if (isset($_SESSION["帳號"])) {
     }
 
     /* 當天時段 */
+    /* 樣式 */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    h3 {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    form label {
+      margin: 0;
+    }
+
+    form select,
+    form button {
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+
+    form button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    form button:hover {
+      background-color: #0056b3;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
+      background-color: #fff;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
     }
 
     th,
@@ -174,37 +221,51 @@ if (isset($_SESSION["帳號"])) {
     }
 
     th {
-      background-color: #f2f2f2;
+      background-color: #f4f4f4;
+      font-weight: bold;
     }
 
-    form {
+    a {
+      text-decoration: none;
+      color: #007bff;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* 分頁樣式 */
+    .pagination {
       text-align: center;
-      margin-bottom: 20px;
+      margin: 20px 0;
     }
 
-    /* 預約資料 */
-    #appointmentModal {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      padding: 20px;
-      border: 1px solid #ccc;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      z-index: 1000;
+    .pagination a {
+      margin: 0 5px;
+      text-decoration: none;
+      color: #007bff;
     }
 
-    #modalOverlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
+    .pagination a:hover {
+      text-decoration: underline;
+    }
+
+    .pagination span {
+      margin: 0 5px;
+    }
+
+    /* 響應式設計 */
+    @media (max-width: 768px) {
+      form {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      form select,
+      form button {
+        width: 100%;
+        max-width: 300px;
+      }
     }
   </style>
 
@@ -444,9 +505,10 @@ if (isset($_SESSION["帳號"])) {
 
         <div class="container">
           <!-- 日期選擇與查詢 -->
-          <form method="GET" action="" style="text-align: center; margin-bottom: 20px;">
-            <label for="year">年份：</label>
-            <select id="year" name="year">
+          <form method="GET" action=""
+            style="text-align: center; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px;">
+            <label for="year" style="margin: 0;">年份：</label>
+            <select id="year" name="year" style="padding: 5px;">
               <?php for ($year = $current_year - 5; $year <= $current_year + 5; $year++): ?>
                 <option value="<?php echo $year; ?>" <?php if ($year == $selected_year)
                      echo 'selected'; ?>>
@@ -455,8 +517,8 @@ if (isset($_SESSION["帳號"])) {
               <?php endfor; ?>
             </select>
 
-            <label for="month">月份：</label>
-            <select id="month" name="month">
+            <label for="month" style="margin: 0;">月份：</label>
+            <select id="month" name="month" style="padding: 5px;">
               <?php for ($month = 1; $month <= 12; $month++): ?>
                 <option value="<?php echo str_pad($month, 2, '0', STR_PAD_LEFT); ?>" <?php if ($month == $selected_month)
                         echo 'selected'; ?>>
@@ -465,8 +527,8 @@ if (isset($_SESSION["帳號"])) {
               <?php endfor; ?>
             </select>
 
-            <label for="day">日期：</label>
-            <select id="day" name="day">
+            <label for="day" style="margin: 0;">日期：</label>
+            <select id="day" name="day" style="padding: 5px;">
               <?php for ($day = 1; $day <= 31; $day++): ?>
                 <option value="<?php echo str_pad($day, 2, '0', STR_PAD_LEFT); ?>" <?php if ($day == $selected_day)
                         echo 'selected'; ?>>
@@ -475,8 +537,9 @@ if (isset($_SESSION["帳號"])) {
               <?php endfor; ?>
             </select>
 
-            <button type="submit">查詢</button>
+            <button type="submit" style="padding: 5px 10px;">查詢</button>
           </form>
+
 
           <!-- 總人數顯示 -->
           <div style="text-align: center; margin-bottom: 10px;">
@@ -550,7 +613,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="d_numberpeople.php">當天人數及時段</a></li>
               <li><a href="d_doctorshift.php">班表時段</a></li>
               <li><a href="d_leave.php">請假申請</a></li>
-              <li><a href="d_leave-query.php"></a>請假資料查詢</li>
+              <li><a href="d_leave-query.php">請假資料查詢</a></li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
               <li><a href="d_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->

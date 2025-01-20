@@ -161,37 +161,6 @@ if (isset($_SESSION["帳號"])) {
 
 
     /* 看診紀錄 */
-    table {
-      width: auto;
-      /* 讓表格寬度根據內容自動調整 */
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-
-    .search-container {
-      text-align: right;
-      margin-bottom: 10px;
-    }
-
-    th,
-    td {
-      padding: 8px;
-      text-align: center;
-      border: 1px solid #ddd;
-      white-space: nowrap;
-      /* 防止文字換行，保持欄位寬度符合文字 */
-    }
-
-    th {
-      background-color: #f2f2f2;
-    }
-
-    table th,
-    table td {
-      text-align: center;
-      vertical-align: middle;
-      /* 垂直置中 */
-    }
   </style>
 
 </head>
@@ -364,7 +333,6 @@ if (isset($_SESSION["帳號"])) {
         <!-- 搜尋框 -->
         <div class="search-container" style="margin-bottom: 10px; width: 80%; text-align: right;">
           <form method="GET" action="">
-            <!-- 隱藏的狀態標誌，用於檢測是否按下搜尋按鈕 -->
             <input type="hidden" name="is_search" value="1">
             <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
               value="<?php echo isset($_GET['search_name']) ? htmlspecialchars($_GET['search_name']) : ''; ?>"
@@ -374,41 +342,14 @@ if (isset($_SESSION["帳號"])) {
         </div>
 
         <?php
-        require '../db.php'; // 引入資料庫連接檔案
-        
-        // 檢查是否由搜尋按鈕提交
-        if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['is_search'])) {
-          $search_name = trim($_GET['search_name']);
+        require '../db.php';
 
-          if ($search_name === '') {
-            // 如果搜尋姓名為空，顯示彈跳訊息
-            echo "<script>alert('請輸入搜尋姓名！');</script>";
-          } else {
-            // 執行資料庫查詢，檢查是否有該資料
-            $sql = "
-            SELECT COUNT(*) AS total
-            FROM appointment a
-            LEFT JOIN people p ON a.people_id = p.people_id
-            WHERE p.name LIKE '%$search_name%'
-            ";
-            $result = mysqli_query($link, $sql);
-            $data = mysqli_fetch_assoc($result);
-
-            if ($data['total'] == 0) {
-              // 查無資料，顯示彈跳訊息
-              echo "<script>alert('查無此人！');</script>";
-            }
-          }
-        }
-
-        // 接收搜尋參數
+        // 搜尋邏輯
         $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
-
         $page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
-        $records_per_page = 10; // 每頁顯示筆數
+        $records_per_page = 10;
         $offset = ($page - 1) * $records_per_page;
 
-        // 查詢條件
         $where_clause = "1=1";
         if ($search_name !== '') {
           $where_clause .= " AND p.name LIKE '%" . mysqli_real_escape_string($link, $search_name) . "%'";
@@ -433,8 +374,15 @@ if (isset($_SESSION["帳號"])) {
     SELECT 
         m.medicalrecord_id,
         p.name AS patient_name,
-        p.gender_id,
-        p.birthday,
+        CASE 
+            WHEN p.gender_id = 1 THEN '男' 
+            WHEN p.gender_id = 2 THEN '女' 
+            ELSE '未設定' 
+        END AS gender,
+        CASE 
+            WHEN p.birthday IS NULL THEN '未設定'
+            ELSE CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), p.birthday) / 365.25), ' 歲)')
+        END AS birthday,
         ds.date,
         i.item,
         i.price,
@@ -450,56 +398,49 @@ if (isset($_SESSION["帳號"])) {
     ";
         $result = mysqli_query($link, $sql);
 
-        // 顯示表格
+        // 表格顯示
+        echo "<div class='table-responsive'>";
         if (mysqli_num_rows($result) > 0) {
-          echo "<table style='border-collapse: collapse; width: 80%; text-align: center; margin: 0 auto;'>";
+          echo "<table class='responsive-table'>";
           echo "<thead>
-          <tr>
-              <th>編號</th>
+            <tr>
+              <th>#</th>
               <th>姓名</th>
               <th>性別</th>
-              <th>生日</th>
+              <th>生日 (年齡)</th>
               <th>看診日期</th>
               <th>治療項目</th>
               <th>治療費用</th>
               <th>建立時間</th>
-          </tr>
-      </thead>";
+            </tr>
+            </thead>";
           echo "<tbody>";
           while ($row = mysqli_fetch_assoc($result)) {
             echo "<tr>
-              <td>{$row['medicalrecord_id']}</td>
-              <td>{$row['patient_name']}</td>
-              <td>" . ($row['gender_id'] == 1 ? '男' : '女') . "</td>
-              <td>{$row['birthday']}</td>
-              <td>{$row['date']}</td>
-              <td>{$row['item']}</td>
-              <td>{$row['price']}</td>
-              <td>{$row['created_at']}</td>
-          </tr>";
+                <td>{$row['medicalrecord_id']}</td>
+                <td>{$row['patient_name']}</td>
+                <td>{$row['gender']}</td>
+                <td>{$row['birthday']}</td>
+                <td>{$row['date']}</td>
+                <td>{$row['item']}</td>
+                <td>{$row['price']}</td>
+                <td>{$row['created_at']}</td>
+              </tr>";
           }
           echo "</tbody>";
           echo "</table>";
         } else {
           echo "<p>目前無資料，請輸入條件進行搜尋。</p>";
         }
-
-        // 顯示頁碼及總頁數資訊
-        echo "<div style='text-align: right; width: 80%; margin-top: 5px; font-size: 14px;'>";
-        echo "第 $page 頁 / 共 $total_pages 頁（共 $total_records 筆資料）";
         echo "</div>";
 
-        // 顯示頁碼
-        echo "<div style='text-align: center; margin-top: 10px;'>";
+        // 分頁按鈕
+        echo "<div class='pagination'>";
         if ($page > 1) {
           echo "<a href='?page=" . ($page - 1) . "&search_name=" . urlencode($search_name) . "'>上一頁</a> ";
         }
         for ($i = 1; $i <= $total_pages; $i++) {
-          if ($i == $page) {
-            echo "<strong>$i</strong> ";
-          } else {
-            echo "<a href='?page=$i&search_name=" . urlencode($search_name) . "'>$i</a> ";
-          }
+          echo $i == $page ? "<strong>$i</strong> " : "<a href='?page=$i&search_name=" . urlencode($search_name) . "'>$i</a> ";
         }
         if ($page < $total_pages) {
           echo "<a href='?page=" . ($page + 1) . "&search_name=" . urlencode($search_name) . "'>下一頁</a>";
@@ -511,9 +452,54 @@ if (isset($_SESSION["帳號"])) {
       </div>
     </section>
 
+    <style>
+      /* 表格外容器，允許橫向滾動 */
+      .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 10px 0;
+      }
+
+      /* 表格樣式 */
+      .responsive-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .responsive-table th,
+      .responsive-table td {
+        padding: 10px;
+        text-align: center;
+        border: 1px solid #ddd;
+        white-space: nowrap;
+        /* 防止內容換行 */
+      }
+
+      .responsive-table th {
+        background-color: #f2f2f2;
+      }
+
+      /* 分頁按鈕樣式 */
+      .pagination {
+        margin-top: 10px;
+        text-align: center;
+      }
+
+      .pagination a {
+        margin: 0 5px;
+        text-decoration: none;
+      }
+
+      .pagination strong {
+        margin: 0 5px;
+        font-weight: bold;
+      }
+    </style>
+
     <!--看診紀錄-->
 
- 
+
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
@@ -532,7 +518,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="d_numberpeople.php">當天人數及時段</a></li>
               <li><a href="d_doctorshift.php">班表時段</a></li>
               <li><a href="d_leave.php">請假申請</a></li>
-              <li><a href="d_leave-query.php"></a>請假資料查詢</li>
+              <li><a href="d_leave-query.php">請假資料查詢</a></li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
               <li><a href="d_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->

@@ -156,37 +156,6 @@ if (isset($_SESSION["帳號"])) {
     }
 
     /*預約紀錄 */
-    table {
-      width: auto;
-      /* 讓表格寬度根據內容自動調整 */
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-
-    .search-container {
-      text-align: right;
-      margin-bottom: 10px;
-    }
-
-    th,
-    td {
-      padding: 8px;
-      text-align: center;
-      border: 1px solid #ddd;
-      white-space: nowrap;
-      /* 防止文字換行，保持欄位寬度符合文字 */
-    }
-
-    th {
-      background-color: #f2f2f2;
-    }
-
-    table th,
-    table td {
-      text-align: center;
-      vertical-align: middle;
-      /* 垂直置中 */
-    }
   </style>
 </head>
 
@@ -353,6 +322,52 @@ if (isset($_SESSION["帳號"])) {
     <!--標題-->
 
     <!--預約紀錄-->
+    <style>
+      /* 表格外容器，手機模式允許橫向滾動 */
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* 表格樣式 */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        white-space: nowrap;
+        /* 防止內容換行 */
+      }
+
+      th {
+        background-color: #f2f2f2;
+      }
+
+      /* 分頁按鈕樣式 */
+      div a {
+        text-decoration: none;
+        padding: 5px 10px;
+        margin: 0 5px;
+        color: #000;
+      }
+
+      div a:hover {
+        background-color: #ddd;
+      }
+
+      /* 僅在螢幕寬度小於768px時啟用滾動 */
+      @media (max-width: 768px) {
+        .table-responsive {
+          overflow-x: scroll;
+        }
+      }
+    </style>
+
     <?php
     session_start();
     if (!isset($_SESSION['帳號'])) {
@@ -396,7 +411,10 @@ if (isset($_SESSION["帳號"])) {
             WHEN p.gender_id = 2 THEN '女' 
             ELSE '未設定' 
         END AS gender,
-        DATE_FORMAT(p.birthday, '%Y-%m-%d') AS birthday,
+        CASE 
+            WHEN p.birthday IS NULL THEN '未設定'
+            ELSE CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), p.birthday) / 365.25), ' 歲)')
+        END AS birthday,
         DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
         st.shifttime AS shifttime,
         COALESCE(a.note, '無') AS note,
@@ -416,7 +434,6 @@ if (isset($_SESSION["帳號"])) {
     $stmt->execute();
     $result = $stmt->get_result();
     ?>
-
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
         <div class="row row-50 justify-content-lg-center">
@@ -431,41 +448,45 @@ if (isset($_SESSION["帳號"])) {
                 </form>
               </div>
 
-              <!-- 顯示查詢結果 -->
-              <table>
-                <thead>
-                  <tr>
-                    <th>編號</th>
-                    <th>姓名</th>
-                    <th>性別</th>
-                    <th>生日 (年齡)</th>
-                    <th>看診日期</th>
-                    <th>看診時間</th>
-                    <th>備註</th>
-                    <th>建立時間</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php if ($result->num_rows > 0): ?>
-                    <?php while ($row = $result->fetch_assoc()): ?>
-                      <tr>
-                        <td><?php echo htmlspecialchars($row['id']); ?></td>
-                        <td><?php echo htmlspecialchars($row['name']); ?></td>
-                        <td><?php echo htmlspecialchars($row['gender']); ?></td>
-                        <td><?php echo htmlspecialchars($row['birthday']); ?></td>
-                        <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
-                        <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
-                        <td><?php echo htmlspecialchars($row['note']); ?></td>
-                        <td><?php echo htmlspecialchars($row['created_at']); ?></td>
-                      </tr>
-                    <?php endwhile; ?>
-                  <?php else: ?>
+              <!-- 表格外容器 -->
+              <div class="table-responsive">
+                <!-- 顯示查詢結果 -->
+                <table>
+                  <thead>
                     <tr>
-                      <td colspan="8">目前無資料</td>
+                      <th>#</th>
+                      <th>姓名</th>
+                      <th>性別</th>
+                      <th>生日 (年齡)</th>
+                      <th>看診日期</th>
+                      <th>看診時間</th>
+                      <th>備註</th>
+                      <th>建立時間</th>
                     </tr>
-                  <?php endif; ?>
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    <?php if ($result->num_rows > 0): ?>
+                      <?php while ($row = $result->fetch_assoc()): ?>
+                        <tr>
+                          <td><?php echo htmlspecialchars($row['id']); ?></td>
+                          <td><?php echo htmlspecialchars($row['name']); ?></td>
+                          <td><?php echo htmlspecialchars($row['gender']); ?></td>
+                          <td><?php echo htmlspecialchars($row['birthday']); ?></td>
+                          <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
+                          <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
+                          <td><?php echo htmlspecialchars($row['note']); ?></td>
+                          <td><?php echo htmlspecialchars($row['created_at']); ?></td>
+                        </tr>
+                      <?php endwhile; ?>
+                    <?php else: ?>
+                      <tr>
+                        <td colspan="8">目前無資料</td>
+                      </tr>
+                    <?php endif; ?>
+                  </tbody>
+                </table>
+              </div>
+
               <!-- 總數顯示 -->
               <div style="text-align: right; margin: 20px 0;">
                 <?php echo "第 $page 頁 / 共 $total_pages 頁 (總共 $total_records 筆資料)"; ?>
@@ -479,13 +500,11 @@ if (isset($_SESSION["帳號"])) {
                   </a>
                 <?php endfor; ?>
               </div>
-
             </div>
           </div>
         </div>
       </div>
     </section>
-
 
     <!--預約紀錄-->
 
@@ -507,7 +526,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="d_numberpeople.php">當天人數及時段</a></li>
               <li><a href="d_doctorshift.php">班表時段</a></li>
               <li><a href="d_leave.php">請假申請</a></li>
-              <li><a href="d_leave-query.php"></a>請假資料查詢</li>
+              <li><a href="d_leave-query.php">請假資料查詢</a></li>
               <li><a href="d_medical-record.php">看診紀錄</a></li>
               <li><a href="d_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
