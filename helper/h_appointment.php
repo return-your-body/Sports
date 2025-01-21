@@ -272,31 +272,64 @@ if (isset($_SESSION["帳號"])) {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
 
-    /* 醫生班表 */
-    .table-custom {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
+    /* 預約 */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
     }
 
-    .table-custom th,
-    .table-custom td {
+    .form-container {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-label {
+      font-weight: bold;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .form-control,
+    .form-select {
       border: 1px solid #ddd;
-      text-align: left;
-      /* 文字靠左對齊 */
-      padding: 8px;
-      white-space: nowrap;
+      border-radius: 5px;
+      padding: 10px;
+      font-size: 14px;
+      width: 100%;
+      background-color: #f9f9f9;
+      box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.1);
     }
 
-    .table-custom th {
-      background-color: #00a79d;
-      color: white;
+    .form-control:focus,
+    .form-select:focus {
+      border-color: #007bff;
+      outline: none;
+      box-shadow: 0px 0px 5px rgba(0, 123, 255, 0.5);
+    }
+
+    textarea.form-control {
+      resize: none;
+    }
+
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+
+    .text-center {
       text-align: center;
-    }
-
-    .reservation-info {
-      color: red;
-      margin-top: 5px;
     }
   </style>
 
@@ -471,17 +504,17 @@ if (isset($_SESSION["帳號"])) {
     session_start();
 
     // 確認登入角色
-    $user_role = $_SESSION['role']; // 'helper' 或其他角色
+    $user_role = $_SESSION['role'] ?? null; // 確保有設定角色
+    $doctors = []; // 初始化醫生陣列
     
-    // 初始化醫生列表
-    $doctors = [];
-
     if ($user_role === 'helper') {
-      // 如果是助手登入，顯示所有醫生（grade_id=2 代表醫生）
-      $query = "SELECT d.doctor_id, d.doctor 
-              FROM doctor d
-              INNER JOIN user u ON d.user_id = u.user_id
-              WHERE u.grade_id = 2"; // 排除非醫生
+      // 查詢醫生資料
+      $query = "
+        SELECT d.doctor_id, d.doctor 
+        FROM doctor d
+        INNER JOIN user u ON d.user_id = u.user_id
+        WHERE u.grade_id = 2
+    ";
       $result = mysqli_query($link, $query);
       if ($result) {
         while ($row = mysqli_fetch_assoc($result)) {
@@ -490,12 +523,12 @@ if (isset($_SESSION["帳號"])) {
       }
     }
 
-    // 如果沒有醫生
+    // 如果沒有醫生資料
     if (empty($doctors)) {
       $doctors[] = ['doctor_id' => '', 'doctor' => '目前無醫生可供選擇'];
     }
 
-    // 顯示患者資料
+    // 確認患者資料
     $people_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
     $query_people = "SELECT name FROM people WHERE people_id = ?";
     $stmt_people = $link->prepare($query_people);
@@ -509,11 +542,12 @@ if (isset($_SESSION["帳號"])) {
     $link->close();
     ?>
 
+
     <section class="section section-lg novi-bg novi-bg-img bg-default">
       <div class="container">
         <div class="form-container shadow-lg p-4 rounded bg-light">
           <h3 class="text-center mb-4">預約表單</h3>
-          <form action="預約.php" method="post">
+          <form action="\u9810\u7d04.php" method="post">
             <!-- 使用者姓名 -->
             <div class="form-group mb-3">
               <label for="people_name" class="form-label">姓名：</label>
@@ -523,17 +557,16 @@ if (isset($_SESSION["帳號"])) {
 
             <!-- 醫生姓名 -->
             <div class="form-group mb-3">
-              <label for="doctor_id" class="form-label">醫生姓名：</label>
-              <select id="doctor_id" name="doctor_id" class="form-select" required>
-                <option value="">請選擇醫生</option>
-                <?php foreach ($doctors as $doctor): ?>
-                  <option value="<?= htmlspecialchars($doctor['doctor_id']); ?>">
-                    <?= htmlspecialchars($doctor['doctor']); ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
+            <select id="doctor_id" name="doctor_id" class="form-select" required>
+              <option value="">請選擇醫生</option>
+              <?php foreach ($doctors as $doctor): ?>
+                <option value="<?= htmlspecialchars($doctor['doctor_id']); ?>">
+                  <?= htmlspecialchars($doctor['doctor']); ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
             </div>
-
+      
             <!-- 預約日期 -->
             <div class="form-group mb-3">
               <label for="date" class="form-label">預約日期：</label>
@@ -566,7 +599,6 @@ if (isset($_SESSION["帳號"])) {
         </div>
       </div>
     </section>
-
 
 
 

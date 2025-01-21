@@ -215,17 +215,16 @@ WHERE m.medicalrecord_id = $id
     }
 
     /* 列印收據 */
+
     /* 通用樣式 */
     #print-area {
       width: 350px;
       margin: 0 auto;
-      /* 水平居中 */
       border: 2px solid black;
       padding: 20px;
       text-align: left;
       box-sizing: border-box;
       page-break-inside: avoid;
-      /* 防止分頁 */
     }
 
     #print-area h1 {
@@ -240,38 +239,40 @@ WHERE m.medicalrecord_id = $id
       font-size: 16px;
     }
 
-    .doctor-sign {
+    #print-area table {
+      border-collapse: collapse;
+      width: 100%;
+      text-align: center;
       margin-top: 20px;
-      font-weight: bold;
     }
 
-    /* 新增按鈕容器樣式 */
+    #print-area table th,
+    #print-area table td {
+      border: 1px solid black;
+      padding: 10px;
+    }
+
     .button-container {
       display: flex;
       justify-content: center;
       gap: 10px;
-      /* 按鈕之間的間距 */
       margin-top: 20px;
     }
 
-    /* 按鈕樣式 */
     button {
       padding: 10px 20px;
       font-size: 16px;
-      /* 圓角按鈕 */
-      /* cursor: pointer;
+      cursor: pointer;
       border: 1px solid #ccc;
       border-radius: 5px;
-      background-color: #f5f5f5; 
-      transition: background-color 0.3s ease; */
+      background-color: #f5f5f5;
+      transition: background-color 0.3s ease;
     }
 
     button:hover {
       background-color: #e0e0e0;
-      /* 懸停效果 */
     }
 
-    /* 列印樣式 */
     @media print {
 
       html,
@@ -280,33 +281,19 @@ WHERE m.medicalrecord_id = $id
         padding: 0;
         height: 100%;
         overflow: hidden;
-        /* 防止滾動條 */
       }
 
       body * {
         visibility: hidden;
-        /* 隱藏其他內容 */
       }
 
       #print-area,
       #print-area * {
         visibility: visible;
-        /* 只顯示目標區域 */
-      }
-
-      #print-area {
-        margin: 0 auto;
-        page-break-inside: avoid;
-        /* 防止分頁 */
-        page-break-before: auto;
-        /* 避免提前分頁 */
-        page-break-after: avoid;
-        /* 避免結束後另起空白頁 */
       }
 
       button {
         display: none;
-        /* 隱藏按鈕 */
       }
     }
   </style>
@@ -482,12 +469,10 @@ WHERE m.medicalrecord_id = $id
       <div class="container">
         <div class="row row-50 justify-content-lg-center">
           <div class="col-lg-10 col-xl-8">
-            <!-- Bootstrap collapse-->
             <div class="accordion-custom-group accordion-custom-group-custom accordion-custom-group-corporate"
               id="accordion1" role="tablist" aria-multiselectable="false">
               <dl class="list-terms">
                 <!-- 收據顯示區域 -->
-
                 <div id="print-area">
                   <h1>看診收據</h1>
                   <p>姓名：<?php echo htmlspecialchars($people_name); ?></p>
@@ -495,28 +480,26 @@ WHERE m.medicalrecord_id = $id
                   <p>生日 (年齡)：<?php echo $birthday_with_age; ?></p>
                   <p>就診日期：<?php echo $appointment_date . " (" . $consultation_weekday . ")"; ?></p>
                   <p>治療師：<?php echo $doctor_name; ?></p>
-                  <table style="border-collapse: collapse; width: 100%; text-align: center;">
+                  <table>
                     <tr>
-                      <th style="border: 1px solid black;">治療項目</th>
-                      <th style="border: 1px solid black;">費用</th>
+                      <th>治療項目</th>
+                      <th>費用</th>
                     </tr>
                     <tr>
-                      <td style="border: 1px solid black;"><?php echo $treatment_item; ?></td>
-                      <td style="border: 1px solid black;"><?php echo $treatment_price; ?></td>
+                      <td><?php echo $treatment_item; ?></td>
+                      <td><?php echo $treatment_price; ?></td>
                     </tr>
                     <tr>
-                      <td style="border: 1px solid black;"><strong>總費用</strong></td>
-                      <td style="border: 1px solid black;"><strong><?php echo $treatment_price; ?></strong></td>
+                      <td><strong>總費用</strong></td>
+                      <td><strong><?php echo $treatment_price; ?></strong></td>
                     </tr>
                   </table>
                   <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
-
                 </div>
                 <div class="button-container">
                   <button onclick="window.print()">列印收據</button>
                   <button onclick="location.href='h_medical-record.php'">返回</button>
                 </div>
-
               </dl>
             </div>
           </div>

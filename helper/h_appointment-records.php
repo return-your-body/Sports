@@ -159,36 +159,48 @@ if (isset($_SESSION["帳號"])) {
     }
 
     /*預約紀錄 */
+
+    .table-responsive {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+
     table {
-      width: auto;
-      /* 讓表格寬度根據內容自動調整 */
+      width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
     }
 
-    .search-container {
-      text-align: right;
-      margin-bottom: 10px;
-    }
-
     th,
     td {
-      padding: 8px;
+      padding: 10px;
       text-align: center;
       border: 1px solid #ddd;
       white-space: nowrap;
-      /* 防止文字換行，保持欄位寬度符合文字 */
+      /* 禁止換行 */
     }
 
     th {
       background-color: #f2f2f2;
+      font-weight: bold;
     }
 
-    table th,
-    table td {
-      text-align: center;
-      vertical-align: middle;
-      /* 垂直置中 */
+    @media (max-width: 768px) {
+
+      th,
+      td {
+        padding: 8px;
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+
+      th,
+      td {
+        padding: 6px;
+        font-size: 12px;
+      }
     }
   </style>
 </head>
@@ -431,7 +443,7 @@ if (isset($_SESSION["帳號"])) {
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
         <div class="row row-50 justify-content-lg-center">
-          <div class="col-lg-10 col-xl-8">
+          <div class="col-lg-12">
             <div id="accordion1" role="tablist" aria-multiselectable="false">
               <!-- 搜尋表單 -->
               <div class="search-container">
@@ -443,51 +455,63 @@ if (isset($_SESSION["帳號"])) {
                 </form>
               </div>
 
-              <!-- 顯示查詢結果 -->
-              <table>
-                <thead>
-                  <tr>
-                    <th>編號</th>
-                    <th>姓名</th>
-                    <th>性別</th>
-                    <th>生日 (年齡)</th>
-                    <th>看診日期(星期)</th>
-                    <th>看診時間</th>
-                    <th>備註</th>
-                    <th>建立時間</th>
-                    <th>選項</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php if ($result->num_rows > 0): ?>
-                    <?php while ($row = $result->fetch_assoc()): ?>
-                      <tr>
-                        <td><?php echo htmlspecialchars($row['id']); ?></td>
-                        <td><?php echo htmlspecialchars($row['name']); ?></td>
-                        <td><?php echo htmlspecialchars($row['gender']); ?></td>
-                        <td><?php echo htmlspecialchars($row['birthday']); ?></td>
-                        <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
-                        <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
-                        <td><?php echo htmlspecialchars($row['note']); ?></td>
-                        <td><?php echo htmlspecialchars($row['created_at']); ?></td>
-                        <td>
-                          <a href="h_print-appointment.php?id=<?php echo $row['id']; ?>" target="_blank">
-                            <button type="button">列印預約單</button>
-                          </a>
-                        </td>
-                      </tr>
-                    <?php endwhile; ?>
-                  <?php else: ?>
+              <!-- 表格容器 -->
+              <div class="table-responsive">
+                <table class="table table-bordered">
+                  <thead>
                     <tr>
-                      <td colspan="8">目前無資料</td>
+                      <th>#</th>
+                      <th>姓名</th>
+                      <th>性別</th>
+                      <th>生日 (年齡)</th>
+                      <th>看診日期 (星期)</th>
+                      <th>看診時間</th>
+                      <th>備註</th>
+                      <th>建立時間</th>
+                      <th>選項</th>
                     </tr>
-                  <?php endif; ?>
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    <?php if ($result->num_rows > 0): ?>
+                      <?php while ($row = $result->fetch_assoc()): ?>
+                        <tr>
+                          <td><?php echo htmlspecialchars($row['id']); ?></td>
+                          <td><?php echo htmlspecialchars($row['name']); ?></td>
+                          <td><?php echo htmlspecialchars($row['gender']); ?></td>
+                          <td><?php echo htmlspecialchars($row['birthday']); ?></td>
+                          <td>
+                            <?php
+                            $appointment_date = htmlspecialchars($row['appointment_date']);
+                            $weekday = ['日', '一', '二', '三', '四', '五', '六'][date('w', strtotime($appointment_date))];
+                            echo "$appointment_date (星期$weekday)";
+                            ?>
+                          </td>
+                          <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
+                          <td><?php echo htmlspecialchars($row['note']); ?></td>
+                          <td><?php echo htmlspecialchars($row['created_at']); ?></td>
+                          <td>
+                            <a href="h_print-appointment.php?id=<?php echo $row['id']; ?>" target="_blank">
+                              <button type="button">列印預約單</button>
+                            </a>
+                          </td>
+                        </tr>
+                      <?php endwhile; ?>
+                    <?php else: ?>
+                      <tr>
+                        <td colspan="9">目前無資料</td>
+                      </tr>
+                    <?php endif; ?>
+                  </tbody>
+                </table>
+              </div>
 
               <!-- 分頁顯示 -->
               <div style="text-align: right; margin: 20px 0;">
-                <strong><?php echo "總共 $total_records 筆資料"; ?></strong>
+                <strong>
+                  <?php
+                  echo "第 $page 頁 / 共 $total_pages 頁（總共 $total_records 筆資料）";
+                  ?>
+                </strong>
               </div>
 
               <div style="text-align: center; margin: 20px 0;">
@@ -504,9 +528,6 @@ if (isset($_SESSION["帳號"])) {
         </div>
       </div>
     </section>
-
-
-    <!--預約紀錄-->
 
 
 

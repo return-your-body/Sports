@@ -219,52 +219,47 @@ $result = mysqli_query($link, $sql);
 
 
         /* 看診紀錄 */
-        .table-container {
+
+        .table-responsive {
             overflow-x: auto;
-            /* 啟用橫向滾動 */
             margin-top: 20px;
-            border: 1px solid #ddd;
-            /* 為表格容器加邊框 */
         }
 
         table {
             width: 100%;
-            /* 寬度自適應 */
             border-collapse: collapse;
             margin-top: 20px;
-            table-layout: auto;
-            /* 允許自適應內容寬度 */
         }
 
         th,
         td {
-            padding: 8px;
+            padding: 10px;
             text-align: center;
             border: 1px solid #ddd;
-            /* 單元格邊框 */
             white-space: nowrap;
-            /* 防止文字換行 */
-            font-size: 14px;
-            /* 調整字體大小 */
-            vertical-align: middle;
-            /* 垂直置中 */
+            /* 禁止換行 */
         }
 
         th {
             background-color: #f2f2f2;
-            color: #333;
+            font-weight: bold;
         }
 
         @media (max-width: 768px) {
-            table {
-                font-size: 12px;
-                /* 在小屏設備上縮小字體 */
+
+            th,
+            td {
+                padding: 8px;
+                font-size: 14px;
             }
+        }
+
+        @media (max-width: 480px) {
 
             th,
             td {
                 padding: 6px;
-                /* 減少內邊距 */
+                font-size: 12px;
             }
         }
     </style>
@@ -461,11 +456,11 @@ $result = mysqli_query($link, $sql);
                         </div>
 
                         <!-- 表格容器 -->
-                        <div class="table-container">
+                        <div class="table-responsive">
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>編號</th>
+                                        <th>#</th>
                                         <th>姓名</th>
                                         <th>性別</th>
                                         <th>生日 (年齡)</th>
@@ -517,8 +512,10 @@ $result = mysqli_query($link, $sql);
 
                         <!-- 分頁 -->
                         <div style="text-align: right; margin-top: 10px; margin-bottom: 10px;">
-                            <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（共
-                                <?php echo $total_records; ?> 筆資料）</span>
+                            <span>
+                                第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共
+                                <?php echo $total_records; ?> 筆資料）
+                            </span>
                         </div>
 
                         <div style="text-align: center; margin-top: 20px;">
@@ -550,6 +547,7 @@ $result = mysqli_query($link, $sql);
                 </div>
             </div>
         </section>
+
 
         <!--看診紀錄-->
 
