@@ -367,124 +367,58 @@ if (isset($_SESSION["帳號"])) {
             </section>
         </div>
         <!--標題-->
+        <?php
+        // 開啟 session 並引入資料庫連線
+        session_start();
+        require '../db.php'; // 資料庫連線
+        
+        // 預設參數
+        $records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 3;
+        $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+        $search_name = isset($_GET['search_name']) ? $_GET['search_name'] : '';
 
-        <!-- 使用者資料-->
-        <section class="section section-lg novi-bg novi-bg-img bg-default">
-            <div class="container">
-                <div class="row row-40 row-lg-50">
-                    <div class="form-container">
+        // 計算總筆數
+        $sql_total = "SELECT COUNT(*) AS total FROM `people` WHERE `name` LIKE ?";
+        $stmt_total = $link->prepare($sql_total);
+        $like_search = "%$search_name%";
+        $stmt_total->bind_param("s", $like_search);
+        $stmt_total->execute();
+        $result_total = $stmt_total->get_result();
+        $row_total = $result_total->fetch_assoc();
+        $total_records = $row_total['total'];
+        $stmt_total->close();
 
-                        <?php
-                        session_start();
-                        require '../db.php'; // 引入資料庫連線
-                        
-                        // 預設分頁與顯示筆數
-                        $records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 3;
-                        $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-                        $search_name = isset($_GET['search_name']) ? $_GET['search_name'] : '';
+        // 計算總頁數與分頁偏移量
+        $total_pages = ceil($total_records / $records_per_page);
+        $offset = ($current_page - 1) * $records_per_page;
 
-                        // 計算總筆數
-                        $sql_total = "SELECT COUNT(*) AS total FROM `people` WHERE `name` LIKE ?";
-                        $stmt_total = $link->prepare($sql_total);
-                        $like_search = "%$search_name%";
-                        $stmt_total->bind_param("s", $like_search);
-                        $stmt_total->execute();
-                        $result_total = $stmt_total->get_result();
-                        $row_total = $result_total->fetch_assoc();
-                        $total_records = $row_total['total'];
+        // 查詢分頁資料，計算年齡
+        $sql = "
+SELECT 
+    people_id, 
+    name, 
+    gender_id, 
+    birthday, 
+    idcard,
+    CASE 
+        WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday) / 365.25), ' 歲)')
+        ELSE '無資料'
+    END AS birthday_with_age
+FROM `people`
+WHERE `name` LIKE ?
+LIMIT ?, ?";
+        $stmt = $link->prepare($sql);
+        $stmt->bind_param("sii", $like_search, $offset, $records_per_page);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $people = $result->fetch_all(MYSQLI_ASSOC); // 將結果存為陣列
+        $stmt->close();
 
-                        // 計算總頁數
-                        $total_pages = ceil($total_records / $records_per_page);
-                        $offset = ($current_page - 1) * $records_per_page;
+        // 關閉資料庫連線
+        $link->close();
+        ?>
 
-                        // 查詢分頁資料，計算年齡
-                        $sql = "
-          SELECT 
-            people_id, 
-            name, 
-            gender_id, 
-            birthday, 
-            idcard,
-            CASE 
-              WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday) / 365.25), ' 歲)')
-              ELSE '無資料'
-            END AS birthday_with_age
-          FROM `people`
-          WHERE `name` LIKE ?
-          LIMIT ?, ?";
-                        $stmt = $link->prepare($sql);
-                        $stmt->bind_param("sii", $like_search, $offset, $records_per_page);
-                        $stmt->execute();
-                        $result = $stmt->get_result();
-
-                        // 搜尋表單
-                        echo "<form method='GET' action='' class='mb-4' style='text-align: right; margin-bottom: 20px;'>
-          <input type='text' name='search_name' placeholder='請輸入姓名' value='" . htmlspecialchars($search_name) . "' style='padding: 5px; margin-right: 10px;' />
-          <button type='submit' class='popup-btn' style='padding: 5px 10px; margin-right: 10px;'>搜尋</button>
-          <select name='per_page' onchange='this.form.submit()' class='popup-btn' style='padding: 5px;'>
-              <option value='3'" . ($records_per_page == 3 ? ' selected' : '') . ">3筆/頁</option>
-              <option value='5'" . ($records_per_page == 5 ? ' selected' : '') . ">5筆/頁</option>
-              <option value='10'" . ($records_per_page == 10 ? ' selected' : '') . ">10筆/頁</option>
-          </select>
-        </form>";
-
-                        // 顯示資料表格
-                        if ($result->num_rows > 0) {
-                            echo "<table style='width: 100%; text-align: center; border: 1px solid #ddd;'>
-            <thead style='background-color: #f5f5f5; border: 1px solid #ddd;'>
-              <tr>
-                <th>#</th>
-                <th>姓名</th>
-                <th>性別</th>
-                <th>生日 (年齡)</th>
-                <th>身分證</th>
-                <th>選項</th>
-              </tr>
-            </thead>
-            <tbody style='border: 1px solid #ddd;'>";
-                            while ($row = $result->fetch_assoc()) {
-                                echo "<tr>
-              <td style='border: 1px solid #ddd;'>" . $row["people_id"] . "</td>
-              <td style='border: 1px solid #ddd;'>" . htmlspecialchars($row["name"]) . "</td>
-              <td style='border: 1px solid #ddd;'>" . ($row["gender_id"] == 1 ? '男' : ($row["gender_id"] == 2 ? '女' : '無資料')) . "</td>
-              <td style='border: 1px solid #ddd;'>" . htmlspecialchars($row["birthday_with_age"]) . "</td>
-              <td style='border: 1px solid #ddd;'>" . (!empty($row["idcard"]) ? htmlspecialchars($row["idcard"]) : '無資料') . "</td>
-              <td style='border: 1px solid #ddd;'>
-                <a href='h_appointment.php?id=" . urlencode($row['people_id']) . "' target='_blank'>
-                  <button type='button' class='popup-btn'>預約</button>
-                </a>
-              </td>
-            </tr>";
-                            }
-                            echo "</tbody></table>";
-
-                            // 分頁導航
-                            echo "<div style='text-align: center; margin-top: 20px;'>";
-                            for ($i = 1; $i <= $total_pages; $i++) {
-                                echo "<a href='?search_name=" . urlencode($search_name) . "&per_page=$records_per_page&page=$i' 
-                  style='margin: 0 5px; text-decoration: none; " . ($i == $current_page ? "font-weight: bold;" : "") . "'>
-                  $i
-              </a>";
-                            }
-                            echo "</div>";
-                        } else {
-                            echo "<p style='text-align: center;'>查無資料</p>";
-                        }
-
-                        // 關閉連線
-                        $stmt->close();
-                        $stmt_total->close();
-                        $link->close();
-                        ?>
-
-                    </div>
-                </div>
-            </div>
-        </section>
-
-
-        <!-- 使用者資料-->
-
+         
         <!--頁尾-->
         <footer class="section novi-bg novi-bg-img footer-simple">
             <div class="container">
