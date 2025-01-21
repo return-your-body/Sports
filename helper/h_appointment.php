@@ -557,16 +557,16 @@ if (isset($_SESSION["帳號"])) {
 
             <!-- 醫生姓名 -->
             <div class="form-group mb-3">
-            <select id="doctor_id" name="doctor_id" class="form-select" required>
-              <option value="">請選擇醫生</option>
-              <?php foreach ($doctors as $doctor): ?>
-                <option value="<?= htmlspecialchars($doctor['doctor_id']); ?>">
-                  <?= htmlspecialchars($doctor['doctor']); ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
+              <select id="doctor_id" name="doctor_id" class="form-select" required>
+                <option value="">請選擇醫生</option>
+                <?php foreach ($doctors as $doctor): ?>
+                  <option value="<?= htmlspecialchars($doctor['doctor_id']); ?>">
+                    <?= htmlspecialchars($doctor['doctor']); ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
             </div>
-      
+
             <!-- 預約日期 -->
             <div class="form-group mb-3">
               <label for="date" class="form-label">預約日期：</label>
@@ -619,6 +619,8 @@ if (isset($_SESSION["帳號"])) {
               <!-- <li><a href="h_appointment.php">預約</a></li> -->
               <li><a href="h_numberpeople.php">當天人數及時段</a></li>
               <li><a href="h_doctorshift.php">班表時段</a></li>
+              <li><a href="h_medical-record.php">看診紀錄</a></li>
+              <li><a href="h_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
               <li><a href="h_print-appointment.php">列印預約單</a></li> -->
               <li><a href="h_patient-needs.php">患者需求</a></li>
