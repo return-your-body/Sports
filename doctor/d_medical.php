@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html class="wide wow-animation" lang="en">
 <?php
 session_start();
 
@@ -18,7 +20,8 @@ if (isset($_SESSION["帳號"])) {
 
   // 資料庫連接
   require '../db.php';
-
+  // 接收搜尋參數
+  $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
   // 查詢該帳號的詳細資料
   $sql = "SELECT user.account, doctor.doctor AS name 
             FROM user 
@@ -50,6 +53,8 @@ if (isset($_SESSION["帳號"])) {
               </script>";
     exit();
   }
+
+
 } else {
   echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
@@ -58,16 +63,15 @@ if (isset($_SESSION["帳號"])) {
   exit();
 }
 
-//預約紀錄
+// 看診紀錄
+
 
 ?>
 
-<!DOCTYPE html>
-<html class="wide wow-animation" lang="en">
 
 <head>
   <!-- Site Title-->
-  <title>醫生-預約紀錄</title>
+  <title>醫生-看診</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -155,50 +159,10 @@ if (isset($_SESSION["帳號"])) {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
 
-    /*預約紀錄 */
-    .table-responsive {
-      overflow-x: auto;
-      margin-top: 20px;
-    }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-
-    th,
-    td {
-      padding: 10px;
-      text-align: center;
-      border: 1px solid #ddd;
-      white-space: nowrap;
-      /* 禁止換行 */
-    }
-
-    th {
-      background-color: #f2f2f2;
-      font-weight: bold;
-    }
-
-    @media (max-width: 768px) {
-
-      th,
-      td {
-        padding: 8px;
-        font-size: 14px;
-      }
-    }
-
-    @media (max-width: 480px) {
-
-      th,
-      td {
-        padding: 6px;
-        font-size: 12px;
-      }
-    }
+    /* 看診紀錄 */
   </style>
+
 </head>
 
 <body>
@@ -259,7 +223,8 @@ if (isset($_SESSION["帳號"])) {
                   </ul>
                 </li>
 
-                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a></li> -->
+                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a>
+                </li> -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">班表</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_doctorshift.php">每月班表</a>
@@ -272,13 +237,11 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
-                </li>
                 <li class="rd-nav-item active"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="d_medical-record.php">看診紀錄</a>
                     </li>
-                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
-                        href="d_appointment-records.php">預約紀錄</a>
+                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="d_appointment-records.php">預約紀錄</a>
                     </li>
                   </ul>
                 </li>
@@ -351,176 +314,99 @@ if (isset($_SESSION["帳號"])) {
       <!-- Breadcrumbs-->
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <!-- <p class="breadcrumbs-custom-subtitle">Terms of Use</p> -->
-          <p class="heading-1 breadcrumbs-custom-title">預約紀錄</p>
+          <!-- <p class="breadcrumbs-custom-subtitle">Ask us</p> -->
+          <p class="heading-1 breadcrumbs-custom-title">看診</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="d_index.php">首頁</a></li>
             <li><a href="#">紀錄</a></li>
-            <li class="active">預約紀錄</li>
+            <li class="active">看診</li>
           </ul>
         </div>
       </section>
     </div>
     <!--標題-->
 
-    <!--預約紀錄-->
-    <?php
-    session_start();
-    if (!isset($_SESSION['帳號'])) {
-      die('未登入或 Session 已失效，請重新登入。');
+    <!--看診-->
+    <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
     }
-
-    require '../db.php';
-
-    // 接收搜尋條件
-    $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
-
-    // 分頁參數
-    $records_per_page = 10;
-    $page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-    $offset = ($page - 1) * $records_per_page;
-
-    // 總筆數計算
-    $count_stmt = $link->prepare("
-    SELECT COUNT(*) AS total
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE p.name LIKE CONCAT('%', ?, '%')
-");
-    if (!$count_stmt) {
-      die('SQL 錯誤: ' . $link->error);
+    .form-container {
+      width: 50%;
+      margin: 50px auto;
+      background-color: #fff;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
     }
-    $count_stmt->bind_param('s', $search_name);
-    $count_stmt->execute();
-    $count_result = $count_stmt->get_result();
-    $total_records = $count_result->fetch_assoc()['total'] ?? 0;
-    $total_pages = ceil($total_records / $records_per_page);
-
-    // 查詢分頁資料
-    $stmt = $link->prepare("
-    SELECT 
-        a.appointment_id AS id,
-        COALESCE(p.name, '未預約') AS name,
-        CASE 
-            WHEN p.gender_id = 1 THEN '男' 
-            WHEN p.gender_id = 2 THEN '女' 
-            ELSE '未設定' 
-        END AS gender,
-        DATE_FORMAT(p.birthday, '%Y-%m-%d') AS birthday,
-        DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
-        st.shifttime AS shifttime,
-        COALESCE(a.note, '無') AS note,
-        a.created_at AS created_at
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE p.name LIKE CONCAT('%', ?, '%')
-    ORDER BY ds.date, st.shifttime
-    LIMIT ?, ?
-");
-    if (!$stmt) {
-      die('SQL 錯誤: ' . $link->error);
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
     }
-    $stmt->bind_param('sii', $search_name, $offset, $records_per_page);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    ?>
-
-    <section class="section section-lg bg-default novi-bg novi-bg-img">
-      <div class="container">
-        <div class="row row-50 justify-content-lg-center">
-          <div class="col-lg-12">
-            <div id="accordion1" role="tablist" aria-multiselectable="false">
-              <!-- 搜尋表單 -->
-              <div class="search-container">
-                <form method="GET" action="">
-                  <label for="search_name">搜尋姓名：</label>
-                  <input type="text" name="search_name" id="search_name" placeholder="請輸入使用者姓名"
-                    value="<?php echo htmlspecialchars($search_name); ?>">
-                  <button type="submit">搜尋</button>
-                </form>
-              </div>
-
-              <!-- 表格容器 -->
-              <div class="table-responsive">
-                <table class="table table-bordered">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>姓名</th>
-                      <th>性別</th>
-                      <th>生日 (年齡)</th>
-                      <th>看診日期 (星期)</th>
-                      <th>看診時間</th>
-                      <th>備註</th>
-                      <th>建立時間</th>
-                      <th>選項</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php if ($result->num_rows > 0): ?>
-                      <?php while ($row = $result->fetch_assoc()): ?>
-                        <tr>
-                          <td><?php echo htmlspecialchars($row['id']); ?></td>
-                          <td><?php echo htmlspecialchars($row['name']); ?></td>
-                          <td><?php echo htmlspecialchars($row['gender']); ?></td>
-                          <td><?php echo htmlspecialchars($row['birthday']); ?></td>
-                          <td>
-                            <?php
-                            $appointment_date = htmlspecialchars($row['appointment_date']);
-                            $weekday = ['日', '一', '二', '三', '四', '五', '六'][date('w', strtotime($appointment_date))];
-                            echo "$appointment_date (星期$weekday)";
-                            ?>
-                          </td>
-                          <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
-                          <td><?php echo htmlspecialchars($row['note']); ?></td>
-                          <td><?php echo htmlspecialchars($row['created_at']); ?></td>
-                          <td>
-                            <a href="d_medical.php?id=<?php echo $row['id']; ?>" target="_blank">
-                              <button type="button">新增看診資料</button>
-                            </a>
-                          </td>
-                        </tr>
-                      <?php endwhile; ?>
-                    <?php else: ?>
-                      <tr>
-                        <td colspan="9">目前無資料</td>
-                      </tr>
-                    <?php endif; ?>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- 分頁顯示 -->
-              <div style="text-align: right; margin: 20px 0;">
-                <strong>
-                  <?php
-                  echo "第 $page 頁 / 共 $total_pages 頁（總共 $total_records 筆資料）";
-                  ?>
-                </strong>
-              </div>
-
-              <div style="text-align: center; margin: 20px 0;">
-                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                  <a href="?search_name=<?php echo urlencode($search_name); ?>&page=<?php echo $i; ?>"
-                    style="margin: 0 5px; <?php echo $i == $page ? 'font-weight: bold;' : ''; ?>">
-                    <?php echo $i; ?>
-                  </a>
-                <?php endfor; ?>
-              </div>
-
-            </div>
-          </div>
-        </div>
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .form-multi-select {
+      height: auto;
+    }
+    .btn-group {
+      text-align: center;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+    <div class="form-container">
+    <h2>新增診療紀錄</h2>
+    <form action="看診.php" method="POST">
+      <!-- 預約 ID -->
+      <div class="form-group">
+        <label for="appointment_id">預約 ID</label>
+        <input type="number" id="appointment_id" name="appointment_id" required>
       </div>
-    </section>
-    <!-- 預約紀錄 -->
+
+      <!-- 診療項目 -->
+      <div class="form-group">
+        <label for="item_ids">診療項目</label>
+        <select id="item_ids" name="item_ids[]" multiple size="5" class="form-multi-select" required>
+          <option value="1">A (200元)</option>
+          <option value="2">B (200元)</option>
+          <option value="3">C (500元)</option>
+          <option value="4">D (800元)</option>
+        </select>
+      </div>
+
+      <!-- 提交按鈕 -->
+      <div class="btn-group">
+        <button type="submit">提交紀錄</button>
+      </div>
+    </form>
+
+    <!--看診-->
+
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
@@ -575,7 +461,6 @@ if (isset($_SESSION["帳號"])) {
   <!-- Javascript-->
   <script src="js/core.min.js"></script>
   <script src="js/script.js"></script>
-  <!-- coded by Himic-->
 </body>
 
 </html>
