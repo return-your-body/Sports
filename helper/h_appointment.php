@@ -477,100 +477,84 @@ if (isset($_SESSION["帳號"])) {
 		<?php
 		include "../db.php";
 
-		// 查詢排班數據
-		$query = "
-SELECT 
-    d.doctor_id, 
-    d.doctor, 
-    ds.date, 
-    st1.shifttime AS go_time, 
-    st2.shifttime AS off_time
-FROM 
-    doctorshift ds
-JOIN 
-    doctor d ON ds.doctor_id = d.doctor_id
-JOIN 
-    shifttime st1 ON ds.go = st1.shifttime_id
-JOIN 
-    shifttime st2 ON ds.off = st2.shifttime_id
-ORDER BY ds.date, d.doctor_id";
+    // 確認登入角色
+    $user_role = $_SESSION['role'] ?? null; // 確保有設定角色
+    $doctors = []; // 初始化醫生陣列
+    
+    if ($user_role === 'helper') {
+      // 查詢醫生資料
+      $query = "
+        SELECT d.doctor_id, d.doctor 
+        FROM doctor d
+        INNER JOIN user u ON d.user_id = u.user_id
+        WHERE u.grade_id = 2
+    ";
+      $result = mysqli_query($link, $query);
+      if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+          $doctors[] = $row;
+        }
+      }
+    }
 
-		$result = mysqli_query($link, $query);
+    // 如果沒有醫生資料
+    if (empty($doctors)) {
+      $doctors[] = ['doctor_id' => '', 'doctor' => '目前無醫生可供選擇'];
+    }
 
-		$schedule = [];
-		while ($row = mysqli_fetch_assoc($result)) {
-			$date = $row['date'];
-			if (!isset($schedule[$date])) {
-				$schedule[$date] = [];
-			}
-			$schedule[$date][] = [
-				'doctor' => $row['doctor'],
-				'go_time' => $row['go_time'],
-				'off_time' => $row['off_time'],
-				'doctor_id' => $row['doctor_id'],
-			];
-		}
+    // 確認患者資料
+    $people_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+    $query_people = "SELECT name FROM people WHERE people_id = ?";
+    $stmt_people = $link->prepare($query_people);
+    $stmt_people->bind_param("i", $people_id);
+    $stmt_people->execute();
+    $result_people = $stmt_people->get_result();
+    $person = $result_people->fetch_assoc();
 
-		// 查詢請假數據
-		$query_leaves = "SELECT l.doctor_id, l.start_date, l.end_date FROM leaves l WHERE l.is_approved = 1";
-
-		$result_leaves = mysqli_query($link, $query_leaves);
-
-		$leaves = [];
-		while ($row = mysqli_fetch_assoc($result_leaves)) {
-			$leaves[] = [
-				'doctor_id' => $row['doctor_id'],
-				'start_date' => $row['start_date'],
-				'end_date' => $row['end_date'],
-			];
-		}
-
-		// 輸出數據給前端
-		header('Content-Type: application/json');
-		// echo json_encode(['schedule' => $schedule, 'leaves' => $leaves], JSON_UNESCAPED_UNICODE);
-		session_start();
-		// 接收 `id` 和 `name` 參數
-		$people_id = isset($_GET['id']) ? intval($_GET['id']) : null;
-		$name = isset($_GET['name']) ? htmlspecialchars($_GET['name']) : '未知姓名';
-
-		// 如果 `id` 不存在，顯示錯誤或導向其他頁面
-		if (!$people_id) {
-			die('無效的訪問！');
-		}
-		$_SESSION['people_id'] = $people_id;
-		?>
+    // 關閉資料庫連線
+    $stmt_people->close();
+    $link->close();
+    ?>
 
 
-		<section class="section section-lg bg-default">
-			<div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
-				<div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
-					<!-- 顯示姓名 -->
-					<p>患者姓名: <?php echo isset($_GET['name']) ? htmlspecialchars($_GET['name']) : '未指定'; ?></p>
+    <section class="section section-lg novi-bg novi-bg-img bg-default">
+      <div class="container">
+        <div class="form-container shadow-lg p-4 rounded bg-light">
+          <h3 class="text-center mb-4">預約表單</h3>
+          <form action="\u9810\u7d04.php" method="post">
+            <!-- 使用者姓名 -->
+            <div class="form-group mb-3">
+              <label for="people_name" class="form-label">姓名：</label>
+              <input type="text" id="people_name" name="people_name" class="form-control"
+                value="<?= htmlspecialchars($person['name'] ?? '未知患者'); ?>" readonly required />
+            </div>
 
-					<!-- 選擇年份 -->
-					<label for="year">選擇年份：</label>
-					<select id="year"></select>
+            <!-- 醫生姓名 -->
+            <div class="form-group mb-3">
+            <select id="doctor_id" name="doctor_id" class="form-select" required>
+              <option value="">請選擇醫生</option>
+              <?php foreach ($doctors as $doctor): ?>
+                <option value="<?= htmlspecialchars($doctor['doctor_id']); ?>">
+                  <?= htmlspecialchars($doctor['doctor']); ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+            </div>
+      
+            <!-- 預約日期 -->
+            <div class="form-group mb-3">
+              <label for="date" class="form-label">預約日期：</label>
+              <input type="date" id="date" name="date" class="form-control" required min="<?= date('Y-m-d'); ?>"
+                max="<?= date('Y-m-d', strtotime('+30 days')); ?>" />
+            </div>
 
-					<!-- 選擇月份 -->
-					<label for="month">選擇月份：</label>
-					<select id="month"></select>
-
-					<!-- 返回上一頁按鈕 -->
-					<button onclick="history.back()" style="
-	padding: 10px 20px; 
-	border: none; 
-	background-color: #008CBA; 
-	color: white; 
-	border-radius: 5px; 
-	font-size: 14px; 
-	cursor: pointer; 
-	transition: background-color 0.3s ease;
-">
-						返回上一頁
-					</button>
-
-				</div>
-			</div>
+            <!-- 預約時間 -->
+            <div class="form-group mb-3">
+              <label for="time" class="form-label">預約時間：</label>
+              <select id="time" name="time" class="form-select" required>
+                <option value="">請選擇時間</option>
+              </select>
+            </div>
 
 			<!-- 日曆內容 -->
 			<div style="overflow-x: auto; max-width: 100%; margin-top: 20px;">
@@ -1261,51 +1245,51 @@ ORDER BY ds.date, d.doctor_id";
 
 
 
-		<!--頁尾-->
-		<footer class="section novi-bg novi-bg-img footer-simple">
-			<div class="container">
-				<div class="row row-40">
-					<!-- <div class="col-md-4">
-			<h4>關於我們</h4>
-			<p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
-			  professional knowledge using innovative approach.</p>
-		  </div> -->
-					<div class="col-md-3">
-						<h4>快速連結</h4>
-						<ul class="list-marked">
-							<li><a href="h_index.php">首頁</a></li>
-							<li><a href="h_people.php">用戶資料</a></li>
-							<!-- <li><a href="h_appointment.php">預約</a></li> -->
-							<li><a href="h_numberpeople.php">當天人數及時段</a></li>
-							<li><a href="h_doctorshift.php">班表時段</a></li>
-							<!-- <li><a href="h_print-receipt.php">列印收據</a></li>
-			  <li><a href="h_print-appointment.php">列印預約單</a></li> -->
-							<li><a href="h_patient-needs.php">患者需求</a></li>
-						</ul>
-					</div>
-					<!-- <div class="col-md-5">
-			<h4>聯絡我們</h4>
-			<p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
-			  courses we offer.</p>
-			<form class="rd-mailform rd-form-boxed" data-form-output="form-output-global" data-form-type="subscribe"
-			  method="post" action="bat/rd-mailform.php">
-			  <div class="form-wrap">
-				<input class="form-input" type="email" name="email" data-constraints="@Email @Required"
-				  id="footer-mail">
-				<label class="form-label" for="footer-mail">Enter your e-mail</label>
-			  </div>
-			  <button class="form-button linearicons-paper-plane"></button>
-			</form>
-		  </div> -->
-				</div>
-				<!-- <p class="rights"><span>&copy;&nbsp;</span><span
-			class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
-			Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank"
-			href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p> -->
-			</div>
-		</footer>
-	</div>
-	<!--頁尾-->
+    <!--頁尾-->
+    <footer class="section novi-bg novi-bg-img footer-simple">
+      <div class="container">
+        <div class="row row-40">
+          <!-- <div class="col-md-4">
+            <h4>關於我們</h4>
+            <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
+              professional knowledge using innovative approach.</p>
+          </div> -->
+          <div class="col-md-3">
+            <h4>快速連結</h4>
+            <ul class="list-marked">
+              <li><a href="h_index.php">首頁</a></li>
+              <li><a href="h_people.php">用戶資料</a></li>
+              <!-- <li><a href="h_appointment.php">預約</a></li> -->
+              <li><a href="h_numberpeople.php">當天人數及時段</a></li>
+              <li><a href="h_doctorshift.php">班表時段</a></li>
+              <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
+              <li><a href="h_print-appointment.php">列印預約單</a></li> -->
+              <li><a href="h_patient-needs.php">患者需求</a></li>
+            </ul>
+          </div>
+          <!-- <div class="col-md-5">
+            <h4>聯絡我們</h4>
+            <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
+              courses we offer.</p>
+            <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global" data-form-type="subscribe"
+              method="post" action="bat/rd-mailform.php">
+              <div class="form-wrap">
+                <input class="form-input" type="email" name="email" data-constraints="@Email @Required"
+                  id="footer-mail">
+                <label class="form-label" for="footer-mail">Enter your e-mail</label>
+              </div>
+              <button class="form-button linearicons-paper-plane"></button>
+            </form>
+          </div> -->
+        </div>
+        <!-- <p class="rights"><span>&copy;&nbsp;</span><span
+            class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
+            Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank"
+            href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p> -->
+      </div>
+    </footer>
+  </div>
+  <!--頁尾-->
 
 
 	<!-- Global Mailform Output-->

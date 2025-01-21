@@ -20,7 +20,8 @@ if (isset($_SESSION["帳號"])) {
 
     // 資料庫連接
     require '../db.php';
-
+    // 接收搜尋參數
+    $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
     // 查詢該帳號的詳細資料
     $sql = "SELECT user.account, doctor.doctor AS name 
             FROM user 
@@ -53,8 +54,7 @@ if (isset($_SESSION["帳號"])) {
         exit();
     }
 
-    // 關閉資料庫連接
-    mysqli_close($link);
+
 } else {
     echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
@@ -63,13 +63,15 @@ if (isset($_SESSION["帳號"])) {
     exit();
 }
 
+// 看診紀錄
+
 
 ?>
 
 
 <head>
     <!-- Site Title-->
-    <title>助手-預約</title>
+    <title>醫生-看診</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -95,9 +97,8 @@ if (isset($_SESSION["帳號"])) {
         html.lt-ie-10 .ie-panel {
             display: block;
         }
-
-
-
+    </style>
+    <style>
         /* 登出確認視窗 - 初始隱藏 */
         .logout-box {
             display: none;
@@ -158,38 +159,8 @@ if (isset($_SESSION["帳號"])) {
             box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
         }
 
-        /* 按鈕樣式 */
-        .popup-btn {
-            background-color: #00A896;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
 
-        .popup-btn:hover {
-            background-color: #007f6e;
-        }
-
-
-        .ie-panel {
-            display: none;
-            background: #212121;
-            padding: 10px 0;
-            box-shadow: 3px 3px 5px 0 rgba(0, 0, 0, .3);
-            clear: both;
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        html.ie-10 .ie-panel,
-        html.lt-ie-10 .ie-panel {
-            display: block;
-        }
+        /* 看診紀錄 */
     </style>
 
 </head>
@@ -238,7 +209,7 @@ if (isset($_SESSION["帳號"])) {
                                 data-rd-navbar-toggle=".rd-navbar-nav-wrap"><span></span></button>
                             <!-- RD Navbar Brand-->
                             <div class="rd-navbar-brand">
-                                <!--Brand--><a class="brand-name" href="h_index.php"><img class="logo-default"
+                                <!--Brand--><a class="brand-name" href="d_index.php"><img class="logo-default"
                                         src="images/logo-default-172x36.png" alt="" width="86" height="18"
                                         loading="lazy" /><img class="logo-inverse" src="images/logo-inverse-172x36.png"
                                         alt="" width="86" height="18" loading="lazy" /></a>
@@ -246,49 +217,46 @@ if (isset($_SESSION["帳號"])) {
                         </div>
                         <div class="rd-navbar-nav-wrap">
                             <ul class="rd-navbar-nav">
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="h_index.php">首頁</a>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="d_index.php">首頁</a>
                                 </li>
-                                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">預約</a>
-                                    <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
-                                                href="h_people.php">用戶資料</a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a></li> -->
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">醫生班表</a>
-                                    <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="h_doctorshift.php">治療師班表</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="h_numberpeople.php">當天人數及時段</a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="#">列印</a>
-                                    <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="h_print-receipt.php">列印收據</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="h_print-appointment.php">列印預約單</a>
-                                        </li>
-                                    </ul>
-                                </li> -->
 
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="h_medical-record.php">看診紀錄</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="h_appointment-records.php">預約紀錄</a>
+                                                href="d_people.php">用戶資料</a>
                                         </li>
                                     </ul>
                                 </li>
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="h_patient-needs.php">病患需求</a>
+
+                                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a>
+                </li> -->
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">班表</a>
+                                    <ul class="rd-menu rd-navbar-dropdown">
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="d_doctorshift.php">每月班表</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="d_numberpeople.php">當天人數及時段</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="d_leave.php">請假申請</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="d_leave-query.php">請假資料查詢</a>
+                                        </li>
+                                    </ul>
                                 </li>
+                                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">紀錄</a>
+                                    <ul class="rd-menu rd-navbar-dropdown">
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="d_medical-record.php">看診紀錄</a>
+                                        </li>
+                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
+                                                href="d_appointment-records.php">預約紀錄</a>
+                                        </li>
+                                    </ul>
+                                </li>
+
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                                         onclick="showLogoutBox()">登出</a>
@@ -322,26 +290,26 @@ if (isset($_SESSION["帳號"])) {
                                         document.getElementById('logoutBox').style.display = 'none';
                                     }
                                 </script>
+
                             </ul>
                         </div>
                         <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span>
                         </div>
                         <!-- <div class="rd-navbar-aside-right rd-navbar-collapse">
-                            <div class="rd-navbar-social">
-                                <div class="rd-navbar-social-text">Follow us</div>
-                                <ul class="list-inline">
-                                    <li><a class="icon novi-icon icon-default icon-custom-facebook"
-                                            href="https://www.facebook.com/ReTurnYourBody/"></a>
-                                    </li>
-                                    <li><a class="icon novi-icon icon-default icon-custom-linkedin"
-                                            href="https://line.me/R/ti/p/@888tnmck?oat_content=url&ts=10041434"></a>
-                                    </li>
-                                    <li><a class="icon novi-icon icon-default icon-custom-instagram"
-                                            href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"></a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div> -->
+              <div class="rd-navbar-social">
+                <div class="rd-navbar-social-text">Follow us</div>
+                <ul class="list-inline">
+                  <li><a class="icon novi-icon icon-default icon-custom-facebook"
+                      href="https://www.facebook.com/ReTurnYourBody/"></a>
+                  </li>
+                  <li><a class="icon novi-icon icon-default icon-custom-linkedin"
+                      href="https://line.me/R/ti/p/@888tnmck?oat_content=url&ts=10041434"></a>
+                  </li>
+                  <li><a class="icon novi-icon icon-default icon-custom-instagram"
+                      href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"></a></li>
+                </ul>
+              </div>
+            </div> -->
                         <?php
                         echo "歡迎 ~ ";
                         // 顯示姓名
@@ -351,74 +319,148 @@ if (isset($_SESSION["帳號"])) {
                 </nav>
             </div>
         </header>
+        <!--標題列-->
+
         <!--標題-->
         <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
             <!-- Breadcrumbs-->
             <section class="breadcrumbs-custom breadcrumbs-custom-svg">
                 <div class="container">
                     <!-- <p class="breadcrumbs-custom-subtitle">Ask us</p> -->
-                    <p class="heading-1 breadcrumbs-custom-title">用戶資料</p>
+                    <p class="heading-1 breadcrumbs-custom-title">看診</p>
                     <ul class="breadcrumbs-custom-path">
-                        <li><a href="h_index.php">首頁</a></li>
+                        <li><a href="d_index.php">首頁</a></li>
                         <li><a href="#">紀錄</a></li>
-                        <li class="active">用戶資料</li>
+                        <li class="active">看診</li>
                     </ul>
                 </div>
             </section>
         </div>
         <!--標題-->
-        <?php
-        // 開啟 session 並引入資料庫連線
-        session_start();
-        require '../db.php'; // 資料庫連線
-        
-        // 預設參數
-        $records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 3;
-        $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-        $search_name = isset($_GET['search_name']) ? $_GET['search_name'] : '';
 
-        // 計算總筆數
-        $sql_total = "SELECT COUNT(*) AS total FROM `people` WHERE `name` LIKE ?";
-        $stmt_total = $link->prepare($sql_total);
-        $like_search = "%$search_name%";
-        $stmt_total->bind_param("s", $like_search);
-        $stmt_total->execute();
-        $result_total = $stmt_total->get_result();
-        $row_total = $result_total->fetch_assoc();
-        $total_records = $row_total['total'];
-        $stmt_total->close();
+        <!--看診-->
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f5f5f5;
+                margin: 0;
+                padding: 0;
+            }
 
-        // 計算總頁數與分頁偏移量
-        $total_pages = ceil($total_records / $records_per_page);
-        $offset = ($current_page - 1) * $records_per_page;
+            .form-container {
+                width: 50%;
+                margin: 50px auto;
+                background-color: #fff;
+                padding: 20px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                border-radius: 8px;
+            }
 
-        // 查詢分頁資料，計算年齡
-        $sql = "
-SELECT 
-    people_id, 
-    name, 
-    gender_id, 
-    birthday, 
-    idcard,
-    CASE 
-        WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday) / 365.25), ' 歲)')
-        ELSE '無資料'
-    END AS birthday_with_age
-FROM `people`
-WHERE `name` LIKE ?
-LIMIT ?, ?";
-        $stmt = $link->prepare($sql);
-        $stmt->bind_param("sii", $like_search, $offset, $records_per_page);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $people = $result->fetch_all(MYSQLI_ASSOC); // 將結果存為陣列
-        $stmt->close();
+            h2 {
+                text-align: center;
+                margin-bottom: 20px;
+            }
 
-        // 關閉資料庫連線
-        $link->close();
-        ?>
+            .form-group {
+                margin-bottom: 15px;
+            }
 
-         
+            label {
+                display: block;
+                margin-bottom: 10px;
+                font-weight: bold;
+            }
+
+            .checkbox-group {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .checkbox-group label {
+                display: flex;
+                align-items: center;
+            }
+
+            .checkbox-group input[type="checkbox"] {
+                margin-right: 10px;
+            }
+
+            .btn-group {
+                text-align: center;
+            }
+
+            button {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 4px;
+                background-color: #007bff;
+                color: white;
+                font-size: 16px;
+                cursor: pointer;
+            }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+        </style>
+
+        <div class="form-container">
+            <h2>新增診療紀錄</h2>
+            <form action="save_medicalrecord.php" method="POST">
+                <!-- 預約 ID -->
+                <div class="form-group">
+                    <label for="appointment_id">預約 ID</label>
+                    <input type="number" id="appointment_id" name="appointment_id" required>
+                </div>
+
+                <?php
+                // 顯示 PHP 錯誤
+                ini_set('display_errors', 1);
+                ini_set('display_startup_errors', 1);
+                error_reporting(E_ALL);
+
+                // 引入資料庫連線
+                require 'db.php';
+
+                // 測試資料庫連線
+                if (!$link) {
+                    die('資料庫連線失敗：' . mysqli_connect_error());
+                }
+
+                // 查詢診療項目
+                $query_items = "SELECT item_id, item, price FROM item";
+                $result_items = mysqli_query($link, $query_items);
+
+                if (!$result_items) {
+                    die('診療項目查詢失敗：' . mysqli_error($link));
+                }
+                ?>
+                <div class="form-group">
+                    <label for="item_ids">診療項目</label>
+                    <div class="checkbox-group">
+                        <?php
+                        // 動態生成診療項目多選按鈕
+                        while ($row = mysqli_fetch_assoc($result_items)) {
+                            echo '<label>';
+                            echo '<input type="checkbox" name="item_ids[]" value="' . htmlspecialchars($row['item_id']) . '">';
+                            echo htmlspecialchars($row['item']) . ' (' . htmlspecialchars($row['price']) . '元)';
+                            echo '</label>';
+                        }
+                        ?>
+                    </div>
+                </div>
+
+
+                <!-- 提交按鈕 -->
+                <div class="btn-group">
+                    <button type="submit">提交紀錄</button>
+                </div>
+            </form>
+        </div>
+        <!--看診-->
+
+
         <!--頁尾-->
         <footer class="section novi-bg novi-bg-img footer-simple">
             <div class="container">
@@ -431,15 +473,16 @@ LIMIT ?, ?";
                     <div class="col-md-3">
                         <h4>快速連結</h4>
                         <ul class="list-marked">
-                            <li><a href="h_index.php">首頁</a></li>
-                            <li><a href="h_appointment.php">預約</a></li>
-                            <li><a href="h_numberpeople.php">當天人數及時段</a></li>
-                            <li><a href="h_doctorshift.php">班表時段</a></li>
-                            <li><a href="h_medical-record.php">看診紀錄</a></li>
-                            <li><a href="h_appointment-records.php">預約紀錄</a></li>
-                            <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
-                            <li><a href="h_print-appointment.php">列印預約單</a></li> -->
-                            <li><a href="h_patient-needs.php">患者需求</a></li>
+                            <li><a href="d_index.php">首頁</a></li>
+                            <li><a href="d_people.php">用戶資料</a></li>
+                            <!-- <li><a href="d_appointment.php">預約</a></li> -->
+                            <li><a href="d_numberpeople.php">當天人數及時段</a></li>
+                            <li><a href="d_doctorshift.php">班表時段</a></li>
+                            <li><a href="d_leave.php">請假申請</a></li>
+                            <li><a href="d_leave-query.php">請假資料查詢</a></li>
+                            <li><a href="d_medical-record.php">看診紀錄</a></li>
+                            <li><a href="d_appointment-records.php">預約紀錄</a></li>
+                            <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
                         </ul>
                     </div>
                     <!-- <div class="col-md-5">

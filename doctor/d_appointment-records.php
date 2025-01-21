@@ -156,6 +156,48 @@ if (isset($_SESSION["帳號"])) {
     }
 
     /*預約紀錄 */
+    .table-responsive {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+      white-space: nowrap;
+      /* 禁止換行 */
+    }
+
+    th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+
+      th,
+      td {
+        padding: 8px;
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+
+      th,
+      td {
+        padding: 6px;
+        font-size: 12px;
+      }
+    }
   </style>
 </head>
 
@@ -322,52 +364,6 @@ if (isset($_SESSION["帳號"])) {
     <!--標題-->
 
     <!--預約紀錄-->
-    <style>
-      /* 表格外容器，手機模式允許橫向滾動 */
-      .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      /* 表格樣式 */
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: center;
-      }
-
-      th,
-      td {
-        padding: 10px;
-        border: 1px solid #ddd;
-        white-space: nowrap;
-        /* 防止內容換行 */
-      }
-
-      th {
-        background-color: #f2f2f2;
-      }
-
-      /* 分頁按鈕樣式 */
-      div a {
-        text-decoration: none;
-        padding: 5px 10px;
-        margin: 0 5px;
-        color: #000;
-      }
-
-      div a:hover {
-        background-color: #ddd;
-      }
-
-      /* 僅在螢幕寬度小於768px時啟用滾動 */
-      @media (max-width: 768px) {
-        .table-responsive {
-          overflow-x: scroll;
-        }
-      }
-    </style>
-
     <?php
     session_start();
     if (!isset($_SESSION['帳號'])) {
@@ -376,12 +372,12 @@ if (isset($_SESSION["帳號"])) {
 
     require '../db.php';
 
-    $帳號 = $_SESSION['帳號'];
+    // 接收搜尋條件
     $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
 
     // 分頁參數
     $records_per_page = 10;
-    $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int) $_GET['page'] : 1;
+    $page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
     $offset = ($page - 1) * $records_per_page;
 
     // 總筆數計算
@@ -392,13 +388,15 @@ if (isset($_SESSION["帳號"])) {
     LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
     LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
     LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE u.account = ?
-    AND p.name LIKE CONCAT('%', ?, '%')
+    WHERE p.name LIKE CONCAT('%', ?, '%')
 ");
-    $count_stmt->bind_param('ss', $帳號, $search_name);
+    if (!$count_stmt) {
+      die('SQL 錯誤: ' . $link->error);
+    }
+    $count_stmt->bind_param('s', $search_name);
     $count_stmt->execute();
     $count_result = $count_stmt->get_result();
-    $total_records = $count_result->fetch_assoc()['total'];
+    $total_records = $count_result->fetch_assoc()['total'] ?? 0;
     $total_pages = ceil($total_records / $records_per_page);
 
     // 查詢分頁資料
@@ -411,10 +409,7 @@ if (isset($_SESSION["帳號"])) {
             WHEN p.gender_id = 2 THEN '女' 
             ELSE '未設定' 
         END AS gender,
-        CASE 
-            WHEN p.birthday IS NULL THEN '未設定'
-            ELSE CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), p.birthday) / 365.25), ' 歲)')
-        END AS birthday,
+        DATE_FORMAT(p.birthday, '%Y-%m-%d') AS birthday,
         DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
         st.shifttime AS shifttime,
         COALESCE(a.note, '無') AS note,
@@ -425,43 +420,47 @@ if (isset($_SESSION["帳號"])) {
     LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
     LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
     LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE u.account = ?
-    AND p.name LIKE CONCAT('%', ?, '%')
+    WHERE p.name LIKE CONCAT('%', ?, '%')
     ORDER BY ds.date, st.shifttime
     LIMIT ?, ?
 ");
-    $stmt->bind_param('ssii', $帳號, $search_name, $offset, $records_per_page);
+    if (!$stmt) {
+      die('SQL 錯誤: ' . $link->error);
+    }
+    $stmt->bind_param('sii', $search_name, $offset, $records_per_page);
     $stmt->execute();
     $result = $stmt->get_result();
     ?>
+
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
         <div class="row row-50 justify-content-lg-center">
-          <div class="col-lg-10 col-xl-8">
+          <div class="col-lg-12">
             <div id="accordion1" role="tablist" aria-multiselectable="false">
+              <!-- 搜尋表單 -->
               <div class="search-container">
                 <form method="GET" action="">
-                  <input type="hidden" name="is_search" value="1">
-                  <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
+                  <label for="search_name">搜尋姓名：</label>
+                  <input type="text" name="search_name" id="search_name" placeholder="請輸入使用者姓名"
                     value="<?php echo htmlspecialchars($search_name); ?>">
                   <button type="submit">搜尋</button>
                 </form>
               </div>
 
-              <!-- 表格外容器 -->
+              <!-- 表格容器 -->
               <div class="table-responsive">
-                <!-- 顯示查詢結果 -->
-                <table>
+                <table class="table table-bordered">
                   <thead>
                     <tr>
                       <th>#</th>
                       <th>姓名</th>
                       <th>性別</th>
                       <th>生日 (年齡)</th>
-                      <th>看診日期</th>
+                      <th>看診日期 (星期)</th>
                       <th>看診時間</th>
                       <th>備註</th>
                       <th>建立時間</th>
+                      <th>選項</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -472,41 +471,56 @@ if (isset($_SESSION["帳號"])) {
                           <td><?php echo htmlspecialchars($row['name']); ?></td>
                           <td><?php echo htmlspecialchars($row['gender']); ?></td>
                           <td><?php echo htmlspecialchars($row['birthday']); ?></td>
-                          <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
+                          <td>
+                            <?php
+                            $appointment_date = htmlspecialchars($row['appointment_date']);
+                            $weekday = ['日', '一', '二', '三', '四', '五', '六'][date('w', strtotime($appointment_date))];
+                            echo "$appointment_date (星期$weekday)";
+                            ?>
+                          </td>
                           <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
                           <td><?php echo htmlspecialchars($row['note']); ?></td>
                           <td><?php echo htmlspecialchars($row['created_at']); ?></td>
+                          <td>
+                            <a href="d_medical.php?id=<?php echo $row['id']; ?>" target="_blank">
+                              <button type="button">新增看診資料</button>
+                            </a>
+                          </td>
                         </tr>
                       <?php endwhile; ?>
                     <?php else: ?>
                       <tr>
-                        <td colspan="8">目前無資料</td>
+                        <td colspan="9">目前無資料</td>
                       </tr>
                     <?php endif; ?>
                   </tbody>
                 </table>
               </div>
 
-              <!-- 總數顯示 -->
-              <div style="text-align: right; margin: 20px 0;">
-                <?php echo "第 $page 頁 / 共 $total_pages 頁 (總共 $total_records 筆資料)"; ?>
-              </div>
               <!-- 分頁顯示 -->
+              <div style="text-align: right; margin: 20px 0;">
+                <strong>
+                  <?php
+                  echo "第 $page 頁 / 共 $total_pages 頁（總共 $total_records 筆資料）";
+                  ?>
+                </strong>
+              </div>
+
               <div style="text-align: center; margin: 20px 0;">
                 <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                  <a href="?page=<?php echo $i; ?>&search_name=<?php echo urlencode($search_name); ?>"
+                  <a href="?search_name=<?php echo urlencode($search_name); ?>&page=<?php echo $i; ?>"
                     style="margin: 0 5px; <?php echo $i == $page ? 'font-weight: bold;' : ''; ?>">
                     <?php echo $i; ?>
                   </a>
                 <?php endfor; ?>
               </div>
+
             </div>
           </div>
         </div>
       </div>
     </section>
-
-    <!--預約紀錄-->
+    <!-- 預約紀錄 -->
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
