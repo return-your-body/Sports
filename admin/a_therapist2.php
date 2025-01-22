@@ -211,12 +211,13 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 								<li class="rd-nav-item active"><a class="rd-nav-link" href="">關於治療師</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_therapist.php">治療師時間表</a>
+												href="a_therapist.php">總人數時段表</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_addds.php">新增治療師班表</a>
+												href="a_addds.php">治療師班表</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">修改治療師班表</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_treatment.php">新增治療項目</a>
 										</li>
 										<li class="rd-dropdown-item">
 											<a class="rd-dropdown-link" href="a_leave.php">
@@ -366,14 +367,33 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			$where_conditions .= " AND doctorshift.doctor_id = '$filter_doctor'";
 		}
 
-		// 組合 SQL 查詢語句
+		// 接收分頁參數，並設置默認值
+		$page = isset($_GET['page']) ? (int) $_GET['page'] : 1; // 當前頁數，默認為第 1 頁
+		$rowsPerPage = isset($_GET['rowsPerPage']) ? (int) $_GET['rowsPerPage'] : 3; // 每頁顯示筆數，默認為 3 筆
+		$offset = ($page - 1) * $rowsPerPage; // 計算查詢偏移量
+		
+		// 查詢總筆數
+		$countQuery = "
+    SELECT COUNT(*) AS total
+    FROM appointment
+    JOIN shifttime ON appointment.shifttime_id = shifttime.shifttime_id
+    JOIN people ON appointment.people_id = people.people_id
+    JOIN doctorshift ON appointment.doctorshift_id = doctorshift.doctorshift_id
+    JOIN doctor ON doctorshift.doctor_id = doctor.doctor_id
+    WHERE $where_conditions
+";
+		$countResult = mysqli_query($link, $countQuery);
+		$totalRows = mysqli_fetch_assoc($countResult)['total'];
+		$totalPages = ceil($totalRows / $rowsPerPage); // 計算總頁數
+		
+		// 修改主查詢，加入 LIMIT 和 OFFSET
 		$query = "
     SELECT
-        doctorshift.date AS visit_date,        -- 看診日期
-        shifttime.shifttime AS visit_time,    -- 看診時間
-        people.name AS patient_name,         -- 患者姓名
-        doctor.doctor AS doctor_name,        -- 治療師姓名
-        appointment.created_at AS appointment_time -- 預約時間
+        doctorshift.date AS visit_date,
+        shifttime.shifttime AS visit_time,
+        people.name AS patient_name,
+        doctor.doctor AS doctor_name,
+        appointment.created_at AS appointment_time
     FROM
         appointment
     JOIN
@@ -387,9 +407,11 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
     WHERE
         $where_conditions
     ORDER BY
-        doctorshift.date ASC,               -- 按日期升序排序
-        shifttime.shifttime ASC             -- 按時間升序排序
+        doctorshift.date ASC,
+        shifttime.shifttime ASC
+    LIMIT $rowsPerPage OFFSET $offset
 ";
+
 
 		// 執行 SQL 查詢，並檢查是否有錯誤
 		$result = mysqli_query($link, $query);
@@ -626,7 +648,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 							<?php if ($totalPages > 1): ?>
 								<?php for ($i = 1; $i <= $totalPages; $i++): ?>
 									<button
-										onclick="location.href='?page=<?php echo $i; ?>&rowsPerPage=<?php echo $rowsPerPage; ?>&search=<?php echo htmlspecialchars($search); ?>'"
+										onclick="location.href='?page=<?php echo $i; ?>&rowsPerPage=<?php echo $rowsPerPage; ?>&date=<?php echo htmlspecialchars($filter_date); ?>&doctor_id=<?php echo htmlspecialchars($filter_doctor); ?>'"
 										style="margin: 0 5px; padding: 5px 10px; border: none; background-color: <?php echo $i == $page ? '#00A896' : '#f0f0f0'; ?>; color: <?php echo $i == $page ? 'white' : 'black'; ?>; border-radius: 4px; cursor: pointer;">
 										<?php echo $i; ?>
 									</button>
@@ -634,6 +656,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 								<span>| 共 <?php echo $totalPages; ?> 頁</span>
 							<?php endif; ?>
 						</div>
+
 
 
 					</div>
