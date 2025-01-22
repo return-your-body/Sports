@@ -208,35 +208,35 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
                                 </li>
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="">關於治療師</a>
-                                    <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_therapist.php">治療師時間表</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_addds.php">新增治療師班表</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">修改治療師班表</a>
-                                        </li>
-                                        <li class="rd-dropdown-item">
-                                            <a class="rd-dropdown-link" href="a_leave.php">
-                                                請假申請
-                                                <?php if ($pendingCount > 0): ?>
-                                                    <span style="
-                        background-color: red;
-                        color: white;
-                        font-size: 12px;
-                        border-radius: 50%;
-                        padding: 2px 6px;
-                        margin-left: 5px;
-                        display: inline-block;
-                    ">
-                                                        <?php echo $pendingCount; ?>
-                                                    </span>
-                                                <?php endif; ?>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
+									<ul class="rd-menu rd-navbar-dropdown">
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_therapist.php">總人數時段表</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_addds.php">治療師班表</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="a_treatment.php">新增治療項目</a>
+										</li>
+										<li class="rd-dropdown-item">
+											<a class="rd-dropdown-link" href="a_leave.php">
+												請假申請
+												<?php if ($pendingCount > 0): ?>
+													<span style="
+						background-color: red;
+						color: white;
+						font-size: 12px;
+						border-radius: 50%;
+						padding: 2px 6px;
+						margin-left: 5px;
+						display: inline-block;
+					">
+														<?php echo $pendingCount; ?>
+													</span>
+												<?php endif; ?>
+											</a>
+										</li>
+									</ul>
+								</li>
                                 <li class="rd-nav-item "><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
                                 </li>
                                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>

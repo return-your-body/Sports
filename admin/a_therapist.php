@@ -299,12 +299,13 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 								<li class="rd-nav-item active"><a class="rd-nav-link" href="">關於治療師</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_therapist.php">治療師時間表</a>
+												href="a_therapist.php">總人數時段表</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_addds.php">新增治療師班表</a>
+												href="a_addds.php">治療師班表</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">修改治療師班表</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_treatment.php">新增治療項目</a>
 										</li>
 										<li class="rd-dropdown-item">
 											<a class="rd-dropdown-link" href="a_leave.php">
@@ -414,11 +415,11 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			<!-- Breadcrumbs-->
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
-					<p class="heading-1 breadcrumbs-custom-title">關於治療師</p>
+					<p class="heading-1 breadcrumbs-custom-title">總人數時段表</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="a_index.php">首頁</a></li>
 						<li><a href="">關於治療師</a></li>
-						<li class="active">治療師時間表</li>
+						<li class="active">總人數時段表</li>
 					</ul>
 				</div>
 			</section>
