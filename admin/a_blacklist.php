@@ -343,183 +343,129 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				</div>
 			</section>
 
-		</div>
+			<section class="section section-lg bg-default text-center">
+				<div class="container">
+					<div class="row justify-content-sm-center">
+						<div class="col-md-10 col-xl-8">
+							<!-- 搜尋框 -->
+							<form class="search-form" method="GET" action="a_blacklist.php"
+								style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+								<div style="flex: 4;">
+									<input class="form-input" type="text" name="search"
+										value="<?php echo htmlspecialchars($search); ?>" placeholder="請輸入身分證"
+										style="padding: 10px 15px; font-size: 16px; width: 100%; border: 1px solid #ccc; border-radius: 4px;">
+								</div>
+								<div style="flex: 1;">
+									<button type="submit"
+										style="padding: 10px 15px; font-size: 16px; width: 100%; border: none; border-radius: 4px; background-color: #00A896; color: white;">
+										<span class="icon mdi mdi-magnify"></span>搜尋
+									</button>
+								</div>
+								<div style="flex: 1;">
+									<select name="rowsPerPage" onchange="this.form.submit()"
+										style="padding: 10px 15px; font-size: 16px; width: 100%; border: 1px solid #ccc; border-radius: 4px;">
+										<option value="3" <?php echo $rowsPerPage == 3 ? 'selected' : ''; ?>>3筆/頁</option>
+										<option value="5" <?php echo $rowsPerPage == 5 ? 'selected' : ''; ?>>5筆/頁</option>
+										<option value="10" <?php echo $rowsPerPage == 10 ? 'selected' : ''; ?>>10筆/頁
+										</option>
+										<option value="20" <?php echo $rowsPerPage == 20 ? 'selected' : ''; ?>>20筆/頁
+										</option>
+									</select>
+								</div>
+							</form>
 
-		<!-- Bordered Row Table -->
-		<section class="section section-lg bg-default text-center">
-			<div class="container">
-				<div class="row justify-content-sm-center">
-					<div class="col-md-10 col-xl-8">
-						<!-- 搜尋框與按鈕區塊 -->
-						<form class="search-form"
-							style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; width: 100%;">
-							<!-- 搜尋框容器（設定寬度比例 4） -->
-							<div style="flex: 4;">
-								<!-- 輸入框：用於用戶輸入身分證號 -->
-								<input class="form-input" type="text" name="search" placeholder="請輸入身分證" style="
-									padding: 10px 15px;          /* 設定內邊距 */
-									font-size: 16px;             /* 字體大小 */
-									width: 100%;                 /* 寬度填滿容器 */
-									border: 1px solid #ccc;      /* 外框顏色 */
-									border-radius: 4px;          /* 圓角設定 */
-									outline: none;               /* 移除點擊時的外框線 */
-									box-sizing: border-box;      /* 使邊框和內邊距包含在寬度內 */
-								">
+							<!-- 表格 -->
+							<div class="table-novi table-custom-responsive" style="font-size: 16px; overflow-x: auto;">
+								<table class="table-custom table-custom-bordered"
+									style="width: 100%; border-collapse: collapse;">
+									<thead>
+										<tr>
+											<th>#</th>
+											<th>姓名</th>
+											<th>身份證</th>
+											<th>剩餘時間</th>
+											<th>選項</th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php if (!empty($users)): ?>
+											<?php foreach ($users as $index => $user): ?>
+												<tr>
+													<td><?php echo $offset + $index + 1; ?></td>
+													<td><?php echo htmlspecialchars($user['name']); ?></td>
+													<td><?php echo htmlspecialchars($user['idcard']); ?></td>
+													<td>
+														<?php if ($user['remaining_time'] === "已解除"): ?>
+															已解除
+														<?php else: ?>
+															<span class="countdown"
+																data-seconds="<?php echo $user['remaining_time']; ?>"></span>
+														<?php endif; ?>
+													</td>
+													<td>
+														<button
+															style="padding: 6px 12px; background-color: #00A896; color: white; border: none; border-radius: 4px;">操作</button>
+														<button
+															style="padding: 6px 12px; background-color: #FFB900; color: white; border: none; border-radius: 4px;">詳細</button>
+													</td>
+												</tr>
+											<?php endforeach; ?>
+										<?php else: ?>
+											<tr>
+												<td colspan="5" style="text-align: center;">未找到資料</td>
+											</tr>
+										<?php endif; ?>
+									</tbody>
+								</table>
 							</div>
 
-							<!-- 搜尋按鈕容器（設定寬度比例 1） -->
-							<div style="flex: 1;">
-								<!-- 按鈕：觸發搜尋功能 -->
-								<button class="" type="submit" style="
-									padding: 10px 15px;           /* 設定內邊距 */
-									font-size: 16px;              /* 字體大小 */
-									width: 100%;                  /* 寬度填滿容器 */
-									border: none;                 /* 移除按鈕邊框 */
-									border-radius: 4px;           /* 圓角設定 */
-									background-color: #00A896;    /* 按鈕背景顏色 */
-									color: white;                 /* 文字顏色 */
-									cursor: pointer;              /* 滑鼠懸停時顯示指針 */
-									box-sizing: border-box;       /* 使寬度包含邊框和內邊距 */
-									display: flex;                /* 使用彈性盒模型 */
-									align-items: center;          /* 內容垂直居中 */
-									justify-content: center;      /* 內容水平居中 */
-									gap: 5px;                     /* 圖示與文字之間的間距 */
-								">
-									<!-- 圖示：放大鏡 -->
-									<span class="icon mdi mdi-magnify"></span>搜尋
-								</button>
+							<!-- 分頁 -->
+							<div id="pagination" style="text-align: center; margin-top: 10px;">
+								<?php if ($totalPages > 1): ?>
+									<?php for ($i = 1; $i <= $totalPages; $i++): ?>
+										<button
+											onclick="location.href='?page=<?php echo $i; ?>&rowsPerPage=<?php echo $rowsPerPage; ?>&search=<?php echo htmlspecialchars($search); ?>'"
+											style="margin: 0 5px; padding: 5px 10px; border: none; background-color: <?php echo $i == $page ? '#00A896' : '#f0f0f0'; ?>; color: <?php echo $i == $page ? 'white' : 'black'; ?>; border-radius: 4px;">
+											<?php echo $i; ?>
+										</button>
+									<?php endfor; ?>
+									<span>| 共 <?php echo $totalPages; ?> 頁</span>
+								<?php endif; ?>
 							</div>
-						</form>
-
-
-
-
-						<!-- 表格區域 -->
-						<div class="table-novi table-custom-responsive" style="font-size: 16px; overflow-x: auto;">
-							<table class="table-custom table-custom-bordered"
-								style="width: 100%; border-collapse: collapse;">
-								<thead>
-									<tr>
-										<th style="padding: 10px; text-align: left;">#</th>
-										<th style="padding: 10px; text-align: left;">帳號</th>
-										<th style="padding: 10px; text-align: left;">姓名</th>
-										<th style="padding: 10px; text-align: left;">身份證</th>
-										<th style="padding: 10px; text-align: left;">選項</th>
-									</tr>
-								</thead>
-								<tbody id="table-body">
-									<!-- 動態插入的資料行 -->
-								</tbody>
-							</table>
 						</div>
-
-						<!-- 分頁顯示區域 -->
-						<div id="pagination"
-							style="text-align: center; margin-top: 10px; font-size: 14px; color: #333;"></div>
-
-						<!-- JavaScript -->
-						<script>
-							// 假設的資料源
-							const tableData = [];
-							for (let i = 1; i <= 47; i++) {
-								tableData.push({
-									id: i,
-									account: `User${i}`,
-									name: `Name${i}`,
-									idNumber: `@user${i}`,
-									option: "操作",
-									newOption: "詳細" // 新的按鈕名稱
-								});
-							}
-
-							const rowsPerPage = 10; // 每頁顯示 10 行
-							let currentPage = 1;
-
-							// 渲染表格內容
-							function renderTable(page) {
-								const tableBody = document.getElementById("table-body");
-								tableBody.innerHTML = "";
-
-								// 計算當前頁的資料範圍
-								const start = (page - 1) * rowsPerPage;
-								const end = start + rowsPerPage;
-								const pageData = tableData.slice(start, end);
-
-								// 插入資料行
-								pageData.forEach((row) => {
-									const tr = `
-				<tr>
-					<td style="padding: 10px;">${row.id}</td>
-					<td style="padding: 10px;">${row.account}</td>
-					<td style="padding: 10px;">${row.name}</td>
-					<td style="padding: 10px;">${row.idNumber}</td>
-					<td style="padding: 10px; text-align: center; display: flex; gap: 5px; justify-content: center;">
-						<!-- 操作按鈕 -->
-						<button style="
-							padding: 6px 12px; 
-							font-size: 12px; 
-							border: none; 
-							background-color: #00A896; 
-							color: white; 
-							cursor: pointer; 
-							border-radius: 4px;">
-							${row.option}
-						</button>
-						<!-- 新按鈕 -->
-						<button style="
-							padding: 6px 12px; 
-							font-size: 12px; 
-							border: none; 
-							background-color: #FFB900; 
-							color: white; 
-							cursor: pointer; 
-							border-radius: 4px;">
-							${row.newOption}
-						</button>
-					</td>
-				</tr>
-			`;
-									tableBody.innerHTML += tr;
-								});
-
-								renderPagination();
-							}
-
-							// 渲染分頁資訊
-							function renderPagination() {
-								const pagination = document.getElementById("pagination");
-								const totalPages = Math.ceil(tableData.length / rowsPerPage);
-								pagination.innerHTML = `共 ${totalPages} 頁`;
-
-								if (totalPages > 1) {
-									pagination.innerHTML += " | ";
-									for (let i = 1; i <= totalPages; i++) {
-										pagination.innerHTML += `<button onclick="changePage(${i})" style="margin: 0 5px; padding: 5px 10px; cursor: pointer; border: none; background-color: ${i === currentPage ? "#00A896" : "#f0f0f0"
-											}; color: ${i === currentPage ? "white" : "black"}; border-radius: 4px;">${i}</button>`;
-									}
-								}
-							}
-
-							// 換頁功能
-							function changePage(page) {
-								currentPage = page;
-								renderTable(currentPage);
-							}
-
-							// 初始化渲染表格
-							renderTable(currentPage);
-						</script>
 					</div>
 				</div>
-			</div>
-		</section>
+			</section>
 
+			<!-- 倒數計時 JavaScript -->
+			<script>
+				document.querySelectorAll('.countdown').forEach(function (element) {
+					let seconds = parseInt(element.getAttribute('data-seconds'));
 
-		<!-- Global Mailform Output-->
-		<div class="snackbars" id="form-output-global"></div>
-		<!-- Javascript-->
-		<script src="js/core.min.js"></script>
-		<script src="js/script.js"></script>
+					function updateCountdown() {
+						if (seconds <= 0) {
+							element.textContent = '已解除';
+						} else {
+							let days = Math.floor(seconds / 86400);
+							let hours = Math.floor((seconds % 86400) / 3600);
+							let minutes = Math.floor((seconds % 3600) / 60);
+							let sec = seconds % 60;
+
+							element.textContent = `${days}天 ${hours}時 ${minutes}分 ${sec}秒`;
+							seconds--;
+							setTimeout(updateCountdown, 1000);
+						}
+					}
+
+					updateCountdown();
+				});
+			</script>
+
+			<!-- Global Mailform Output-->
+			<div class="snackbars" id="form-output-global"></div>
+			<!-- Javascript-->
+			<script src="js/core.min.js"></script>
+			<script src="js/script.js"></script>
 </body>
 
 </html>
