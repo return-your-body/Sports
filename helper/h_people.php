@@ -69,9 +69,9 @@ session_start();
 require '../db.php'; // 資料庫連線
 
 // 預設參數
-$records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 3;
+$records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 10; // 預設 10 筆
 $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-$search_name = isset($_GET['search_name']) ? $_GET['search_name'] : '';
+$search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
 
 // 計算總筆數
 $sql_total = "SELECT COUNT(*) AS total FROM `people` WHERE `name` LIKE ?";
@@ -85,7 +85,7 @@ $total_records = $row_total['total'];
 $stmt_total->close();
 
 // 計算總頁數與分頁偏移量
-$total_pages = ceil($total_records / $records_per_page);
+$total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
 $offset = ($current_page - 1) * $records_per_page;
 
 // 查詢分頁資料，計算年齡
@@ -107,7 +107,7 @@ $stmt = $link->prepare($sql);
 $stmt->bind_param("sii", $like_search, $offset, $records_per_page);
 $stmt->execute();
 $result = $stmt->get_result();
-$people = $result->fetch_all(MYSQLI_ASSOC); // 將結果存為陣列
+$people = $result->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
 // 關閉資料庫連線
@@ -229,7 +229,7 @@ $link->close();
             background-color: #f2f2f2;
         }
 
-        /* 表格容器樣式，用於手機模式的滾動 */
+        /* 表格容器樣式 */
         .table-responsive {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -251,26 +251,34 @@ $link->close();
             background-color: #007f6e;
         }
 
+        /* 下拉選單樣式 */
+        .pagination-select {
+            padding: 5px 10px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
         /* 手機模式樣式 */
         @media (max-width: 768px) {
             table {
                 font-size: 12px;
-                /* 縮小字體 */
             }
 
             th,
             td {
                 padding: 8px;
-                /* 減少內邊距 */
             }
 
             .table-responsive {
                 overflow-x: scroll;
-                /* 啟用橫向滾動 */
             }
 
             .popup-btn {
                 padding: 5px 10px;
+                font-size: 12px;
+            }
+
+            .pagination-select {
                 font-size: 12px;
             }
         }
@@ -454,114 +462,133 @@ $link->close();
 
         <section class="section section-lg bg-default">
             <div class="container">
-                <div class="search-container" style="text-align: right; margin-bottom: 20px;">
-                    <form method="GET" action="">
-                        <label for="search_name">搜尋姓名：</label>
+                <div class="search-container"
+                    style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <form method="GET" action="" style="display: flex; align-items: center; gap: 10px;">
+                        <!-- <label for="search_name">搜尋姓名：</label> -->
                         <input type="text" name="search_name" id="search_name" placeholder="請輸入使用者姓名"
                             value="<?php echo htmlspecialchars($search_name); ?>">
                         <button type="submit" class="popup-btn">搜尋</button>
                     </form>
-                </div>
 
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>姓名</th>
-                                <th>性別</th>
-                                <th>生日 (年齡)</th>
-                                <th>身份證</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (!empty($people)): ?>
-                                <?php foreach ($people as $person): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($person['people_id']); ?></td>
-                                        <td><?php echo htmlspecialchars($person['name']); ?></td>
-                                        <td>
-                                            <?php
-                                            switch ($person['gender_id']) {
-                                                case 1:
-                                                    echo "男";
-                                                    break;
-                                                case 2:
-                                                    echo "女";
-                                                    break;
-                                                default:
-                                                    echo "未設定";
-                                                    break;
-                                            }
-                                            ?>
-                                        </td>
-                                        <td><?php echo htmlspecialchars($person['birthday_with_age']); ?></td>
-                                        <td><?php echo htmlspecialchars($person['idcard']); ?></td>
-                                        <td>
-                                            <a href="edit_user.php?id=<?php echo $person['people_id']; ?>">
-                                                <button class="popup-btn">編輯</button>
-                                            </a>
-                                            <a href="delete_user.php?id=<?php echo $person['people_id']; ?>"
-                                                onclick="return confirm('確定要刪除嗎？')">
-                                                <button class="popup-btn">刪除</button>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="6">目前無資料</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- 分頁顯示 -->
-                <div style="text-align: right; margin-top: 20px;">
-                    <strong>
-                        第 <?php echo $current_page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共
-                        <?php echo $total_records; ?> 筆資料）
-                    </strong>
-                </div>
-
-                <div style="text-align: center; margin-top: 20px;">
-                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <a href="?search_name=<?php echo urlencode($search_name); ?>&page=<?php echo $i; ?>&per_page=<?php echo $records_per_page; ?>"
-                            style="margin: 0 5px; <?php echo $i == $current_page ? 'font-weight: bold;' : ''; ?>">
-                            <?php echo $i; ?>
-                        </a>
-                    <?php endfor; ?>
+                    <!-- <label for="per_page">每頁顯示筆數：</label> -->
+                    <select id="per_page" class="pagination-select" onchange="changePerPage(this.value)">
+                        <?php
+                        $options = [3, 5, 10, 20, 50, 100];
+                        foreach ($options as $option) {
+                            echo "<option value='$option' " . ($records_per_page == $option ? 'selected' : '') . ">$option 筆/頁</option>";
+                        }
+                        ?>
+                    </select>
                 </div>
             </div>
-        </section>
 
 
-        <!--頁尾-->
-        <footer class="section novi-bg novi-bg-img footer-simple">
-            <div class="container">
-                <div class="row row-40">
-                    <!-- <div class="col-md-4">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>姓名</th>
+                            <th>性別</th>
+                            <th>生日 (年齡)</th>
+                            <th>身份證</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($people)): ?>
+                            <?php foreach ($people as $person): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($person['people_id']); ?></td>
+                                    <td><?php echo htmlspecialchars($person['name']); ?></td>
+                                    <td>
+                                        <?php
+                                        switch ($person['gender_id']) {
+                                            case 1:
+                                                echo "男";
+                                                break;
+                                            case 2:
+                                                echo "女";
+                                                break;
+                                            default:
+                                                echo "未設定";
+                                                break;
+                                        }
+                                        ?>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($person['birthday_with_age']); ?></td>
+                                    <td><?php echo htmlspecialchars($person['idcard']); ?></td>
+                                    <td>
+                                        <a href="edit_user.php?id=<?php echo $person['people_id']; ?>">
+                                            <button class="popup-btn">編輯</button>
+                                        </a>
+                                        <a href="delete_user.php?id=<?php echo $person['people_id']; ?>"
+                                            onclick="return confirm('確定要刪除嗎？')">
+                                            <button class="popup-btn">刪除</button>
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="6">目前無資料</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分頁顯示 -->
+            <div style="text-align: right; margin-top: 20px;">
+                <strong>
+                    第 <?php echo $current_page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共
+                    <?php echo $total_records; ?> 筆資料）
+                </strong>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                    <a href="?search_name=<?php echo urlencode($search_name); ?>&page=<?php echo $i; ?>&per_page=<?php echo $records_per_page; ?>"
+                        style="margin: 0 5px; <?php echo $i == $current_page ? 'font-weight: bold;' : ''; ?>">
+                        <?php echo $i; ?>
+                    </a>
+                <?php endfor; ?>
+            </div>
+    </div>
+    </section>
+
+    <script>
+        function changePerPage(perPage) {
+            window.location.href = "?search_name=<?php echo urlencode($search_name); ?>&per_page=" + perPage;
+        }
+    </script>
+
+
+    <!--頁尾-->
+    <footer class="section novi-bg novi-bg-img footer-simple">
+        <div class="container">
+            <div class="row row-40">
+                <!-- <div class="col-md-4">
             <h4>關於我們</h4>
             <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
               professional knowledge using innovative approach.</p>
           </div> -->
-                    <div class="col-md-3">
-                        <h4>快速連結</h4>
-                        <ul class="list-marked">
-                            <li><a href="h_index.php">首頁</a></li>
-                            <li><a href="h_appointment.php">預約</a></li>
-                            <li><a href="h_numberpeople.php">當天人數及時段</a></li>
-                            <li><a href="h_doctorshift.php">班表時段</a></li>
-                            <li><a href="h_medical-record.php">看診紀錄</a></li>
-                            <li><a href="h_appointment-records.php">預約紀錄</a></li>
-                            <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
+                <div class="col-md-3">
+                    <h4>快速連結</h4>
+                    <ul class="list-marked">
+                        <li><a href="h_index.php">首頁</a></li>
+                        <li><a href="h_appointment.php">預約</a></li>
+                        <li><a href="h_numberpeople.php">當天人數及時段</a></li>
+                        <li><a href="h_doctorshift.php">班表時段</a></li>
+                        <li><a href="h_medical-record.php">看診紀錄</a></li>
+                        <li><a href="h_appointment-records.php">預約紀錄</a></li>
+                        <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
                             <li><a href="h_print-appointment.php">列印預約單</a></li> -->
-                            <li><a href="h_patient-needs.php">患者需求</a></li>
-                        </ul>
-                    </div>
-                    <!-- <div class="col-md-5">
+                        <li><a href="h_patient-needs.php">患者需求</a></li>
+                    </ul>
+                </div>
+                <!-- <div class="col-md-5">
             <h4>聯絡我們</h4>
             <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
               courses we offer.</p>
@@ -575,13 +602,13 @@ $link->close();
               <button class="form-button linearicons-paper-plane"></button>
             </form>
           </div> -->
-                </div>
-                <!-- <p class="rights"><span>&copy;&nbsp;</span><span
+            </div>
+            <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
             Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank"
             href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p> -->
-            </div>
-        </footer>
+        </div>
+    </footer>
     </div>
     <!--頁尾-->
 
