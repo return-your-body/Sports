@@ -347,54 +347,81 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			// 引入資料庫連接
 			include '../db.php';
 
-			// 自動檢查黑名單過期
-			$sql = "
-    SELECT people_id, blacklist_end_date 
-    FROM people 
-    WHERE black >= 3";
+			// 讀取預設黑名單時間（從 settings 表）
+			$blacklistDuration = 1; // 預設 1 小時
+			$blacklistUnit = 'HOUR';
+
+			// 查詢 settings 表來獲取黑名單的預設時間
+			$default_sql = "SELECT setting_value FROM settings WHERE setting_key = 'default_blacklist_duration'";
+			$result = mysqli_query($link, $default_sql);
+			if ($row = mysqli_fetch_assoc($result)) {
+				$blacklistDuration = intval($row['setting_value']);
+			}
+
+			$default_sql = "SELECT setting_value FROM settings WHERE setting_key = 'default_blacklist_unit'";
+			$result = mysqli_query($link, $default_sql);
+			if ($row = mysqli_fetch_assoc($result)) {
+				$blacklistUnit = $row['setting_value'];
+			}
+
+			// 確保黑名單時間單位有效
+			$allowedUnits = ['HOUR', 'DAY', 'MONTH'];
+			if (!in_array($blacklistUnit, $allowedUnits)) {
+				$blacklistUnit = 'HOUR';
+			}
+
+			// 設定 SQL 語法的時間單位
+			$intervalSQL = "INTERVAL $blacklistDuration $blacklistUnit";
+
+			// 1️⃣ **檢查黑名單是否過期**
+			$sql = "SELECT people_id, blacklist_end_date FROM people WHERE black >= 3";
 			$result = mysqli_query($link, $sql);
 			while ($row = mysqli_fetch_assoc($result)) {
-				if (new DateTime() > new DateTime($row['blacklist_end_date'])) {
+				if (!empty($row['blacklist_end_date']) && new DateTime() > new DateTime($row['blacklist_end_date'])) {
+					// 如果黑名單已過期，將 `black` 設為 0，清空黑名單時間
 					$reset_sql = "UPDATE people SET black = 0, blacklist_start_date = NULL, blacklist_end_date = NULL WHERE people_id = ?";
 					$stmt = mysqli_prepare($link, $reset_sql);
 					mysqli_stmt_bind_param($stmt, "i", $row['people_id']);
 					mysqli_stmt_execute($stmt);
+					mysqli_stmt_close($stmt);
 				}
 			}
 
-			// 自動檢查違規次數，並新增黑名單資料（剩餘時間 1 分鐘）
+			// 2️⃣ **重新設定黑名單（避免已過期的人永遠不進黑名單）**
 			$update_blacklist_sql = "
     UPDATE people
     SET blacklist_start_date = NOW(), 
-        blacklist_end_date = DATE_ADD(NOW(), INTERVAL 1 MINUTE)
-    WHERE black >= 3 AND blacklist_start_date IS NULL";
+        blacklist_end_date = DATE_ADD(NOW(), $intervalSQL)
+    WHERE black >= 3 AND (blacklist_end_date IS NULL OR blacklist_end_date < NOW())";
+
 			mysqli_query($link, $update_blacklist_sql);
 
-			// 處理搜尋
+			// 3️⃣ **處理搜尋**
 			$search = $_GET['search'] ?? '';
 			$rowsPerPage = $_GET['rowsPerPage'] ?? 10;
 			$page = $_GET['page'] ?? 1;
 			$offset = ($page - 1) * $rowsPerPage;
 
-			// 定義函數計算剩餘時間
+			// 4️⃣ **修正 `calculateRemainingTime()`**
 			function calculateRemainingTime($end_date)
 			{
+				if (empty($end_date)) {
+					return 0; // 確保 JavaScript 讀取數字，不會變成 NaN
+				}
+
 				$current_date = new DateTime();
 				$end_date = new DateTime($end_date);
 
 				if ($current_date > $end_date) {
-					return "已解除";
+					return 0; // 如果時間過期，回傳 0 秒（JavaScript 會顯示 "已解除"）
 				} else {
-					$interval = $current_date->diff($end_date);
-					return $interval->days * 86400 + $interval->h * 3600 + $interval->i * 60 + $interval->s;
+					return $end_date->getTimestamp() - $current_date->getTimestamp(); // 回傳剩餘秒數
 				}
 			}
 
-			// 查詢違規次數資料
-			$sql = "
-    SELECT people_id, name, idcard, black, blacklist_end_date 
-    FROM people 
-    WHERE black > 0";
+
+			// 5️⃣ **查詢違規次數資料**
+			$sql = "SELECT people_id, name, idcard, black, blacklist_end_date FROM people WHERE black > 0";
 			if (!empty($search)) {
 				$sql .= " AND idcard LIKE ? ";
 			}
@@ -411,19 +438,12 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 			$users = [];
 			while ($row = mysqli_fetch_assoc($result)) {
-				if ($row['black'] >= 3) {
-					$row['remaining_time'] = calculateRemainingTime($row['blacklist_end_date']);
-				} else {
-					$row['remaining_time'] = "違規次數：{$row['black']}";
-				}
+				$row['remaining_time'] = calculateRemainingTime($row['blacklist_end_date']);
 				$users[] = $row;
 			}
 
-			// 獲取總頁數
-			$count_sql = "
-    SELECT COUNT(*) AS total 
-    FROM people 
-    WHERE black > 0";
+			// 6️⃣ **獲取總頁數**
+			$count_sql = "SELECT COUNT(*) AS total FROM people WHERE black > 0";
 			if (!empty($search)) {
 				$count_sql .= " AND idcard LIKE ?";
 				$stmt = mysqli_prepare($link, $count_sql);
@@ -435,7 +455,10 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			}
 			$totalRows = mysqli_fetch_assoc($count_result)['total'] ?? 0;
 			$totalPages = ceil($totalRows / $rowsPerPage);
+
 			?>
+
+
 
 
 
@@ -468,6 +491,152 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 										</option>
 									</select>
 								</div>
+								<!-- 這段放在 "資料筆數" 選單旁邊 -->
+								<!-- 設定連結（點擊開啟設定彈窗） -->
+								<a href="#" class="settings-link" onclick="openBlacklistSettings()">⚙</a>
+								<!-- 黑名單時間設定彈出視窗 -->
+								<div id="blacklistSettingsModal" class="modal-container">
+									<div class="modal-content">
+										<!-- <h3 class="modal-title">設定黑名單時間</h3> -->
+
+										<!-- 修改這部分，讓時間長度與輸入框對齊 -->
+										<div class="input-group">
+											<label for="blacklistDuration">時間長度：</label>
+											<div class="input-wrapper">
+												<input type="number" id="blacklistDuration" value="1" min="1">
+												<select id="blacklistUnit">
+													<option value="HOUR">小時</option>
+													<option value="DAY">天</option>
+													<option value="MONTH">月</option>
+												</select>
+											</div>
+										</div>
+
+										<div class="checkbox-group">
+											<input type="checkbox" id="updateExistingBlacklist">
+											<label for="updateExistingBlacklist">修改已在黑名單內的使用者</label>
+										</div>
+
+										<div class="modal-buttons">
+											<button class="confirm-btn" onclick="saveBlacklistSettings()">確認</button>
+											<button class="cancel-btn" onclick="closeBlacklistSettings()">取消</button>
+										</div>
+									</div>
+								</div>
+
+
+								<!-- CSS -->
+								<style>
+									/* 彈窗背景 */
+									.modal-container {
+										display: none;
+										position: fixed;
+										top: 0;
+										left: 0;
+										width: 100%;
+										height: 100%;
+										background: rgba(0, 0, 0, 0.5);
+										justify-content: center;
+										align-items: center;
+										z-index: 1000;
+									}
+
+									/* 彈窗內容 */
+									.modal-content {
+										background: white;
+										padding: 20px;
+										border-radius: 10px;
+										box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+										width: 340px;
+										text-align: center;
+									}
+
+									/* 標題 */
+									.modal-title {
+										font-size: 18px;
+										margin-bottom: 15px;
+										color: black;
+									}
+
+									/* 讓時間長度 + 輸入框 + 單位選擇 在同一行 */
+									.input-group {
+										display: flex;
+										align-items: center;
+										justify-content: space-between;
+										gap: 10px;
+										margin-bottom: 15px;
+									}
+
+									/* 讓輸入框與選單保持一致大小 */
+									.input-wrapper {
+										display: flex;
+										align-items: center;
+										gap: 5px;
+										flex-grow: 1;
+									}
+
+									.input-wrapper input,
+									.input-wrapper select {
+										padding: 8px;
+										border: 1px solid #ccc;
+										border-radius: 5px;
+										font-size: 14px;
+										width: 50%;
+									}
+
+									/* 讓標籤文字對齊 */
+									.input-group label {
+										font-size: 14px;
+										color: black;
+										white-space: nowrap;
+									}
+
+									/* 勾選框對齊 */
+									.checkbox-group {
+										display: flex;
+										align-items: center;
+										justify-content: center;
+										gap: 8px;
+										font-size: 14px;
+										margin-bottom: 15px;
+										color: black;
+									}
+
+									/* 確保勾選框標籤可見 */
+									.checkbox-group label {
+										color: black;
+									}
+
+									/* 按鈕組 */
+									.modal-buttons {
+										display: flex;
+										justify-content: space-between;
+										gap: 10px;
+									}
+
+									/* 確認按鈕 */
+									.confirm-btn {
+										background-color: #28a745;
+										color: white;
+										padding: 8px 15px;
+										border: none;
+										border-radius: 5px;
+										cursor: pointer;
+										flex: 1;
+									}
+
+									/* 取消按鈕 */
+									.cancel-btn {
+										background-color: #ccc;
+										color: black;
+										padding: 8px 15px;
+										border: none;
+										border-radius: 5px;
+										cursor: pointer;
+										flex: 1;
+									}
+								</style>
+
 							</form>
 
 							<!-- 表格 -->
@@ -531,6 +700,9 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 									<span>| 共 <?php echo $totalPages; ?> 頁</span>
 								<?php endif; ?>
 							</div>
+
+
+
 						</div>
 					</div>
 				</div>
@@ -540,6 +712,12 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			<script>
 				document.querySelectorAll('.countdown').forEach(function (element) {
 					let seconds = parseInt(element.getAttribute('data-seconds'));
+
+					// 確保 `seconds` 不為 NaN，並且至少為 1 秒
+					if (isNaN(seconds) || seconds <= 0) {
+						element.textContent = '已解除';
+						return;
+					}
 
 					function updateCountdown() {
 						if (seconds <= 0) {
@@ -552,12 +730,41 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 							element.textContent = `${days}天 ${hours}時 ${minutes}分 ${sec}秒`;
 							seconds--;
+
 							setTimeout(updateCountdown, 1000);
 						}
 					}
 
 					updateCountdown();
 				});
+
+
+
+				function openBlacklistSettings() {
+					document.getElementById('blacklistSettingsModal').style.display = 'flex';
+				}
+
+				function closeBlacklistSettings() {
+					document.getElementById('blacklistSettingsModal').style.display = 'none';
+				}
+
+				function saveBlacklistSettings() {
+					let duration = document.getElementById('blacklistDuration').value;
+					let unit = document.getElementById('blacklistUnit').value;
+					let updateExisting = document.getElementById('updateExistingBlacklist').checked ? 1 : 0;
+
+					let xhr = new XMLHttpRequest();
+					xhr.open("POST", "修改黑名單時間.php", true);
+					xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+					xhr.send(`duration=${duration}&unit=${unit}&updateExisting=${updateExisting}`);
+
+					xhr.onload = function () {
+						alert(xhr.responseText);
+						closeBlacklistSettings();
+						location.reload();
+					};
+				}
+
 			</script>
 
 
