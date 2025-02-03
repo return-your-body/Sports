@@ -74,26 +74,40 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
   // 查詢關聯資料
   $query = "
 SELECT 
-m.medicalrecord_id,
-a.appointment_id,
-p.name AS people_name,
-CASE 
-WHEN p.gender_id = 1 THEN '男'
-WHEN p.gender_id = 2 THEN '女'
-ELSE '未設定'
-END AS gender,
-CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') AS birthday_with_age,
-d.doctor AS doctor_name,
-ds.date AS appointment_date,
-i.item AS treatment_item,
-i.price AS treatment_price,
-m.created_at
+    m.medicalrecord_id,
+    a.appointment_id,
+    p.name AS people_name,
+    CASE 
+        WHEN p.gender_id = 1 THEN '男'
+        WHEN p.gender_id = 2 THEN '女'
+        ELSE '未設定'
+    END AS gender,
+    CASE 
+        WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)')
+        ELSE '未知'
+    END AS birthday_with_age,
+    d.doctor AS doctor_name,
+    ds.date AS appointment_date,
+    CASE DAYOFWEEK(ds.date)
+        WHEN 1 THEN '星期日'
+        WHEN 2 THEN '星期一'
+        WHEN 3 THEN '星期二'
+        WHEN 4 THEN '星期三'
+        WHEN 5 THEN '星期四'
+        WHEN 6 THEN '星期五'
+        WHEN 7 THEN '星期六'
+    END AS consultation_weekday,
+    st.shifttime AS appointment_time,
+    i.item AS treatment_item,
+    i.price AS treatment_price,
+    m.created_at
 FROM medicalrecord m
 LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
 LEFT JOIN people p ON a.people_id = p.people_id
 LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
 LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
 LEFT JOIN item i ON m.item_id = i.item_id
+LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
 WHERE m.medicalrecord_id = $id
 ";
 
@@ -112,6 +126,8 @@ WHERE m.medicalrecord_id = $id
     $gender = $record['gender'];
     $birthday_with_age = $record['birthday_with_age'];
     $appointment_date = $record['appointment_date'];
+    $consultation_weekday = $record['consultation_weekday'];
+    $appointment_time = $record['appointment_time'];
     $doctor_name = $record['doctor_name'];
     $treatment_item = $record['treatment_item'];
     $treatment_price = $record['treatment_price'];
@@ -478,7 +494,8 @@ WHERE m.medicalrecord_id = $id
                   <p>姓名：<?php echo htmlspecialchars($people_name); ?></p>
                   <p>性別：<?php echo $gender; ?></p>
                   <p>生日 (年齡)：<?php echo $birthday_with_age; ?></p>
-                  <p>就診日期：<?php echo $appointment_date . " (" . $consultation_weekday . ")"; ?></p>
+                  <p>看診日期：<?php echo $appointment_date . " (" . $consultation_weekday . ")"; ?></p>
+                  <p>看診時間：<?php echo $appointment_time; ?></p>
                   <p>治療師：<?php echo $doctor_name; ?></p>
                   <table>
                     <tr>
@@ -506,6 +523,7 @@ WHERE m.medicalrecord_id = $id
         </div>
       </div>
     </section>
+
     <!--列印收據-->
 
     <!--頁尾-->

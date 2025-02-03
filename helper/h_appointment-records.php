@@ -63,7 +63,42 @@ if (isset($_SESSION["帳號"])) {
 
 //預約紀錄
 
+session_start();
+if (!isset($_SESSION['帳號'])) {
+  die('未登入或 Session 已失效，請重新登入。');
+}
+
+require '../db.php';
+
+// 接收搜尋條件
+$search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
+
+// 分頁參數
+$records_per_page = 10;
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+$offset = ($page - 1) * $records_per_page;
+
+// 總筆數計算
+$count_stmt = $link->prepare("SELECT COUNT(*) AS total FROM appointment a LEFT JOIN people p ON a.people_id = p.people_id LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id LEFT JOIN user u ON d.user_id = u.user_id WHERE p.name LIKE CONCAT('%', ?, '%')");
+if (!$count_stmt) {
+  die('SQL 錯誤: ' . $link->error);
+}
+$count_stmt->bind_param('s', $search_name);
+$count_stmt->execute();
+$count_result = $count_stmt->get_result();
+$total_records = $count_result->fetch_assoc()['total'] ?? 0;
+$total_pages = ceil($total_records / $records_per_page);
+
+// 查詢分頁資料
+$stmt = $link->prepare("SELECT a.appointment_id AS id, COALESCE(p.name, '未預約') AS name, CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未知' END AS gender, IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '未知') AS birthday_with_age, DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date, st.shifttime AS shifttime, d.doctor AS doctor_name, COALESCE(a.note, '無') AS note, a.created_at FROM appointment a LEFT JOIN people p ON a.people_id = p.people_id LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id LEFT JOIN user u ON d.user_id = u.user_id WHERE p.name LIKE CONCAT('%', ?, '%') ORDER BY ds.date, st.shifttime LIMIT ?, ?");
+if (!$stmt) {
+  die('SQL 錯誤: ' . $link->error);
+}
+$stmt->bind_param('sii', $search_name, $offset, $records_per_page);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
+
 
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
@@ -159,7 +194,6 @@ if (isset($_SESSION["帳號"])) {
     }
 
     /*預約紀錄 */
-
     .table-responsive {
       overflow-x: auto;
       margin-top: 20px;
@@ -372,81 +406,13 @@ if (isset($_SESSION["帳號"])) {
     <!--標題-->
 
     <!--預約紀錄-->
-    <?php
-    session_start();
-    if (!isset($_SESSION['帳號'])) {
-      die('未登入或 Session 已失效，請重新登入。');
-    }
-
-    require '../db.php';
-
-    // 接收搜尋條件
-    $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
-
-    // 分頁參數
-    $records_per_page = 10;
-    $page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-    $offset = ($page - 1) * $records_per_page;
-
-    // 總筆數計算
-    $count_stmt = $link->prepare("
-    SELECT COUNT(*) AS total
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE p.name LIKE CONCAT('%', ?, '%')
-");
-    if (!$count_stmt) {
-      die('SQL 錯誤: ' . $link->error);
-    }
-    $count_stmt->bind_param('s', $search_name);
-    $count_stmt->execute();
-    $count_result = $count_stmt->get_result();
-    $total_records = $count_result->fetch_assoc()['total'] ?? 0;
-    $total_pages = ceil($total_records / $records_per_page);
-
-    // 查詢分頁資料
-    $stmt = $link->prepare("
-    SELECT 
-        a.appointment_id AS id,
-        COALESCE(p.name, '未預約') AS name,
-        CASE 
-            WHEN p.gender_id = 1 THEN '男' 
-            WHEN p.gender_id = 2 THEN '女' 
-            ELSE '未設定' 
-        END AS gender,
-        DATE_FORMAT(p.birthday, '%Y-%m-%d') AS birthday,
-        DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
-        st.shifttime AS shifttime,
-        COALESCE(a.note, '無') AS note,
-        a.created_at AS created_at
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE p.name LIKE CONCAT('%', ?, '%')
-    ORDER BY ds.date, st.shifttime
-    LIMIT ?, ?
-");
-    if (!$stmt) {
-      die('SQL 錯誤: ' . $link->error);
-    }
-    $stmt->bind_param('sii', $search_name, $offset, $records_per_page);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    ?>
-
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
         <div class="row row-50 justify-content-lg-center">
           <div class="col-lg-12">
             <div id="accordion1" role="tablist" aria-multiselectable="false">
               <!-- 搜尋表單 -->
-              <div class="search-container">
+              <div class="search-container" style="text-align: right;">
                 <form method="GET" action="">
                   <label for="search_name">搜尋姓名：</label>
                   <input type="text" name="search_name" id="search_name" placeholder="請輸入使用者姓名"
@@ -457,7 +423,7 @@ if (isset($_SESSION["帳號"])) {
 
               <!-- 表格容器 -->
               <div class="table-responsive">
-                <table class="table table-bordered">
+                <table>
                   <thead>
                     <tr>
                       <th>#</th>
@@ -466,6 +432,7 @@ if (isset($_SESSION["帳號"])) {
                       <th>生日 (年齡)</th>
                       <th>看診日期 (星期)</th>
                       <th>看診時間</th>
+                      <th>治療師</th>
                       <th>備註</th>
                       <th>建立時間</th>
                       <th>選項</th>
@@ -478,7 +445,7 @@ if (isset($_SESSION["帳號"])) {
                           <td><?php echo htmlspecialchars($row['id']); ?></td>
                           <td><?php echo htmlspecialchars($row['name']); ?></td>
                           <td><?php echo htmlspecialchars($row['gender']); ?></td>
-                          <td><?php echo htmlspecialchars($row['birthday']); ?></td>
+                          <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
                           <td>
                             <?php
                             $appointment_date = htmlspecialchars($row['appointment_date']);
@@ -487,6 +454,7 @@ if (isset($_SESSION["帳號"])) {
                             ?>
                           </td>
                           <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
+                          <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
                           <td><?php echo htmlspecialchars($row['note']); ?></td>
                           <td><?php echo htmlspecialchars($row['created_at']); ?></td>
                           <td>
@@ -498,7 +466,7 @@ if (isset($_SESSION["帳號"])) {
                       <?php endwhile; ?>
                     <?php else: ?>
                       <tr>
-                        <td colspan="9">目前無資料</td>
+                        <td colspan="10">目前無資料</td>
                       </tr>
                     <?php endif; ?>
                   </tbody>
@@ -507,11 +475,8 @@ if (isset($_SESSION["帳號"])) {
 
               <!-- 分頁顯示 -->
               <div style="text-align: right; margin: 20px 0;">
-                <strong>
-                  <?php
-                  echo "第 $page 頁 / 共 $total_pages 頁（總共 $total_records 筆資料）";
-                  ?>
-                </strong>
+                <strong>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共 <?php echo $total_records; ?>
+                  筆資料）</strong>
               </div>
 
               <div style="text-align: center; margin: 20px 0;">
@@ -528,7 +493,6 @@ if (isset($_SESSION["帳號"])) {
         </div>
       </div>
     </section>
-
 
 
     <!--頁尾-->

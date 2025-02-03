@@ -156,6 +156,75 @@ if (isset($_SESSION["帳號"])) {
     .button-shadow {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
+
+    /* 列印預約單 */
+      /* 通用樣式 */
+      #print-area {
+        width: 350px;
+        margin: 0 auto;
+        border: 2px solid black;
+        padding: 20px;
+        text-align: left;
+        box-sizing: border-box;
+        page-break-inside: avoid;
+      }
+
+      #print-area h1 {
+        text-align: center;
+        margin: 0 0 20px;
+        font-size: 24px;
+      }
+
+      #print-area p {
+        margin: 10px 0;
+        line-height: 1.6;
+        font-size: 16px;
+      }
+
+      .button-container {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #f5f5f5;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #e0e0e0;
+      }
+
+      @media print {
+
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+          overflow: hidden;
+        }
+
+        body * {
+          visibility: hidden;
+        }
+
+        #print-area,
+        #print-area * {
+          visibility: visible;
+        }
+
+        button {
+          display: none;
+        }
+      }
   </style>
 </head>
 
@@ -326,78 +395,7 @@ if (isset($_SESSION["帳號"])) {
     <!--標題-->
 
     <!--列印預約單-->
-    <style>
-      /* 通用樣式 */
-      #print-area {
-        width: 350px;
-        margin: 0 auto;
-        border: 2px solid black;
-        padding: 20px;
-        text-align: left;
-        box-sizing: border-box;
-        page-break-inside: avoid;
-      }
-
-      #print-area h1 {
-        text-align: center;
-        margin: 0 0 20px;
-        font-size: 24px;
-      }
-
-      #print-area p {
-        margin: 10px 0;
-        line-height: 1.6;
-        font-size: 16px;
-      }
-
-      .button-container {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        margin-top: 20px;
-      }
-
-      button {
-        padding: 10px 20px;
-        font-size: 16px;
-        cursor: pointer;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        background-color: #f5f5f5;
-        transition: background-color 0.3s ease;
-      }
-
-      button:hover {
-        background-color: #e0e0e0;
-      }
-
-      @media print {
-
-        html,
-        body {
-          margin: 0;
-          padding: 0;
-          height: 100%;
-          overflow: hidden;
-        }
-
-        body * {
-          visibility: hidden;
-        }
-
-        #print-area,
-        #print-area * {
-          visibility: visible;
-        }
-
-        button {
-          display: none;
-        }
-      }
-    </style>
-
-
-
+    
     <section class="section section-lg bg-default text-center">
       <div class="container">
         <div class="row row-50 justify-content-lg-center">
@@ -416,19 +414,29 @@ if (isset($_SESSION["帳號"])) {
         SELECT 
             a.appointment_id,
             p.name AS people_name,
-            p.birthday AS people_birthday,
+            IFNULL(CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '未知') AS people_birthday,
             CASE 
                 WHEN p.gender_id = 1 THEN '男' 
                 WHEN p.gender_id = 2 THEN '女' 
                 ELSE '未設定' 
             END AS people_gender,
             ds.date AS appointment_date,
+            CASE DAYOFWEEK(ds.date)
+                WHEN 1 THEN '星期日'
+                WHEN 2 THEN '星期一'
+                WHEN 3 THEN '星期二'
+                WHEN 4 THEN '星期三'
+                WHEN 5 THEN '星期四'
+                WHEN 6 THEN '星期五'
+                WHEN 7 THEN '星期六'
+            END AS appointment_weekday,
             st.shifttime AS appointment_time,
-            d.doctor AS doctor_name
+            d.doctor AS doctor_name,
+            COALESCE(a.note, '無') AS appointment_note
         FROM appointment a
         LEFT JOIN people p ON a.people_id = p.people_id
         LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-        LEFT JOIN shifttime st ON ds.go = st.shifttime_id
+        LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
         LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
         WHERE a.appointment_id = '$appointment_id';
     ";
@@ -451,9 +459,10 @@ if (isset($_SESSION["帳號"])) {
               <p>姓名：<?php echo htmlspecialchars($data['people_name']); ?></p>
               <p>性別：<?php echo htmlspecialchars($data['people_gender']); ?></p>
               <p>生日：<?php echo htmlspecialchars($data['people_birthday']); ?></p>
-              <p>預約日期：<?php echo htmlspecialchars($data['appointment_date']); ?></p>
+              <p>預約日期：<?php echo htmlspecialchars($data['appointment_date']) . " (" . htmlspecialchars($data['appointment_weekday']) . ")"; ?></p>
               <p>預約時間：<?php echo htmlspecialchars($data['appointment_time']); ?></p>
               <p>治療師：<?php echo htmlspecialchars($data['doctor_name']); ?></p>
+              <p>備註：<?php echo htmlspecialchars($data['appointment_note']); ?></p>
               <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
             </div>
 
@@ -469,6 +478,7 @@ if (isset($_SESSION["帳號"])) {
         </div>
       </div>
     </section>
+
 
 
     <!--頁尾-->

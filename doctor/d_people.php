@@ -158,6 +158,71 @@ if (isset($_SESSION["帳號"])) {
 
 
     /* 用戶資料 */
+      /* 表格樣式 */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        white-space: nowrap;
+        /* 防止文字換行 */
+      }
+
+      th {
+        background-color: #f2f2f2;
+      }
+
+      /* 表格容器樣式，用於手機模式的滾動 */
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* 按鈕樣式 */
+      .popup-btn {
+        background-color: #00A896;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.3s;
+      }
+
+      .popup-btn:hover {
+        background-color: #007f6e;
+      }
+
+      /* 手機模式樣式 */
+      @media (max-width: 768px) {
+        table {
+          font-size: 12px;
+          /* 縮小字體 */
+        }
+
+        th,
+        td {
+          padding: 8px;
+          /* 減少內邊距 */
+        }
+
+        .table-responsive {
+          overflow-x: scroll;
+          /* 啟用橫向滾動 */
+        }
+
+        .popup-btn {
+          padding: 5px 10px;
+          font-size: 12px;
+        }
+      }
   </style>
 </head>
 
@@ -321,74 +386,7 @@ if (isset($_SESSION["帳號"])) {
     <!--標題-->
 
     <!-- 使用者資料-->
-    <style>
-      /* 表格樣式 */
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: center;
-        margin-top: 20px;
-      }
-
-      th,
-      td {
-        padding: 10px;
-        border: 1px solid #ddd;
-        white-space: nowrap;
-        /* 防止文字換行 */
-      }
-
-      th {
-        background-color: #f2f2f2;
-      }
-
-      /* 表格容器樣式，用於手機模式的滾動 */
-      .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      /* 按鈕樣式 */
-      .popup-btn {
-        background-color: #00A896;
-        color: white;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-        transition: background-color 0.3s;
-      }
-
-      .popup-btn:hover {
-        background-color: #007f6e;
-      }
-
-      /* 手機模式樣式 */
-      @media (max-width: 768px) {
-        table {
-          font-size: 12px;
-          /* 縮小字體 */
-        }
-
-        th,
-        td {
-          padding: 8px;
-          /* 減少內邊距 */
-        }
-
-        .table-responsive {
-          overflow-x: scroll;
-          /* 啟用橫向滾動 */
-        }
-
-        .popup-btn {
-          padding: 5px 10px;
-          font-size: 12px;
-        }
-      }
-    </style>
-
+  
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
         <div class="row row-40 row-lg-50">
