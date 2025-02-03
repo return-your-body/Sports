@@ -407,7 +407,6 @@ if (isset($_SESSION["帳號"])) {
                 cursor: not-allowed;
             }
         </style>
-
         <?php
         require '../db.php';
         session_start();
@@ -420,7 +419,7 @@ if (isset($_SESSION["帳號"])) {
         $appointment_id = intval($_GET['id']);
 
         // 獲取使用者帳號
-        $帳號 = isset($_SESSION["帳號"]) ? $_SESSION["帳號"] : '';
+        $帳號 = $_SESSION["帳號"] ?? '';
         if (empty($帳號)) {
             echo "<script>alert('使用者未登入！'); window.location.href='login.php';</script>";
             exit;
@@ -432,10 +431,6 @@ if (isset($_SESSION["帳號"])) {
         JOIN doctor ON user.user_id = doctor.user_id 
         WHERE user.account = ?";
         $stmt = mysqli_prepare($link, $sql);
-        if (!$stmt) {
-            echo "<script>alert('SQL 準備失敗：" . mysqli_error($link) . "');</script>";
-            exit;
-        }
         mysqli_stmt_bind_param($stmt, "s", $帳號);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
@@ -445,47 +440,75 @@ if (isset($_SESSION["帳號"])) {
         }
         $user_data = mysqli_fetch_assoc($result);
 
-        // 處理搜尋功能
-        $search_keyword = isset($_POST['search_keyword']) ? trim($_POST['search_keyword']) : '';
+        // 查詢可選診療項目
         $query_items = "SELECT item_id, item, price FROM item";
-        if (!empty($search_keyword)) {
-            $query_items .= " WHERE item LIKE ?";
-            $stmt_items = mysqli_prepare($link, $query_items);
-            $search_keyword = '%' . $search_keyword . '%';
-            mysqli_stmt_bind_param($stmt_items, "s", $search_keyword);
-        } else {
-            $stmt_items = mysqli_prepare($link, $query_items);
-        }
+        $stmt_items = mysqli_prepare($link, $query_items);
         mysqli_stmt_execute($stmt_items);
         $result_items = mysqli_stmt_get_result($stmt_items);
 
-        // 處理表單提交
+        // **檢查 `medicalrecord` 是否已有該 `appointment_id` 的記錄**
+        $check_existing_appointment = "SELECT COUNT(*) FROM medicalrecord WHERE appointment_id = ?";
+        $stmt_check_appointment = mysqli_prepare($link, $check_existing_appointment);
+        mysqli_stmt_bind_param($stmt_check_appointment, "i", $appointment_id);
+        mysqli_stmt_execute($stmt_check_appointment);
+        mysqli_stmt_bind_result($stmt_check_appointment, $appointment_exists);
+        mysqli_stmt_fetch($stmt_check_appointment);
+        mysqli_stmt_close($stmt_check_appointment);
+
+        if ($appointment_exists > 0) {
+            echo "<script>alert('錯誤：該預約 (ID: $appointment_id) 已經有診療紀錄，無法重複新增！'); window.location.href='d_appointment-records.php';</script>";
+            exit;
+        }
+
+        // **處理表單提交**
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_ids'])) {
             $item_ids = $_POST['item_ids'];
+
             if (empty($item_ids)) {
                 echo "<script>alert('請勾選至少一種診療項目！');</script>";
             } else {
-                // 插入診療記錄
-                $insert_medicalrecord = "INSERT INTO medicalrecord (appointment_id, created_at) VALUES (?, NOW())";
-                $stmt_medicalrecord = mysqli_prepare($link, $insert_medicalrecord);
-                mysqli_stmt_bind_param($stmt_medicalrecord, "i", $appointment_id);
-                if (mysqli_stmt_execute($stmt_medicalrecord)) {
-                    $medicalrecord_id = mysqli_insert_id($link);
+                $success = false;
 
-                    // 插入多個診療項目
-                    $insert_item = "INSERT INTO medicalrecord_items (medicalrecord_id, item_id) VALUES (?, ?)";
-                    $stmt_item = mysqli_prepare($link, $insert_item);
-                    foreach ($item_ids as $item_id) {
-                        mysqli_stmt_bind_param($stmt_item, "ii", $medicalrecord_id, $item_id);
-                        if (!mysqli_stmt_execute($stmt_item)) {
-                            echo "<script>alert('診療項目新增失敗：" . mysqli_error($link) . "');</script>";
-                            exit;
-                        }
+                foreach ($item_ids as $item_id) {
+                    $item_id = intval($item_id);
+
+                    // **確保 `item_id` 存在於 `item` 表**
+                    $check_item = "SELECT COUNT(*) FROM item WHERE item_id = ?";
+                    $stmt_check = mysqli_prepare($link, $check_item);
+                    mysqli_stmt_bind_param($stmt_check, "i", $item_id);
+                    mysqli_stmt_execute($stmt_check);
+                    mysqli_stmt_bind_result($stmt_check, $count);
+                    mysqli_stmt_fetch($stmt_check);
+                    mysqli_stmt_close($stmt_check);
+
+                    if ($count == 0) {
+                        echo "<script>alert('錯誤：診療項目 (ID: $item_id) 不存在！');</script>";
+                        exit;
                     }
-                    echo "<script>alert('診療紀錄新增成功！'); window.location.href='d_appointment-records.php';</script>";
-                } else {
-                    echo "<script>alert('診療紀錄新增失敗：" . mysqli_error($link) . "');</script>";
+
+                    // **每個項目單獨創建一筆診療紀錄**
+                    $insert_medicalrecord = "INSERT INTO medicalrecord (appointment_id, item_id, created_at) VALUES (?, ?, NOW())";
+                    $stmt_medicalrecord = mysqli_prepare($link, $insert_medicalrecord);
+                    mysqli_stmt_bind_param($stmt_medicalrecord, "ii", $appointment_id, $item_id);
+                    if (!mysqli_stmt_execute($stmt_medicalrecord)) {
+                        echo "<script>alert('診療紀錄新增失敗：" . mysqli_error($link) . "');</script>";
+                        exit;
+                    }
+                    $success = true;
                 }
+
+                // **如果診療紀錄有存入，則更新 `appointment.status_id = 6`**
+                if ($success) {
+                    $update_appointment = "UPDATE appointment SET status_id = 6 WHERE appointment_id = ?";
+                    $stmt_update = mysqli_prepare($link, $update_appointment);
+                    mysqli_stmt_bind_param($stmt_update, "i", $appointment_id);
+                    if (!mysqli_stmt_execute($stmt_update)) {
+                        echo "<script>alert('更新預約狀態失敗：" . mysqli_error($link) . "');</script>";
+                        exit;
+                    }
+                }
+
+                echo "<script>alert('診療紀錄新增成功！'); window.location.href='d_appointment-records.php';</script>";
             }
         }
         ?>
@@ -500,11 +523,6 @@ if (isset($_SESSION["帳號"])) {
                 <label for="appointment_id">預約 ID：</label>
                 <input type="number" id="appointment_id" name="appointment_id" value="<?php echo $appointment_id; ?>"
                     readonly>
-
-                <label for="search_keyword">診療項目搜尋：</label>
-                <input type="text" id="search_keyword" name="search_keyword"
-                    value="<?php echo htmlspecialchars($search_keyword); ?>">
-                <button type="submit" name="search">搜尋</button>
 
                 <label>診療項目：</label>
                 <div class="checkbox-group">

@@ -63,8 +63,57 @@ if (isset($_SESSION["帳號"])) {
     exit();
 }
 
+// 用戶資料
+// 開啟 session 並引入資料庫連線
+session_start();
+require '../db.php'; // 資料庫連線
 
+// 預設參數
+$records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 3;
+$current_page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+$search_name = isset($_GET['search_name']) ? $_GET['search_name'] : '';
+
+// 計算總筆數
+$sql_total = "SELECT COUNT(*) AS total FROM `people` WHERE `name` LIKE ?";
+$stmt_total = $link->prepare($sql_total);
+$like_search = "%$search_name%";
+$stmt_total->bind_param("s", $like_search);
+$stmt_total->execute();
+$result_total = $stmt_total->get_result();
+$row_total = $result_total->fetch_assoc();
+$total_records = $row_total['total'];
+$stmt_total->close();
+
+// 計算總頁數與分頁偏移量
+$total_pages = ceil($total_records / $records_per_page);
+$offset = ($current_page - 1) * $records_per_page;
+
+// 查詢分頁資料，計算年齡
+$sql = "
+    SELECT 
+        people_id, 
+        name, 
+        gender_id, 
+        birthday, 
+        idcard,
+        CASE 
+            WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday) / 365.25), ' 歲)')
+            ELSE '無資料'
+        END AS birthday_with_age
+    FROM `people`
+    WHERE `name` LIKE ?
+    LIMIT ?, ?";
+$stmt = $link->prepare($sql);
+$stmt->bind_param("sii", $like_search, $offset, $records_per_page);
+$stmt->execute();
+$result = $stmt->get_result();
+$people = $result->fetch_all(MYSQLI_ASSOC); // 將結果存為陣列
+$stmt->close();
+
+// 關閉資料庫連線
+$link->close();
 ?>
+
 
 
 <head>
@@ -158,6 +207,34 @@ if (isset($_SESSION["帳號"])) {
             box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
         }
 
+
+        /* 用戶資料 */
+        /* 表格樣式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            white-space: nowrap;
+            /* 防止文字換行 */
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* 表格容器樣式，用於手機模式的滾動 */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         /* 按鈕樣式 */
         .popup-btn {
             background-color: #00A896;
@@ -174,21 +251,28 @@ if (isset($_SESSION["帳號"])) {
             background-color: #007f6e;
         }
 
+        /* 手機模式樣式 */
+        @media (max-width: 768px) {
+            table {
+                font-size: 12px;
+                /* 縮小字體 */
+            }
 
-        .ie-panel {
-            display: none;
-            background: #212121;
-            padding: 10px 0;
-            box-shadow: 3px 3px 5px 0 rgba(0, 0, 0, .3);
-            clear: both;
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
+            th,
+            td {
+                padding: 8px;
+                /* 減少內邊距 */
+            }
 
-        html.ie-10 .ie-panel,
-        html.lt-ie-10 .ie-panel {
-            display: block;
+            .table-responsive {
+                overflow-x: scroll;
+                /* 啟用橫向滾動 */
+            }
+
+            .popup-btn {
+                padding: 5px 10px;
+                font-size: 12px;
+            }
         }
     </style>
 
@@ -367,58 +451,93 @@ if (isset($_SESSION["帳號"])) {
             </section>
         </div>
         <!--標題-->
-        <?php
-        // 開啟 session 並引入資料庫連線
-        session_start();
-        require '../db.php'; // 資料庫連線
-        
-        // 預設參數
-        $records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 3;
-        $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-        $search_name = isset($_GET['search_name']) ? $_GET['search_name'] : '';
 
-        // 計算總筆數
-        $sql_total = "SELECT COUNT(*) AS total FROM `people` WHERE `name` LIKE ?";
-        $stmt_total = $link->prepare($sql_total);
-        $like_search = "%$search_name%";
-        $stmt_total->bind_param("s", $like_search);
-        $stmt_total->execute();
-        $result_total = $stmt_total->get_result();
-        $row_total = $result_total->fetch_assoc();
-        $total_records = $row_total['total'];
-        $stmt_total->close();
+        <section class="section section-lg bg-default">
+            <div class="container">
+                <div class="search-container" style="text-align: right; margin-bottom: 20px;">
+                    <form method="GET" action="">
+                        <label for="search_name">搜尋姓名：</label>
+                        <input type="text" name="search_name" id="search_name" placeholder="請輸入使用者姓名"
+                            value="<?php echo htmlspecialchars($search_name); ?>">
+                        <button type="submit" class="popup-btn">搜尋</button>
+                    </form>
+                </div>
 
-        // 計算總頁數與分頁偏移量
-        $total_pages = ceil($total_records / $records_per_page);
-        $offset = ($current_page - 1) * $records_per_page;
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>姓名</th>
+                                <th>性別</th>
+                                <th>生日 (年齡)</th>
+                                <th>身份證</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (!empty($people)): ?>
+                                <?php foreach ($people as $person): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($person['people_id']); ?></td>
+                                        <td><?php echo htmlspecialchars($person['name']); ?></td>
+                                        <td>
+                                            <?php
+                                            switch ($person['gender_id']) {
+                                                case 1:
+                                                    echo "男";
+                                                    break;
+                                                case 2:
+                                                    echo "女";
+                                                    break;
+                                                default:
+                                                    echo "未設定";
+                                                    break;
+                                            }
+                                            ?>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($person['birthday_with_age']); ?></td>
+                                        <td><?php echo htmlspecialchars($person['idcard']); ?></td>
+                                        <td>
+                                            <a href="edit_user.php?id=<?php echo $person['people_id']; ?>">
+                                                <button class="popup-btn">編輯</button>
+                                            </a>
+                                            <a href="delete_user.php?id=<?php echo $person['people_id']; ?>"
+                                                onclick="return confirm('確定要刪除嗎？')">
+                                                <button class="popup-btn">刪除</button>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="6">目前無資料</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
 
-        // 查詢分頁資料，計算年齡
-        $sql = "
-SELECT 
-    people_id, 
-    name, 
-    gender_id, 
-    birthday, 
-    idcard,
-    CASE 
-        WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday) / 365.25), ' 歲)')
-        ELSE '無資料'
-    END AS birthday_with_age
-FROM `people`
-WHERE `name` LIKE ?
-LIMIT ?, ?";
-        $stmt = $link->prepare($sql);
-        $stmt->bind_param("sii", $like_search, $offset, $records_per_page);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $people = $result->fetch_all(MYSQLI_ASSOC); // 將結果存為陣列
-        $stmt->close();
+                <!-- 分頁顯示 -->
+                <div style="text-align: right; margin-top: 20px;">
+                    <strong>
+                        第 <?php echo $current_page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共
+                        <?php echo $total_records; ?> 筆資料）
+                    </strong>
+                </div>
 
-        // 關閉資料庫連線
-        $link->close();
-        ?>
+                <div style="text-align: center; margin-top: 20px;">
+                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                        <a href="?search_name=<?php echo urlencode($search_name); ?>&page=<?php echo $i; ?>&per_page=<?php echo $records_per_page; ?>"
+                            style="margin: 0 5px; <?php echo $i == $current_page ? 'font-weight: bold;' : ''; ?>">
+                            <?php echo $i; ?>
+                        </a>
+                    <?php endfor; ?>
+                </div>
+            </div>
+        </section>
 
-         
+
         <!--頁尾-->
         <footer class="section novi-bg novi-bg-img footer-simple">
             <div class="container">

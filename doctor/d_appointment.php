@@ -489,30 +489,32 @@ if ($result_doctor->num_rows > 0) {
             <div class="form-container shadow-lg p-4 rounded bg-light">
               <h3 class="text-center mb-4">預約表單</h3>
               <form action="預約.php" method="post">
-                <!-- 使用者姓名 -->
+                <!-- 使用者姓名 (顯示姓名，實際提交 people_id) -->
                 <div class="form-group mb-3">
-                  <label for="people_name" class="form-label">姓名：</label>
-                  <input type="text" id="people_name" name="people_name" class="form-control"
+                  <label for="people_name">姓名：</label>
+                  <input type="text" id="people_name" class="form-control"
                     value="<?= htmlspecialchars($_SESSION['user_name']); ?>" readonly required />
+                  <input type="hidden" name="people_id" value="<?= $_SESSION['people_id']; ?>">
                 </div>
 
-                <!-- 醫生姓名 -->
+                <!-- 醫生姓名 (顯示姓名，實際提交 doctor_id) -->
                 <div class="form-group mb-3">
-                  <label for="doctor_name" class="form-label">醫生姓名：</label>
-                  <input type="text" id="doctor_name" name="doctor_name" class="form-control"
+                  <label for="doctor_name">醫生姓名：</label>
+                  <input type="text" id="doctor_name" class="form-control"
                     value="<?= htmlspecialchars($_SESSION['doctor_name']); ?>" readonly required />
+                  <input type="hidden" name="doctor_id" value="<?= $_SESSION['doctor_id']; ?>">
                 </div>
 
                 <!-- 預約日期 -->
                 <div class="form-group mb-3">
-                  <label for="date" class="form-label">預約日期：</label>
+                  <label for="date">預約日期：</label>
                   <input type="date" id="date" name="date" class="form-control" onchange="fetchAvailableTimes()"
                     required min="<?= date('Y-m-d'); ?>" max="<?= date('Y-m-d', strtotime('+30 days')); ?>" />
                 </div>
 
                 <!-- 預約時間 -->
                 <div class="form-group mb-3">
-                  <label for="time" class="form-label">預約時間：</label>
+                  <label for="time">預約時間：</label>
                   <select id="time" name="time" class="form-select" required>
                     <option value="">請選擇時間</option>
                   </select>
@@ -520,7 +522,7 @@ if ($result_doctor->num_rows > 0) {
 
                 <!-- 備註 -->
                 <div class="form-group mb-4">
-                  <label for="note" class="form-label">備註：</label>
+                  <label for="note">備註：</label>
                   <textarea id="note" name="note" class="form-control" rows="4" maxlength="200"
                     placeholder="請輸入備註，最多200字"></textarea>
                 </div>
@@ -532,6 +534,7 @@ if ($result_doctor->num_rows > 0) {
                     class="btn btn-secondary px-4 py-2">返回</button>
                 </div>
               </form>
+
             </div>
           </div>
         </div>
@@ -539,21 +542,86 @@ if ($result_doctor->num_rows > 0) {
     </section>
 
     <script>
-      function fetchAvailableTimes() {
-        const date = document.getElementById("date").value;
+      document.addEventListener("DOMContentLoaded", function () {
+        const dateInput = document.getElementById("date");
         const timeSelect = document.getElementById("time");
-        timeSelect.innerHTML = '<option value="">加載中...</option>';
+        const doctorId = document.querySelector("input[name='doctor_id']").value;
 
-        if (date) {
+        // 檢查是否有之前選擇的時間並恢復
+        const savedDate = localStorage.getItem("selectedDate");
+        const savedTime = localStorage.getItem("selectedTime");
+
+        if (savedDate) {
+          dateInput.value = savedDate;
+          fetchAvailableTimes(savedDate, savedTime);
+        }
+
+        // 監聽日期變更
+        dateInput.addEventListener("change", function () {
+          localStorage.setItem("selectedDate", dateInput.value);
+          fetchAvailableTimes(dateInput.value);
+        });
+
+        function fetchAvailableTimes(date, savedTime = null) {
+          if (!date || !doctorId) return;
+
+          timeSelect.innerHTML = '<option value="">加載中...</option>';
+
           fetch("檢查預約.php", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `date=${date}&doctor_id=<?= $_SESSION['doctor_id']; ?>`,
+            body: `date=${date}&doctor_id=${doctorId}`,
           })
             .then(response => response.json())
             .then(data => {
+              timeSelect.innerHTML = '<option value="">請選擇時間</option>';
               if (data.success) {
-                timeSelect.innerHTML = '<option value="">請選擇時間</option>';
+                data.times.forEach(time => {
+                  const option = document.createElement("option");
+                  option.value = time.shifttime_id;
+                  option.textContent = time.shifttime;
+                  if (savedTime && savedTime == time.shifttime_id) {
+                    option.selected = true;
+                  }
+                  timeSelect.appendChild(option);
+                });
+              } else {
+                timeSelect.innerHTML = '<option value="">無可用時段</option>';
+              }
+            })
+            .catch(error => {
+              console.error("錯誤：", error);
+              timeSelect.innerHTML = '<option value="">無法加載時段</option>';
+            });
+        }
+
+        // 監聽時間選擇變更
+        timeSelect.addEventListener("change", function () {
+          localStorage.setItem("selectedTime", timeSelect.value);
+        });
+      });
+
+
+
+
+
+      function fetchAvailableTimes() {
+        const date = document.getElementById("date").value;
+        const doctorId = document.querySelector("input[name='doctor_id']").value;
+        const timeSelect = document.getElementById("time");
+
+        timeSelect.innerHTML = '<option value="">加載中...</option>';
+
+        if (date && doctorId) {
+          fetch("檢查預約.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `date=${date}&doctor_id=${doctorId}`,
+          })
+            .then(response => response.json())
+            .then(data => {
+              timeSelect.innerHTML = '<option value="">請選擇時間</option>';
+              if (data.success) {
                 data.times.forEach(time => {
                   const option = document.createElement("option");
                   option.value = time.shifttime_id;
@@ -572,6 +640,16 @@ if ($result_doctor->num_rows > 0) {
           timeSelect.innerHTML = '<option value="">請選擇日期</option>';
         }
       }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const dateInput = document.getElementById("date");
+        if (dateInput) {
+          dateInput.addEventListener("change", fetchAvailableTimes);
+        }
+      });
+
+
+
     </script>
 
 
