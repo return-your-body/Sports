@@ -343,6 +343,102 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				</div>
 			</section>
 
+			<?php
+			// 引入資料庫連接
+			include '../db.php';
+
+			// 自動檢查黑名單過期
+			$sql = "
+    SELECT people_id, blacklist_end_date 
+    FROM people 
+    WHERE black >= 3";
+			$result = mysqli_query($link, $sql);
+			while ($row = mysqli_fetch_assoc($result)) {
+				if (new DateTime() > new DateTime($row['blacklist_end_date'])) {
+					$reset_sql = "UPDATE people SET black = 0, blacklist_start_date = NULL, blacklist_end_date = NULL WHERE people_id = ?";
+					$stmt = mysqli_prepare($link, $reset_sql);
+					mysqli_stmt_bind_param($stmt, "i", $row['people_id']);
+					mysqli_stmt_execute($stmt);
+				}
+			}
+
+			// 自動檢查違規次數，並新增黑名單資料（剩餘時間 1 分鐘）
+			$update_blacklist_sql = "
+    UPDATE people
+    SET blacklist_start_date = NOW(), 
+        blacklist_end_date = DATE_ADD(NOW(), INTERVAL 1 MINUTE)
+    WHERE black >= 3 AND blacklist_start_date IS NULL";
+			mysqli_query($link, $update_blacklist_sql);
+
+			// 處理搜尋
+			$search = $_GET['search'] ?? '';
+			$rowsPerPage = $_GET['rowsPerPage'] ?? 10;
+			$page = $_GET['page'] ?? 1;
+			$offset = ($page - 1) * $rowsPerPage;
+
+			// 定義函數計算剩餘時間
+			function calculateRemainingTime($end_date)
+			{
+				$current_date = new DateTime();
+				$end_date = new DateTime($end_date);
+
+				if ($current_date > $end_date) {
+					return "已解除";
+				} else {
+					$interval = $current_date->diff($end_date);
+					return $interval->days * 86400 + $interval->h * 3600 + $interval->i * 60 + $interval->s;
+				}
+			}
+
+			// 查詢違規次數資料
+			$sql = "
+    SELECT people_id, name, idcard, black, blacklist_end_date 
+    FROM people 
+    WHERE black > 0";
+			if (!empty($search)) {
+				$sql .= " AND idcard LIKE ? ";
+			}
+			$sql .= " LIMIT ?, ?";
+			$stmt = mysqli_prepare($link, $sql);
+			if (!empty($search)) {
+				$likeSearch = "%$search%";
+				mysqli_stmt_bind_param($stmt, "sii", $likeSearch, $offset, $rowsPerPage);
+			} else {
+				mysqli_stmt_bind_param($stmt, "ii", $offset, $rowsPerPage);
+			}
+			mysqli_stmt_execute($stmt);
+			$result = mysqli_stmt_get_result($stmt);
+
+			$users = [];
+			while ($row = mysqli_fetch_assoc($result)) {
+				if ($row['black'] >= 3) {
+					$row['remaining_time'] = calculateRemainingTime($row['blacklist_end_date']);
+				} else {
+					$row['remaining_time'] = "違規次數：{$row['black']}";
+				}
+				$users[] = $row;
+			}
+
+			// 獲取總頁數
+			$count_sql = "
+    SELECT COUNT(*) AS total 
+    FROM people 
+    WHERE black > 0";
+			if (!empty($search)) {
+				$count_sql .= " AND idcard LIKE ?";
+				$stmt = mysqli_prepare($link, $count_sql);
+				mysqli_stmt_bind_param($stmt, "s", $likeSearch);
+				mysqli_stmt_execute($stmt);
+				$count_result = mysqli_stmt_get_result($stmt);
+			} else {
+				$count_result = mysqli_query($link, $count_sql);
+			}
+			$totalRows = mysqli_fetch_assoc($count_result)['total'] ?? 0;
+			$totalPages = ceil($totalRows / $rowsPerPage);
+			?>
+
+
+
 			<section class="section section-lg bg-default text-center">
 				<div class="container">
 					<div class="row justify-content-sm-center">
@@ -376,43 +472,46 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 							<!-- 表格 -->
 							<div class="table-novi table-custom-responsive" style="font-size: 16px; overflow-x: auto;">
-								<table class="table-custom table-custom-bordered"
-									style="width: 100%; border-collapse: collapse;">
+								<table class="table-custom table-custom-bordered" style="width: 90%; /* 調整表格寬度，90% 居中 */ 
+				  margin: 0 auto; /* 讓表格居中對齊 */ 
+				  border-collapse: collapse;">
 									<thead>
 										<tr>
-											<th>#</th>
-											<th>姓名</th>
-											<th>身份證</th>
-											<th>剩餘時間</th>
-											<th>選項</th>
+											<th style="padding: 20px; text-align: left;">#</th>
+											<th style="padding: 20px; text-align: left;">姓名</th>
+											<th style="padding: 20px; text-align: left;">身份證</th>
+											<th style="padding: 20px; text-align: left;">剩餘時間 / 違規次數</th>
+											<th style="padding: 20px; text-align: center;">選項</th>
 										</tr>
 									</thead>
 									<tbody>
 										<?php if (!empty($users)): ?>
 											<?php foreach ($users as $index => $user): ?>
 												<tr>
-													<td><?php echo $offset + $index + 1; ?></td>
-													<td><?php echo htmlspecialchars($user['name']); ?></td>
-													<td><?php echo htmlspecialchars($user['idcard']); ?></td>
-													<td>
-														<?php if ($user['remaining_time'] === "已解除"): ?>
-															已解除
+													<td style="padding: 20px;"><?php echo $offset + $index + 1; ?></td>
+													<td style="padding: 20px;"><?php echo htmlspecialchars($user['name']); ?>
+													</td>
+													<td style="padding: 20px;"><?php echo htmlspecialchars($user['idcard']); ?>
+													</td>
+													<td style="padding: 20px;">
+														<?php if (strpos($user['remaining_time'], "違規次數") !== false): ?>
+															<?php echo $user['remaining_time']; ?>
 														<?php else: ?>
 															<span class="countdown"
 																data-seconds="<?php echo $user['remaining_time']; ?>"></span>
 														<?php endif; ?>
 													</td>
-													<td>
+													<td style="padding: 20px; text-align: center;">
 														<button
-															style="padding: 6px 12px; background-color: #00A896; color: white; border: none; border-radius: 4px;">操作</button>
+															style="padding: 8px 16px; background-color: #00A896; color: white; border: none; border-radius: 6px;">操作</button>
 														<button
-															style="padding: 6px 12px; background-color: #FFB900; color: white; border: none; border-radius: 4px;">詳細</button>
+															style="padding: 8px 16px; background-color: #FFB900; color: white; border: none; border-radius: 6px;">詳細</button>
 													</td>
 												</tr>
 											<?php endforeach; ?>
 										<?php else: ?>
 											<tr>
-												<td colspan="5" style="text-align: center;">未找到資料</td>
+												<td colspan="5" style="text-align: center; padding: 20px;">未找到資料</td>
 											</tr>
 										<?php endif; ?>
 									</tbody>
@@ -460,6 +559,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 					updateCountdown();
 				});
 			</script>
+
 
 			<!-- Global Mailform Output-->
 			<div class="snackbars" id="form-output-global"></div>
