@@ -269,8 +269,7 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="h_patient-needs.php">病患需求</a>
-                </li>
+               
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
@@ -352,7 +351,8 @@ if (isset($_SESSION["帳號"])) {
     <!-- 每日預約總人數-->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
-        <h3 style="text-align: center;">當天時段</h3>
+        <h3 style="text-align: center;">當日狀況</h3>
+        <br/>
         <?php
         require '../db.php';
 
@@ -552,7 +552,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="h_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
               <li><a href="h_print-appointment.php">列印預約單</a></li> -->
-              <li><a href="h_patient-needs.php">患者需求</a></li>
+              
             </ul>
           </div>
           <!-- <div class="col-md-5">

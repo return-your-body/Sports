@@ -238,8 +238,7 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="h_patient-needs.php">病患需求</a>
-                </li>
+              
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
@@ -312,18 +311,18 @@ if (isset($_SESSION["帳號"])) {
           ✨還原回到它自己該在的位置而達到放鬆✨</p>
         <div class="group-md button-group">
           <a class="button button-dark button-nina" href="h_numberpeople.php">當天看診人數</a>
-          <a class="button button-primary button-nina" href="h_doctorshift.html">治療師班表時段</a>
+          <a class="button button-primary button-nina" href="h_doctorshift.php">治療師班表時段</a>
         </div>
       </div>
     </section>
     <!--Welcome back doctor-->
 
-    <section class="section section-lg text-center text-md-start bg-default">
+    <!-- <section class="section section-lg text-center text-md-start bg-default">
       <div class="container">
         <div class="row row-50 justify-content-md-center justify-content-xl-end justify-content-xxl-end">
         </div>
       </div>
-    </section>
+    </section> -->
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
@@ -346,7 +345,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="h_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
               <li><a href="h_print-appointment.php">列印預約單</a></li> -->
-              <li><a href="h_patient-needs.php">患者需求</a></li>
+            
             </ul>
           </div>
           <!-- <div class="col-md-5">
