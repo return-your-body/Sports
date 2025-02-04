@@ -342,437 +342,562 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 					</ul>
 				</div>
 			</section>
+		</div>
+		<?php
+		// 引入資料庫連接
+		include '../db.php';
 
-			<?php
-			// 引入資料庫連接
-			include '../db.php';
+		// 讀取預設黑名單時間（從 settings 表）
+		$blacklistDuration = 1; // 預設 1 小時
+		$blacklistUnit = 'HOUR';
 
-			// 讀取預設黑名單時間（從 settings 表）
-			$blacklistDuration = 1; // 預設 1 小時
+		// 查詢 settings 表來獲取黑名單的預設時間
+		$default_sql = "SELECT setting_value FROM settings WHERE setting_key = 'default_blacklist_duration'";
+		$result = mysqli_query($link, $default_sql);
+		if ($row = mysqli_fetch_assoc($result)) {
+			$blacklistDuration = intval($row['setting_value']);
+		}
+
+		$default_sql = "SELECT setting_value FROM settings WHERE setting_key = 'default_blacklist_unit'";
+		$result = mysqli_query($link, $default_sql);
+		if ($row = mysqli_fetch_assoc($result)) {
+			$blacklistUnit = $row['setting_value'];
+		}
+
+		// 確保黑名單時間單位有效
+		$allowedUnits = ['HOUR', 'DAY', 'MONTH'];
+		if (!in_array($blacklistUnit, $allowedUnits)) {
 			$blacklistUnit = 'HOUR';
+		}
 
-			// 查詢 settings 表來獲取黑名單的預設時間
-			$default_sql = "SELECT setting_value FROM settings WHERE setting_key = 'default_blacklist_duration'";
-			$result = mysqli_query($link, $default_sql);
-			if ($row = mysqli_fetch_assoc($result)) {
-				$blacklistDuration = intval($row['setting_value']);
+		// 設定 SQL 語法的時間單位
+		$intervalSQL = "INTERVAL $blacklistDuration $blacklistUnit";
+
+		// 1️⃣ **檢查黑名單是否過期**
+		$sql = "SELECT people_id, blacklist_end_date FROM people WHERE black >= 3";
+		$result = mysqli_query($link, $sql);
+		while ($row = mysqli_fetch_assoc($result)) {
+			if (!empty($row['blacklist_end_date']) && new DateTime() > new DateTime($row['blacklist_end_date'])) {
+				// 如果黑名單已過期，將 `black` 設為 0，清空黑名單時間
+				$reset_sql = "UPDATE people SET black = 0, blacklist_start_date = NULL, blacklist_end_date = NULL WHERE people_id = ?";
+				$stmt = mysqli_prepare($link, $reset_sql);
+				mysqli_stmt_bind_param($stmt, "i", $row['people_id']);
+				mysqli_stmt_execute($stmt);
+				mysqli_stmt_close($stmt);
 			}
+		}
 
-			$default_sql = "SELECT setting_value FROM settings WHERE setting_key = 'default_blacklist_unit'";
-			$result = mysqli_query($link, $default_sql);
-			if ($row = mysqli_fetch_assoc($result)) {
-				$blacklistUnit = $row['setting_value'];
-			}
-
-			// 確保黑名單時間單位有效
-			$allowedUnits = ['HOUR', 'DAY', 'MONTH'];
-			if (!in_array($blacklistUnit, $allowedUnits)) {
-				$blacklistUnit = 'HOUR';
-			}
-
-			// 設定 SQL 語法的時間單位
-			$intervalSQL = "INTERVAL $blacklistDuration $blacklistUnit";
-
-			// 1️⃣ **檢查黑名單是否過期**
-			$sql = "SELECT people_id, blacklist_end_date FROM people WHERE black >= 3";
-			$result = mysqli_query($link, $sql);
-			while ($row = mysqli_fetch_assoc($result)) {
-				if (!empty($row['blacklist_end_date']) && new DateTime() > new DateTime($row['blacklist_end_date'])) {
-					// 如果黑名單已過期，將 `black` 設為 0，清空黑名單時間
-					$reset_sql = "UPDATE people SET black = 0, blacklist_start_date = NULL, blacklist_end_date = NULL WHERE people_id = ?";
-					$stmt = mysqli_prepare($link, $reset_sql);
-					mysqli_stmt_bind_param($stmt, "i", $row['people_id']);
-					mysqli_stmt_execute($stmt);
-					mysqli_stmt_close($stmt);
-				}
-			}
-
-			// 2️⃣ **重新設定黑名單（避免已過期的人永遠不進黑名單）**
-			$update_blacklist_sql = "
+		// 2️⃣ **重新設定黑名單（避免已過期的人永遠不進黑名單）**
+		$update_blacklist_sql = "
     UPDATE people
     SET blacklist_start_date = NOW(), 
         blacklist_end_date = DATE_ADD(NOW(), $intervalSQL)
     WHERE black >= 3 AND (blacklist_end_date IS NULL OR blacklist_end_date < NOW())";
 
-			mysqli_query($link, $update_blacklist_sql);
+		mysqli_query($link, $update_blacklist_sql);
 
-			// 3️⃣ **處理搜尋**
-			$search = $_GET['search'] ?? '';
-			$rowsPerPage = $_GET['rowsPerPage'] ?? 10;
-			$page = $_GET['page'] ?? 1;
-			$offset = ($page - 1) * $rowsPerPage;
+		// 3️⃣ **處理搜尋**
+		$search = $_GET['search'] ?? '';
+		$rowsPerPage = $_GET['rowsPerPage'] ?? 10;
+		$page = $_GET['page'] ?? 1;
+		$offset = ($page - 1) * $rowsPerPage;
 
-			// 4️⃣ **修正 `calculateRemainingTime()`**
-			function calculateRemainingTime($end_date)
-			{
-				if (empty($end_date)) {
-					return 0; // 確保 JavaScript 讀取數字，不會變成 NaN
-				}
-
-				$current_date = new DateTime();
-				$end_date = new DateTime($end_date);
-
-				if ($current_date > $end_date) {
-					return 0; // 如果時間過期，回傳 0 秒（JavaScript 會顯示 "已解除"）
-				} else {
-					return $end_date->getTimestamp() - $current_date->getTimestamp(); // 回傳剩餘秒數
-				}
+		// 4️⃣ **修正 `calculateRemainingTime()`**
+		function calculateRemainingTime($end_date)
+		{
+			if (empty($end_date)) {
+				return 0; // 確保 JavaScript 讀取數字，不會變成 NaN
 			}
 
+			$current_date = new DateTime();
+			$end_date = new DateTime($end_date);
 
-			// 5️⃣ **查詢違規次數資料**
-			$sql = "SELECT people_id, name, idcard, black, blacklist_end_date FROM people WHERE black > 0";
-			if (!empty($search)) {
-				$sql .= " AND idcard LIKE ? ";
-			}
-			$sql .= " LIMIT ?, ?";
-			$stmt = mysqli_prepare($link, $sql);
-			if (!empty($search)) {
-				$likeSearch = "%$search%";
-				mysqli_stmt_bind_param($stmt, "sii", $likeSearch, $offset, $rowsPerPage);
+			if ($current_date > $end_date) {
+				return 0; // 如果時間過期，回傳 0 秒（JavaScript 會顯示 "已解除"）
 			} else {
-				mysqli_stmt_bind_param($stmt, "ii", $offset, $rowsPerPage);
+				return $end_date->getTimestamp() - $current_date->getTimestamp(); // 回傳剩餘秒數
 			}
+		}
+
+
+		// 5️⃣ **查詢違規次數資料**
+		$sql = "SELECT people_id, name, idcard, black, blacklist_end_date FROM people WHERE black > 0";
+		if (!empty($search)) {
+			$sql .= " AND idcard LIKE ? ";
+		}
+		$sql .= " LIMIT ?, ?";
+		$stmt = mysqli_prepare($link, $sql);
+		if (!empty($search)) {
+			$likeSearch = "%$search%";
+			mysqli_stmt_bind_param($stmt, "sii", $likeSearch, $offset, $rowsPerPage);
+		} else {
+			mysqli_stmt_bind_param($stmt, "ii", $offset, $rowsPerPage);
+		}
+		mysqli_stmt_execute($stmt);
+		$result = mysqli_stmt_get_result($stmt);
+
+		$users = [];
+		while ($row = mysqli_fetch_assoc($result)) {
+			$row['remaining_time'] = calculateRemainingTime($row['blacklist_end_date']);
+			$users[] = $row;
+		}
+
+		// 6️⃣ **獲取總頁數**
+		$count_sql = "SELECT COUNT(*) AS total FROM people WHERE black > 0";
+		if (!empty($search)) {
+			$count_sql .= " AND idcard LIKE ?";
+			$stmt = mysqli_prepare($link, $count_sql);
+			mysqli_stmt_bind_param($stmt, "s", $likeSearch);
 			mysqli_stmt_execute($stmt);
-			$result = mysqli_stmt_get_result($stmt);
+			$count_result = mysqli_stmt_get_result($stmt);
+		} else {
+			$count_result = mysqli_query($link, $count_sql);
+		}
+		$totalRows = mysqli_fetch_assoc($count_result)['total'] ?? 0;
+		$totalPages = ceil($totalRows / $rowsPerPage);
 
-			$users = [];
-			while ($row = mysqli_fetch_assoc($result)) {
-				$row['remaining_time'] = calculateRemainingTime($row['blacklist_end_date']);
-				$users[] = $row;
-			}
-
-			// 6️⃣ **獲取總頁數**
-			$count_sql = "SELECT COUNT(*) AS total FROM people WHERE black > 0";
-			if (!empty($search)) {
-				$count_sql .= " AND idcard LIKE ?";
-				$stmt = mysqli_prepare($link, $count_sql);
-				mysqli_stmt_bind_param($stmt, "s", $likeSearch);
-				mysqli_stmt_execute($stmt);
-				$count_result = mysqli_stmt_get_result($stmt);
-			} else {
-				$count_result = mysqli_query($link, $count_sql);
-			}
-			$totalRows = mysqli_fetch_assoc($count_result)['total'] ?? 0;
-			$totalPages = ceil($totalRows / $rowsPerPage);
-
-			?>
+		?>
 
 
 
 
 
-			<section class="section section-lg bg-default text-center">
-				<div class="container">
-					<div class="row justify-content-sm-center">
-						<div class="col-md-10 col-xl-8">
-							<!-- 搜尋框 -->
-							<form class="search-form" method="GET" action="a_blacklist.php"
-								style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-								<div style="flex: 4;">
-									<input class="form-input" type="text" name="search"
-										value="<?php echo htmlspecialchars($search); ?>" placeholder="請輸入身分證"
-										style="padding: 10px 15px; font-size: 16px; width: 100%; border: 1px solid #ccc; border-radius: 4px;">
-								</div>
-								<div style="flex: 1;">
-									<button type="submit"
-										style="padding: 10px 15px; font-size: 16px; width: 100%; border: none; border-radius: 4px; background-color: #00A896; color: white;">
-										<span class="icon mdi mdi-magnify"></span>搜尋
-									</button>
-								</div>
-								<div style="flex: 1;">
-									<select name="rowsPerPage" onchange="this.form.submit()"
-										style="padding: 10px 15px; font-size: 16px; width: 100%; border: 1px solid #ccc; border-radius: 4px;">
-										<option value="3" <?php echo $rowsPerPage == 3 ? 'selected' : ''; ?>>3筆/頁</option>
-										<option value="5" <?php echo $rowsPerPage == 5 ? 'selected' : ''; ?>>5筆/頁</option>
-										<option value="10" <?php echo $rowsPerPage == 10 ? 'selected' : ''; ?>>10筆/頁
-										</option>
-										<option value="20" <?php echo $rowsPerPage == 20 ? 'selected' : ''; ?>>20筆/頁
-										</option>
-									</select>
-								</div>
-								<!-- 這段放在 "資料筆數" 選單旁邊 -->
-								<!-- 設定連結（點擊開啟設定彈窗） -->
-								<a href="#" class="settings-link" onclick="openBlacklistSettings()">⚙</a>
-								<!-- 黑名單時間設定彈出視窗 -->
-								<div id="blacklistSettingsModal" class="modal-container">
-									<div class="modal-content">
-										<!-- <h3 class="modal-title">設定黑名單時間</h3> -->
+		<section class="section section-lg bg-default text-center">
+			<div class="container">
+				<div class="row justify-content-sm-center">
+					<div class="col-md-10 col-xl-8">
+						<!-- 搜尋框 -->
+						<form class="search-form" method="GET" action="a_blacklist.php"
+							style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+							<div style="flex: 4;">
+								<input class="form-input" type="text" name="search"
+									value="<?php echo htmlspecialchars($search); ?>" placeholder="請輸入身分證"
+									style="padding: 10px 15px; font-size: 16px; width: 100%; border: 1px solid #ccc; border-radius: 4px;">
+							</div>
+							<div style="flex: 1;">
+								<button type="submit"
+									style="padding: 10px 15px; font-size: 16px; width: 100%; border: none; border-radius: 4px; background-color: #00A896; color: white;">
+									<span class="icon mdi mdi-magnify"></span>搜尋
+								</button>
+							</div>
+							<div style="flex: 1;">
+								<select name="rowsPerPage" onchange="this.form.submit()"
+									style="padding: 10px 15px; font-size: 16px; width: 100%; border: 1px solid #ccc; border-radius: 4px;">
+									<option value="3" <?php echo $rowsPerPage == 3 ? 'selected' : ''; ?>>3筆/頁</option>
+									<option value="5" <?php echo $rowsPerPage == 5 ? 'selected' : ''; ?>>5筆/頁</option>
+									<option value="10" <?php echo $rowsPerPage == 10 ? 'selected' : ''; ?>>10筆/頁
+									</option>
+									<option value="20" <?php echo $rowsPerPage == 20 ? 'selected' : ''; ?>>20筆/頁
+									</option>
+								</select>
+							</div>
+							<!-- 這段放在 "資料筆數" 選單旁邊 -->
+							<!-- 設定連結（點擊開啟設定彈窗） -->
+							<a href="#" class="settings-link" onclick="openBlacklistSettings()">⚙</a>
+							<!-- 黑名單時間設定彈出視窗 -->
+							<div id="blacklistSettingsModal" class="modal-container">
+								<div class="modal-content">
+									<!-- <h3 class="modal-title">設定黑名單時間</h3> -->
 
-										<!-- 修改這部分，讓時間長度與輸入框對齊 -->
-										<div class="input-group">
-											<label for="blacklistDuration">時間長度：</label>
-											<div class="input-wrapper">
-												<input type="number" id="blacklistDuration" value="1" min="1">
-												<select id="blacklistUnit">
-													<option value="HOUR">小時</option>
-													<option value="DAY">天</option>
-													<option value="MONTH">月</option>
-												</select>
-											</div>
-										</div>
-
-										<div class="checkbox-group">
-											<input type="checkbox" id="updateExistingBlacklist">
-											<label for="updateExistingBlacklist">修改已在黑名單內的使用者</label>
-										</div>
-
-										<div class="modal-buttons">
-											<button class="confirm-btn" onclick="saveBlacklistSettings()">確認</button>
-											<button class="cancel-btn" onclick="closeBlacklistSettings()">取消</button>
+									<!-- 修改這部分，讓時間長度與輸入框對齊 -->
+									<div class="input-group">
+										<label for="blacklistDuration">時間長度：</label>
+										<div class="input-wrapper">
+											<input type="number" id="blacklistDuration" value="1" min="1">
+											<select id="blacklistUnit">
+												<option value="HOUR">小時</option>
+												<option value="DAY">天</option>
+												<option value="MONTH">月</option>
+											</select>
 										</div>
 									</div>
+
+									<div class="checkbox-group">
+										<input type="checkbox" id="updateExistingBlacklist">
+										<label for="updateExistingBlacklist">修改已在黑名單內的使用者</label>
+									</div>
+
+									<div class="modal-buttons">
+										<button class="confirm-btn" onclick="saveBlacklistSettings()">確認</button>
+										<button class="cancel-btn" onclick="closeBlacklistSettings()">取消</button>
+									</div>
 								</div>
+							</div>
 
 
-								<!-- CSS -->
-								<style>
-									/* 彈窗背景 */
-									.modal-container {
-										display: none;
-										position: fixed;
-										top: 0;
-										left: 0;
-										width: 100%;
-										height: 100%;
-										background: rgba(0, 0, 0, 0.5);
-										justify-content: center;
-										align-items: center;
-										z-index: 1000;
-									}
+							<!-- CSS -->
+							<style>
+								/* 彈窗背景 */
+								.modal-container {
+									display: none;
+									position: fixed;
+									top: 0;
+									left: 0;
+									width: 100%;
+									height: 100%;
+									background: rgba(0, 0, 0, 0.5);
+									justify-content: center;
+									align-items: center;
+									z-index: 1000;
+								}
 
-									/* 彈窗內容 */
-									.modal-content {
-										background: white;
-										padding: 20px;
-										border-radius: 10px;
-										box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-										width: 340px;
-										text-align: center;
-									}
+								/* 彈窗內容 */
+								.modal-content {
+									background: white;
+									padding: 20px;
+									border-radius: 10px;
+									box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+									width: 340px;
+									text-align: center;
+								}
 
-									/* 標題 */
-									.modal-title {
-										font-size: 18px;
-										margin-bottom: 15px;
-										color: black;
-									}
+								/* 標題 */
+								.modal-title {
+									font-size: 18px;
+									margin-bottom: 15px;
+									color: black;
+								}
 
-									/* 讓時間長度 + 輸入框 + 單位選擇 在同一行 */
-									.input-group {
-										display: flex;
-										align-items: center;
-										justify-content: space-between;
-										gap: 10px;
-										margin-bottom: 15px;
-									}
+								/* 讓時間長度 + 輸入框 + 單位選擇 在同一行 */
+								.input-group {
+									display: flex;
+									align-items: center;
+									justify-content: space-between;
+									gap: 10px;
+									margin-bottom: 15px;
+								}
 
-									/* 讓輸入框與選單保持一致大小 */
-									.input-wrapper {
-										display: flex;
-										align-items: center;
-										gap: 5px;
-										flex-grow: 1;
-									}
+								/* 讓輸入框與選單保持一致大小 */
+								.input-wrapper {
+									display: flex;
+									align-items: center;
+									gap: 5px;
+									flex-grow: 1;
+								}
 
-									.input-wrapper input,
-									.input-wrapper select {
-										padding: 8px;
-										border: 1px solid #ccc;
-										border-radius: 5px;
-										font-size: 14px;
-										width: 50%;
-									}
+								.input-wrapper input,
+								.input-wrapper select {
+									padding: 8px;
+									border: 1px solid #ccc;
+									border-radius: 5px;
+									font-size: 14px;
+									width: 50%;
+								}
 
-									/* 讓標籤文字對齊 */
-									.input-group label {
-										font-size: 14px;
-										color: black;
-										white-space: nowrap;
-									}
+								/* 讓標籤文字對齊 */
+								.input-group label {
+									font-size: 14px;
+									color: black;
+									white-space: nowrap;
+								}
 
-									/* 勾選框對齊 */
-									.checkbox-group {
-										display: flex;
-										align-items: center;
-										justify-content: center;
-										gap: 8px;
-										font-size: 14px;
-										margin-bottom: 15px;
-										color: black;
-									}
+								/* 勾選框對齊 */
+								.checkbox-group {
+									display: flex;
+									align-items: center;
+									justify-content: center;
+									gap: 8px;
+									font-size: 14px;
+									margin-bottom: 15px;
+									color: black;
+								}
 
-									/* 確保勾選框標籤可見 */
-									.checkbox-group label {
-										color: black;
-									}
+								/* 確保勾選框標籤可見 */
+								.checkbox-group label {
+									color: black;
+								}
 
-									/* 按鈕組 */
-									.modal-buttons {
-										display: flex;
-										justify-content: space-between;
-										gap: 10px;
-									}
+								/* 按鈕組 */
+								.modal-buttons {
+									display: flex;
+									justify-content: space-between;
+									gap: 10px;
+								}
 
-									/* 確認按鈕 */
-									.confirm-btn {
-										background-color: #28a745;
-										color: white;
-										padding: 8px 15px;
-										border: none;
-										border-radius: 5px;
-										cursor: pointer;
-										flex: 1;
-									}
+								/* 確認按鈕 */
+								.confirm-btn {
+									background-color: #28a745;
+									color: white;
+									padding: 8px 15px;
+									border: none;
+									border-radius: 5px;
+									cursor: pointer;
+									flex: 1;
+								}
 
-									/* 取消按鈕 */
-									.cancel-btn {
-										background-color: #ccc;
-										color: black;
-										padding: 8px 15px;
-										border: none;
-										border-radius: 5px;
-										cursor: pointer;
-										flex: 1;
-									}
-								</style>
+								/* 取消按鈕 */
+								.cancel-btn {
+									background-color: #ccc;
+									color: black;
+									padding: 8px 15px;
+									border: none;
+									border-radius: 5px;
+									cursor: pointer;
+									flex: 1;
+								}
+							</style>
 
-							</form>
+						</form>
 
-							<!-- 表格 -->
-							<div class="table-novi table-custom-responsive" style="font-size: 16px; overflow-x: auto;">
-								<table class="table-custom table-custom-bordered" style="width: 90%; /* 調整表格寬度，90% 居中 */ 
+						<!-- 表格 -->
+						<div class="table-novi table-custom-responsive" style="font-size: 16px; overflow-x: auto;">
+							<table class="table-custom table-custom-bordered" style="width: 90%; /* 調整表格寬度，90% 居中 */ 
 				  margin: 0 auto; /* 讓表格居中對齊 */ 
 				  border-collapse: collapse;">
-									<thead>
-										<tr>
-											<th style="padding: 20px; text-align: left;">#</th>
-											<th style="padding: 20px; text-align: left;">姓名</th>
-											<th style="padding: 20px; text-align: left;">身份證</th>
-											<th style="padding: 20px; text-align: left;">剩餘時間 / 違規次數</th>
-											<th style="padding: 20px; text-align: center;">選項</th>
-										</tr>
-									</thead>
-									<tbody>
-										<?php if (!empty($users)): ?>
-											<?php foreach ($users as $index => $user): ?>
-												<tr>
-													<td style="padding: 20px;"><?php echo $offset + $index + 1; ?></td>
-													<td style="padding: 20px;"><?php echo htmlspecialchars($user['name']); ?>
-													</td>
-													<td style="padding: 20px;"><?php echo htmlspecialchars($user['idcard']); ?>
-													</td>
-													<td style="padding: 20px;">
-														<?php if (strpos($user['remaining_time'], "違規次數") !== false): ?>
-															<?php echo $user['remaining_time']; ?>
-														<?php else: ?>
-															<span class="countdown"
-																data-seconds="<?php echo $user['remaining_time']; ?>"></span>
-														<?php endif; ?>
-													</td>
-													<td style="padding: 20px; text-align: center;">
-														<button
-															style="padding: 8px 16px; background-color: #00A896; color: white; border: none; border-radius: 6px;">操作</button>
-														<button
-															style="padding: 8px 16px; background-color: #FFB900; color: white; border: none; border-radius: 6px;">詳細</button>
-													</td>
-												</tr>
-											<?php endforeach; ?>
-										<?php else: ?>
+								<thead>
+									<tr>
+										<th style="padding: 20px; text-align: left;">#</th>
+										<th style="padding: 20px; text-align: left;">姓名</th>
+										<th style="padding: 20px; text-align: left;">身份證</th>
+										<th style="padding: 20px; text-align: left;">剩餘時間 / 違規次數</th>
+										<th style="padding: 20px; text-align: center;">選項</th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php if (!empty($users)): ?>
+										<?php foreach ($users as $index => $user): ?>
 											<tr>
-												<td colspan="5" style="text-align: center; padding: 20px;">未找到資料</td>
+												<td style="padding: 20px;"><?php echo $offset + $index + 1; ?></td>
+												<td style="padding: 20px;"><?php echo htmlspecialchars($user['name']); ?>
+												</td>
+												<td style="padding: 20px;"><?php echo htmlspecialchars($user['idcard']); ?>
+												</td>
+												<td style="padding: 20px;">
+													<?php if (strpos($user['remaining_time'], "違規次數") !== false): ?>
+														<?php echo $user['remaining_time']; ?>
+													<?php else: ?>
+														<span class="countdown"
+															data-seconds="<?php echo $user['remaining_time']; ?>"></span>
+													<?php endif; ?>
+												</td>
+												<td style="padding: 20px; text-align: center;">
+													<button
+														onclick="openActionModal(<?php echo $user['people_id']; ?>, '<?php echo htmlspecialchars($user['name']); ?>')"
+														style="padding: 8px 16px; background-color: #00A896; color: white; border: none; border-radius: 6px;">操作</button>
+													<button
+														style="padding: 8px 16px; background-color: #FFB900; color: white; border: none; border-radius: 6px;">詳細</button>
+												</td>
 											</tr>
-										<?php endif; ?>
-									</tbody>
-								</table>
-							</div>
-
-							<!-- 分頁 -->
-							<div id="pagination" style="text-align: center; margin-top: 10px;">
-								<?php if ($totalPages > 1): ?>
-									<?php for ($i = 1; $i <= $totalPages; $i++): ?>
-										<button
-											onclick="location.href='?page=<?php echo $i; ?>&rowsPerPage=<?php echo $rowsPerPage; ?>&search=<?php echo htmlspecialchars($search); ?>'"
-											style="margin: 0 5px; padding: 5px 10px; border: none; background-color: <?php echo $i == $page ? '#00A896' : '#f0f0f0'; ?>; color: <?php echo $i == $page ? 'white' : 'black'; ?>; border-radius: 4px;">
-											<?php echo $i; ?>
-										</button>
-									<?php endfor; ?>
-									<span>| 共 <?php echo $totalPages; ?> 頁</span>
-								<?php endif; ?>
-							</div>
-
-
-
+										<?php endforeach; ?>
+									<?php else: ?>
+										<tr>
+											<td colspan="5" style="text-align: center; padding: 20px;">未找到資料</td>
+										</tr>
+									<?php endif; ?>
+								</tbody>
+							</table>
 						</div>
+
+						<!-- 黑名單操作懸浮視窗 -->
+						<div id="blacklistActionModal" class="modal-container" style="display: none;">
+							<div class="modal-content">
+								<h3 id="modal-title">黑名單操作</h3>
+								<p id="modal-user-info">對 <span id="modal-username"></span> 執行操作：</p>
+
+								<button class="confirm-btn red" onclick="setPermanentBlacklist()">設為永久黑名單</button>
+								<button class="confirm-btn green" onclick="removeBlacklist()">解除黑名單</button>
+
+								<button class="cancel-btn" onclick="closeActionModal()">取消</button>
+							</div>
+						</div>
+
+						<!-- CSS -->
+						<style>
+							/* 彈窗背景 */
+							.modal-container {
+								display: none;
+								position: fixed;
+								top: 0;
+								left: 0;
+								width: 100%;
+								height: 100%;
+								background: rgba(0, 0, 0, 0.5);
+								justify-content: center;
+								align-items: center;
+								z-index: 1000;
+							}
+
+							/* 彈窗內容 */
+							.modal-content {
+								background: white;
+								padding: 20px;
+								border-radius: 10px;
+								box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+								width: 320px;
+								text-align: center;
+							}
+
+							/* 標題 */
+							.modal-content h3 {
+								margin-bottom: 15px;
+							}
+
+							/* 確認按鈕 */
+							.confirm-btn {
+								display: block;
+								width: 100%;
+								padding: 10px;
+								margin-top: 10px;
+								border: none;
+								border-radius: 5px;
+								cursor: pointer;
+								font-size: 16px;
+							}
+
+							/* 紅色按鈕 */
+							.confirm-btn.red {
+								background-color: red;
+								color: white;
+							}
+
+							/* 綠色按鈕 */
+							.confirm-btn.green {
+								background-color: green;
+								color: white;
+							}
+
+							/* 取消按鈕 */
+							.cancel-btn {
+								display: block;
+								width: 100%;
+								padding: 10px;
+								margin-top: 10px;
+								border: none;
+								border-radius: 5px;
+								background-color: #ccc;
+								cursor: pointer;
+								font-size: 16px;
+							}
+						</style>
+
+
+						<!-- 分頁 -->
+						<div id="pagination" style="text-align: center; margin-top: 10px;">
+							<?php if ($totalPages > 1): ?>
+								<?php for ($i = 1; $i <= $totalPages; $i++): ?>
+									<button
+										onclick="location.href='?page=<?php echo $i; ?>&rowsPerPage=<?php echo $rowsPerPage; ?>&search=<?php echo htmlspecialchars($search); ?>'"
+										style="margin: 0 5px; padding: 5px 10px; border: none; background-color: <?php echo $i == $page ? '#00A896' : '#f0f0f0'; ?>; color: <?php echo $i == $page ? 'white' : 'black'; ?>; border-radius: 4px;">
+										<?php echo $i; ?>
+									</button>
+								<?php endfor; ?>
+								<span>| 共 <?php echo $totalPages; ?> 頁</span>
+							<?php endif; ?>
+						</div>
+
+
+
 					</div>
 				</div>
-			</section>
+			</div>
+		</section>
 
-			<!-- 倒數計時 JavaScript -->
-			<script>
-				document.querySelectorAll('.countdown').forEach(function (element) {
-					let seconds = parseInt(element.getAttribute('data-seconds'));
+		<!-- 倒數計時 JavaScript -->
+		<script>
+			document.querySelectorAll('.countdown').forEach(function (element) {
+				let seconds = parseInt(element.getAttribute('data-seconds'));
 
-					// 確保 `seconds` 不為 NaN，並且至少為 1 秒
-					if (isNaN(seconds) || seconds <= 0) {
+				// 確保 `seconds` 不為 NaN，並且至少為 1 秒
+				if (isNaN(seconds) || seconds <= 0) {
+					element.textContent = '已解除';
+					return;
+				}
+
+				function updateCountdown() {
+					if (seconds <= 0) {
 						element.textContent = '已解除';
-						return;
+					} else {
+						let days = Math.floor(seconds / 86400);
+						let hours = Math.floor((seconds % 86400) / 3600);
+						let minutes = Math.floor((seconds % 3600) / 60);
+						let sec = seconds % 60;
+
+						element.textContent = `${days}天 ${hours}時 ${minutes}分 ${sec}秒`;
+						seconds--;
+
+						setTimeout(updateCountdown, 1000);
 					}
-
-					function updateCountdown() {
-						if (seconds <= 0) {
-							element.textContent = '已解除';
-						} else {
-							let days = Math.floor(seconds / 86400);
-							let hours = Math.floor((seconds % 86400) / 3600);
-							let minutes = Math.floor((seconds % 3600) / 60);
-							let sec = seconds % 60;
-
-							element.textContent = `${days}天 ${hours}時 ${minutes}分 ${sec}秒`;
-							seconds--;
-
-							setTimeout(updateCountdown, 1000);
-						}
-					}
-
-					updateCountdown();
-				});
-
-
-
-				function openBlacklistSettings() {
-					document.getElementById('blacklistSettingsModal').style.display = 'flex';
 				}
 
-				function closeBlacklistSettings() {
-					document.getElementById('blacklistSettingsModal').style.display = 'none';
-				}
-
-				function saveBlacklistSettings() {
-					let duration = document.getElementById('blacklistDuration').value;
-					let unit = document.getElementById('blacklistUnit').value;
-					let updateExisting = document.getElementById('updateExistingBlacklist').checked ? 1 : 0;
-
-					let xhr = new XMLHttpRequest();
-					xhr.open("POST", "修改黑名單時間.php", true);
-					xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-					xhr.send(`duration=${duration}&unit=${unit}&updateExisting=${updateExisting}`);
-
-					xhr.onload = function () {
-						alert(xhr.responseText);
-						closeBlacklistSettings();
-						location.reload();
-					};
-				}
-
-			</script>
+				updateCountdown();
+			});
 
 
-			<!-- Global Mailform Output-->
-			<div class="snackbars" id="form-output-global"></div>
-			<!-- Javascript-->
-			<script src="js/core.min.js"></script>
-			<script src="js/script.js"></script>
+
+			function openBlacklistSettings() {
+				document.getElementById('blacklistSettingsModal').style.display = 'flex';
+			}
+
+			function closeBlacklistSettings() {
+				document.getElementById('blacklistSettingsModal').style.display = 'none';
+			}
+
+			function saveBlacklistSettings() {
+				let duration = document.getElementById('blacklistDuration').value;
+				let unit = document.getElementById('blacklistUnit').value;
+				let updateExisting = document.getElementById('updateExistingBlacklist').checked ? 1 : 0;
+
+				let xhr = new XMLHttpRequest();
+				xhr.open("POST", "修改黑名單時間.php", true);
+				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+				xhr.send(`duration=${duration}&unit=${unit}&updateExisting=${updateExisting}`);
+
+				xhr.onload = function () {
+					alert(xhr.responseText);
+					closeBlacklistSettings();
+					location.reload();
+				};
+			}
+
+
+			let selectedUserId = null;
+
+			function openActionModal(userId, username) {
+				selectedUserId = userId;
+				document.getElementById("modal-username").textContent = username;
+				document.getElementById("blacklistActionModal").style.display = "flex";
+			}
+
+			function closeActionModal() {
+				document.getElementById("blacklistActionModal").style.display = "none";
+			}
+
+			// 設為永久黑名單
+			function setPermanentBlacklist() {
+				if (!confirm("確定要將此使用者設為永久黑名單嗎？")) return;
+				let xhr = new XMLHttpRequest();
+				xhr.open("POST", "黑名單永久或解除.php", true);
+				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+				xhr.send(`action=permanent&userId=${selectedUserId}`);
+				xhr.onload = function () {
+					alert(xhr.responseText);
+					closeActionModal();
+					location.reload();
+				};
+			}
+
+			// 解除黑名單
+			function removeBlacklist() {
+				if (!confirm("確定要解除黑名單嗎？")) return;
+				let xhr = new XMLHttpRequest();
+				xhr.open("POST", "黑名單永久或解除.php", true);
+				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+				xhr.send(`action=remove&userId=${selectedUserId}`);
+				xhr.onload = function () {
+					alert(xhr.responseText);
+					closeActionModal();
+					location.reload();
+				};
+			}
+
+		</script>
+
+
+		<!-- Global Mailform Output-->
+		<div class="snackbars" id="form-output-global"></div>
+		<!-- Javascript-->
+		<script src="js/core.min.js"></script>
+		<script src="js/script.js"></script>
 </body>
 
 </html>
