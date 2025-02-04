@@ -511,8 +511,8 @@ if (!$result) {
                                             <td>
                                                 <a href="h_print-receipt.php?id=<?php echo $row['medicalrecord_id']; ?>"
                                                     target="_blank">
-                                                    <button type="button">列印收據</button>
-                                                </a>
+                                                    <button type="button">列印</button>
+                                                </a>  
                                             </td>
                                         </tr>
                                     <?php endwhile; ?>

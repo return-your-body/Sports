@@ -459,7 +459,10 @@ $result = $stmt->get_result();
                           <td><?php echo htmlspecialchars($row['created_at']); ?></td>
                           <td>
                             <a href="h_print-appointment.php?id=<?php echo $row['id']; ?>" target="_blank">
-                              <button type="button">列印預約單</button>
+                              <button type="button">列印</button>
+                            </a>
+                            <a href="h_patient-needs.php?id=<?php echo $row['id']; ?>" target="_blank">
+                              <button type="button">操作</button>
                             </a>
                           </td>
                         </tr>
