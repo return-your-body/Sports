@@ -62,18 +62,15 @@ if (isset($_SESSION["帳號"])) {
 }
 
 //預約紀錄
-session_start();
-if (!isset($_SESSION['帳號'])) {
-  die('未登入或 Session 已失效，請重新登入。');
-}
-
 require '../db.php';
 
 // 接收搜尋條件
 $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
 
-// 分頁參數
-$records_per_page = 10;
+// 取得筆數選擇 (預設 10)
+$records_per_page = isset($_GET['limit']) ? max(1, (int) $_GET['limit']) : 10;
+
+// 取得當前頁數
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $offset = ($page - 1) * $records_per_page;
 
@@ -270,6 +267,63 @@ $result = $stmt->get_result();
         padding: 6px;
         font-size: 12px;
       }
+    }
+
+    /* 讓搜尋框與筆數選擇在同一行，並靠右對齊 */
+    .search-limit-container {
+      display: flex;
+      justify-content: flex-end;
+      /* 內容靠右對齊 */
+      align-items: center;
+      gap: 15px;
+      /* 設定搜尋框與筆數選擇之間的間距 */
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      /* 確保在小螢幕時換行 */
+    }
+
+    /* 搜尋框 */
+    .search-form {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .search-form input {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .search-form button {
+      padding: 6px 12px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.3s ease-in-out;
+    }
+
+    .search-form button:hover {
+      background-color: #0056b3;
+    }
+
+    /* 筆數選擇 */
+    .limit-selector {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .limit-selector label {
+      font-size: 14px;
+    }
+
+    .limit-selector select {
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
 
     /* 狀態 */
@@ -484,15 +538,31 @@ $result = $stmt->get_result();
         <div class="row row-50 justify-content-lg-center">
           <div class="col-lg-12">
             <div id="accordion1" role="tablist" aria-multiselectable="false">
-              <!-- 搜尋表單 -->
-              <div class="search-container" style="text-align: right;">
-                <form method="GET" action="">
-                  <label for="search_name">搜尋姓名：</label>
-                  <input type="text" name="search_name" id="search_name" placeholder="請輸入使用者姓名"
+              <!-- 搜尋與筆數選擇 -->
+              <div class="search-limit-container">
+                <!-- 搜尋框 -->
+                <form method="GET" action="" class="search-form">
+                  <input type="hidden" name="is_search" value="1">
+                  <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
                     value="<?php echo htmlspecialchars($search_name); ?>">
                   <button type="submit">搜尋</button>
                 </form>
+
+                <!-- 每頁筆數選擇 -->
+                <div class="limit-selector">
+                  <!-- <label for="limit">每頁顯示筆數:</label> -->
+                  <select id="limit" name="limit" onchange="updateLimit()">
+                    <?php
+                    $limits = [3, 5, 10, 20, 50, 100];
+                    foreach ($limits as $limit) {
+                      $selected = ($limit == $records_per_page) ? "selected" : "";
+                      echo "<option value='$limit' $selected>$limit 筆/頁</option>";
+                    }
+                    ?>
+                  </select>
+                </div>
               </div>
+
 
               <!-- 表格容器 -->
               <div class="table-responsive">
@@ -530,10 +600,16 @@ $result = $stmt->get_result();
                           <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
                           <td><?php echo htmlspecialchars($row['note']); ?></td>
                           <td>
-                            <button class="status-button" data-id="<?php echo $row['id']; ?>">
-                              <?php echo htmlspecialchars($row['status_name']); ?>
-                            </button>
-                          </td>
+    <select class="status-dropdown" data-id="<?php echo $row['id']; ?>" 
+        <?php echo ($row['status_name'] == '已看診') ? 'disabled' : ''; ?>>
+        <option value="預約" <?php echo ($row['status_name'] == '預約') ? 'selected' : ''; ?>>預約</option>
+        <option value="修改" <?php echo ($row['status_name'] == '修改') ? 'selected' : ''; ?>>修改</option>
+        <option value="報到" <?php echo ($row['status_name'] == '報到') ? 'selected' : ''; ?>>報到</option>
+        <option value="請假" <?php echo ($row['status_name'] == '請假') ? 'selected' : ''; ?>>請假</option>
+        <option value="爽約" <?php echo ($row['status_name'] == '爽約') ? 'selected' : ''; ?>>爽約</option>
+        <option value="已看診" <?php echo ($row['status_name'] == '已看診') ? 'selected' : ''; ?>>已看診</option>
+    </select>
+</td>
                           <td>
                             <a href="h_print-appointment.php?id=<?php echo $row['id']; ?>" target="_blank">
                               <button type="button">列印預約單</button>
@@ -550,74 +626,112 @@ $result = $stmt->get_result();
                 </table>
               </div>
 
-
               <!-- 狀態清單 -->
-              <!-- 右鍵選單 (只建立一次，動態變更位置) -->
-              <div id="custom-menu" class="custom-menu">
-                <ul>
-                  <li onclick="updateStatus('預約')">預約</li>
-                  <li onclick="updateStatus('修改')">修改</li>
-                  <li onclick="updateStatus('報到')">報到</li>
-                  <li onclick="updateStatus('請假')">請假</li>
-                  <li onclick="updateStatus('爽約')">爽約</li>
-                </ul>
-              </div>
 
-              <script>
-                document.addEventListener("DOMContentLoaded", function () {
-                  const buttons = document.querySelectorAll(".status-button");
-                  const menu = document.getElementById("custom-menu");
-                  let selectedId = null;
+              <!-- 選擇時間的 Modal -->
+<!-- 選擇時間的 Modal -->
+<div id="dateTimeModal"
+    style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border-radius:10px; box-shadow: 0px 0px 10px rgba(0,0,0,0.2); z-index:9999;">
+    <h3>請選擇新的預約時間</h3>
+    <label>預約日期：</label>
+    <input type="date" id="appointment_date" onchange="fetchAvailableTimes()">
+    <br>
+    <label>預約時間：</label>
+    <select id="appointment_time">
+        <option value="">請選擇時間</option>
+    </select>
+    <br><br>
+    <button onclick="confirmUpdate()">確認修改</button>
+    <button onclick="closeModal()">取消</button>
+</div>
 
-                  // 為每個按鈕綁定右鍵事件
-                  buttons.forEach(button => {
-                    button.addEventListener("contextmenu", function (event) {
-                      event.preventDefault(); // 禁止瀏覽器預設右鍵選單
-                      selectedId = this.getAttribute("data-id"); // 取得對應的 ID
-                      menu.style.top = event.pageY + "px";
-                      menu.style.left = event.pageX + "px";
-                      menu.style.display = "block";
-                    });
-                  });
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".status-dropdown").forEach(select => {
+        select.addEventListener("change", function () {
+            let appointmentId = this.getAttribute("data-id");
+            let newStatus = this.value;
 
-                  // 點擊外部時隱藏選單
-                  document.addEventListener("click", function () {
-                    menu.style.display = "none";
-                  });
+            if (newStatus === "修改") {
+                window.selectedAppointmentId = appointmentId;
+                document.getElementById("dateTimeModal").style.display = "block";
+                document.getElementById("appointment_date").value = ""; 
+                document.getElementById("appointment_time").innerHTML = "<option value=''>請選擇時間</option>";
+            } else {
+                updateStatus(appointmentId, newStatus);
+            }
+        });
+    });
+});
 
-                  // 更新狀態函數
-                  function updateStatus(status) {
-                    fetch("update_status.php", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                      body: "id=" + selectedId + "&status=" + encodeURIComponent(status)
-                    })
-                      .then(response => response.text())
-                      .then(data => {
-                        console.log(data);
+function closeModal() {
+    document.getElementById("dateTimeModal").style.display = "none";
+}
 
-                        // 更新點擊的按鈕顯示狀態
-                        document.querySelector(`[data-id='${selectedId}']`).innerText = status;
+function fetchAvailableTimes() {
+    let date = document.getElementById("appointment_date").value;
+    let timeDropdown = document.getElementById("appointment_time");
 
-                        alert("狀態已更新為：" + status);
-                        menu.style.display = "none"; // 選擇後隱藏選單
-                      })
-                      .catch(error => console.error("錯誤:", error));
-                  }
+    if (!date) {
+        alert("請先選擇日期！");
+        return;
+    }
 
-                  // 讓所有選單選項的 onclick 事件都可以使用 updateStatus
-                  document.querySelectorAll("#custom-menu li").forEach(item => {
-                    item.addEventListener("click", function () {
-                      updateStatus(this.innerText);
-                    });
-                  });
+    timeDropdown.innerHTML = "<option>載入中...</option>";
+
+    fetch(`獲取時間.php?date=${date}&appointment_id=${window.selectedAppointmentId}`)
+        .then(response => response.json())
+        .then(data => {
+            timeDropdown.innerHTML = "<option value=''>請選擇時間</option>";
+            if (data.length === 0) {
+                timeDropdown.innerHTML = "<option value=''>無可用時段</option>";
+            } else {
+                data.forEach(time => {
+                    let option = document.createElement("option");
+                    option.value = time.shifttime_id;
+                    option.textContent = time.shifttime;
+                    timeDropdown.appendChild(option);
                 });
-              </script>
+            }
+        })
+        .catch(error => {
+            console.error("載入時間錯誤:", error);
+            timeDropdown.innerHTML = "<option value=''>載入失敗</option>";
+        });
+}
 
+function confirmUpdate() {
+    let newDate = document.getElementById("appointment_date").value;
+    let newTime = document.getElementById("appointment_time").value;                                      
+    if (!newDate || !newTime) {
+        alert("請選擇完整的日期與時間！");
+        return;
+    }
 
+    fetch("update_status.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `id=${window.selectedAppointmentId}&status=修改&date=${newDate}&time=${newTime}`
+    })
+    .then(response => response.text())
+    .then(data => {
+        alert("預約已修改！");
+        closeModal();
+        location.reload();
+    })
+    .catch(error => console.error("更新失敗:", error));
+}
+</script>
 
 
               <!-- 分頁顯示 -->
+              <script>
+                function updateLimit() {
+                  var limit = document.getElementById("limit").value;
+                  window.location.href = "?limit=" + limit + "&search_name=<?php echo urlencode($search_name); ?>";
+                }
+              </script>
+
               <div style="text-align: right; margin: 20px 0;">
                 <strong>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共 <?php echo $total_records; ?>
                   筆資料）</strong>
@@ -631,7 +745,6 @@ $result = $stmt->get_result();
                   </a>
                 <?php endfor; ?>
               </div>
-
             </div>
           </div>
         </div>

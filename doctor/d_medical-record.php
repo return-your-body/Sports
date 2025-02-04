@@ -64,9 +64,75 @@ if (isset($_SESSION["帳號"])) {
 }
 
 // 看診紀錄
+require '../db.php';
+session_start(); // 確保 Session 啟動
 
+// 取得登入者帳號
+$帳號 = $_SESSION['帳號'];
+
+// 取得搜尋條件
+$search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
+
+// 取得筆數選擇 (預設 10)
+$records_per_page = isset($_GET['limit']) ? max(3, (int) $_GET['limit']) : 10;
+
+// 取得當前頁數
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+$offset = ($page - 1) * $records_per_page;
+
+// 確認醫生的 user_id
+$doctor_sql = "SELECT doctor_id FROM doctor WHERE user_id = (SELECT user_id FROM user WHERE account = ?)";
+$doctor_stmt = $link->prepare($doctor_sql);
+$doctor_stmt->bind_param('s', $帳號);
+$doctor_stmt->execute();
+$doctor_result = $doctor_stmt->get_result();
+$doctor_row = $doctor_result->fetch_assoc();
+$doctor_id = $doctor_row['doctor_id'] ?? null;
+
+if (!$doctor_id) {
+  die("未找到該醫生的資料");
+}
+
+// 計算總筆數
+$count_sql = "SELECT COUNT(*) AS total FROM medicalrecord m 
+LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN item i ON m.item_id = i.item_id
+WHERE ds.doctor_id = ? AND p.name LIKE CONCAT('%', ?, '%')";
+
+$count_stmt = $link->prepare($count_sql);
+$count_stmt->bind_param('is', $doctor_id, $search_name);
+$count_stmt->execute();
+$count_result = $count_stmt->get_result();
+$total_records = $count_result->fetch_assoc()['total'] ?? 0;
+$total_pages = max(ceil($total_records / $records_per_page), 1);
+
+// 查詢分頁資料
+$data_sql = "SELECT 
+    m.medicalrecord_id, p.name AS patient_name, 
+    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
+    IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '未設定') AS birthday,
+    ds.date AS appointment_date,
+    st.shifttime AS appointment_time,
+    i.item, i.price, m.created_at 
+FROM medicalrecord m 
+LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+LEFT JOIN item i ON m.item_id = i.item_id
+WHERE ds.doctor_id = ? AND p.name LIKE CONCAT('%', ?, '%')
+ORDER BY ds.date, st.shifttime
+LIMIT ?, ?";
+
+$data_stmt = $link->prepare($data_sql);
+$data_stmt->bind_param('isii', $doctor_id, $search_name, $offset, $records_per_page);
+$data_stmt->execute();
+$result = $data_stmt->get_result();
 
 ?>
+
 
 
 <head>
@@ -161,6 +227,151 @@ if (isset($_SESSION["帳號"])) {
 
 
     /* 看診紀錄 */
+    /* 保持表格容器全寬 */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    /* 表格響應式 */
+    .table-responsive {
+      width: 100%;
+    }
+
+    /* 表格樣式 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    /* 標題與內容樣式 */
+    th,
+    td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+      white-space: nowrap;
+      /* 防止內容換行 */
+    }
+
+    /* 標題背景顏色 */
+    th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+
+    /* 響應式設計 */
+    @media (max-width: 768px) {
+
+      th,
+      td {
+        padding: 8px;
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+
+      th,
+      td {
+        padding: 6px;
+        font-size: 12px;
+      }
+    }
+
+    /* 搜尋框與筆數選擇在同一行靠右 */
+    .search-limit-container {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* 搜尋框 */
+    .search-form {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .search-form input {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .search-form button {
+      padding: 6px 12px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.3s ease-in-out;
+    }
+
+    .search-form button:hover {
+      background-color: #0056b3;
+    }
+
+    /* 筆數選擇 */
+    .limit-selector {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* 頁碼資訊 (靠右) */
+    .pagination-info-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    /* 分頁按鈕 (置中) */
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .pagination-container a {
+      margin: 0 5px;
+      text-decoration: none;
+      padding: 5px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+    }
+
+    .pagination-container a:hover {
+      background-color: #e2e6ea;
+    }
+
+    .pagination-container strong {
+      margin: 0 5px;
+      font-weight: bold;
+    }
+
+    /* 響應式處理 */
+    @media (max-width: 768px) {
+      .search-limit-container {
+        justify-content: center;
+      }
+
+      .pagination-info-container {
+        justify-content: center;
+      }
+
+      .pagination-container {
+        justify-content: center;
+      }
+    }
   </style>
 
 </head>
@@ -327,175 +538,115 @@ if (isset($_SESSION["帳號"])) {
     <!--標題-->
 
     <!--看診紀錄-->
-    <section class="section section-lg bg-default text-center" style="padding: 20px 0;">
-      <div
-        style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh;">
-        <!-- 搜尋框 -->
-        <div class="search-container" style="margin-bottom: 10px; width: 80%; text-align: right;">
-          <form method="GET" action="">
+    <section class="section section-lg bg-default text-center">
+      <div class="container">
+        <!-- 搜尋與筆數選擇 -->
+        <div class="search-limit-container">
+          <form method="GET" action="" class="search-form">
             <input type="hidden" name="is_search" value="1">
             <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
-              value="<?php echo isset($_GET['search_name']) ? htmlspecialchars($_GET['search_name']) : ''; ?>"
-              style="padding: 5px; width: 200px;">
-            <button type="submit" style="padding: 5px 10px; margin-left: 10px;">搜尋</button>
+              value="<?php echo htmlspecialchars($search_name); ?>">
+            <button type="submit">搜尋</button>
           </form>
+
+          <div class="limit-selector">
+            <!-- <label for="limit">每頁顯示筆數:</label> -->
+            <select id="limit" name="limit" onchange="updateLimit()">
+              <?php
+              $limits = [3, 5, 10, 20, 50, 100];
+              foreach ($limits as $limit) {
+                $selected = ($limit == $records_per_page) ? "selected" : "";
+                echo "<option value='$limit' $selected>$limit 筆/頁</option>";
+              }
+              ?>
+            </select>
+          </div>
+
         </div>
 
-        <?php
-        require '../db.php';
+        <!-- 表格 -->
+        <!-- 表格 -->
+        <div class="table-container">
+          <div class="table-responsive">
+            <table class="responsive-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>姓名</th>
+                  <th>性別</th>
+                  <th>生日 (年齡)</th>
+                  <th>看診日期</th>
+                  <th>看診時間</th> <!-- 新增時間 -->
+                  <th>治療項目</th>
+                  <th>治療費用</th>
+                  <th>建立時間</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if ($result->num_rows > 0): ?>
+                  <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                    <tr>
+                      <td><?php echo htmlspecialchars($row['medicalrecord_id']); ?></td>
+                      <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
+                      <td><?php echo htmlspecialchars($row['gender']); ?></td>
+                      <td><?php echo htmlspecialchars($row['birthday']); ?></td>
+                      <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
+                      <td><?php echo htmlspecialchars($row['appointment_time']); ?></td> <!-- 新增時間 -->
+                      <td><?php echo htmlspecialchars($row['item']); ?></td>
+                      <td><?php echo htmlspecialchars($row['price']); ?></td>
+                      <td><?php echo htmlspecialchars($row['created_at']); ?></td>
+                    </tr>
+                  <?php endwhile; ?>
+                <?php else: ?>
+                  <tr>
+                    <td colspan="9">目前無資料，請輸入條件進行搜尋。</td>
+                  </tr>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-        // 搜尋邏輯
-        $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, trim($_GET['search_name'])) : '';
-        $page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
-        $records_per_page = 10;
-        $offset = ($page - 1) * $records_per_page;
 
-        $where_clause = "1=1";
-        if ($search_name !== '') {
-          $where_clause .= " AND p.name LIKE '%" . mysqli_real_escape_string($link, $search_name) . "%'";
-        }
+        <!-- 分頁資訊 (靠右) -->
+        <div class="pagination-info-container">
+          <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共
+            <strong><?php echo $total_records; ?></strong> 筆資料）</span>
+        </div>
 
-        // 查詢總筆數
-        $count_sql = "
-    SELECT COUNT(*) AS total
-    FROM medicalrecord m
-    LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN item i ON m.item_id = i.item_id
-    WHERE $where_clause
-    ";
-        $count_result = mysqli_query($link, $count_sql);
-        $total_records = mysqli_fetch_assoc($count_result)['total'];
-        $total_pages = max(ceil($total_records / $records_per_page), 1);
+        <!-- 分頁按鈕 (置中) -->
+        <div class="pagination-container">
+          <?php if ($page > 1): ?>
+            <a
+              href="?page=<?php echo $page - 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
+          <?php endif; ?>
 
-        // 查詢資料
-        $sql = "
-    SELECT 
-        m.medicalrecord_id,
-        p.name AS patient_name,
-        CASE 
-            WHEN p.gender_id = 1 THEN '男' 
-            WHEN p.gender_id = 2 THEN '女' 
-            ELSE '未設定' 
-        END AS gender,
-        CASE 
-            WHEN p.birthday IS NULL THEN '未設定'
-            ELSE CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), p.birthday) / 365.25), ' 歲)')
-        END AS birthday,
-        ds.date,
-        i.item,
-        i.price,
-        m.created_at
-    FROM medicalrecord m
-    LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN item i ON m.item_id = i.item_id
-    WHERE $where_clause
-    ORDER BY ds.date
-    LIMIT $offset, $records_per_page
-    ";
-        $result = mysqli_query($link, $sql);
+          <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+            <?php if ($i == $page): ?>
+              <strong><?php echo $i; ?></strong>
+            <?php else: ?>
+              <a
+                href="?page=<?php echo $i; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
+            <?php endif; ?>
+          <?php endfor; ?>
 
-        // 表格顯示
-        echo "<div class='table-responsive'>";
-        if (mysqli_num_rows($result) > 0) {
-          echo "<table class='responsive-table'>";
-          echo "<thead>
-            <tr>
-              <th>#</th>
-              <th>姓名</th>
-              <th>性別</th>
-              <th>生日 (年齡)</th>
-              <th>看診日期</th>
-              <th>治療項目</th>
-              <th>治療費用</th>
-              <th>建立時間</th>
-            </tr>
-            </thead>";
-          echo "<tbody>";
-          while ($row = mysqli_fetch_assoc($result)) {
-            echo "<tr>
-                <td>{$row['medicalrecord_id']}</td>
-                <td>{$row['patient_name']}</td>
-                <td>{$row['gender']}</td>
-                <td>{$row['birthday']}</td>
-                <td>{$row['date']}</td>
-                <td>{$row['item']}</td>
-                <td>{$row['price']}</td>
-                <td>{$row['created_at']}</td>
-              </tr>";
-          }
-          echo "</tbody>";
-          echo "</table>";
-        } else {
-          echo "<p>目前無資料，請輸入條件進行搜尋。</p>";
-        }
-        echo "</div>";
-
-        // 分頁按鈕
-        echo "<div class='pagination'>";
-        if ($page > 1) {
-          echo "<a href='?page=" . ($page - 1) . "&search_name=" . urlencode($search_name) . "'>上一頁</a> ";
-        }
-        for ($i = 1; $i <= $total_pages; $i++) {
-          echo $i == $page ? "<strong>$i</strong> " : "<a href='?page=$i&search_name=" . urlencode($search_name) . "'>$i</a> ";
-        }
-        if ($page < $total_pages) {
-          echo "<a href='?page=" . ($page + 1) . "&search_name=" . urlencode($search_name) . "'>下一頁</a>";
-        }
-        echo "</div>";
-
-        mysqli_close($link);
-        ?>
+          <?php if ($page < $total_pages): ?>
+            <a
+              href="?page=<?php echo $page + 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
+          <?php endif; ?>
+        </div>
       </div>
     </section>
 
-    <style>
-      /* 表格外容器，允許橫向滾動 */
-      .table-responsive {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        margin: 10px 0;
+    <!-- 分頁設定 -->
+    <script>
+      function updateLimit() {
+        var limit = document.getElementById("limit").value;
+        var searchName = document.getElementById("search_name").value;
+        window.location.href = "?limit=" + limit + "&search_name=" + encodeURIComponent(searchName);
       }
+    </script>
 
-      /* 表格樣式 */
-      .responsive-table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .responsive-table th,
-      .responsive-table td {
-        padding: 10px;
-        text-align: center;
-        border: 1px solid #ddd;
-        white-space: nowrap;
-        /* 防止內容換行 */
-      }
-
-      .responsive-table th {
-        background-color: #f2f2f2;
-      }
-
-      /* 分頁按鈕樣式 */
-      .pagination {
-        margin-top: 10px;
-        text-align: center;
-      }
-
-      .pagination a {
-        margin: 0 5px;
-        text-decoration: none;
-      }
-
-      .pagination strong {
-        margin: 0 5px;
-        font-weight: bold;
-      }
-    </style>
 
     <!--看診紀錄-->
 

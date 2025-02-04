@@ -1,28 +1,48 @@
 <?php
-include 'db_connect.php'; // 連接資料庫
+require '../db.php';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $id = $_POST['id'];
-    $status = $_POST['status'];
+$id = $_POST['id'];
+$status = $_POST['status'];
 
-    // 限制允許的狀態
-    $valid_statuses = ['預約', '修改', '報到', '請假', '爽約'];
-    if (!in_array($status, $valid_statuses)) {
-        die("錯誤：無效的狀態");
-    }
+if ($status == '修改') {
+    $date = $_POST['date'];
+    $time = $_POST['time'];
 
-    // 更新資料庫
-    $sql = "UPDATE appointment SET status_name = ? WHERE id = ?";
-    $stmt = $link->prepare($sql);
+    $stmt = $link->prepare("UPDATE appointment SET date = ?, shifttime_id = ?, status_id = (SELECT status_id FROM status WHERE status_name = '修改') WHERE appointment_id = ?");
+    $stmt->bind_param("sii", $date, $time, $id);
+} else {
+    $stmt = $link->prepare("UPDATE appointment SET status_id = (SELECT status_id FROM status WHERE status_name = ?) WHERE appointment_id = ?");
     $stmt->bind_param("si", $status, $id);
-    
-    if ($stmt->execute()) {
-        echo "狀態更新成功";
-    } else {
-        echo "更新失敗：" . $stmt->error;
-    }
-
-    $stmt->close();
-    $link->close();
 }
+
+$stmt->execute();
+$stmt->close();
+
+// **處理黑名單邏輯**
+if ($status == '請假' || $status == '爽約') {
+    $people_id_stmt = $link->prepare("SELECT people_id FROM appointment WHERE appointment_id = ?");
+    $people_id_stmt->bind_param("i", $id);
+    $people_id_stmt->execute();
+    $result = $people_id_stmt->get_result();
+    $people_id = $result->fetch_assoc()['people_id'];
+
+    $points = ($status == '請假') ? 0.5 : 1;
+
+    $update_violation_stmt = $link->prepare("UPDATE people SET black = black + ? WHERE people_id = ?");
+    $update_violation_stmt->bind_param("di", $points, $people_id);
+    $update_violation_stmt->execute();
+
+    $check_blacklist_stmt = $link->prepare("SELECT black FROM people WHERE people_id = ?");
+    $check_blacklist_stmt->bind_param("i", $people_id);
+    $check_blacklist_stmt->execute();
+    $black_count = $check_blacklist_stmt->get_result()->fetch_assoc()['black'];
+
+    if ($black_count >= 3) {
+        $blacklist_stmt = $link->prepare("INSERT INTO blacklist (people_id, black_id, violation_date) VALUES (?, 3, NOW())");
+        $blacklist_stmt->bind_param("i", $people_id);
+        $blacklist_stmt->execute();
+    }
+}
+
+echo "更新成功";
 ?>
