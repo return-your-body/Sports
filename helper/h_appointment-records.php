@@ -62,7 +62,6 @@ if (isset($_SESSION["帳號"])) {
 }
 
 //預約紀錄
-
 session_start();
 if (!isset($_SESSION['帳號'])) {
   die('未登入或 Session 已失效，請重新登入。');
@@ -79,7 +78,16 @@ $page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int) $_GET['
 $offset = ($page - 1) * $records_per_page;
 
 // 總筆數計算
-$count_stmt = $link->prepare("SELECT COUNT(*) AS total FROM appointment a LEFT JOIN people p ON a.people_id = p.people_id LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id LEFT JOIN user u ON d.user_id = u.user_id WHERE p.name LIKE CONCAT('%', ?, '%')");
+$count_stmt = $link->prepare("
+    SELECT COUNT(*) AS total 
+    FROM appointment a
+    LEFT JOIN people p ON a.people_id = p.people_id
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+    LEFT JOIN user u ON d.user_id = u.user_id
+    LEFT JOIN status s ON a.status_id = s.status_id
+    WHERE p.name LIKE CONCAT('%', ?, '%')
+");
 if (!$count_stmt) {
   die('SQL 錯誤: ' . $link->error);
 }
@@ -90,7 +98,33 @@ $total_records = $count_result->fetch_assoc()['total'] ?? 0;
 $total_pages = ceil($total_records / $records_per_page);
 
 // 查詢分頁資料
-$stmt = $link->prepare("SELECT a.appointment_id AS id, COALESCE(p.name, '未預約') AS name, CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未知' END AS gender, IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '未知') AS birthday_with_age, DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date, st.shifttime AS shifttime, d.doctor AS doctor_name, COALESCE(a.note, '無') AS note, a.created_at FROM appointment a LEFT JOIN people p ON a.people_id = p.people_id LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id LEFT JOIN user u ON d.user_id = u.user_id WHERE p.name LIKE CONCAT('%', ?, '%') ORDER BY ds.date, st.shifttime LIMIT ?, ?");
+$stmt = $link->prepare("
+    SELECT 
+        a.appointment_id AS id,
+        COALESCE(p.name, '未預約') AS name,
+        CASE 
+            WHEN p.gender_id = 1 THEN '男' 
+            WHEN p.gender_id = 2 THEN '女' 
+            ELSE '未知' 
+        END AS gender,
+        IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '未知') AS birthday_with_age,
+        DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
+        st.shifttime AS shifttime,
+        d.doctor AS doctor_name,
+        COALESCE(a.note, '無') AS note,
+        COALESCE(s.status_name, '未設定') AS status_name,  
+        a.created_at
+    FROM appointment a
+    LEFT JOIN people p ON a.people_id = p.people_id
+    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+    LEFT JOIN user u ON d.user_id = u.user_id
+    LEFT JOIN status s ON a.status_id = s.status_id  
+    WHERE p.name LIKE CONCAT('%', ?, '%')
+    ORDER BY ds.date, st.shifttime
+    LIMIT ?, ?
+");
 if (!$stmt) {
   die('SQL 錯誤: ' . $link->error);
 }
@@ -98,6 +132,7 @@ $stmt->bind_param('sii', $search_name, $offset, $records_per_page);
 $stmt->execute();
 $result = $stmt->get_result();
 ?>
+
 
 
 <!DOCTYPE html>
@@ -236,6 +271,46 @@ $result = $stmt->get_result();
         font-size: 12px;
       }
     }
+
+    /* 狀態 */
+
+    /* 狀態按鈕 */
+    .status-button {
+      display: inline-block;
+      padding: 5px 10px;
+      border: 1px solid black;
+      cursor: pointer;
+      background-color: white;
+    }
+
+    /* 下拉選單 */
+    .custom-menu {
+      display: none;
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      width: 100px;
+    }
+
+    /* 選單內的按鈕 */
+    .custom-menu ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .custom-menu li {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+
+    .custom-menu li:hover {
+      background: #f0f0f0;
+    }
   </style>
 </head>
 
@@ -323,8 +398,6 @@ $result = $stmt->get_result();
                         href="h_appointment-records.php">預約紀錄</a>
                     </li>
                   </ul>
-                </li>
-                <li class="rd-nav-item"><a class="rd-nav-link" href="h_patient-needs.php">病患需求</a>
                 </li>
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
@@ -434,7 +507,7 @@ $result = $stmt->get_result();
                       <th>看診時間</th>
                       <th>治療師</th>
                       <th>備註</th>
-                      <th>建立時間</th>
+                      <th>狀態</th>
                       <th>選項</th>
                     </tr>
                   </thead>
@@ -456,13 +529,14 @@ $result = $stmt->get_result();
                           <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
                           <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
                           <td><?php echo htmlspecialchars($row['note']); ?></td>
-                          <td><?php echo htmlspecialchars($row['created_at']); ?></td>
+                          <td>
+                            <button class="status-button" data-id="<?php echo $row['id']; ?>">
+                              <?php echo htmlspecialchars($row['status_name']); ?>
+                            </button>
+                          </td>
                           <td>
                             <a href="h_print-appointment.php?id=<?php echo $row['id']; ?>" target="_blank">
-                              <button type="button">列印</button>
-                            </a>
-                            <a href="h_patient-needs.php?id=<?php echo $row['id']; ?>" target="_blank">
-                              <button type="button">操作</button>
+                              <button type="button">列印預約單</button>
                             </a>
                           </td>
                         </tr>
@@ -475,6 +549,73 @@ $result = $stmt->get_result();
                   </tbody>
                 </table>
               </div>
+
+
+              <!-- 狀態清單 -->
+              <!-- 右鍵選單 (只建立一次，動態變更位置) -->
+              <div id="custom-menu" class="custom-menu">
+                <ul>
+                  <li onclick="updateStatus('預約')">預約</li>
+                  <li onclick="updateStatus('修改')">修改</li>
+                  <li onclick="updateStatus('報到')">報到</li>
+                  <li onclick="updateStatus('請假')">請假</li>
+                  <li onclick="updateStatus('爽約')">爽約</li>
+                </ul>
+              </div>
+
+              <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                  const buttons = document.querySelectorAll(".status-button");
+                  const menu = document.getElementById("custom-menu");
+                  let selectedId = null;
+
+                  // 為每個按鈕綁定右鍵事件
+                  buttons.forEach(button => {
+                    button.addEventListener("contextmenu", function (event) {
+                      event.preventDefault(); // 禁止瀏覽器預設右鍵選單
+                      selectedId = this.getAttribute("data-id"); // 取得對應的 ID
+                      menu.style.top = event.pageY + "px";
+                      menu.style.left = event.pageX + "px";
+                      menu.style.display = "block";
+                    });
+                  });
+
+                  // 點擊外部時隱藏選單
+                  document.addEventListener("click", function () {
+                    menu.style.display = "none";
+                  });
+
+                  // 更新狀態函數
+                  function updateStatus(status) {
+                    fetch("update_status.php", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                      body: "id=" + selectedId + "&status=" + encodeURIComponent(status)
+                    })
+                      .then(response => response.text())
+                      .then(data => {
+                        console.log(data);
+
+                        // 更新點擊的按鈕顯示狀態
+                        document.querySelector(`[data-id='${selectedId}']`).innerText = status;
+
+                        alert("狀態已更新為：" + status);
+                        menu.style.display = "none"; // 選擇後隱藏選單
+                      })
+                      .catch(error => console.error("錯誤:", error));
+                  }
+
+                  // 讓所有選單選項的 onclick 事件都可以使用 updateStatus
+                  document.querySelectorAll("#custom-menu li").forEach(item => {
+                    item.addEventListener("click", function () {
+                      updateStatus(this.innerText);
+                    });
+                  });
+                });
+              </script>
+
+
+
 
               <!-- 分頁顯示 -->
               <div style="text-align: right; margin: 20px 0;">
@@ -498,6 +639,7 @@ $result = $stmt->get_result();
     </section>
 
 
+
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
@@ -519,7 +661,6 @@ $result = $stmt->get_result();
               <li><a href="h_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
               <li><a href="h_print-appointment.php">列印預約單</a></li> -->
-              <li><a href="h_patient-needs.php">患者需求</a></li>
             </ul>
           </div>
           <!-- <div class="col-md-5">

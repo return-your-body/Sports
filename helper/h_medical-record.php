@@ -382,8 +382,7 @@ if (!$result) {
                                         </li>
                                     </ul>
                                 </li>
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="h_patient-needs.php">病患需求</a>
-                                </li>
+                               
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                                         onclick="showLogoutBox()">登出</a>
@@ -511,7 +510,7 @@ if (!$result) {
                                             <td>
                                                 <a href="h_print-receipt.php?id=<?php echo $row['medicalrecord_id']; ?>"
                                                     target="_blank">
-                                                    <button type="button">列印</button>
+                                                    <button type="button">列印收據</button>
                                                 </a>  
                                             </td>
                                         </tr>
@@ -582,7 +581,7 @@ if (!$result) {
                             <li><a href="h_appointment-records.php">預約紀錄</a></li>
                             <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
                             <li><a href="h_print-appointment.php">列印預約單</a></li> -->
-                            <li><a href="h_patient-needs.php">患者需求</a></li>
+                        
                         </ul>
                     </div>
                     <!-- <div class="col-md-5">
