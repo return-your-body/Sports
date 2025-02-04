@@ -158,71 +158,71 @@ if (isset($_SESSION["帳號"])) {
 
 
     /* 用戶資料 */
-      /* 表格樣式 */
+    /* 表格樣式 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      white-space: nowrap;
+      /* 防止文字換行 */
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    /* 表格容器樣式，用於手機模式的滾動 */
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* 按鈕樣式 */
+    .popup-btn {
+      background-color: #00A896;
+      color: white;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+
+    .popup-btn:hover {
+      background-color: #007f6e;
+    }
+
+    /* 手機模式樣式 */
+    @media (max-width: 768px) {
       table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: center;
-        margin-top: 20px;
+        font-size: 12px;
+        /* 縮小字體 */
       }
 
       th,
       td {
-        padding: 10px;
-        border: 1px solid #ddd;
-        white-space: nowrap;
-        /* 防止文字換行 */
+        padding: 8px;
+        /* 減少內邊距 */
       }
 
-      th {
-        background-color: #f2f2f2;
-      }
-
-      /* 表格容器樣式，用於手機模式的滾動 */
       .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow-x: scroll;
+        /* 啟用橫向滾動 */
       }
 
-      /* 按鈕樣式 */
       .popup-btn {
-        background-color: #00A896;
-        color: white;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-        transition: background-color 0.3s;
+        padding: 5px 10px;
+        font-size: 12px;
       }
-
-      .popup-btn:hover {
-        background-color: #007f6e;
-      }
-
-      /* 手機模式樣式 */
-      @media (max-width: 768px) {
-        table {
-          font-size: 12px;
-          /* 縮小字體 */
-        }
-
-        th,
-        td {
-          padding: 8px;
-          /* 減少內邊距 */
-        }
-
-        .table-responsive {
-          overflow-x: scroll;
-          /* 啟用橫向滾動 */
-        }
-
-        .popup-btn {
-          padding: 5px 10px;
-          font-size: 12px;
-        }
-      }
+    }
   </style>
 </head>
 
@@ -386,7 +386,7 @@ if (isset($_SESSION["帳號"])) {
     <!--標題-->
 
     <!-- 使用者資料-->
-  
+
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
         <div class="row row-40 row-lg-50">
@@ -396,7 +396,7 @@ if (isset($_SESSION["帳號"])) {
             require '../db.php'; // 引入資料庫連線
             
             // 預設分頁與顯示筆數
-            $records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 3;
+            $records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 10;
             $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1;
             $search_name = isset($_GET['search_name']) ? $_GET['search_name'] : '';
 
@@ -416,80 +416,97 @@ if (isset($_SESSION["帳號"])) {
 
             // 查詢分頁資料，計算年齡
             $sql = "
-          SELECT 
-            people_id, 
-            name, 
-            gender_id, 
-            birthday, 
-            idcard,
-            CASE 
-              WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday) / 365.25), ' 歲)')
-              ELSE '無資料'
-            END AS birthday_with_age
-          FROM people
-          WHERE name LIKE ?
-          LIMIT ?, ?";
+                SELECT 
+                    people_id, 
+                    name, 
+                    gender_id, 
+                    birthday, 
+                    idcard,
+                    CASE 
+                        WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday) / 365.25), ' 歲)')
+                        ELSE '無資料'
+                    END AS birthday_with_age
+                FROM people
+                WHERE name LIKE ?
+                LIMIT ?, ?";
             $stmt = $link->prepare($sql);
             $stmt->bind_param("sii", $like_search, $offset, $records_per_page);
             $stmt->execute();
             $result = $stmt->get_result();
+            ?>
 
-            // 搜尋表單
-            echo "<form method='GET' action='' class='mb-4' style='text-align: right; margin-bottom: 20px;'>
-          <input type='text' name='search_name' placeholder='請輸入姓名' value='" . htmlspecialchars($search_name) . "' style='padding: 5px; margin-right: 10px;' />
-          <button type='submit' class='popup-btn' style='padding: 5px 10px; margin-right: 10px;'>搜尋</button>
-          <select name='per_page' onchange='this.form.submit()' class='popup-btn' style='padding: 5px;'>
-              <option value='3'" . ($records_per_page == 3 ? ' selected' : '') . ">3筆/頁</option>
-              <option value='5'" . ($records_per_page == 5 ? ' selected' : '') . ">5筆/頁</option>
-              <option value='10'" . ($records_per_page == 10 ? ' selected' : '') . ">10筆/頁</option>
-          </select>
-        </form>";
+            <!-- 🔍 搜尋表單 + 每頁筆數 -->
+            <div class="search-container"
+              style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 20px;">
+              <form method="GET" action="" style="display: flex; align-items: center;">
+                <!-- <label for="search_name">搜尋姓名：</label> -->
+                <input type="text" name="search_name" id="search_name" placeholder="請輸入姓名"
+                  value="<?php echo htmlspecialchars($search_name); ?>" style="padding: 5px; margin-right: 10px;" />
+                <button type="submit" class="popup-btn" style="padding: 5px 10px;">搜尋</button>
+              </form>
 
-            // 顯示資料表格
-            if ($result->num_rows > 0) {
-              echo "<div class='table-responsive'>";
-              echo "<table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>姓名</th>
-                <th>性別</th>
-                <th>生日 (年齡)</th>
-                <th>身分證</th>
-                <th>選項</th>
-              </tr>
-            </thead>
-            <tbody>";
-              while ($row = $result->fetch_assoc()) {
-                echo "<tr>
-              <td>" . $row["people_id"] . "</td>
-              <td>" . htmlspecialchars($row["name"]) . "</td>
-              <td>" . ($row["gender_id"] == 1 ? '男' : ($row["gender_id"] == 2 ? '女' : '無資料')) . "</td>
-              <td>" . htmlspecialchars($row["birthday_with_age"]) . "</td>
-              <td>" . (!empty($row["idcard"]) ? htmlspecialchars($row["idcard"]) : '無資料') . "</td>
-              <td>
-                <a href='d_appointment.php?id=" . urlencode($row['people_id']) . "' target='_blank'>
-                  <button type='button' class='popup-btn'>預約</button>
+              <!-- <label for="per_page">每頁顯示筆數：</label> -->
+              <select id="per_page" class="pagination-select" onchange="changePerPage(this.value)">
+                <?php
+                $options = [3, 5, 10, 20, 50, 100];
+                foreach ($options as $option) {
+                  echo "<option value='$option' " . ($records_per_page == $option ? 'selected' : '') . ">$option 筆/頁</option>";
+                }
+                ?>
+              </select>
+            </div>
+
+            <!-- 📊 表格 -->
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>姓名</th>
+                    <th>性別</th>
+                    <th>生日 (年齡)</th>
+                    <th>身分證</th>
+                    <th>選項</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php if ($result->num_rows > 0): ?>
+                    <?php while ($row = $result->fetch_assoc()): ?>
+                      <tr>
+                        <td><?php echo htmlspecialchars($row['people_id']); ?></td>
+                        <td><?php echo htmlspecialchars($row['name']); ?></td>
+                        <td>
+                          <?php echo ($row['gender_id'] == 1) ? '男' : (($row['gender_id'] == 2) ? '女' : '無資料'); ?>
+                        </td>
+                        <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
+                        <td><?php echo !empty($row['idcard']) ? htmlspecialchars($row['idcard']) : '無資料'; ?></td>
+                        <td>
+                          <a href="d_appointment.php?id=<?php echo urlencode($row['people_id']); ?>" target="_blank">
+                            <button type="button" class="popup-btn">預約</button>
+                          </a>
+                        </td>
+                      </tr>
+                    <?php endwhile; ?>
+                  <?php else: ?>
+                    <tr>
+                      <td colspan="6">目前無資料</td>
+                    </tr>
+                  <?php endif; ?>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 📌 分頁導航 -->
+            <div style="text-align: center; margin-top: 20px;">
+              <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                <a href="?search_name=<?php echo urlencode($search_name); ?>&per_page=<?php echo $records_per_page; ?>&page=<?php echo $i; ?>"
+                  style="margin: 0 5px; text-decoration: none; <?php echo $i == $current_page ? 'font-weight: bold;' : ''; ?>">
+                  <?php echo $i; ?>
                 </a>
-              </td>
-            </tr>";
-              }
-              echo "</tbody></table>";
-              echo "</div>";
+              <?php endfor; ?>
+            </div>
 
-              // 分頁導航
-              echo "<div style='text-align: center; margin-top: 20px;'>";
-              for ($i = 1; $i <= $total_pages; $i++) {
-                echo "<a href='?search_name=" . urlencode($search_name) . "&per_page=$records_per_page&page=$i' 
-                  style='margin: 0 5px; text-decoration: none; " . ($i == $current_page ? "font-weight: bold;" : "") . "'>
-                  $i
-              </a>";
-              }
-              echo "</div>";
-            } else {
-              echo "<p style='text-align: center;'>查無資料</p>";
-            }
-
+            <?php
             // 關閉連線
             $stmt->close();
             $stmt_total->close();
@@ -499,6 +516,17 @@ if (isset($_SESSION["帳號"])) {
         </div>
       </div>
     </section>
+
+    <!-- 📝 JavaScript 讓 per_page 變更後即時更新頁面 -->
+    <script>
+      function changePerPage(perPage) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('per_page', perPage); // 設定 per_page 參數
+        url.searchParams.set('page', 1); // 切換筆數時回到第一頁
+        window.location.href = url.toString(); // 重新導向
+      }
+    </script>
+
 
     <!-- 使用者資料-->
 
