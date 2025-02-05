@@ -1,45 +1,92 @@
 <?php
-require '../db.php';
+// 開啟錯誤顯示（Debug 模式）
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-if (!isset($_GET['date']) || empty($_GET['date']) || !isset($_GET['appointment_id'])) {
-    echo json_encode([]);
+require_once '../db.php'; // 確保 db.php 存在
+
+header("Content-Type: application/json; charset=UTF-8");
+
+// 取得參數
+$date = isset($_GET['date']) ? $_GET['date'] : null;
+$appointment_id = isset($_GET['appointment_id']) ? (int)$_GET['appointment_id'] : 0;
+
+// 檢查必要參數
+if (!$date || !$appointment_id) {
+    echo json_encode(["error" => "❌ 缺少 date 或 appointment_id"]);
     exit;
 }
 
-$date = $_GET['date'];
-$appointment_id = $_GET['appointment_id'];
-
-// 查詢預約的醫生 ID
-$queryDoctor = "SELECT doctor_id FROM appointment WHERE appointment_id = ?";
-$stmt = $link->prepare($queryDoctor);
+// 透過 `doctorshift` 獲取 `doctor_id` 和對應班表
+$sql = "
+    SELECT ds.doctor_id, ds.go, ds.off 
+    FROM appointment a
+    JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    WHERE a.appointment_id = ?
+";
+$stmt = $link->prepare($sql);
+if (!$stmt) {
+    echo json_encode(["error" => "❌ SQL 錯誤 (appointment 查詢): " . $link->error]);
+    exit;
+}
 $stmt->bind_param("i", $appointment_id);
 $stmt->execute();
 $result = $stmt->get_result();
-$doctor = $result->fetch_assoc();
+$row = $result->fetch_assoc();
 
-if (!$doctor) {
-    echo json_encode([]);
+if (!$row || empty($row['doctor_id'])) {
+    echo json_encode(["error" => "❌ 找不到對應的醫生"]);
     exit;
 }
 
-$doctor_id = $doctor['doctor_id'];
+$doctor_id = (int)$row['doctor_id'];
+$go = (int)$row['go'];
+$off = (int)$row['off'];
+$current_time = date("H:i");
 
-// 查詢該醫生當天可用的時段
-$query = "SELECT s.shifttime_id, s.shifttime
-          FROM shifttime s
-          JOIN doctorshift d ON s.shifttime_id BETWEEN d.go AND d.off
-          WHERE d.date = ? AND d.doctor_id = ?";
+// **獲取可用時段**
+$sql = "
+    SELECT s.shifttime_id, s.shifttime
+    FROM shifttime s
+    WHERE s.shifttime_id BETWEEN ? AND ?
+    AND s.shifttime_id NOT IN (
+        SELECT shifttime_id FROM appointment 
+        WHERE doctorshift_id IN (SELECT doctorshift_id FROM doctorshift WHERE doctor_id = ? AND date = ?)
+    )
+";
 
-$stmt = $link->prepare($query);
-$stmt->bind_param("si", $date, $doctor_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-$times = [];
-while ($row = $result->fetch_assoc()) {
-    $times[] = $row;
+// **如果是今天，則過濾掉已過時間**
+if ($date == date("Y-m-d")) {
+    $sql .= " AND TIME_FORMAT(s.shifttime, '%H:%i') > ?";
+    $stmt = $link->prepare($sql);
+    if (!$stmt) {
+        echo json_encode(["error" => "❌ SQL 錯誤 (shifttime 查詢): " . $link->error]);
+        exit;
+    }
+    $stmt->bind_param("iiiss", $go, $off, $doctor_id, $date, $current_time);
+} else {
+    $stmt = $link->prepare($sql);
+    if (!$stmt) {
+        echo json_encode(["error" => "❌ SQL 錯誤 (shifttime 查詢): " . $link->error]);
+        exit;
+    }
+    $stmt->bind_param("iiis", $go, $off, $doctor_id, $date);
 }
 
-// 回傳 JSON
-echo json_encode($times);
+$stmt->execute();
+$result = $stmt->get_result();
+$availableTimes = [];
+
+while ($row = $result->fetch_assoc()) {
+    $availableTimes[] = $row;
+}
+
+// **確保回傳 JSON**
+if (empty($availableTimes)) {
+    echo json_encode(["error" => "⚠️ 無可用時段"]);
+    exit;
+}
+
+echo json_encode($availableTimes);
 ?>

@@ -98,7 +98,7 @@ COALESCE(
     CASE 
         WHEN gender_id = 1 THEN '男'
         WHEN gender_id = 2 THEN '女'
-        ELSE '未知'
+        ELSE '無資料'
     END, '未知') AS gender,
 COALESCE(
     CASE 

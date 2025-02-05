@@ -111,8 +111,8 @@ $total_pages = max(ceil($total_records / $records_per_page), 1);
 // 查詢分頁資料
 $data_sql = "SELECT 
     m.medicalrecord_id, p.name AS patient_name, 
-    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
-    IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '未設定') AS birthday,
+    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '無資料' END AS gender,
+    IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '無資料') AS birthday,
     ds.date AS appointment_date,
     st.shifttime AS appointment_time,
     i.item, i.price, m.created_at 

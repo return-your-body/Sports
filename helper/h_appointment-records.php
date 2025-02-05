@@ -102,9 +102,9 @@ $stmt = $link->prepare("
         CASE 
             WHEN p.gender_id = 1 THEN '男' 
             WHEN p.gender_id = 2 THEN '女' 
-            ELSE '未知' 
+            ELSE '無資料' 
         END AS gender,
-        IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '未知') AS birthday_with_age,
+        IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '無資料') AS birthday_with_age,
         DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
         st.shifttime AS shifttime,
         d.doctor AS doctor_name,
@@ -610,6 +610,7 @@ $result = $stmt->get_result();
         <option value="已看診" <?php echo ($row['status_name'] == '已看診') ? 'selected' : ''; ?>>已看診</option>
     </select>
 </td>
+
                           <td>
                             <a href="h_print-appointment.php?id=<?php echo $row['id']; ?>" target="_blank">
                               <button type="button">列印預約單</button>
@@ -627,11 +628,9 @@ $result = $stmt->get_result();
               </div>
 
               <!-- 狀態清單 -->
-
-              <!-- 選擇時間的 Modal -->
-<!-- 選擇時間的 Modal -->
-<div id="dateTimeModal"
-    style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border-radius:10px; box-shadow: 0px 0px 10px rgba(0,0,0,0.2); z-index:9999;">
+              <!-- 修改 -->
+<!-- 選擇時間 Modal -->
+<div id="dateTimeModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border-radius:10px; box-shadow: 0px 0px 10px rgba(0,0,0,0.2); z-index:9999;">
     <h3>請選擇新的預約時間</h3>
     <label>預約日期：</label>
     <input type="date" id="appointment_date" onchange="fetchAvailableTimes()">
@@ -655,7 +654,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (newStatus === "修改") {
                 window.selectedAppointmentId = appointmentId;
                 document.getElementById("dateTimeModal").style.display = "block";
-                document.getElementById("appointment_date").value = ""; 
+                document.getElementById("appointment_date").value = "";
                 document.getElementById("appointment_time").innerHTML = "<option value=''>請選擇時間</option>";
             } else {
                 updateStatus(appointmentId, newStatus);
@@ -664,10 +663,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+// 關閉 modal
 function closeModal() {
     document.getElementById("dateTimeModal").style.display = "none";
 }
 
+// 取得可用時段
 function fetchAvailableTimes() {
     let date = document.getElementById("appointment_date").value;
     let timeDropdown = document.getElementById("appointment_time");
@@ -679,16 +680,25 @@ function fetchAvailableTimes() {
 
     timeDropdown.innerHTML = "<option>載入中...</option>";
 
-    fetch(`獲取時間.php?date=${date}&appointment_id=${window.selectedAppointmentId}`)
+    fetch(`獲取時間.php?date=${encodeURIComponent(date)}&appointment_id=${encodeURIComponent(window.selectedAppointmentId)}`)
         .then(response => response.json())
         .then(data => {
+            console.log("API 返回資料:", data);
+
             timeDropdown.innerHTML = "<option value=''>請選擇時間</option>";
-            if (data.length === 0) {
+
+            if (data.error) {
+                console.error("載入時間錯誤:", data.error);
+                timeDropdown.innerHTML = `<option value=''>${data.error}</option>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
                 timeDropdown.innerHTML = "<option value=''>無可用時段</option>";
             } else {
                 data.forEach(time => {
                     let option = document.createElement("option");
-                    option.value = time.shifttime_id;
+                    option.value = time.shifttime_id; // 確保發送的是 shifttime_id
                     option.textContent = time.shifttime;
                     timeDropdown.appendChild(option);
                 });
@@ -700,28 +710,41 @@ function fetchAvailableTimes() {
         });
 }
 
+// 確認更新預約狀態
 function confirmUpdate() {
     let newDate = document.getElementById("appointment_date").value;
-    let newTime = document.getElementById("appointment_time").value;                                      
+    let newTime = document.getElementById("appointment_time").value;
+    let appointmentId = window.selectedAppointmentId;
+
     if (!newDate || !newTime) {
         alert("請選擇完整的日期與時間！");
         return;
     }
 
-    fetch("update_status.php", {
+    let formData = new URLSearchParams();
+    formData.append("id", appointmentId);
+    formData.append("status", "修改");
+    formData.append("date", newDate);
+    formData.append("time", newTime);
+
+    fetch("更新狀態.php", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `id=${window.selectedAppointmentId}&status=修改&date=${newDate}&time=${newTime}`
+        body: formData.toString()
     })
-    .then(response => response.text())
+    .then(response => response.json())
     .then(data => {
-        alert("預約已修改！");
-        closeModal();
-        location.reload();
+        if (data.success) {
+            alert("預約已修改！");
+            location.reload(); // 確保頁面刷新
+        } else {
+            alert("更新失敗: " + data.error);
+        }
     })
     .catch(error => console.error("更新失敗:", error));
 }
 </script>
+
 
 
               <!-- 分頁顯示 -->
