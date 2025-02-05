@@ -406,18 +406,21 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		function calculateRemainingTime($end_date)
 		{
 			if (empty($end_date)) {
-				return 0; // 確保 JavaScript 讀取數字，不會變成 NaN
+				return "永久黑名單";
 			}
 
 			$current_date = new DateTime();
 			$end_date = new DateTime($end_date);
 
 			if ($current_date > $end_date) {
-				return 0; // 如果時間過期，回傳 0 秒（JavaScript 會顯示 "已解除"）
+				return "已解除";
+			} elseif ($end_date->getTimestamp() - $current_date->getTimestamp() > 999999999) {
+				return "永久黑名單";
 			} else {
-				return $end_date->getTimestamp() - $current_date->getTimestamp(); // 回傳剩餘秒數
+				return $end_date->getTimestamp() - $current_date->getTimestamp();
 			}
 		}
+
 
 
 		// 5️⃣ **查詢違規次數資料**
@@ -438,7 +441,14 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 		$users = [];
 		while ($row = mysqli_fetch_assoc($result)) {
-			$row['remaining_time'] = calculateRemainingTime($row['blacklist_end_date']);
+			if ($row['black'] >= 3) {
+				// 若違規次數 >= 3，顯示倒數計時
+				$row['remaining_time'] = calculateRemainingTime($row['blacklist_end_date']);
+			} else {
+				// 若違規次數 < 3，顯示違規次數
+				$row['remaining_time'] = "已違規 " . $row['black'] . " 次";
+			}
+
 			$users[] = $row;
 		}
 
@@ -665,17 +675,23 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 												<td style="padding: 20px;">
 													<?php if (strpos($user['remaining_time'], "違規次數") !== false): ?>
 														<?php echo $user['remaining_time']; ?>
+													<?php elseif ($user['remaining_time'] === "永久黑名單"): ?>
+														永久黑名單
 													<?php else: ?>
 														<span class="countdown"
 															data-seconds="<?php echo $user['remaining_time']; ?>"></span>
 													<?php endif; ?>
 												</td>
+
 												<td style="padding: 20px; text-align: center;">
 													<button
 														onclick="openActionModal(<?php echo $user['people_id']; ?>, '<?php echo htmlspecialchars($user['name']); ?>')"
 														style="padding: 8px 16px; background-color: #00A896; color: white; border: none; border-radius: 6px;">操作</button>
-													<button
-														style="padding: 8px 16px; background-color: #FFB900; color: white; border: none; border-radius: 6px;">詳細</button>
+													<button onclick="openViolationModal(<?php echo $user['people_id']; ?>)"
+														style="padding: 8px 16px; background-color: #FFB900; color: white; border: none; border-radius: 6px;">
+														詳細
+													</button>
+
 												</td>
 											</tr>
 										<?php endforeach; ?>
@@ -694,12 +710,33 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 								<h3 id="modal-title">黑名單操作</h3>
 								<p id="modal-user-info">對 <span id="modal-username"></span> 執行操作：</p>
 
+								<!-- 設為永久黑名單按鈕 (紅色) -->
 								<button class="confirm-btn red" onclick="setPermanentBlacklist()">設為永久黑名單</button>
+
+								<!-- 解除黑名單按鈕 (綠色) -->
 								<button class="confirm-btn green" onclick="removeBlacklist()">解除黑名單</button>
 
+								<!-- 刪除違規次數按鈕 (橙色) -->
+								<!-- <button class="confirm-btn yellow" onclick="clearViolationCount()">刪除違規次數</button> -->
+
+								<!-- 加入黑名單按鈕 (藍色) -->
+								<button class="confirm-btn blue" onclick="addToBlacklist()">加入黑名單</button>
+
+								<!-- 取消按鈕 -->
 								<button class="cancel-btn" onclick="closeActionModal()">取消</button>
 							</div>
 						</div>
+
+
+						<!-- 違規紀錄彈跳視窗 -->
+						<div id="violationModal" class="modal-container">
+							<div class="modal-content">
+								<h3>違規記錄</h3>
+								<div id="violationDetails" style="max-height: 300px; overflow-y: auto;">載入中...</div>
+								<button class="cancel-btn" onclick="closeViolationModal()">關閉</button>
+							</div>
+						</div>
+
 
 						<!-- CSS -->
 						<style>
@@ -756,6 +793,16 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 								color: white;
 							}
 
+							.confirm-btn.yellow {
+								background-color: orange;
+								color: white;
+							}
+
+							.confirm-btn.blue {
+								background-color: blue;
+								color: white;
+							}
+
 							/* 取消按鈕 */
 							.cancel-btn {
 								display: block;
@@ -768,7 +815,82 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 								cursor: pointer;
 								font-size: 16px;
 							}
+
+							/* ----- 詳細彈窗背景樣式 ----- */
+							.modal-container {
+								display: none;
+								/* 預設隱藏 */
+								position: fixed;
+								top: 0;
+								left: 0;
+								width: 100%;
+								height: 100%;
+								background: rgba(0, 0, 0, 0.5);
+								/* 半透明背景 */
+								justify-content: center;
+								align-items: center;
+								z-index: 1000;
+								/* 確保視窗位於最上層 */
+							}
+
+							/* ----- 彈窗內容樣式 ----- */
+							.modal-content {
+								background: white;
+								padding: 20px;
+								border-radius: 10px;
+								/* 圓角設計 */
+								width: 400px;
+								text-align: center;
+								box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+								/* 添加陰影 */
+							}
+
+							/* ----- 按鈕樣式 ----- */
+							.cancel-btn {
+								padding: 8px 16px;
+								background-color: #ccc;
+								color: black;
+								border: none;
+								border-radius: 5px;
+								cursor: pointer;
+								margin-top: 10px;
+								width: 100%;
+							}
+
+							/* ----- 美化違規記錄表格 ----- */
+							.violation-table {
+								width: 100%;
+								border-collapse: collapse;
+								margin-top: 10px;
+								font-size: 16px;
+								background: #fff;
+								/* 表格背景 */
+							}
+
+							/* ----- 表頭樣式 ----- */
+							.violation-table th {
+								padding: 12px;
+								text-align: left;
+								background-color: #f4f4f4;
+								/* 淡灰色背景 */
+								font-weight: bold;
+							}
+
+							/* ----- 表格內容樣式 ----- */
+							.violation-table td {
+								padding: 12px;
+								text-align: left;
+								border-bottom: 1px solid #ddd;
+								/* 加上底線 */
+							}
+
+							/* ----- 滑鼠移到表格列時的效果 ----- */
+							.violation-table tbody tr:hover {
+								background-color: #f9f9f9;
+							}
 						</style>
+
+
 
 
 						<!-- 分頁 -->
@@ -795,13 +917,15 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		<!-- 倒數計時 JavaScript -->
 		<script>
 			document.querySelectorAll('.countdown').forEach(function (element) {
-				let seconds = parseInt(element.getAttribute('data-seconds'));
+				let dataValue = element.getAttribute('data-seconds');
 
-				// 確保 `seconds` 不為 NaN，並且至少為 1 秒
-				if (isNaN(seconds) || seconds <= 0) {
-					element.textContent = '已解除';
+				if (isNaN(dataValue) || dataValue === "已違規 1 次" || dataValue === "已違規 2 次") {
+					// 如果數值為 NaN 或是小於 3 次的違規紀錄，則直接顯示違規次數
+					element.textContent = dataValue;
 					return;
 				}
+
+				let seconds = parseInt(dataValue);
 
 				function updateCountdown() {
 					if (seconds <= 0) {
@@ -850,25 +974,58 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			}
 
 
+			// 變數：用來存放當前選擇的使用者 ID
 			let selectedUserId = null;
 
+			/**
+			 * 開啟黑名單操作彈窗
+			 * @param {number} userId - 使用者 ID
+			 * @param {string} username - 使用者名稱
+			 */
 			function openActionModal(userId, username) {
-				selectedUserId = userId;
-				document.getElementById("modal-username").textContent = username;
-				document.getElementById("blacklistActionModal").style.display = "flex";
+				selectedUserId = userId;  // 記錄選擇的使用者 ID
+				document.getElementById("modal-username").textContent = username; // 顯示使用者名稱
+				document.getElementById("blacklistActionModal").style.display = "flex"; // 顯示彈窗
 			}
 
+			/**
+			 * 關閉黑名單操作彈窗
+			 */
 			function closeActionModal() {
 				document.getElementById("blacklistActionModal").style.display = "none";
 			}
 
-			// 設為永久黑名單
+			/**
+			 * 設為永久黑名單
+			 * 這將會讓該使用者無法再登入或使用系統
+			 */
 			function setPermanentBlacklist() {
 				if (!confirm("確定要將此使用者設為永久黑名單嗎？")) return;
+
 				let xhr = new XMLHttpRequest();
 				xhr.open("POST", "黑名單永久或解除.php", true);
 				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 				xhr.send(`action=permanent&userId=${selectedUserId}`);
+
+				xhr.onload = function () {
+					alert(xhr.responseText); // 顯示伺服器返回的訊息
+					closeActionModal(); // 關閉彈窗
+					location.reload(); // 重新整理頁面
+				};
+			}
+
+			/**
+			 * 解除黑名單
+			 * 如果使用者誤加入黑名單，可使用此功能讓他恢復正常使用權限
+			 */
+			function removeBlacklist() {
+				if (!confirm("確定要解除黑名單嗎？")) return;
+
+				let xhr = new XMLHttpRequest();
+				xhr.open("POST", "黑名單永久或解除.php", true);
+				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+				xhr.send(`action=remove&userId=${selectedUserId}`);
+
 				xhr.onload = function () {
 					alert(xhr.responseText);
 					closeActionModal();
@@ -876,18 +1033,66 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				};
 			}
 
-			// 解除黑名單
-			function removeBlacklist() {
-				if (!confirm("確定要解除黑名單嗎？")) return;
+			/**
+				* 刪除違規次數
+			*/
+			// function clearViolationCount() {
+			// 	if (!confirm("確定要刪除違規次數嗎？")) return;
+
+			// 	let xhr = new XMLHttpRequest();
+			// 	xhr.open("POST", "黑名單永久或解除.php", true);
+			// 	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+			// 	xhr.send(`action=clear_violation&userId=${selectedUserId}`); // 🔹 修正 action
+
+			// 	xhr.onload = function () {
+			// 		alert(xhr.responseText);
+			// 		closeActionModal();
+			// 		location.reload();
+			// 	};
+			// }
+
+			/**
+			 * 加入黑名單
+			 */
+			function addToBlacklist() {
+				if (!confirm("確定要將此使用者加入黑名單嗎？")) return;
+
 				let xhr = new XMLHttpRequest();
 				xhr.open("POST", "黑名單永久或解除.php", true);
 				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-				xhr.send(`action=remove&userId=${selectedUserId}`);
+				xhr.send(`action=add_blacklist&userId=${selectedUserId}`); // 🔹 修正 action
+
 				xhr.onload = function () {
 					alert(xhr.responseText);
 					closeActionModal();
 					location.reload();
 				};
+			}
+
+			/**
+			* 開啟違規記錄的彈出視窗
+			* @param {number} peopleId - 需要查詢的使用者 ID
+			*/
+			function openViolationModal(peopleId) {
+				document.getElementById("violationModal").style.display = "flex"; // 顯示彈窗
+
+				// 使用 AJAX 發送請求，取得違規記錄
+				let xhr = new XMLHttpRequest();
+				xhr.open("POST", "顯示違規資訊.php", true);
+				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+				xhr.send("people_id=" + peopleId); // 發送 people_id 給 PHP
+
+				// 當請求完成後，將結果顯示在彈窗內
+				xhr.onload = function () {
+					document.getElementById("violationDetails").innerHTML = xhr.responseText;
+				};
+			}
+
+			/**
+			 * 關閉違規記錄的彈出視窗
+			 */
+			function closeViolationModal() {
+				document.getElementById("violationModal").style.display = "none"; // 隱藏彈窗
 			}
 
 		</script>

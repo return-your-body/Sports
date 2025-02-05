@@ -464,7 +464,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			<!-- <a href="a_therapist2.php">預約用戶資料</a> -->
 
 		</div>
-		<table class="table-custom table-color-header table-custom-bordered">
+		<div style="overflow-x: auto; white-space: nowrap;"><table class="table-custom table-color-header table-custom-bordered">
 			<thead>
 				<tr>
 					<th>日</th>
@@ -477,7 +477,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				</tr>
 			</thead>
 			<tbody id="calendar"></tbody>
-		</table>
+		</table></div>
 
 		<script>
 			const currentDate = new Date();

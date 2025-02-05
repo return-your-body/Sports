@@ -579,7 +579,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			</div>
 
 			<!-- 日曆表格 -->
-			<table class="table-custom table-color-header table-custom-bordered">
+			<div style="overflow-x: auto; white-space: nowrap;"><table class="table-custom table-color-header table-custom-bordered">
 				<thead>
 					<tr>
 						<th>日</th>
@@ -592,7 +592,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 					</tr>
 				</thead>
 				<tbody id="calendar"></tbody>
-			</table>
+			</table></div>
 
 			<!-- 隱藏的表單數據 -->
 			<div id="calendarData"></div>
