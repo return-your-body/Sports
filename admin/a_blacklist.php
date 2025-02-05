@@ -687,8 +687,11 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 													<button
 														onclick="openActionModal(<?php echo $user['people_id']; ?>, '<?php echo htmlspecialchars($user['name']); ?>')"
 														style="padding: 8px 16px; background-color: #00A896; color: white; border: none; border-radius: 6px;">操作</button>
-													<button
-														style="padding: 8px 16px; background-color: #FFB900; color: white; border: none; border-radius: 6px;">詳細</button>
+													<button onclick="openViolationModal(<?php echo $user['people_id']; ?>)"
+														style="padding: 8px 16px; background-color: #FFB900; color: white; border: none; border-radius: 6px;">
+														詳細
+													</button>
+
 												</td>
 											</tr>
 										<?php endforeach; ?>
@@ -723,6 +726,17 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 								<button class="cancel-btn" onclick="closeActionModal()">取消</button>
 							</div>
 						</div>
+
+
+						<!-- 違規紀錄彈跳視窗 -->
+						<div id="violationModal" class="modal-container">
+							<div class="modal-content">
+								<h3>違規記錄</h3>
+								<div id="violationDetails" style="max-height: 300px; overflow-y: auto;">載入中...</div>
+								<button class="cancel-btn" onclick="closeViolationModal()">關閉</button>
+							</div>
+						</div>
+
 
 						<!-- CSS -->
 						<style>
@@ -801,7 +815,82 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 								cursor: pointer;
 								font-size: 16px;
 							}
+
+							/* ----- 詳細彈窗背景樣式 ----- */
+							.modal-container {
+								display: none;
+								/* 預設隱藏 */
+								position: fixed;
+								top: 0;
+								left: 0;
+								width: 100%;
+								height: 100%;
+								background: rgba(0, 0, 0, 0.5);
+								/* 半透明背景 */
+								justify-content: center;
+								align-items: center;
+								z-index: 1000;
+								/* 確保視窗位於最上層 */
+							}
+
+							/* ----- 彈窗內容樣式 ----- */
+							.modal-content {
+								background: white;
+								padding: 20px;
+								border-radius: 10px;
+								/* 圓角設計 */
+								width: 400px;
+								text-align: center;
+								box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+								/* 添加陰影 */
+							}
+
+							/* ----- 按鈕樣式 ----- */
+							.cancel-btn {
+								padding: 8px 16px;
+								background-color: #ccc;
+								color: black;
+								border: none;
+								border-radius: 5px;
+								cursor: pointer;
+								margin-top: 10px;
+								width: 100%;
+							}
+
+							/* ----- 美化違規記錄表格 ----- */
+							.violation-table {
+								width: 100%;
+								border-collapse: collapse;
+								margin-top: 10px;
+								font-size: 16px;
+								background: #fff;
+								/* 表格背景 */
+							}
+
+							/* ----- 表頭樣式 ----- */
+							.violation-table th {
+								padding: 12px;
+								text-align: left;
+								background-color: #f4f4f4;
+								/* 淡灰色背景 */
+								font-weight: bold;
+							}
+
+							/* ----- 表格內容樣式 ----- */
+							.violation-table td {
+								padding: 12px;
+								text-align: left;
+								border-bottom: 1px solid #ddd;
+								/* 加上底線 */
+							}
+
+							/* ----- 滑鼠移到表格列時的效果 ----- */
+							.violation-table tbody tr:hover {
+								background-color: #f9f9f9;
+							}
 						</style>
+
+
 
 
 						<!-- 分頁 -->
@@ -980,7 +1069,31 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				};
 			}
 
+			/**
+			* 開啟違規記錄的彈出視窗
+			* @param {number} peopleId - 需要查詢的使用者 ID
+			*/
+			function openViolationModal(peopleId) {
+				document.getElementById("violationModal").style.display = "flex"; // 顯示彈窗
 
+				// 使用 AJAX 發送請求，取得違規記錄
+				let xhr = new XMLHttpRequest();
+				xhr.open("POST", "顯示違規資訊.php", true);
+				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+				xhr.send("people_id=" + peopleId); // 發送 people_id 給 PHP
+
+				// 當請求完成後，將結果顯示在彈窗內
+				xhr.onload = function () {
+					document.getElementById("violationDetails").innerHTML = xhr.responseText;
+				};
+			}
+
+			/**
+			 * 關閉違規記錄的彈出視窗
+			 */
+			function closeViolationModal() {
+				document.getElementById("violationModal").style.display = "none"; // 隱藏彈窗
+			}
 
 		</script>
 
