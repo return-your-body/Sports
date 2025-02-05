@@ -64,7 +64,7 @@ require '../db.php';
 
 // 確保使用者已登入
 if (!isset($_SESSION['帳號'])) {
-  die('未登入或 Session 已失效，請重新登入。');
+    die('未登入或 Session 已失效，請重新登入。');
 }
 
 $帳號 = $_SESSION['帳號']; // 取得當前登入醫生的帳號
@@ -77,7 +77,7 @@ $records_per_page = isset($_GET['limit']) ? max(3, (int) $_GET['limit']) : 10;
 $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $offset = ($page - 1) * $records_per_page;
 
-// 計算總筆數，只獲取該醫生的預約數據
+// 計算總筆數，排除已經有看診紀錄的預約
 $count_stmt = $link->prepare("
     SELECT COUNT(*) AS total 
     FROM appointment a
@@ -85,11 +85,14 @@ $count_stmt = $link->prepare("
     LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
     LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
     LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE u.account = ? AND p.name LIKE CONCAT('%', ?, '%')
+    LEFT JOIN medicalrecord m ON a.appointment_id = m.appointment_id
+    WHERE u.account = ? 
+      AND p.name LIKE CONCAT('%', ?, '%') 
+      AND m.appointment_id IS NULL
 ");
 
 if (!$count_stmt) {
-  die('SQL 錯誤: ' . $link->error);
+    die('SQL 錯誤: ' . $link->error);
 }
 
 $count_stmt->bind_param('ss', $帳號, $search_name);
@@ -98,7 +101,7 @@ $count_result = $count_stmt->get_result();
 $total_records = $count_result->fetch_assoc()['total'] ?? 0;
 $total_pages = max(ceil($total_records / $records_per_page), 1);
 
-// 查詢分頁資料
+// 查詢分頁資料，排除已經有看診紀錄的預約
 $stmt = $link->prepare("
     SELECT 
         a.appointment_id AS id,
@@ -106,9 +109,12 @@ $stmt = $link->prepare("
         CASE 
             WHEN p.gender_id = 1 THEN '男' 
             WHEN p.gender_id = 2 THEN '女' 
-            ELSE '未設定' 
+            ELSE '無資料' 
         END AS gender,
-        DATE_FORMAT(p.birthday, '%Y-%m-%d') AS birthday,
+        COALESCE(
+            CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'),
+            '無資料'
+        ) AS birthday,
         DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
         st.shifttime AS shifttime,
         COALESCE(a.note, '無') AS note,
@@ -119,19 +125,24 @@ $stmt = $link->prepare("
     LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
     LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
     LEFT JOIN user u ON d.user_id = u.user_id
-    WHERE u.account = ? AND p.name LIKE CONCAT('%', ?, '%')
+    LEFT JOIN medicalrecord m ON a.appointment_id = m.appointment_id
+    WHERE u.account = ? 
+      AND p.name LIKE CONCAT('%', ?, '%') 
+      AND m.appointment_id IS NULL
     ORDER BY ds.date, st.shifttime
     LIMIT ?, ?
 ");
 
+
 if (!$stmt) {
-  die('SQL 錯誤: ' . $link->error);
+    die('SQL 錯誤: ' . $link->error);
 }
 
 $stmt->bind_param('ssii', $帳號, $search_name, $offset, $records_per_page);
 $stmt->execute();
 $result = $stmt->get_result();
 ?>
+
 
 
 <!DOCTYPE html>

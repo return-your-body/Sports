@@ -108,11 +108,11 @@ p.name AS patient_name,
 CASE 
 WHEN p.gender_id = 1 THEN '男'
 WHEN p.gender_id = 2 THEN '女'
-ELSE '未知'
+ELSE '無資料'
 END AS gender,
 CASE 
 WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)')
-ELSE '未知'
+ELSE '無資料'
 END AS birthday_with_age,
 d.doctor AS doctor_name,
 i.item AS treatment_item,

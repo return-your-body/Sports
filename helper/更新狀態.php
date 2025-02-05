@@ -1,48 +1,81 @@
 <?php
 require '../db.php';
 
-$id = $_POST['id'];
-$status = $_POST['status'];
+// 啟用錯誤記錄（Debug）
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-if ($status == '修改') {
-    $date = $_POST['date'];
-    $time = $_POST['time'];
+header("Content-Type: application/json");
 
-    $stmt = $link->prepare("UPDATE appointment SET date = ?, shifttime_id = ?, status_id = (SELECT status_id FROM status WHERE status_name = '修改') WHERE appointment_id = ?");
-    $stmt->bind_param("sii", $date, $time, $id);
+// 確保請求為 POST
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    echo json_encode(["error" => "無效的請求方式"]);
+    exit;
+}
+
+// 確保所有必要參數都存在
+if (!isset($_POST['id'], $_POST['status'], $_POST['date'], $_POST['time'])) {
+    echo json_encode(["error" => "缺少必要參數"]);
+    exit;
+}
+
+// 取得參數
+$appointment_id = intval($_POST['id']);
+$status_name = trim($_POST['status']);
+$date = $_POST['date'];
+$shifttime_id = intval($_POST['time']); // 確保是數字
+
+// 確保 `$link` 變數正確連接資料庫
+if (!$link) {
+    echo json_encode(["error" => "資料庫連接失敗"]);
+    exit;
+}
+
+// **取得 status_id**
+$status_stmt = $link->prepare("SELECT status_id FROM status WHERE status_name = ?");
+$status_stmt->bind_param("s", $status_name);
+$status_stmt->execute();
+$status_result = $status_stmt->get_result();
+$status_row = $status_result->fetch_assoc();
+$status_stmt->close();
+
+if (!$status_row) {
+    echo json_encode(["error" => "無效的狀態"]);
+    exit;
+}
+$status_id = $status_row['status_id'];
+
+// **取得醫生的 doctorshift_id**
+$doctorshift_stmt = $link->prepare("
+    SELECT doctorshift_id FROM doctorshift 
+    WHERE doctor_id = (SELECT doctor_id FROM appointment WHERE appointment_id = ?) 
+    AND date = ? 
+    AND ? BETWEEN go AND off
+");
+$doctorshift_stmt->bind_param("isi", $appointment_id, $date, $shifttime_id);
+$doctorshift_stmt->execute();
+$doctorshift_result = $doctorshift_stmt->get_result();
+$doctorshift_row = $doctorshift_result->fetch_assoc();
+$doctorshift_stmt->close();
+
+if (!$doctorshift_row) {
+    echo json_encode(["error" => "該時段不在醫生的班表範圍內"]);
+    exit;
+}
+$doctorshift_id = $doctorshift_row['doctorshift_id'];
+
+// **更新 appointment**
+$update_query = "UPDATE appointment SET status_id = ?, shifttime_id = ?, doctorshift_id = ?, created_at = NOW() WHERE appointment_id = ?";
+$update_stmt = $link->prepare($update_query);
+$update_stmt->bind_param("iiii", $status_id, $shifttime_id, $doctorshift_id, $appointment_id);
+
+if ($update_stmt->execute()) {
+    echo json_encode(["success" => "預約更新成功"]);
 } else {
-    $stmt = $link->prepare("UPDATE appointment SET status_id = (SELECT status_id FROM status WHERE status_name = ?) WHERE appointment_id = ?");
-    $stmt->bind_param("si", $status, $id);
+    echo json_encode(["error" => "SQL 更新失敗: " . $link->error]);
 }
 
-$stmt->execute();
-$stmt->close();
-
-// **處理黑名單邏輯**
-if ($status == '請假' || $status == '爽約') {
-    $people_id_stmt = $link->prepare("SELECT people_id FROM appointment WHERE appointment_id = ?");
-    $people_id_stmt->bind_param("i", $id);
-    $people_id_stmt->execute();
-    $result = $people_id_stmt->get_result();
-    $people_id = $result->fetch_assoc()['people_id'];
-
-    $points = ($status == '請假') ? 0.5 : 1;
-
-    $update_violation_stmt = $link->prepare("UPDATE people SET black = black + ? WHERE people_id = ?");
-    $update_violation_stmt->bind_param("di", $points, $people_id);
-    $update_violation_stmt->execute();
-
-    $check_blacklist_stmt = $link->prepare("SELECT black FROM people WHERE people_id = ?");
-    $check_blacklist_stmt->bind_param("i", $people_id);
-    $check_blacklist_stmt->execute();
-    $black_count = $check_blacklist_stmt->get_result()->fetch_assoc()['black'];
-
-    if ($black_count >= 3) {
-        $blacklist_stmt = $link->prepare("INSERT INTO blacklist (people_id, black_id, violation_date) VALUES (?, 3, NOW())");
-        $blacklist_stmt->bind_param("i", $people_id);
-        $blacklist_stmt->execute();
-    }
-}
-
-echo "更新成功";
+$update_stmt->close();
+$link->close();
 ?>
