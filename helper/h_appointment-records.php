@@ -599,17 +599,18 @@ $result = $stmt->get_result();
                           <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
                           <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
                           <td><?php echo htmlspecialchars($row['note']); ?></td>
+
                           <td>
-    <select class="status-dropdown" data-id="<?php echo $row['id']; ?>" 
-        <?php echo ($row['status_name'] == '已看診') ? 'disabled' : ''; ?>>
-        <option value="預約" <?php echo ($row['status_name'] == '預約') ? 'selected' : ''; ?>>預約</option>
-        <option value="修改" <?php echo ($row['status_name'] == '修改') ? 'selected' : ''; ?>>修改</option>
-        <option value="報到" <?php echo ($row['status_name'] == '報到') ? 'selected' : ''; ?>>報到</option>
-        <option value="請假" <?php echo ($row['status_name'] == '請假') ? 'selected' : ''; ?>>請假</option>
-        <option value="爽約" <?php echo ($row['status_name'] == '爽約') ? 'selected' : ''; ?>>爽約</option>
-        <option value="已看診" <?php echo ($row['status_name'] == '已看診') ? 'selected' : ''; ?>>已看診</option>
-    </select>
-</td>
+                            <select class="status-dropdown" data-id="<?php echo $row['id']; ?>" 
+                              <?php echo ($row['status_name'] == '已看診') ? 'disabled' : ''; ?>>
+                              <option value="預約" <?php echo ($row['status_name'] == '預約') ? 'selected' : ''; ?>>預約</option>
+                              <option value="修改" <?php echo ($row['status_name'] == '修改') ? 'selected' : ''; ?>>修改</option>
+                              <option value="報到" <?php echo ($row['status_name'] == '報到') ? 'selected' : ''; ?>>報到</option>
+                              <option value="請假" <?php echo ($row['status_name'] == '請假') ? 'selected' : ''; ?>>請假</option>
+                              <option value="爽約" <?php echo ($row['status_name'] == '爽約') ? 'selected' : ''; ?>>爽約</option>
+                              <option value="已看診" <?php echo ($row['status_name'] == '已看診') ? 'selected' : ''; ?>>已看診</option>
+                            </select>
+                          </td>
 
                           <td>
                             <a href="h_print-appointment.php?id=<?php echo $row['id']; ?>" target="_blank">
@@ -629,8 +630,9 @@ $result = $stmt->get_result();
 
               <!-- 狀態清單 -->
               <!-- 修改 -->
-<!-- 選擇時間 Modal -->
-<div id="dateTimeModal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border-radius:10px; box-shadow: 0px 0px 10px rgba(0,0,0,0.2); z-index:9999;">
+              <!--修改- 選擇時間 Modal -->
+              <div id="dateTimeModal" 
+    style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; border-radius:10px; box-shadow: 0px 0px 10px rgba(0,0,0,0.2); z-index:9999;">
     <h3>請選擇新的預約時間</h3>
     <label>預約日期：</label>
     <input type="date" id="appointment_date" onchange="fetchAvailableTimes()">
@@ -640,112 +642,129 @@ $result = $stmt->get_result();
         <option value="">請選擇時間</option>
     </select>
     <br><br>
-    <button onclick="confirmUpdate()">確認修改</button>
+    <button id="confirmModify">確認修改</button>
     <button onclick="closeModal()">取消</button>
 </div>
 
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".status-dropdown").forEach(select => {
-        select.addEventListener("change", function () {
-            let appointmentId = this.getAttribute("data-id");
-            let newStatus = this.value;
+    console.log("JavaScript 載入成功");
 
-            if (newStatus === "修改") {
-                window.selectedAppointmentId = appointmentId;
-                document.getElementById("dateTimeModal").style.display = "block";
-                document.getElementById("appointment_date").value = "";
-                document.getElementById("appointment_time").innerHTML = "<option value=''>請選擇時間</option>";
-            } else {
-                updateStatus(appointmentId, newStatus);
-            }
+    // **綁定所有按鈕**
+    function bindButtons() {
+        console.log("開始綁定按鈕");
+
+        // **綁定「修改」按鈕**
+        document.querySelectorAll(".modify-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                let appointmentId = this.getAttribute("data-id");
+                console.log("點擊修改，ID:", appointmentId);
+                showModifyModal(appointmentId);
+            });
         });
-    });
-});
 
-// 關閉 modal
-function closeModal() {
-    document.getElementById("dateTimeModal").style.display = "none";
-}
-
-// 取得可用時段
-function fetchAvailableTimes() {
-    let date = document.getElementById("appointment_date").value;
-    let timeDropdown = document.getElementById("appointment_time");
-
-    if (!date) {
-        alert("請先選擇日期！");
-        return;
+        // **綁定「報到」、「請假」、「爽約」按鈕**
+        document.querySelectorAll(".status-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                let status = this.getAttribute("data-status");
+                let appointmentId = this.getAttribute("data-id");
+                console.log("點擊狀態按鈕，ID:", appointmentId, "狀態:", status);
+                updateStatus(status, appointmentId, this);
+            });
+        });
     }
 
-    timeDropdown.innerHTML = "<option>載入中...</option>";
+    // **顯示修改視窗**
+    function showModifyModal(id) {
+        let modal = document.getElementById("dateTimeModal");
+        if (!modal) {
+            console.error("找不到 dateTimeModal");
+            return;
+        }
+        modal.style.display = "block";
+        modal.setAttribute("data-id", id);
+    }
 
-    fetch(`獲取時間.php?date=${encodeURIComponent(date)}&appointment_id=${encodeURIComponent(window.selectedAppointmentId)}`)
+    // **關閉修改視窗**
+    function closeModal() {
+        let modal = document.getElementById("dateTimeModal");
+        if (modal) modal.style.display = "none";
+    }
+
+    // **確認修改**
+    function confirmUpdate() {
+        let modal = document.getElementById("dateTimeModal");
+        if (!modal) {
+            console.error("找不到 dateTimeModal");
+            return;
+        }
+
+        let appointmentId = modal.getAttribute("data-id");
+        let newDate = document.getElementById("appointment_date").value;
+        let newTime = document.getElementById("appointment_time").value;
+
+        if (!newDate || !newTime) {
+            alert("請選擇新的日期和時間");
+            return;
+        }
+
+        console.log("發送修改請求:", appointmentId, newDate, newTime);
+
+        fetch("更新狀態.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `action=modify&id=${appointmentId}&date=${newDate}&time=${newTime}`
+        })
         .then(response => response.json())
         .then(data => {
-            console.log("API 返回資料:", data);
-
-            timeDropdown.innerHTML = "<option value=''>請選擇時間</option>";
-
-            if (data.error) {
-                console.error("載入時間錯誤:", data.error);
-                timeDropdown.innerHTML = `<option value=''>${data.error}</option>`;
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                timeDropdown.innerHTML = "<option value=''>無可用時段</option>";
-            } else {
-                data.forEach(time => {
-                    let option = document.createElement("option");
-                    option.value = time.shifttime_id; // 確保發送的是 shifttime_id
-                    option.textContent = time.shifttime;
-                    timeDropdown.appendChild(option);
-                });
+            console.log("伺服器回應:", data);
+            alert(data.message);
+            if (data.status === "success") {
+                location.reload();
             }
         })
-        .catch(error => {
-            console.error("載入時間錯誤:", error);
-            timeDropdown.innerHTML = "<option value=''>載入失敗</option>";
-        });
-}
-
-// 確認更新預約狀態
-function confirmUpdate() {
-    let newDate = document.getElementById("appointment_date").value;
-    let newTime = document.getElementById("appointment_time").value;
-    let appointmentId = window.selectedAppointmentId;
-
-    if (!newDate || !newTime) {
-        alert("請選擇完整的日期與時間！");
-        return;
+        .catch(error => console.error("錯誤:", error));
     }
 
-    let formData = new URLSearchParams();
-    formData.append("id", appointmentId);
-    formData.append("status", "修改");
-    formData.append("date", newDate);
-    formData.append("time", newTime);
+    // **更新狀態（報到、請假、爽約）**
+    function updateStatus(action, id, button) {
+        console.log(`準備更新狀態: ${action}, ID: ${id}`);
 
-    fetch("更新狀態.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData.toString()
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert("預約已修改！");
-            location.reload(); // 確保頁面刷新
+        fetch("更新狀態.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `action=${action}&id=${id}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("伺服器回應:", data);
+            alert(data.message);
+            if (data.status === "success") {
+                button.disabled = true;
+                button.closest("tr").querySelector(".status-select").disabled = true;
+                location.reload();
+            }
+        })
+        .catch(error => console.error("錯誤:", error));
+    }
+
+    // **綁定按鈕**
+    bindButtons();
+
+    // **確保「確認修改」按鈕能夠正確綁定**
+    setTimeout(() => {
+        let confirmModifyBtn = document.getElementById("confirmModify");
+        if (confirmModifyBtn) {
+            confirmModifyBtn.addEventListener("click", confirmUpdate);
+            console.log("確認修改按鈕綁定成功");
         } else {
-            alert("更新失敗: " + data.error);
+            console.error("找不到 confirmModify 按鈕，請檢查 HTML 結構");
         }
-    })
-    .catch(error => console.error("更新失敗:", error));
-}
+    }, 500);
+});
+
 </script>
-
-
 
               <!-- 分頁顯示 -->
               <script>
