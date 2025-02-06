@@ -215,7 +215,8 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_addds.php">治療師班表</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="a_treatment.php">新增治療項目</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_treatment.php">新增治療項目</a>
 										</li>
 										<li class="rd-dropdown-item">
 											<a class="rd-dropdown-link" href="a_leave.php">
@@ -327,17 +328,210 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				</nav>
 			</div>
 		</header>
-		<section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
-			<div class="fullwidth-page-inner">
-				<div class="section-md text-center">
-					<div class="container">
-						<p class="breadcrumbs-custom-subtitle">您所點選的頁面尚未開放，敬請期待～！</p>
-						<p class="heading-1 breadcrumbs-custom-title">Error 404</p>
-						<p>The page you selected is not yet open, please stay tuned.</p>
-					</div>
-				</div>
+		<?php
+		include '../db.php'; // 連接資料庫
+		
+		// 取得篩選條件，預設為「今日」
+		$doctor_id = isset($_GET['doctor_id']) ? intval($_GET['doctor_id']) : 0;
+		$group_by = isset($_GET['group_by']) ? $_GET['group_by'] : '日'; // 預設按日
+		$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-d');
+		$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
+
+		// SQL 查詢 (根據選擇的時間分類)
+		$group_column = ($group_by == '年') ? "YEAR(ds.date)" : (($group_by == '月') ? "CONCAT(YEAR(ds.date), '-', MONTH(ds.date))" : "ds.date");
+
+		$sql = "
+SELECT 
+    d.doctor AS 醫生,
+    $group_column AS 時間分類,
+    SUM(i.price) AS 總收入
+FROM medicalrecord m
+JOIN item i ON m.item_id = i.item_id
+JOIN appointment a ON m.appointment_id = a.appointment_id
+JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+JOIN doctor d ON ds.doctor_id = d.doctor_id
+JOIN user u ON d.user_id = u.user_id
+WHERE ds.date BETWEEN ? AND ? AND u.grade_id = 2
+" . ($doctor_id > 0 ? " AND d.doctor_id = ?" : "") . "
+GROUP BY d.doctor, 時間分類
+ORDER BY 時間分類 ASC;
+";
+
+		$stmt = mysqli_prepare($link, $sql);
+		if ($doctor_id > 0) {
+			mysqli_stmt_bind_param($stmt, "sss", $start_date, $end_date, $doctor_id);
+		} else {
+			mysqli_stmt_bind_param($stmt, "ss", $start_date, $end_date);
+		}
+		mysqli_stmt_execute($stmt);
+		$result = mysqli_stmt_get_result($stmt);
+
+		// 轉換數據成 JSON 格式
+		$data = [];
+		while ($row = mysqli_fetch_assoc($result)) {
+			$data[] = $row;
+		}
+		mysqli_stmt_close($stmt);
+		?>
+
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				text-align: center;
+			}
+
+			canvas {
+				max-width: 80%;
+				margin: 20px auto;
+			}
+
+			.chart-container {
+				display: flex;
+				justify-content: center;
+				flex-wrap: wrap;
+			}
+
+			.chart-box {
+				width: 45%;
+				min-width: 300px;
+				margin: 20px;
+			}
+		</style>
+
+		<form id="filterForm">
+			<label>選擇醫生：</label>
+			<select name="doctor_id" id="doctor_id">
+				<option value="0">所有醫生</option>
+				<?php
+				$doctor_sql = "SELECT d.doctor_id, d.doctor FROM doctor d JOIN user u ON d.user_id = u.user_id WHERE u.grade_id = 2";
+				$doctor_result = mysqli_query($link, $doctor_sql);
+				while ($doc = mysqli_fetch_assoc($doctor_result)) {
+					echo "<option value='{$doc['doctor_id']}' " . ($doc['doctor_id'] == $doctor_id ? "selected" : "") . ">{$doc['doctor']}</option>";
+				}
+				?>
+			</select>
+
+			<label>選擇時間分類：</label>
+			<select name="group_by" id="group_by">
+				<option value="日" <?= ($group_by == '日') ? 'selected' : '' ?>>每日</option>
+				<option value="月" <?= ($group_by == '月') ? 'selected' : '' ?>>每月</option>
+				<option value="年" <?= ($group_by == '年') ? 'selected' : '' ?>>每年</option>
+			</select>
+
+			<label id="date_label">選擇日期：</label>
+			<input type="date" name="start_date" id="start_date" value="<?= $start_date ?>">
+
+			<label id="end_date_label">結束日期：</label>
+			<input type="date" name="end_date" id="end_date" value="<?= $end_date ?>">
+		</form>
+
+		<div class="chart-container">
+			<div class="chart-box">
+				<canvas id="incomeChart"></canvas>
 			</div>
-		</section>
+			<div class="chart-box">
+				<canvas id="percentageChart"></canvas>
+			</div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script>
+			// 取得篩選欄位
+			const doctorSelect = document.getElementById("doctor_id");
+			const groupBySelect = document.getElementById("group_by");
+			const startDateInput = document.getElementById("start_date");
+			const endDateInput = document.getElementById("end_date");
+			const filterForm = document.getElementById("filterForm");
+
+			// 監聽所有篩選條件變更，並自動更新數據
+			filterForm.addEventListener("change", function () {
+				updateCharts();
+			});
+
+			function updateCharts() {
+				const params = new URLSearchParams({
+					doctor_id: doctorSelect.value,
+					group_by: groupBySelect.value,
+					start_date: startDateInput.value,
+					end_date: endDateInput.value
+				});
+
+				fetch("a_comprehensive.php?" + params.toString())
+					.then(response => response.json())
+					.then(data => {
+						renderCharts(data);
+					});
+			}
+
+			function renderCharts(chartData) {
+				const labels = chartData.map(d => d.時間分類);
+				const values = chartData.map(d => d.總收入);
+				const doctors = chartData.map(d => d.醫生);
+
+				// 長條圖 - 每日/月/年 收入
+				new Chart(document.getElementById("incomeChart"), {
+					type: "bar",
+					data: {
+						labels: labels,
+						datasets: [{
+							label: "收入",
+							data: values,
+							backgroundColor: "rgba(75, 192, 192, 0.2)",
+							borderColor: "rgba(75, 192, 192, 1)",
+							borderWidth: 1
+						}]
+					},
+					options: {
+						responsive: true,
+						plugins: {
+							legend: { display: false },
+							title: { display: true, text: "收入統計 - " + groupBySelect.value }
+						},
+						scales: {
+							y: { beginAtZero: true }
+						}
+					}
+				});
+
+				// 圓餅圖 - 醫生收入佔比
+				new Chart(document.getElementById("percentageChart"), {
+					type: "pie",
+					data: {
+						labels: doctors,
+						datasets: [{
+							label: "佔比 (%)",
+							data: values,
+							backgroundColor: [
+								"rgba(255, 99, 132, 0.6)",
+								"rgba(54, 162, 235, 0.6)",
+								"rgba(255, 206, 86, 0.6)",
+								"rgba(75, 192, 192, 0.6)",
+								"rgba(153, 102, 255, 0.6)"
+							],
+							borderColor: [
+								"rgba(255, 99, 132, 1)",
+								"rgba(54, 162, 235, 1)",
+								"rgba(255, 206, 86, 1)",
+								"rgba(75, 192, 192, 1)",
+								"rgba(153, 102, 255, 1)"
+							],
+							borderWidth: 1
+						}]
+					},
+					options: {
+						responsive: true,
+						plugins: {
+							title: { display: true, text: "醫生收入佔比" }
+						}
+					}
+				});
+			}
+
+			// 預設載入當天數據
+			updateCharts();
+		</script>
+
+
 	</div>
 	<!-- Global Mailform Output-->
 	<div class="snackbars" id="form-output-global"></div>
