@@ -266,6 +266,33 @@ mysqli_close($link);
 		.button-shadow {
 			box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
 		}
+
+		/* 美化違規紀錄表格 */
+		.violation-table {
+			width: 100%;
+			border-collapse: collapse;
+			margin-top: 10px;
+			font-size: 16px;
+			background: #fff;
+		}
+
+		.violation-table th {
+			padding: 12px;
+			text-align: left;
+			background-color: #f4f4f4;
+			font-weight: bold;
+		}
+
+		.violation-table td {
+			padding: 12px;
+			text-align: left;
+			border-bottom: 1px solid #ddd;
+		}
+
+		/* 滑鼠懸停時變色 */
+		.violation-table tbody tr:hover {
+			background-color: #f9f9f9;
+		}
 	</style>
 </head>
 
@@ -330,7 +357,8 @@ mysqli_close($link);
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_addds.php">治療師班表</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="a_treatment.php">新增治療項目</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_treatment.php">新增治療項目</a>
 										</li>
 										<li class="rd-dropdown-item">
 											<a class="rd-dropdown-link" href="a_leave.php">
@@ -464,13 +492,12 @@ mysqli_close($link);
 					<!-- 左側 -->
 					<div style="flex: 1; text-align: center;">
 						<img id="popup-image" src="" alt="頭像" class="profile-image">
-						<div style="margin-top: 10px;">
-							<!-- <button class="popup-btn" onclick="viewDetails()">詳細</button> -->
-							<div style="margin-top: 10px;">
-								<label class="blacklist-toggle">
-									<input type="checkbox" id="blacklist-toggle"> 加入黑名單
-								</label>
-							</div>
+						<div style="margin-top: 10px; display: flex; justify-content: center; gap: 10px;">
+							<a href="#" onclick="toggleMedicalRecord()">病例</a>
+							<a>|</a>
+							<!-- 這個按鈕讓使用者點擊後顯示 / 隱藏 違規紀錄 -->
+							<a href="javascript:void(0);" onclick="viewViolationRecord()">違規</a>
+
 
 						</div>
 					</div>
@@ -479,72 +506,173 @@ mysqli_close($link);
 						<p><strong>姓名：</strong><span id="popup-name"></span></p>
 						<p><strong>性別：</strong><span id="popup-gender"></span></p>
 						<p><strong>出生日期：</strong><span id="popup-birthday"></span></p>
-						<p><strong>身份證：</strong><span id="popup-idcard"></span></p>
+						<p><strong>身份證：</strong><span id="popup-idcard" data-id=""></span></p>
 						<p><strong>電話：</strong><span id="popup-phone"></span></p>
 						<p><strong>地址：</strong><span id="popup-address"></span></p>
 						<p><strong>電子郵件：</strong><span id="popup-email"></span></p>
 					</div>
 				</div>
+
+				<!-- **違規紀錄區塊** -->
+				<div id="violation-record" style="margin-top: 20px; display: none;">
+					<h3>違規紀錄</h3>
+					<div id="violation-details" style="max-height: 300px; overflow-y: auto;">載入中...</div>
+				</div>
+
+				<!-- 病例紀錄區塊（初始隱藏） -->
+				<div id="medical-records" style="display: none; margin-top: 20px;">
+					<h3>病歷紀錄</h3>
+					<table class="violation-table">
+						<thead>
+							<tr>
+								<th>醫生</th>
+								<th>看診日期</th>
+								<th>時間</th>
+								<th>治療項目</th>
+								<th>總費用</th>
+							</tr>
+						</thead>
+						<tbody id="medical-records-body">
+							<!-- AJAX 載入數據 -->
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</div>
 
 
+
 		<script>
+			/**
+			* 顯示使用者詳細資訊的彈窗
+			* @param {Object} user - 包含使用者資訊的物件
+			*/
 			function openPopup(user) {
 				try {
-					// 頭像圖片判斷
+					// 取得彈窗內的頭像元素
 					const profileImage = document.getElementById('popup-image');
 
-					if (user.images && user.images.trim() !== '' && user.images !== 'NULL') {
-						// 如果有圖片資料，將 BLOB 格式轉為 Base64 並設置圖片來源
+					// 檢查是否有有效的頭像數據
+					if (user.images && user.images.trim() !== '' && user.images !== 'NULL' && user.images !== null) {
+						// 如果有圖片數據，則轉換為 Base64 格式並設置圖片來源
 						const base64Image = `data:image/jpeg;base64,${user.images}`;
 						profileImage.src = base64Image;
 					} else {
-						// 如果沒有圖片資料，使用預設圖片
+						// 如果沒有圖片數據，則使用預設圖片
 						profileImage.src = 'images/300.jpg';
 					}
 
-					// 處理圖片加載失敗的情況
+					// 若圖片加載失敗，則替換為預設圖片
 					profileImage.onerror = function () {
-						this.src = 'images/300.jpg'; // 使用預設圖片
+						this.src = 'images/300.jpg';
 					};
 
-					// 計算歲數
-					let ageText = "無資料";
-					if (user.birthday && user.birthday !== "無資料") {
-						const birthday = new Date(user.birthday);
-						const today = new Date();
-						let age = today.getFullYear() - birthday.getFullYear();
-						const monthDifference = today.getMonth() - birthday.getMonth();
-
-						// 如果生日月份尚未到，或者生日月份到了但日期未到，歲數減一
-						if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthday.getDate())) {
-							age--;
-						}
-						ageText = `${age} 歲`;
-					}
-
-					// 設置其他用戶資訊
-					document.getElementById('popup-name').innerText = user.name || '無資料';
-					document.getElementById('popup-gender').innerText = user.gender_id === '1' ? '男性' : '女性';
-					document.getElementById('popup-birthday').innerText = user.birthday ? `${user.birthday} (${ageText})` : '無資料';
-					document.getElementById('popup-idcard').innerText = user.idcard || '無資料';
-					document.getElementById('popup-phone').innerText = user.phone || '無資料';
-					document.getElementById('popup-address').innerText = user.address || '無資料';
-					document.getElementById('popup-email').innerText = user.email || '無資料';
+					// 設定用戶的基本資訊到彈窗內的對應欄位
+					document.getElementById("popup-name").textContent = user.name || "無資料";  // 設定姓名
+					document.getElementById("popup-gender").textContent = user.gender_id == 1 ? "男性" : "女性"; // 設定性別
+					document.getElementById("popup-birthday").textContent = user.birthday || "無資料"; // 設定生日
+					document.getElementById("popup-idcard").textContent = user.idcard || "無資料"; // 設定身份證號碼
+					document.getElementById("popup-idcard").setAttribute("data-id", user.people_id || ""); // 設定 people_id 供違規紀錄查詢
+					document.getElementById("popup-phone").textContent = user.phone || "無資料"; // 設定電話
+					document.getElementById("popup-address").textContent = user.address || "無資料"; // 設定地址
+					document.getElementById("popup-email").textContent = user.email || "無資料"; // 設定電子郵件
 
 					// 顯示彈窗
-					document.getElementById('popup').style.display = 'flex';
+					document.getElementById("popup").style.display = "flex";
+
+					// **隱藏違規紀錄區塊，讓使用者點擊「違規」按鈕後才顯示**
+					document.getElementById("violation-record").style.display = "none";
+					document.getElementById("violation-details").innerHTML = ""; // 清空違規內容，避免殘留上次查詢的資料
 				} catch (error) {
 					console.error("無法顯示彈窗：", error);
 				}
 			}
 
 
+
+
 			// 關閉彈窗
 			function closePopup() {
 				document.getElementById('popup').style.display = 'none';
 			}
+
+			/**
+			* 切換違規紀錄的顯示/隱藏狀態
+			*/
+			function viewViolationRecord() {
+				let violationSection = document.getElementById("violation-record");
+
+				// **如果違規紀錄已經顯示，則隱藏它**
+				if (violationSection.style.display === "block") {
+					violationSection.style.display = "none"; // 隱藏違規紀錄
+					return;
+				}
+
+				// **如果違規紀錄未顯示，則發送請求取得資料並顯示**
+				let peopleId = document.getElementById("popup-idcard").getAttribute("data-id");
+
+				// 確保 peopleId 存在，避免發送錯誤請求
+				if (!peopleId || peopleId === "null" || peopleId === "undefined") {
+					alert("錯誤：未找到使用者 ID！");
+					return;
+				}
+
+				// 顯示違規區塊，載入新內容
+				violationSection.style.display = "block";
+				document.getElementById("violation-details").innerHTML = "載入中...";
+
+				// 發送 AJAX 請求到 `顯示違規紀錄2.php`
+				let xhr = new XMLHttpRequest();
+				xhr.open("POST", "顯示違規紀錄2.php", true);
+				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+				xhr.send("people_id=" + encodeURIComponent(peopleId));
+
+				xhr.onload = function () {
+					document.getElementById("violation-details").innerHTML = xhr.responseText;
+				};
+			}
+
+
+			/**
+			* 查詢並顯示或隱藏病例紀錄
+			*/
+			function toggleMedicalRecord() {
+				let peopleId = document.getElementById("popup-idcard").getAttribute("data-id"); // 取得使用者 ID
+
+				if (!peopleId || peopleId === "null") {
+					alert("錯誤：未找到使用者 ID！");
+					return;
+				}
+
+				let medicalRecordsDiv = document.getElementById("medical-records");
+				let medicalRecordsBody = document.getElementById("medical-records-body");
+
+				// 如果已顯示，則隱藏
+				if (medicalRecordsDiv.style.display === "block") {
+					medicalRecordsDiv.style.display = "none";
+					return;
+				}
+
+				// 顯示病歷區塊，並清空舊數據
+				medicalRecordsDiv.style.display = "block";
+				medicalRecordsBody.innerHTML = "<tr><td colspan='5'>載入中...</td></tr>";
+
+				// 發送 AJAX 請求到 PHP
+				let xhr = new XMLHttpRequest();
+				xhr.open("POST", "查詢病例.php", true);
+				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+				xhr.send("people_id=" + encodeURIComponent(peopleId));
+
+				xhr.onload = function () {
+					if (xhr.status === 200) {
+						medicalRecordsBody.innerHTML = xhr.responseText; // 插入表格內容
+					} else {
+						medicalRecordsBody.innerHTML = "<tr><td colspan='5'>查詢失敗</td></tr>";
+					}
+				};
+			}
+
+
 
 		</script>
 
@@ -637,12 +765,14 @@ mysqli_close($link);
 														"address" => $user["address"] ?? "無資料",
 														"email" => $user["email"] ?? "無資料",
 														"images" => $user["images"] ?? "images/300.jpg",
+														"people_id" => $user["id"] ?? null  // ✅ 確保傳遞 people_id
 													], JSON_UNESCAPED_SLASHES | JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'
 														style="padding: 6px 12px; font-size: 12px; border: none; background-color: #00A896; color: white; cursor: pointer; border-radius: 4px;">
 														操作
 													</button>
-
 												</td>
+
+
 											</tr>
 										<?php endforeach; ?>
 									<?php else: ?>
