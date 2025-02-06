@@ -493,8 +493,8 @@ mysqli_close($link);
 					<div style="flex: 1; text-align: center;">
 						<img id="popup-image" src="" alt="頭像" class="profile-image">
 						<div style="margin-top: 10px; display: flex; justify-content: center; gap: 10px;">
-							<a href="#" onclick="toggleMedicalRecord()">病例</a>
-							<a>|</a>
+							<!-- <a href="#" onclick="toggleMedicalRecord()">病例</a>
+							<a>|</a> -->
 							<!-- 這個按鈕讓使用者點擊後顯示 / 隱藏 違規紀錄 -->
 							<a href="javascript:void(0);" onclick="viewViolationRecord()">違規</a>
 
@@ -520,7 +520,7 @@ mysqli_close($link);
 				</div>
 
 				<!-- 病例紀錄區塊（初始隱藏） -->
-				<div id="medical-records" style="display: none; margin-top: 20px;">
+				<!-- <div id="medical-records" style="display: none; margin-top: 20px;">
 					<h3>病歷紀錄</h3>
 					<table class="violation-table">
 						<thead>
@@ -528,15 +528,15 @@ mysqli_close($link);
 								<th>醫生</th>
 								<th>看診日期</th>
 								<th>時間</th>
+								<th>狀態</th>
 								<th>治療項目</th>
 								<th>總費用</th>
 							</tr>
 						</thead>
 						<tbody id="medical-records-body">
-							<!-- AJAX 載入數據 -->
 						</tbody>
 					</table>
-				</div>
+				</div> -->
 			</div>
 		</div>
 
@@ -636,41 +636,41 @@ mysqli_close($link);
 			/**
 			* 查詢並顯示或隱藏病例紀錄
 			*/
-			function toggleMedicalRecord() {
-				let peopleId = document.getElementById("popup-idcard").getAttribute("data-id"); // 取得使用者 ID
+			// function toggleMedicalRecord() {
+			// 	let peopleId = document.getElementById("popup-idcard").getAttribute("data-id"); // 取得使用者 ID
 
-				if (!peopleId || peopleId === "null") {
-					alert("錯誤：未找到使用者 ID！");
-					return;
-				}
+			// 	if (!peopleId || peopleId === "null") {
+			// 		alert("錯誤：未找到使用者 ID！");
+			// 		return;
+			// 	}
 
-				let medicalRecordsDiv = document.getElementById("medical-records");
-				let medicalRecordsBody = document.getElementById("medical-records-body");
+			// 	let medicalRecordsDiv = document.getElementById("medical-records");
+			// 	let medicalRecordsBody = document.getElementById("medical-records-body");
 
-				// 如果已顯示，則隱藏
-				if (medicalRecordsDiv.style.display === "block") {
-					medicalRecordsDiv.style.display = "none";
-					return;
-				}
+			// 	// 如果已顯示，則隱藏
+			// 	if (medicalRecordsDiv.style.display === "block") {
+			// 		medicalRecordsDiv.style.display = "none";
+			// 		return;
+			// 	}
 
-				// 顯示病歷區塊，並清空舊數據
-				medicalRecordsDiv.style.display = "block";
-				medicalRecordsBody.innerHTML = "<tr><td colspan='5'>載入中...</td></tr>";
+			// 	// 顯示病歷區塊，並清空舊數據
+			// 	medicalRecordsDiv.style.display = "block";
+			// 	medicalRecordsBody.innerHTML = "<tr><td colspan='5'>載入中...</td></tr>";
 
-				// 發送 AJAX 請求到 PHP
-				let xhr = new XMLHttpRequest();
-				xhr.open("POST", "查詢病例.php", true);
-				xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-				xhr.send("people_id=" + encodeURIComponent(peopleId));
+			// 	// 發送 AJAX 請求到 PHP
+			// 	let xhr = new XMLHttpRequest();
+			// 	xhr.open("POST", "查詢病例.php", true);
+			// 	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+			// 	xhr.send("people_id=" + encodeURIComponent(peopleId));
 
-				xhr.onload = function () {
-					if (xhr.status === 200) {
-						medicalRecordsBody.innerHTML = xhr.responseText; // 插入表格內容
-					} else {
-						medicalRecordsBody.innerHTML = "<tr><td colspan='5'>查詢失敗</td></tr>";
-					}
-				};
-			}
+			// 	xhr.onload = function () {
+			// 		if (xhr.status === 200) {
+			// 			medicalRecordsBody.innerHTML = xhr.responseText; // 插入表格內容
+			// 		} else {
+			// 			medicalRecordsBody.innerHTML = "<tr><td colspan='5'>查詢失敗</td></tr>";
+			// 		}
+			// 	};
+			// }
 
 
 

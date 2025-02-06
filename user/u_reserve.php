@@ -11,16 +11,15 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
+require '../db.php'; // 連接資料庫
+
 // 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-	// 獲取用戶帳號
+	// 取得使用者帳號
 	$帳號 = $_SESSION['帳號'];
 
-	// 資料庫連接
-	require '../db.php';
-
-	// 查詢該帳號的詳細資料
-	$sql = "SELECT user.account, people.name 
+	// 查詢該帳號的詳細資料（包含違規次數）
+	$sql = "SELECT user.account, people.name, people.black 
             FROM user 
             JOIN people ON user.user_id = people.user_id 
             WHERE user.account = ?";
@@ -30,12 +29,28 @@ if (isset($_SESSION["帳號"])) {
 	$result = mysqli_stmt_get_result($stmt);
 
 	if (mysqli_num_rows($result) > 0) {
-		// 抓取對應姓名
 		$row = mysqli_fetch_assoc($result);
 		$姓名 = $row['name'];
 		$帳號名稱 = $row['account'];
+		$違規次數 = intval($row['black']); // 轉為整數，確保安全
+
+		// 從 settings 讀取錯誤訊息
+		$setting_sql = "SELECT setting_value FROM settings WHERE setting_key = 'error_message'";
+		$setting_result = mysqli_query($link, $setting_sql);
+
+		if ($setting_row = mysqli_fetch_assoc($setting_result)) {
+			$error_message = $setting_row['setting_value'];
+
+			// ✅ 改為 >= 3，確保 3 也會觸發跳轉
+			if ($違規次數 >= 3) {
+				echo "<script>
+                        alert('$error_message');
+                        window.location.href = 'u_index.php';
+                      </script>";
+				exit();
+			}
+		}
 	} else {
-		// 如果資料不存在，提示用戶重新登入
 		echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
@@ -44,6 +59,7 @@ if (isset($_SESSION["帳號"])) {
 	}
 
 	// 關閉資料庫連接
+	mysqli_stmt_close($stmt);
 	mysqli_close($link);
 } else {
 	echo "<script>
@@ -52,8 +68,8 @@ if (isset($_SESSION["帳號"])) {
           </script>";
 	exit();
 }
-
 ?>
+
 
 
 

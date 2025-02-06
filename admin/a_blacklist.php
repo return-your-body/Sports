@@ -446,7 +446,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				$row['remaining_time'] = calculateRemainingTime($row['blacklist_end_date']);
 			} else {
 				// 若違規次數 < 3，顯示違規次數
-				$row['remaining_time'] = "已違規 " . $row['black'] . " 次";
+				$row['remaining_time'] = "已違規";
 			}
 
 			$users[] = $row;
@@ -919,7 +919,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			document.querySelectorAll('.countdown').forEach(function (element) {
 				let dataValue = element.getAttribute('data-seconds');
 
-				if (isNaN(dataValue) || dataValue === "已違規 1 次" || dataValue === "已違規 2 次") {
+				if (isNaN(dataValue) || dataValue === "已違規") {
 					// 如果數值為 NaN 或是小於 3 次的違規紀錄，則直接顯示違規次數
 					element.textContent = dataValue;
 					return;
