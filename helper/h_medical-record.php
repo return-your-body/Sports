@@ -643,11 +643,12 @@ if (!$result) {
                                             <td><?php echo htmlspecialchars($row['treatment_items']); ?></td>
                                             <td><?php echo htmlspecialchars($row['total_treatment_price']); ?></td>
                                             <td>
-                                                <a href="h_print-receipt.php?id=<?php echo $row['medicalrecord_id']; ?>"
+                                                <a href="h_print-receipt.php?id=<?php echo $row['appointment_id']; ?>"
                                                     target="_blank">
                                                     <button type="button">列印收據</button>
                                                 </a>
                                             </td>
+
                                         </tr>
                                     <?php endwhile; ?>
                                 </tbody>

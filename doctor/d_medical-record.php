@@ -64,6 +64,7 @@ if (isset($_SESSION["帳號"])) {
 }
 
 // 看診紀錄
+
 require '../db.php';
 session_start(); // 確保 Session 啟動
 
@@ -94,11 +95,10 @@ if (!$doctor_id) {
 }
 
 // 計算總筆數
-$count_sql = "SELECT COUNT(*) AS total FROM medicalrecord m 
+$count_sql = "SELECT COUNT(DISTINCT a.appointment_id) AS total FROM medicalrecord m 
 LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
 LEFT JOIN people p ON a.people_id = p.people_id
 LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN item i ON m.item_id = i.item_id
 WHERE ds.doctor_id = ? AND p.name LIKE CONCAT('%', ?, '%')";
 
 $count_stmt = $link->prepare($count_sql);
@@ -110,20 +110,44 @@ $total_pages = max(ceil($total_records / $records_per_page), 1);
 
 // 查詢分頁資料
 $data_sql = "SELECT 
-    m.medicalrecord_id, p.name AS patient_name, 
-    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '無資料' END AS gender,
-    IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '無資料') AS birthday,
-    ds.date AS appointment_date,
-    st.shifttime AS appointment_time,
-    i.item, i.price, m.created_at 
-FROM medicalrecord m 
+    (@row_number := @row_number + 1) AS row_num,
+    MIN(m.medicalrecord_id) AS medicalrecord_id,
+    a.appointment_id,
+    p.name AS patient_name,
+    CASE 
+        WHEN p.gender_id = 1 THEN '男'
+        WHEN p.gender_id = 2 THEN '女'
+        ELSE '無資料'
+    END AS gender,
+    CASE 
+        WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)')
+        ELSE '無資料'
+    END AS birthday_with_age,
+    d.doctor AS doctor_name,
+    GROUP_CONCAT(i.item ORDER BY i.item SEPARATOR ', ') AS treatment_items,
+    SUM(i.price) AS total_treatment_price,
+    DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
+    CASE DAYOFWEEK(ds.date)
+        WHEN 1 THEN '星期日'
+        WHEN 2 THEN '星期一'
+        WHEN 3 THEN '星期二'
+        WHEN 4 THEN '星期三'
+        WHEN 5 THEN '星期四'
+        WHEN 6 THEN '星期五'
+        WHEN 7 THEN '星期六'
+    END AS consultation_weekday,
+    st.shifttime AS consultation_time,
+    MIN(m.created_at) AS created_at
+FROM medicalrecord m
 LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
 LEFT JOIN people p ON a.people_id = p.people_id
 LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
 LEFT JOIN item i ON m.item_id = i.item_id
+LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
 WHERE ds.doctor_id = ? AND p.name LIKE CONCAT('%', ?, '%')
-ORDER BY ds.date, st.shifttime
+GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime
+ORDER BY created_at ASC
 LIMIT ?, ?";
 
 $data_stmt = $link->prepare($data_sql);
@@ -571,12 +595,12 @@ $result = $data_stmt->get_result();
             <table class="responsive-table">
               <thead>
                 <tr>
-                  <th>#</th>
+                  <!-- <th>#</th> -->
                   <th>姓名</th>
                   <th>性別</th>
                   <th>生日 (年齡)</th>
                   <th>看診日期</th>
-                  <th>看診時間</th> <!-- 新增時間 -->
+                  <th>看診時間</th>
                   <th>治療項目</th>
                   <th>治療費用</th>
                   <th>建立時間</th>
@@ -586,14 +610,16 @@ $result = $data_stmt->get_result();
                 <?php if ($result->num_rows > 0): ?>
                   <?php while ($row = mysqli_fetch_assoc($result)): ?>
                     <tr>
-                      <td><?php echo htmlspecialchars($row['medicalrecord_id']); ?></td>
+                      <!-- <td><?php echo htmlspecialchars($row['row_num']); ?></td> -->
                       <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
                       <td><?php echo htmlspecialchars($row['gender']); ?></td>
-                      <td><?php echo htmlspecialchars($row['birthday']); ?></td>
-                      <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
-                      <td><?php echo htmlspecialchars($row['appointment_time']); ?></td> <!-- 新增時間 -->
-                      <td><?php echo htmlspecialchars($row['item']); ?></td>
-                      <td><?php echo htmlspecialchars($row['price']); ?></td>
+                      <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
+                      <td>
+                        <?php echo htmlspecialchars($row['consultation_date'] . " (" . $row['consultation_weekday'] . ")"); ?>
+                      </td>
+                      <td><?php echo htmlspecialchars($row['consultation_time']); ?></td>
+                      <td><?php echo htmlspecialchars($row['treatment_items']); ?></td>
+                      <td><?php echo htmlspecialchars($row['total_treatment_price']); ?></td>
                       <td><?php echo htmlspecialchars($row['created_at']); ?></td>
                     </tr>
                   <?php endwhile; ?>
@@ -603,6 +629,7 @@ $result = $data_stmt->get_result();
                   </tr>
                 <?php endif; ?>
               </tbody>
+
             </table>
           </div>
         </div>

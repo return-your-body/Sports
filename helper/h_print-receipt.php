@@ -69,47 +69,40 @@ require '../db.php'; // 引入資料庫連接檔案
 
 // 確認 GET 請求是否攜帶有效的 ID
 if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-  $id = intval($_GET['id']);
+  $appointment_id = intval($_GET['id']);
 
-  // 查詢關聯資料
+  // 查詢基本資訊
   $query = "
-SELECT 
-    m.medicalrecord_id,
-    a.appointment_id,
-    p.name AS people_name,
-    CASE 
-        WHEN p.gender_id = 1 THEN '男'
-        WHEN p.gender_id = 2 THEN '女'
-        ELSE '未設定'
-    END AS gender,
-    CASE 
-        WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)')
-        ELSE '未知'
-    END AS birthday_with_age,
-    d.doctor AS doctor_name,
-    ds.date AS appointment_date,
-    CASE DAYOFWEEK(ds.date)
-        WHEN 1 THEN '星期日'
-        WHEN 2 THEN '星期一'
-        WHEN 3 THEN '星期二'
-        WHEN 4 THEN '星期三'
-        WHEN 5 THEN '星期四'
-        WHEN 6 THEN '星期五'
-        WHEN 7 THEN '星期六'
-    END AS consultation_weekday,
-    st.shifttime AS appointment_time,
-    i.item AS treatment_item,
-    i.price AS treatment_price,
-    m.created_at
-FROM medicalrecord m
-LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN item i ON m.item_id = i.item_id
-LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-WHERE m.medicalrecord_id = $id
-";
+    SELECT 
+        p.name AS people_name,
+        CASE 
+            WHEN p.gender_id = 1 THEN '男'
+            WHEN p.gender_id = 2 THEN '女'
+            ELSE '無資料'
+        END AS gender,
+        CASE 
+            WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)')
+            ELSE '無資料'
+        END AS birthday_with_age,
+        d.doctor AS doctor_name,
+        ds.date AS appointment_date,
+        CASE DAYOFWEEK(ds.date)
+            WHEN 1 THEN '星期日'
+            WHEN 2 THEN '星期一'
+            WHEN 3 THEN '星期二'
+            WHEN 4 THEN '星期三'
+            WHEN 5 THEN '星期四'
+            WHEN 6 THEN '星期五'
+            WHEN 7 THEN '星期六'
+        END AS consultation_weekday,
+        st.shifttime AS appointment_time
+    FROM appointment a
+    LEFT JOIN people p ON a.people_id = p.people_id
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+    WHERE a.appointment_id = $appointment_id
+    GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime";
 
   $result = mysqli_query($link, $query);
 
@@ -121,7 +114,7 @@ WHERE m.medicalrecord_id = $id
   if (mysqli_num_rows($result) > 0) {
     $record = mysqli_fetch_assoc($result);
 
-    // 提取資料到變數
+    // 提取基本資料
     $people_name = $record['people_name'];
     $gender = $record['gender'];
     $birthday_with_age = $record['birthday_with_age'];
@@ -129,8 +122,20 @@ WHERE m.medicalrecord_id = $id
     $consultation_weekday = $record['consultation_weekday'];
     $appointment_time = $record['appointment_time'];
     $doctor_name = $record['doctor_name'];
-    $treatment_item = $record['treatment_item'];
-    $treatment_price = $record['treatment_price'];
+
+    // 查詢該次 appointment 的所有項目與價錢
+    $item_query = "
+        SELECT i.item AS treatment_item, i.price AS treatment_price
+        FROM medicalrecord m
+        LEFT JOIN item i ON m.item_id = i.item_id
+        WHERE m.appointment_id = $appointment_id";
+
+    $item_result = mysqli_query($link, $item_query);
+
+    if (!$item_result) {
+      echo "SQL 錯誤：" . mysqli_error($link);
+      exit;
+    }
   } else {
     echo "未找到對應的病歷資料";
     exit;
@@ -140,6 +145,8 @@ WHERE m.medicalrecord_id = $id
   exit;
 }
 ?>
+
+
 
 <head>
   <!-- Site Title-->
@@ -398,7 +405,7 @@ WHERE m.medicalrecord_id = $id
                     </li>
                   </ul>
                 </li>
-                
+
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
@@ -480,6 +487,8 @@ WHERE m.medicalrecord_id = $id
 
 
     <!--列印收據-->
+
+
     <section class="section section-lg bg-default text-center">
       <div class="container">
         <div class="row row-50 justify-content-lg-center">
@@ -496,20 +505,28 @@ WHERE m.medicalrecord_id = $id
                   <p>看診日期：<?php echo $appointment_date . " (" . $consultation_weekday . ")"; ?></p>
                   <p>看診時間：<?php echo $appointment_time; ?></p>
                   <p>治療師：<?php echo $doctor_name; ?></p>
+
                   <table>
                     <tr>
                       <th>治療項目</th>
                       <th>費用</th>
                     </tr>
-                    <tr>
-                      <td><?php echo $treatment_item; ?></td>
-                      <td><?php echo $treatment_price; ?></td>
-                    </tr>
+                    <?php
+                    $total_price = 0;
+                    while ($item_row = mysqli_fetch_assoc($item_result)) {
+                      echo "<tr>";
+                      echo "<td>" . htmlspecialchars($item_row['treatment_item']) . "</td>";
+                      echo "<td>" . htmlspecialchars($item_row['treatment_price']) . "</td>";
+                      echo "</tr>";
+                      $total_price += $item_row['treatment_price'];
+                    }
+                    ?>
                     <tr>
                       <td><strong>總費用</strong></td>
-                      <td><strong><?php echo $treatment_price; ?></strong></td>
+                      <td><strong><?php echo $total_price; ?></strong></td>
                     </tr>
                   </table>
+
                   <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
                 </div>
                 <div class="button-container">
@@ -546,7 +563,7 @@ WHERE m.medicalrecord_id = $id
               <li><a href="h_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
               <li><a href="h_print-appointment.php">列印預約單</a></li> -->
-             
+
             </ul>
           </div>
           <!-- <div class="col-md-5">
