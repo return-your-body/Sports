@@ -79,9 +79,12 @@ $offset = ($page - 1) * $records_per_page;
 // 搜尋條件
 $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, $_GET['search_name']) : '';
 
+// 初始化流水號
+mysqli_query($link, "SET @row_number = 0;");
+
 // 計算總記錄數
 $count_sql = "
-SELECT COUNT(*) AS total
+SELECT COUNT(DISTINCT a.appointment_id) AS total
 FROM medicalrecord m
 LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
 LEFT JOIN people p ON a.people_id = p.people_id
@@ -102,33 +105,34 @@ $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) :
 // 查詢資料
 $sql = "
 SELECT 
-m.medicalrecord_id,
-a.appointment_id,
-p.name AS patient_name,
-CASE 
-WHEN p.gender_id = 1 THEN '男'
-WHEN p.gender_id = 2 THEN '女'
-ELSE '無資料'
-END AS gender,
-CASE 
-WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)')
-ELSE '無資料'
-END AS birthday_with_age,
-d.doctor AS doctor_name,
-i.item AS treatment_item,
-i.price AS treatment_price,
-DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
-CASE DAYOFWEEK(ds.date)
-WHEN 1 THEN '星期日'
-WHEN 2 THEN '星期一'
-WHEN 3 THEN '星期二'
-WHEN 4 THEN '星期三'
-WHEN 5 THEN '星期四'
-WHEN 6 THEN '星期五'
-WHEN 7 THEN '星期六'
-END AS consultation_weekday,
-st.shifttime AS consultation_time,
-m.created_at
+    (@row_number := @row_number + 1) AS row_num,
+    MIN(m.medicalrecord_id) AS medicalrecord_id,
+    a.appointment_id,
+    p.name AS patient_name,
+    CASE 
+        WHEN p.gender_id = 1 THEN '男'
+        WHEN p.gender_id = 2 THEN '女'
+        ELSE '無資料'
+    END AS gender,
+    CASE 
+        WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)')
+        ELSE '無資料'
+    END AS birthday_with_age,
+    d.doctor AS doctor_name,
+    GROUP_CONCAT(i.item ORDER BY i.item SEPARATOR ', ') AS treatment_items,
+    SUM(i.price) AS total_treatment_price,
+    DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
+    CASE DAYOFWEEK(ds.date)
+        WHEN 1 THEN '星期日'
+        WHEN 2 THEN '星期一'
+        WHEN 3 THEN '星期二'
+        WHEN 4 THEN '星期三'
+        WHEN 5 THEN '星期四'
+        WHEN 6 THEN '星期五'
+        WHEN 7 THEN '星期六'
+    END AS consultation_weekday,
+    st.shifttime AS consultation_time,
+    MIN(m.created_at) AS created_at
 FROM medicalrecord m
 LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
 LEFT JOIN people p ON a.people_id = p.people_id
@@ -137,7 +141,8 @@ LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
 LEFT JOIN item i ON m.item_id = i.item_id
 LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
 WHERE 1=1 " . ($search_name ? "AND p.name LIKE '%$search_name%'" : "") . "
-ORDER BY m.created_at DESC
+GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime
+ORDER BY created_at ASC
 LIMIT $offset, $records_per_page";
 
 $result = mysqli_query($link, $sql);
@@ -145,6 +150,7 @@ if (!$result) {
     die("SQL 查詢失敗: " . mysqli_error($link));
 }
 ?>
+
 
 
 <head>
@@ -611,7 +617,7 @@ if (!$result) {
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>#</th>
+                                        <!-- <th>#</th> -->
                                         <th>姓名</th>
                                         <th>性別</th>
                                         <th>生日 (年齡)</th>
@@ -626,7 +632,7 @@ if (!$result) {
                                 <tbody>
                                     <?php while ($row = mysqli_fetch_assoc($result)): ?>
                                         <tr>
-                                            <td><?php echo htmlspecialchars($row['medicalrecord_id']); ?></td>
+                                            <!-- <td><?php echo htmlspecialchars($row['row_num']); ?></td> -->
                                             <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
                                             <td><?php echo htmlspecialchars($row['gender']); ?></td>
                                             <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
@@ -634,8 +640,8 @@ if (!$result) {
                                             </td>
                                             <td><?php echo htmlspecialchars($row['consultation_time']); ?></td>
                                             <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['treatment_item']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['treatment_price']); ?></td>
+                                            <td><?php echo htmlspecialchars($row['treatment_items']); ?></td>
+                                            <td><?php echo htmlspecialchars($row['total_treatment_price']); ?></td>
                                             <td>
                                                 <a href="h_print-receipt.php?id=<?php echo $row['medicalrecord_id']; ?>"
                                                     target="_blank">
@@ -651,42 +657,8 @@ if (!$result) {
                         <?php endif; ?>
                     </div>
                 </div>
-
-                <!-- 分頁資訊 + 頁碼 -->
-                <div class="pagination-wrapper">
-                    <!-- 分頁資訊 (靠右) -->
-                    <div class="pagination-info">
-                        第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共
-                        <strong><?php echo $total_records; ?></strong> 筆資料）
-                    </div>
-
-                    <!-- 頁碼按鈕 (置中) -->
-                    <div class="pagination-container">
-                        <?php if ($page > 1): ?>
-                            <a
-                                href="?page=<?php echo $page - 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
-                        <?php endif; ?>
-
-                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                            <?php if ($i == $page): ?>
-                                <strong><?php echo $i; ?></strong>
-                            <?php else: ?>
-                                <a
-                                    href="?page=<?php echo $i; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
-                            <?php endif; ?>
-                        <?php endfor; ?>
-
-                        <?php if ($page < $total_pages): ?>
-                            <a
-                                href="?page=<?php echo $page + 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
-                        <?php endif; ?>
-                    </div>
-
-
-                </div>
             </div>
         </section>
-
         <!--看診紀錄-->
 
         <!--頁尾-->
