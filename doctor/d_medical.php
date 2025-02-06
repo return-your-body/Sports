@@ -102,8 +102,8 @@ if ($doctor = mysqli_fetch_assoc($result_doctor)) {
 $sql_appointment = "SELECT 
     a.appointment_id, 
     p.name AS patient_name, 
-    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '未設定' END AS gender,
-    IFNULL(DATE_FORMAT(p.birthday, '%Y-%m-%d'), '未設定') AS birthday,
+    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '無資料' END AS gender,
+    IFNULL(DATE_FORMAT(p.birthday, '%Y-%m-%d'), '無資料') AS birthday,
     DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
     st.shifttime AS consultation_time,
     COALESCE(a.note, '無') AS note,

@@ -413,11 +413,11 @@ if (isset($_SESSION["帳號"])) {
         SELECT 
             a.appointment_id,
             p.name AS people_name,
-            IFNULL(CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '未知') AS people_birthday,
+            IFNULL(CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '無資料') AS people_birthday,
             CASE 
                 WHEN p.gender_id = 1 THEN '男' 
                 WHEN p.gender_id = 2 THEN '女' 
-                ELSE '未設定' 
+                ELSE '無資料' 
             END AS people_gender,
             ds.date AS appointment_date,
             CASE DAYOFWEEK(ds.date)
