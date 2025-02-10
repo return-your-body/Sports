@@ -384,7 +384,7 @@ $link->close();
                                         </li>
                                     </ul>
                                 </li>
-                             
+
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                                         onclick="showLogoutBox()">登出</a>
@@ -573,7 +573,7 @@ $link->close();
                             <li><a href="h_appointment-records.php">預約紀錄</a></li>
                             <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
                             <li><a href="h_print-appointment.php">列印預約單</a></li> -->
-                           
+
                         </ul>
                     </div>
                     <!-- <div class="col-md-5">
