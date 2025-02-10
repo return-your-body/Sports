@@ -64,6 +64,14 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
     <link rel="stylesheet" href="css/bootstrap.css">
     <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="css/style.css">
+
+    <!-- jQuery 必須先載入 -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Select2 CSS & JS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
     <style>
         .rd-dropdown-link span {
             background-color: red;
@@ -208,35 +216,36 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a> -->
                                 </li>
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="">關於治療師</a>
-									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_therapist.php">總人數時段表</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_addds.php">治療師班表</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="a_treatment.php">新增治療項目</a>
-										</li>
-										<li class="rd-dropdown-item">
-											<a class="rd-dropdown-link" href="a_leave.php">
-												請假申請
-												<?php if ($pendingCount > 0): ?>
-													<span style="
-						background-color: red;
-						color: white;
-						font-size: 12px;
-						border-radius: 50%;
-						padding: 2px 6px;
-						margin-left: 5px;
-						display: inline-block;
-					">
-														<?php echo $pendingCount; ?>
-													</span>
-												<?php endif; ?>
-											</a>
-										</li>
-									</ul>
-								</li>
+                                    <ul class="rd-menu rd-navbar-dropdown">
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_therapist.php">總人數時段表</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_addds.php">治療師班表</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_treatment.php">新增治療項目</a>
+                                        </li>
+                                        <li class="rd-dropdown-item">
+                                            <a class="rd-dropdown-link" href="a_leave.php">
+                                                請假申請
+                                                <?php if ($pendingCount > 0): ?>
+                                                    <span style="
+                        background-color: red;
+                        color: white;
+                        font-size: 12px;
+                        border-radius: 50%;
+                        padding: 2px 6px;
+                        margin-left: 5px;
+                        display: inline-block;
+                    ">
+                                                        <?php echo $pendingCount; ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
                                 <li class="rd-nav-item "><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
                                 </li>
                                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
@@ -247,24 +256,24 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                 </li> -->
 
                                 <li class="rd-nav-item active"><a class="rd-nav-link" href="">用戶管理</a>
-									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_patient.php">用戶管理</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_addhd.php">新增治療師/助手</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_blacklist.php">黑名單</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_doctorlistadd.php">新增醫生資料</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_doctorlistmod.php">修改醫生資料</a>
-										</li>
-									</ul>
-								</li>
+                                    <ul class="rd-menu rd-navbar-dropdown">
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_patient.php">用戶管理</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_addhd.php">新增治療師/助手</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_blacklist.php">黑名單</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_doctorlistadd.php">新增醫生資料</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_doctorlistmod.php">修改醫生資料</a>
+                                        </li>
+                                    </ul>
+                                </li>
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                                         onclick="showLogoutBox()">登出</a>
@@ -345,9 +354,9 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
             <div class="container">
                 <div class="row justify-content-sm-center">
                     <div class="col-md-10 col-xl-8">
-                        <form class="rd-mailform" method="post" action="新增治療師資料.php" enctype="multipart/form-data">
-                            <div class="row row-20 row-fix">
+                        <form id="doctorForm" enctype="multipart/form-data">
 
+                            <div class="row row-20 row-fix">
                                 <!-- 醫生姓名 -->
                                 <div class="col-md-6">
                                     <div class="form-wrap form-wrap-validation">
@@ -355,81 +364,103 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                         <select class="form-input" id="doctor_id" name="doctor_id" required>
                                             <option value="" selected>-- 請選擇治療師 --</option>
                                             <?php
-                                            // 連接資料庫
-                                            require '../db.php';
-
-                                            // 查詢醫生清單
-                                            $query = "SELECT doctor_id, doctor FROM doctor";
+                                            include '../db.php'; // 引入資料庫連線
+                                            
+                                            // 查詢醫生資料（grade_id = 2 為醫生）
+                                            $query = "
+                                        SELECT d.doctor_id, d.doctor
+                                        FROM doctor d
+                                        INNER JOIN user u ON d.user_id = u.user_id
+                                        INNER JOIN grade g ON u.grade_id = g.grade_id
+                                        WHERE g.grade_id = 2
+                                    ";
                                             $result = mysqli_query($link, $query);
 
-                                            // 檢查查詢是否成功
-                                            if ($result && mysqli_num_rows($result) > 0) {
+                                            if ($result) {
                                                 while ($row = mysqli_fetch_assoc($result)) {
-                                                    echo '<option value="' . $row['doctor_id'] . '">' . htmlspecialchars($row['doctor']) . '</option>';
+                                                    echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
                                                 }
                                             } else {
-                                                echo '<option value="">無醫生資料</option>';
+                                                echo "<option value=''>查詢錯誤</option>";
                                             }
-
-                                            // 關閉資料庫連線
-                                            mysqli_close($link);
                                             ?>
                                         </select>
                                     </div>
                                 </div>
 
-
                                 <!-- 學歷 -->
                                 <div class="col-md-6">
                                     <div class="form-wrap form-wrap-validation">
-                                        <label class="form-label-outside" for="education">學歷</label>
-                                        <input class="form-input" id="education" type="text" name="education"
-                                            placeholder="請輸入學歷" required />
+                                        <label class="form-label-outside">學歷</label>
+                                        <div id="education-container">
+                                            <div class="input-group">
+                                                <input class="form-input" type="text" name="education[]"
+                                                    placeholder="請輸入學歷" required />
+                                                <button type="button" class="btn btn-success"
+                                                    onclick="addInput('education-container', 'education[]')">+</button>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="education-final" name="education_final">
                                     </div>
                                 </div>
 
                                 <!-- 現任職務 -->
                                 <div class="col-md-6">
                                     <div class="form-wrap form-wrap-validation">
-                                        <label class="form-label-outside" for="current_position">現任職務</label>
-                                        <input class="form-input" id="current_position" type="text"
-                                            name="current_position" placeholder="請輸入現任職務" required />
+                                        <label class="form-label-outside">現任職務</label>
+                                        <div id="current_position-container">
+                                            <div class="input-group">
+                                                <input class="form-input" type="text" name="current_position[]"
+                                                    placeholder="請輸入現任職務" required />
+                                                <button type="button" class="btn btn-success"
+                                                    onclick="addInput('current_position-container', 'current_position[]')">+</button>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="current_position-final" name="current_position_final">
                                     </div>
                                 </div>
 
                                 <!-- 專長描述 -->
                                 <div class="col-md-6">
                                     <div class="form-wrap form-wrap-validation">
-                                        <label class="form-label-outside" for="specialty">專長描述</label>
-                                        <input class="form-input" id="specialty" type="text" name="specialty"
-                                            placeholder="請輸入專長描述" required />
+                                        <label class="form-label-outside">專長描述</label>
+                                        <div id="specialty-container">
+                                            <div class="input-group">
+                                                <input class="form-input" type="text" name="specialty[]"
+                                                    placeholder="請輸入專長描述" required />
+                                                <button type="button" class="btn btn-success"
+                                                    onclick="addInput('specialty-container', 'specialty[]')">+</button>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="specialty-final" name="specialty_final">
                                     </div>
                                 </div>
 
                                 <!-- 專業認證 -->
                                 <div class="col-md-6">
                                     <div class="form-wrap form-wrap-validation">
-                                        <label class="form-label-outside" for="certifications">專業認證</label>
-                                        <input class="form-input" id="certifications" type="text" name="certifications"
-                                            placeholder="請輸入專業認證" required />
+                                        <label class="form-label-outside">專業認證</label>
+                                        <div id="certifications-container">
+                                            <div class="input-group">
+                                                <input class="form-input" type="text" name="certifications[]"
+                                                    placeholder="請輸入專業認證" required />
+                                                <button type="button" class="btn btn-success"
+                                                    onclick="addInput('certifications-container', 'certifications[]')">+</button>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="certifications-final" name="certifications_final">
                                     </div>
                                 </div>
 
-                                <!-- 治療理念 -->
-                                <div class="col-md-12">
-                                    <div class="form-wrap form-wrap-validation">
-                                        <label class="form-label-outside" for="treatment_concept">治療理念</label>
-                                        <textarea class="form-input" id="treatment_concept" name="treatment_concept"
-                                            rows="4" placeholder="請輸入治療理念" required></textarea>
-                                    </div>
-                                </div>
-
-                                <!-- 圖片 -->
+                                <!-- 圖片上傳 -->
                                 <div class="col-md-12">
                                     <div class="form-wrap form-wrap-validation">
                                         <label class="form-label-outside" for="image">上傳照片</label>
-                                        <input class="form-input" id="image" type="file" name="image"
-                                            accept="image/*" />
+                                        <input class="form-input" id="image" type="file" name="image" accept="image/*"
+                                            onchange="previewImage(event)" required />
+                                        <br>
+                                        <img id="image-preview" src="" alt="圖片預覽"
+                                            style="max-width: 200px; display: none; margin-top: 10px;">
                                     </div>
                                 </div>
 
@@ -444,8 +475,91 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
             </div>
         </section>
 
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script>
+            $(document).ready(function () {
+                // ✅ 表單提交 AJAX
+                $("form").on("submit", function (event) {
+                    event.preventDefault(); // 防止傳統表單提交
+
+                    // **合併多個輸入框數據**
+                    combineInputs("education-container", "education-final");
+                    combineInputs("current_position-container", "current_position-final");
+                    combineInputs("specialty-container", "specialty-final");
+                    combineInputs("certifications-container", "certifications-final");
+
+                    // **使用 FormData 收集表單數據**
+                    var formData = new FormData(this);
+
+                    $.ajax({
+                        url: "新增治療師資料.php",
+                        type: "POST",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        dataType: "json",
+                        success: function (response) {
+                            if (response.status === "success") {
+                                alert(response.message);
+                                $("form")[0].reset();
+                                $("#image-preview").hide();
+                            } else {
+                                console.error("伺服器錯誤:", response.message);
+                                alert(response.message);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("AJAX 錯誤:", xhr.responseText);
+                            alert("提交失敗，請檢查伺服器日誌：" + xhr.responseText);
+                        }
+                    });
+
+                });
+
+                // ✅ 圖片預覽功能
+                function previewImage(event) {
+                    var reader = new FileReader();
+                    reader.onload = function () {
+                        $("#image-preview").attr("src", reader.result).show();
+                    };
+                    reader.readAsDataURL(event.target.files[0]);
+                }
+                $("#image").change(previewImage);
+
+
+                // ✅ 動態新增輸入框
+                window.addInput = function (containerId, inputName) {
+                    var container = $("#" + containerId);
+                    var div = $('<div class="input-group mb-2"></div>');
+
+                    var input = $('<input class="form-input" type="text" name="' + inputName + '" placeholder="請輸入內容" required>');
+
+                    var removeBtn = $('<button type="button" class="btn btn-danger">−</button>');
+                    removeBtn.click(function () {
+                        div.remove();
+                    });
+
+                    div.append(input).append(removeBtn);
+                    container.append(div);
+                };
+
+                // ✅ 合併多個輸入框為一個字串，使用 `\r\n` 分隔
+                function combineInputs(containerId, finalInputId) {
+                    var values = $("#" + containerId).find("input").map(function () {
+                        return $(this).val().trim();
+                    }).get();
+
+                    $("#" + finalInputId).val(values.join("\r\n"));
+                }
+            });
+        </script>
+
+
+
+
 
     </div>
+
     <!-- Global Mailform Output-->
     <div class="snackbars" id="form-output-global"></div>
     <!-- Javascript-->
