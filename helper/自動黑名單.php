@@ -1,6 +1,5 @@
 <?php
 require '../db.php';
-
 $current_time = date('Y-m-d H:i:s');
 
 $update_no_show = $link->prepare("
