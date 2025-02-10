@@ -608,9 +608,8 @@ $result = $stmt->get_result();
                           <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
                           <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
                           <td><?php echo htmlspecialchars($row['note']); ?></td>
-
                           <td>
-    <select class="status-dropdown" data-id="<?php echo $row['id']; ?>" 
+    <select class="status-dropdown" data-id="<?php echo $row['id']; ?>"
         <?php echo ($row['status_name'] == '已看診') ? 'disabled' : ''; ?>>
         <option value="預約" <?php echo ($row['status_name'] == '預約') ? 'selected' : ''; ?>>預約</option>
         <option value="修改" <?php echo ($row['status_name'] == '修改') ? 'selected' : ''; ?>>修改</option>
@@ -643,7 +642,10 @@ $result = $stmt->get_result();
 
 
               <!-- 修改時間的 Modal -->
-              <div id="modal" class="modal">
+             
+
+<!-- 修改時間的 Modal -->
+<div id="modal" class="modal">
     <div class="modal-content">
         <span id="modal-close" class="close">&times;</span>
         <h2>修改預約</h2>
@@ -660,95 +662,37 @@ $result = $stmt->get_result();
 </div>
 
 
+
               <script>
-document.addEventListener("DOMContentLoaded", function () {
-    console.log("JS 已加載");
+document.getElementById("appointment-date").addEventListener("change", function () {
+    const selectedDate = this.value;
+    console.log("📅 選擇日期:", selectedDate);
 
-    // **監聽狀態變更**
-    document.querySelectorAll(".status-dropdown").forEach(select => {
-        select.addEventListener("change", function () {
-            const appointmentId = this.dataset.id;
-            const status = this.value;
-            console.log(`更新狀態: ${status}，ID: ${appointmentId}`);
-
-            if (status === "2") {
-                openModal(appointmentId); // 若選擇 "修改"，彈跳出表單
-            } else {
-                updateStatus(appointmentId, status);
-            }
-        });
-    });
-
-    // **開啟彈跳視窗**
-    function openModal(appointmentId) {
-        const modal = document.getElementById("modal");
-        if (modal) {
-            console.log("開啟彈跳視窗，ID:", appointmentId);
-            modal.style.display = "block";
-            document.getElementById("confirm-modify").setAttribute("data-appointment-id", appointmentId);
-        } else {
-            console.error("找不到 modal 元素");
-        }
+    if (!selectedDate) {
+        return;
     }
 
-    // **確認修改**
-    document.getElementById("confirm-modify").addEventListener("click", function () {
-        const appointmentId = this.getAttribute("data-appointment-id");
-        const selectedDate = document.getElementById("appointment-date").value;
-        const selectedTime = document.getElementById("appointment-time").value;
-
-        if (!selectedDate || !selectedTime) {
-            alert("請選擇有效的日期與時間");
-            return;
-        }
-
-        console.log(`送出修改請求: ID=${appointmentId}, 日期=${selectedDate}, 時間=${selectedTime}`);
-
-        // **修正 fetch() 傳遞方式，使用 FormData**
-        let formData = new FormData();
-        formData.append("appointment_id", appointmentId);
-        formData.append("date", selectedDate);
-        formData.append("time", selectedTime);
-        formData.append("status", "2");
-
-        fetch("更新狀態.php", {
-            method: "POST",
-            body: formData
-        })
+    fetch(`獲取時間.php?date=${selectedDate}`)
         .then(response => response.json())
         .then(data => {
-            console.log("伺服器回應: ", data);
-            if (data.status === "success") {
-                alert("修改成功！");
-                location.reload();
-            } else {
-                alert("修改失敗：" + data.message);
-            }
-        })
-        .catch(error => console.error("錯誤", error));
-    });
+            console.log("✅ 取得可用時間:", data);
 
-    // **更新狀態**
-    function updateStatus(appointmentId, status) {
-        let formData = new FormData();
-        formData.append("appointment_id", appointmentId);
-        formData.append("status", status);
+            let timeSelect = document.getElementById("appointment-time");
+            timeSelect.innerHTML = "<option value=''>請選擇時間</option>";
 
-        fetch("更新狀態.php", {
-            method: "POST",
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === "success") {
-                alert(`狀態已更新為 ${status}！`);
-                location.reload();
-            } else {
-                alert("更新失敗：" + data.message);
+            if (data.error) {
+                console.warn("⚠️ 無可用時段:", data.error);
+                return;
             }
+
+            data.forEach(timeSlot => {
+                let option = document.createElement("option");
+                option.value = timeSlot.id;
+                option.textContent = timeSlot.time;
+                timeSelect.appendChild(option);
+            });
         })
-        .catch(error => console.error("錯誤", error));
-    }
+        .catch(error => console.error("❌ 錯誤:", error));
 });
 
               </script>
