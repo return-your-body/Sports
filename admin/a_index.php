@@ -255,11 +255,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_blacklist.php">黑名單</a>
 										</li>
-									</ul>
-								</li>
-
-								<li class="rd-nav-item"><a class="rd-nav-link" href="#">醫生管理</a>
-									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_doctorlistadd.php">新增醫生資料</a>
 										</li>
