@@ -1,67 +1,61 @@
 <?php
 require '../db.php';
-header("Content-Type: application/json");
+header('Content-Type: application/json');
 
-if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-    echo json_encode(["error" => "無效的請求方式"]);
+// 紀錄 POST 內容（除錯用）
+$rawPostData = file_get_contents("php://input");
+parse_str($rawPostData, $postVars);
+error_log("POST data: " . print_r($postVars, true));
+
+// 檢查是否收到 id 和 shifttime_id
+if (!isset($_POST['id']) || !isset($_POST['shifttime_id'])) {
+    echo json_encode(["error" => "缺少必要參數", "post_data" => $_POST]);
     exit;
 }
 
-$appointment_id = intval($_POST['id']);
-$status_name = trim($_POST['status']);
-$current_time = date('Y-m-d H:i:s');
+$appointmentId = intval($_POST['id']);
+$newShifttimeId = intval($_POST['shifttime_id']);
 
-if (!$link) {
-    echo json_encode(["error" => "資料庫連接失敗"]);
+// 確保數據正確
+if ($appointmentId <= 0 || $newShifttimeId <= 0) {
+    echo json_encode(["error" => "無效的 id 或 shifttime_id"]);
     exit;
 }
 
-// 取得 status_id
-$status_stmt = $link->prepare("SELECT status_id FROM status WHERE status_name = ?");
-$status_stmt->bind_param("s", $status_name);
-$status_stmt->execute();
-$status_result = $status_stmt->get_result();
-$status_row = $status_result->fetch_assoc();
-$status_stmt->close();
-
-if (!$status_row) {
-    echo json_encode(["error" => "無效的狀態"]);
+// 檢查 appointment 是否存在並取得對應的 doctorshift_id
+$sql = "SELECT doctorshift_id FROM appointment WHERE appointment_id = ?";
+$stmt = $link->prepare($sql);
+if (!$stmt) {
+    echo json_encode(["error" => "SQL 準備失敗: " . $link->error]);
     exit;
 }
-$status_id = $status_row['status_id'];
+$stmt->bind_param("i", $appointmentId);
+$stmt->execute();
+$result = $stmt->get_result();
+$stmt->close();
 
-// **處理請假與爽約**
-if ($status_name === '請假' || $status_name === '爽約') {
-    $black_increment = ($status_name === '請假') ? 0.5 : 1;
-
-    // 獲取 people_id 並更新 black 欄位
-    $people_stmt = $link->prepare("SELECT people_id FROM appointment WHERE appointment_id = ?");
-    $people_stmt->bind_param("i", $appointment_id);
-    $people_stmt->execute();
-    $people_result = $people_stmt->get_result();
-    $people_row = $people_result->fetch_assoc();
-    $people_stmt->close();
-
-    if ($people_row) {
-        $people_id = $people_row['people_id'];
-        $update_people_stmt = $link->prepare("UPDATE people SET black = black + ? WHERE people_id = ?");
-        $update_people_stmt->bind_param("di", $black_increment, $people_id);
-        $update_people_stmt->execute();
-        $update_people_stmt->close();
-    }
+if ($result->num_rows === 0) {
+    echo json_encode(["error" => "找不到對應的預約"]);
+    exit;
 }
 
-// **更新狀態**
-$update_stmt = $link->prepare("UPDATE appointment SET status_id = ?, update_time = ? WHERE appointment_id = ?");
-$update_stmt->bind_param("isi", $status_id, $current_time, $appointment_id);
-$success = $update_stmt->execute();
-$update_stmt->close();
+$row = $result->fetch_assoc();
+$doctorshiftId = $row['doctorshift_id'];
 
-if ($success) {
-    echo json_encode(["success" => true, "message" => "狀態已更新為 $status_name"]);
+// 更新 appointment 的 shifttime_id
+$sql = "UPDATE appointment SET shifttime_id = ? WHERE appointment_id = ?";
+$stmt = $link->prepare($sql);
+if (!$stmt) {
+    echo json_encode(["error" => "SQL 準備失敗: " . $link->error]);
+    exit;
+}
+$stmt->bind_param("ii", $newShifttimeId, $appointmentId);
+
+if ($stmt->execute()) {
+    echo json_encode(["success" => true]);
 } else {
-    echo json_encode(["error" => "狀態更新失敗"]);
+    echo json_encode(["error" => "更新失敗: " . $stmt->error]);
 }
 
-$link->close();
+$stmt->close();
 ?>
