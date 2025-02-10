@@ -27,6 +27,6 @@ $stmt->bind_param("di", $blackScore, $id); // 修正 `di` 為 `dd`
 if ($stmt->execute()) {
     echo json_encode(["status" => "success", "message" => "違規記錄已更新"]);
 } else {
-    echo json_encode(["status" => "error", "message" => "無法更新違規記錄"]]);
+    echo json_encode(["status" => "error", "message" => "無法更新違規記錄"]);
 }
 ?>
