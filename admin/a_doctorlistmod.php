@@ -205,7 +205,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                         </div>
                         <div class="rd-navbar-nav-wrap">
                             <ul class="rd-navbar-nav">
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
+                                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a> -->
                                 </li>
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="">關於治療師</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
@@ -247,31 +247,25 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                     </ul>
                                 </li> -->
 
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="">用戶管理</a>
-                                    <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_patient.php">用戶管理</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_addhd.php">新增治療師/助手</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_blacklist.php">黑名單</a>
-                                        </li>
-                                    </ul>
-                                </li>
-
-
-                                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">醫生管理</a>
-                                    <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_doctorlistadd.php">新增醫生資料</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_doctorlistmod.php">修改醫生資料</a>
-                                        </li>
-                                    </ul>
-                                </li>
+                                <li class="rd-nav-item active"><a class="rd-nav-link" href="">用戶管理</a>
+									<ul class="rd-menu rd-navbar-dropdown">
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_patient.php">用戶管理</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_addhd.php">新增治療師/助手</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_blacklist.php">黑名單</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_doctorlistadd.php">新增醫生資料</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="a_doctorlistmod.php">修改醫生資料</a>
+										</li>
+									</ul>
+								</li>
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                                         onclick="showLogoutBox()">登出</a>
