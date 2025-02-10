@@ -1,26 +1,18 @@
 <?php
-require 'db.php';
-header('Content-Type: application/json');
+require '../db.php';
+$current_time = date('Y-m-d H:i:s');
 
-$id = intval($_GET['id'] ?? 0);
-$action = $_GET['action'] ?? '';
+$update_no_show = $link->prepare("
+    UPDATE appointment a
+    JOIN people p ON a.people_id = p.people_id
+    SET a.status_id = (SELECT status_id FROM status WHERE status_name = '爽約'), 
+        p.black = p.black + 1
+    WHERE a.status_id NOT IN (SELECT status_id FROM status WHERE status_name = '報到')
+    AND TIMESTAMPADD(MINUTE, 10, a.appointment_time) <= ?
+");
+$update_no_show->bind_param("s", $current_time);
+$update_no_show->execute();
+$update_no_show->close();
 
-$blackScore = 0;
-if ($action === "請假") {
-    $blackScore = 0.5;
-} elseif ($action === "爽約") {
-    $blackScore = 1;
-} else {
-    echo json_encode(["status" => "error", "message" => "無效的行為"]);
-    exit;
-}
-
-// 更新 blacklist 表
-$stmt = $link->prepare("UPDATE people SET black = black + ? WHERE people_id = ?");
-$stmt->bind_param("di", $blackScore, $id); // 修正 `di` 為 `dd`
-if ($stmt->execute()) {
-    echo json_encode(["status" => "success", "message" => "違規記錄已更新"]);
-} else {
-    echo json_encode(["status" => "error", "message" => "無法更新違規記錄"]]);
-}
+$link->close();
 ?>
