@@ -1,82 +1,66 @@
 <?php
-// 引入資料庫連線
-require '../db.php';
+require '../db.php'; // 引入資料庫連線
 
-// 如果不是 POST 請求，跳回表單頁面
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header("Location: a_doctorlistadd.php");
-    exit;
-}
+header('Content-Type: application/json'); // 設定回應 JSON
 
-// 接收表單資料
-$doctor_id = isset($_POST['doctor_id']) ? (int) $_POST['doctor_id'] : 0;
-$education = mysqli_real_escape_string($link, $_POST['education'] ?? '');
-$current_position = mysqli_real_escape_string($link, $_POST['current_position'] ?? '');
-$specialty = mysqli_real_escape_string($link, $_POST['specialty'] ?? '');
-$certifications = mysqli_real_escape_string($link, $_POST['certifications'] ?? '');
-$treatment_concept = mysqli_real_escape_string($link, $_POST['treatment_concept'] ?? '');
-$created_at = mysqli_real_escape_string($link, $_POST['created_at'] ?? '');
+$response = ["status" => "error", "message" => ""];
 
-// 如果必要欄位未填寫，返回表單頁面
-if (!$doctor_id || !$education || !$current_position || !$specialty || !$certifications || !$treatment_concept) {
-    echo "<script>
-            alert('請填寫完整的表單資料。');
-            window.location.href = 'a_doctorlistadd.php';
-          </script>";
-    exit;
-}
+// 確保請求方式為 POST
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $doctor_id = isset($_POST['doctor_id']) ? intval($_POST['doctor_id']) : 0;
+    $education = isset($_POST['education_final']) ? $_POST['education_final'] : '';
+    $current_position = isset($_POST['current_position_final']) ? $_POST['current_position_final'] : '';
+    $specialty = isset($_POST['specialty_final']) ? $_POST['specialty_final'] : '';
+    $certifications = isset($_POST['certifications_final']) ? $_POST['certifications_final'] : '';
 
-// 處理圖片上傳
-$image_name = '';
-if (!empty($_FILES['image']['name'])) {
-    $target_dir = "../uploads/";
-    $image_name = time() . "_" . basename($_FILES['image']['name']); // 避免檔名重複
-    $target_file = $target_dir . $image_name;
-
-    // 確保目錄存在
-    if (!is_dir($target_dir)) {
-        mkdir($target_dir, 0777, true);
+    // **處理圖片**
+    $image_data = null;
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $image_tmp_name = $_FILES['image']['tmp_name'];
+        $image_data = file_get_contents($image_tmp_name);
     }
 
-    // 檢查並移動圖片
-    if (!move_uploaded_file($_FILES['image']['tmp_name'], $target_file)) {
-        echo "<script>
-                alert('圖片上傳失敗，請檢查目錄權限。');
-                window.location.href = 'a_doctorlistadd.php';
-              </script>";
+    // **檢查 `doctor_id` 是否有效**
+    if ($doctor_id === 0) {
+        $response["message"] = "請選擇治療師";
+        echo json_encode($response);
         exit;
     }
-}
 
-// 新增資料到資料庫
-$query = "INSERT INTO doctorprofile 
-          (doctor_id, image, education, current_position, specialty, certifications, treatment_concept, created_at, updated_at) 
-          VALUES ($doctor_id,$image_name ,$education ,$current_position , $specialty, $certifications, $treatment_concept, $created_at, NOW())";
+    // **準備 SQL 語句**
+    $query = "INSERT INTO doctorprofile (doctor_id, education, current_position, specialty, certifications, image) 
+              VALUES (?, ?, ?, ?, ?, ?)";
 
-$stmt = mysqli_prepare($link, $query);
-if (!$stmt) {
-    echo "<script>
-            alert('資料庫查詢準備失敗：" . mysqli_error($link) . "');
-            window.location.href = 'a_doctorlistadd.php';
-          </script>";
-    exit;
-}
+    $stmt = mysqli_prepare($link, $query);
+    if (!$stmt) {
+        $response["message"] = "SQL 準備失敗：" . mysqli_error($link);
+        echo json_encode($response);
+        exit;
+    }
 
-// 綁定參數並執行查詢
-mysqli_stmt_bind_param($stmt, "issssss", $doctor_id, $image_name, $education, $current_position, $specialty, $certifications, $treatment_concept);
-if (mysqli_stmt_execute($stmt)) {
-    echo "<script>
-            alert('醫生資料新增成功！');
-            window.location.href = 'a_doctorlistadd.php';
-          </script>";
+    // **綁定參數**
+    mysqli_stmt_bind_param($stmt, "isssss", $doctor_id, $education, $current_position, $specialty, $certifications);
+
+    // **處理 BLOB（圖片二進位數據）**
+    if ($image_data !== null) {
+        mysqli_stmt_send_long_data($stmt, 5, $image_data);
+    }
+
+    // **執行 SQL 並檢查是否成功**
+    if (mysqli_stmt_execute($stmt)) {
+        $response["status"] = "success";
+        $response["message"] = "✅ 醫生資料新增成功";
+    } else {
+        $response["message"] = "❌ 錯誤：" . mysqli_error($link);
+    }
+
+    // **關閉連線**
+    mysqli_stmt_close($stmt);
+    mysqli_close($link);
 } else {
-    echo "<script>
-            alert('資料新增失敗：" . mysqli_error($link) . "');
-            window.location.href = 'a_doctorlistadd.php';
-          </script>";
+    // **防止非 POST 請求**
+    $response["message"] = "請使用 POST 方法";
 }
 
-// 關閉連線
-mysqli_stmt_close($stmt);
-mysqli_close($link);
+echo json_encode($response);
 ?>
