@@ -328,52 +328,51 @@ $result = $stmt->get_result();
 
     /* 狀態 */
 
-  /* 彈跳視窗 */
-/* 彈跳視窗 */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 400px;
-    background: white;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
-    border-radius: 10px;
-}
+    /* 彈跳視窗 */
+    /* 彈跳視窗 */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      background: white;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+    }
 
-.modal-content {
-    padding: 20px;
-    text-align: center;
-}
+    .modal-content {
+      padding: 20px;
+      text-align: center;
+    }
 
-.close {
-    position: absolute;
-    right: 15px;
-    top: 10px;
-    cursor: pointer;
-    font-size: 20px;
-}
+    .close {
+      position: absolute;
+      right: 15px;
+      top: 10px;
+      cursor: pointer;
+      font-size: 20px;
+    }
 
-#appointment-date,
-#appointment-time {
-    display: block;
-    width: 100%;
-    padding: 5px;
-    margin-top: 10px;
-}
+    #appointment-date,
+    #appointment-time {
+      display: block;
+      width: 100%;
+      padding: 5px;
+      margin-top: 10px;
+    }
 
-#confirm-modify {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-    width: 100%;
-    margin-top: 10px;
-}
-
+    #confirm-modify {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
   </style>
 </head>
 
@@ -642,58 +641,58 @@ $result = $stmt->get_result();
 
 
               <!-- 修改時間的 Modal -->
-             
 
-<!-- 修改時間的 Modal -->
-<div id="modal" class="modal">
-    <div class="modal-content">
-        <span id="modal-close" class="close">&times;</span>
-        <h2>修改預約</h2>
-        <label for="appointment-date">預約日期：</label>
-        <input type="date" id="appointment-date">
 
-        <label for="appointment-time">預約時間：</label>
-        <select id="appointment-time">
-            <option value="">請選擇時間</option>
-        </select>
+              <!-- 修改時間的 Modal -->
+              <div id="modal" class="modal">
+                <div class="modal-content">
+                  <span id="modal-close" class="close">&times;</span>
+                  <h2>修改預約</h2>
+                  <label for="appointment-date">預約日期：</label>
+                  <input type="date" id="appointment-date">
 
-        <button id="confirm-modify">確認修改</button>
-    </div>
-</div>
+                  <label for="appointment-time">預約時間：</label>
+                  <select id="appointment-time">
+                    <option value="">請選擇時間</option>
+                  </select>
+
+                  <button id="confirm-modify">確認修改</button>
+                </div>
+              </div>
 
 
 
               <script>
-document.getElementById("appointment-date").addEventListener("change", function () {
-    const selectedDate = this.value;
-    console.log("📅 選擇日期:", selectedDate);
+                document.getElementById("appointment-date").addEventListener("change", function () {
+                  const selectedDate = this.value;
+                  console.log("📅 選擇日期:", selectedDate);
 
-    if (!selectedDate) {
-        return;
-    }
+                  if (!selectedDate) {
+                    return;
+                  }
 
-    fetch(`獲取時間.php?date=${selectedDate}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log("✅ 取得可用時間:", data);
+                  fetch(`獲取時間.php?date=${selectedDate}`)
+                    .then(response => response.json())
+                    .then(data => {
+                      console.log("✅ 取得可用時間:", data);
 
-            let timeSelect = document.getElementById("appointment-time");
-            timeSelect.innerHTML = "<option value=''>請選擇時間</option>";
+                      let timeSelect = document.getElementById("appointment-time");
+                      timeSelect.innerHTML = "<option value=''>請選擇時間</option>";
 
-            if (data.error) {
-                console.warn("⚠️ 無可用時段:", data.error);
-                return;
-            }
+                      if (data.error) {
+                        console.warn("⚠️ 無可用時段:", data.error);
+                        return;
+                      }
 
-            data.forEach(timeSlot => {
-                let option = document.createElement("option");
-                option.value = timeSlot.id;
-                option.textContent = timeSlot.time;
-                timeSelect.appendChild(option);
-            });
-        })
-        .catch(error => console.error("❌ 錯誤:", error));
-});
+                      data.forEach(timeSlot => {
+                        let option = document.createElement("option");
+                        option.value = timeSlot.id;
+                        option.textContent = timeSlot.time;
+                        timeSelect.appendChild(option);
+                      });
+                    })
+                    .catch(error => console.error("❌ 錯誤:", error));
+                });
 
               </script>
 
