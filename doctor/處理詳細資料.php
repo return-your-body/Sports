@@ -1,8 +1,6 @@
 <?php
 require '../db.php';
 
-header("Content-Type: application/json; charset=UTF-8");
-
 if (!isset($_GET['id'])) {
     echo json_encode(['error' => '缺少參數！']);
     exit;
@@ -15,13 +13,15 @@ SELECT
     d.doctor AS doctor_name,
     i.item AS treatment_item,
     i.price AS treatment_price,
+    mr.note_d AS doctor_note,  -- 醫生備註
     mr.created_at AS created_time
 FROM medicalrecord mr
 LEFT JOIN appointment a ON mr.appointment_id = a.appointment_id
 LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
 LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
 LEFT JOIN item i ON mr.item_id = i.item_id
-WHERE mr.appointment_id = ?";
+WHERE mr.appointment_id = ?
+";
 
 $stmt = mysqli_prepare($link, $query_details);
 if (!$stmt) {

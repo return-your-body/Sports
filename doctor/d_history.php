@@ -110,7 +110,6 @@ mysqli_stmt_bind_param($stmt_history, "i", $people_id);
 mysqli_stmt_execute($stmt_history);
 $result_history = mysqli_stmt_get_result($stmt_history);
 ?>
-?>
 
 
 <!DOCTYPE html>
@@ -558,7 +557,7 @@ $result_history = mysqli_stmt_get_result($stmt_history);
                         <?php
                         echo "歡迎 ~ ";
                         // 顯示姓名
-                        echo $_SESSION['doctor_name'];
+                        echo $姓名;
                         ;
                         ?>
                     </div>
@@ -625,7 +624,8 @@ $result_history = mysqli_stmt_get_result($stmt_history);
                     <div id="popup-overlay" onclick="closePopup()"></div>
 
                     <!-- 彈跳視窗 -->
-                    <div id="popup">
+                    <div id="popup" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                        background: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
                         <h2>詳細資料</h2>
                         <table style="width: 100%;">
                             <tr>
@@ -641,12 +641,17 @@ $result_history = mysqli_stmt_get_result($stmt_history);
                                 <td id="popup-treatment-price">無資料</td>
                             </tr>
                             <tr>
+                                <th>醫生備註</th>
+                                <td id="popup-doctor-note">無資料</td>
+                            </tr>
+                            <tr>
                                 <th>建立時間</th>
                                 <td id="popup-created-time">無資料</td>
                             </tr>
                         </table>
                         <button onclick="closePopup()">關閉</button>
                     </div>
+
 
                 <?php endif; ?>
             </div>
@@ -663,11 +668,11 @@ $result_history = mysqli_stmt_get_result($stmt_history);
                             document.getElementById('popup-doctor-name').textContent = data.doctor_name || '無資料';
                             document.getElementById('popup-treatment-item').textContent = data.treatment_item || '無資料';
                             document.getElementById('popup-treatment-price').textContent = data.treatment_price || '無資料';
+                            document.getElementById('popup-doctor-note').textContent = data.doctor_note || '無資料';
                             document.getElementById('popup-created-time').textContent = data.created_time || '無資料';
 
-                            // 顯示彈跳視窗與背景遮罩
+                            // 顯示彈跳視窗
                             document.getElementById('popup').style.display = 'block';
-                            document.getElementById('popup-overlay').style.display = 'block';
                         }
                     })
                     .catch(error => {
@@ -677,8 +682,10 @@ $result_history = mysqli_stmt_get_result($stmt_history);
             }
 
             function closePopup() {
-                document.getElementById('popup').style.display = 'none';
-                document.getElementById('popup-overlay').style.display = 'none';
+                const popup = document.getElementById('popup');
+                if (popup) {
+                    popup.style.display = 'none';
+                }
             }
 
         </script>
