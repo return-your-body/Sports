@@ -72,12 +72,12 @@ require '../db.php'; // 資料庫連線
 // 預設參數
 $records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 10; // 預設 10 筆
 $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-$search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
+$search_idcard = isset($_GET['search_idcard']) ? trim($_GET['search_idcard']) : '';
 
 // 計算總筆數
-$sql_total = "SELECT COUNT(*) AS total FROM `people` WHERE `name` LIKE ?";
+$sql_total = "SELECT COUNT(*) AS total FROM `people` WHERE `idcard` LIKE ?";
 $stmt_total = $link->prepare($sql_total);
-$like_search = "%$search_name%";
+$like_search = "%$search_idcard%";
 $stmt_total->bind_param("s", $like_search);
 $stmt_total->execute();
 $result_total = $stmt_total->get_result();
@@ -92,22 +92,22 @@ $offset = ($current_page - 1) * $records_per_page;
 // 查詢分頁資料，計算年齡
 $sql = "
 SELECT 
-people_id, 
-name, 
-COALESCE(
-    CASE 
-        WHEN gender_id = 1 THEN '男'
-        WHEN gender_id = 2 THEN '女'
-        ELSE '無資料'
-    END, '未知') AS gender,
-COALESCE(
-    CASE 
-        WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday) / 365.25), ' 歲)')
-        ELSE '無資料'
-    END, '無資料') AS birthday_with_age,
-COALESCE(NULLIF(idcard, ''), '無資料') AS idcard
+    people_id, 
+    name, 
+    COALESCE(
+        CASE 
+            WHEN gender_id = 1 THEN '男'
+            WHEN gender_id = 2 THEN '女'
+            ELSE '無資料'
+        END, '未知') AS gender,
+    COALESCE(
+        CASE 
+            WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday) / 365.25), ' 歲)')
+            ELSE '無資料'
+        END, '無資料') AS birthday_with_age,
+    COALESCE(NULLIF(idcard, ''), '無資料') AS idcard
 FROM `people`
-WHERE `name` LIKE ?
+WHERE `idcard` LIKE ?
 LIMIT ?, ?";
 $stmt = $link->prepare($sql);
 $stmt->bind_param("sii", $like_search, $offset, $records_per_page);
@@ -470,8 +470,8 @@ $link->close();
                 <div class="search-container"
                     style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 20px;">
                     <form method="GET" action="" style="display: flex; align-items: center; gap: 10px;">
-                        <input type="text" name="search_name" id="search_name" placeholder="請輸入使用者姓名"
-                            value="<?php echo htmlspecialchars($search_name); ?>">
+                        <input type="text" name="search_idcard" id="search_idcard" placeholder="請輸入身分證號"
+                            value="<?php echo htmlspecialchars($search_idcard); ?>">
                         <button type="submit" class="popup-btn">搜尋</button>
                     </form>
 
@@ -533,9 +533,9 @@ $link->close();
 
                 <div style="text-align: center; margin-top: 20px;">
                     <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <a href="?search_name=<?php echo urlencode($search_name); ?>&page=<?php echo $i; ?>&per_page=<?php echo $records_per_page; ?>"
-                            style="margin: 0 5px; <?php echo $i == $current_page ? 'font-weight: bold;' : ''; ?>">
-                            <?php echo $i; ?>
+                        <a
+                            href="?search_idcard=<?php echo urlencode($search_idcard); ?>&page=<?php echo $i; ?>&per_page=<?php echo $records_per_page; ?>">
+
                         </a>
                     <?php endfor; ?>
                 </div>
