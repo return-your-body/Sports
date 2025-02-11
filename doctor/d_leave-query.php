@@ -357,9 +357,44 @@ if (isset($_SESSION["帳號"])) {
       }
 
       /* 分頁樣式 */
+      /* 分頁樣式 */
       .pagination {
-        text-align: center;
-        margin: 10px 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px 0;
+        list-style: none;
+        padding: 0;
+      }
+
+      .pagination a,
+      .pagination span {
+        display: inline-block;
+        padding: 8px 12px;
+        margin: 0 4px;
+        border: 1px solid #ddd;
+        text-decoration: none;
+        color: #007bff;
+        border-radius: 5px;
+        transition: background-color 0.3s, color 0.3s;
+      }
+
+      .pagination a:hover {
+        background-color: #007bff;
+        color: white;
+      }
+
+      .pagination .active {
+        background-color: #007bff;
+        color: white;
+        font-weight: bold;
+        border-color: #007bff;
+      }
+
+      .pagination .disabled {
+        color: #ccc;
+        border-color: #ddd;
+        cursor: not-allowed;
       }
 
       /* 總資訊樣式 */
@@ -368,7 +403,11 @@ if (isset($_SESSION["帳號"])) {
         margin: 5px 0;
         font-size: 14px;
         color: #555;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
       }
+
 
       /* 響應式樣式 */
       .table-responsive {
@@ -481,13 +520,28 @@ if (isset($_SESSION["帳號"])) {
             </div>
 
             <!-- 分頁 -->
-            <div class="pagination" style="text-align: right; margin: 10px 0;">
+            <div class="pagination">
+              <?php if ($page > 1): ?>
+                <a href="?page=<?php echo $page - 1; ?>">« 上一頁</a>
+              <?php else: ?>
+                <span class="disabled">« 上一頁</span>
+              <?php endif; ?>
+
               <?php for ($p = 1; $p <= $total_pages; $p++): ?>
-                <a href="?page=<?php echo $p; ?>" style="<?php echo $p === $page ? 'font-weight: bold;' : ''; ?>">
-                  <?php echo $p; ?>
-                </a>
+                <?php if ($p == $page): ?>
+                  <span class="active"><?php echo $p; ?></span>
+                <?php else: ?>
+                  <a href="?page=<?php echo $p; ?>"><?php echo $p; ?></a>
+                <?php endif; ?>
               <?php endfor; ?>
+
+              <?php if ($page < $total_pages): ?>
+                <a href="?page=<?php echo $page + 1; ?>">下一頁 »</a>
+              <?php else: ?>
+                <span class="disabled">下一頁 »</span>
+              <?php endif; ?>
             </div>
+
             <?php mysqli_close($link); ?>
           </div>
         </div>
