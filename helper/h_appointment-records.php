@@ -722,13 +722,13 @@ $result = $stmt->get_result();
                   const appointmentTime = document.getElementById("appointment-time");
                   const confirmModifyBtn = document.getElementById("confirm-modify");
                   let selectedAppointmentId = null;
-                  let doctorId = 1; // 這裡應該從後端獲取動態 doctor_id
+                  let doctorId = 1; // **這裡應該動態獲取 doctor_id**
 
-                  // 設定最小可選日期為今天
+                  // **設定最小可選日期為今天**
                   let today = new Date().toISOString().split("T")[0];
                   appointmentDate.setAttribute("min", today);
 
-                  // 顯示修改表單
+                  // **顯示修改表單**
                   document.querySelectorAll(".status-dropdown").forEach((select) => {
                     select.addEventListener("change", function () {
                       selectedAppointmentId = this.getAttribute("data-id");
@@ -744,7 +744,7 @@ $result = $stmt->get_result();
                     });
                   });
 
-                  // 監聽日期變更並獲取可預約時段
+                  // **監聽日期變更並獲取可預約時段**
                   appointmentDate.addEventListener("change", function () {
                     fetchAvailableTimes(appointmentDate.value);
                   });
@@ -770,11 +770,20 @@ $result = $stmt->get_result();
                       .catch((error) => console.error("獲取時間失敗:", error));
                   }
 
-                  // 更新狀態
-                  function updateStatus(appointmentId, newStatus) {
+                  // **送出修改請求**
+                  confirmModifyBtn.addEventListener("click", function () {
+                    let appointmentDateValue = appointmentDate.value;
+                    let appointmentTimeValue = appointmentTime.value;
+
+                    if (!selectedAppointmentId || !appointmentDateValue || !appointmentTimeValue) {
+                      alert("請選擇有效的日期與時間");
+                      return;
+                    }
+
                     let formData = new URLSearchParams();
-                    formData.append("id", appointmentId);
-                    formData.append("status", newStatus);
+                    formData.append("id", selectedAppointmentId);
+                    formData.append("date", appointmentDateValue);
+                    formData.append("time", appointmentTimeValue);
 
                     fetch("更新狀態.php", {
                       method: "POST",
@@ -784,14 +793,14 @@ $result = $stmt->get_result();
                       .then((response) => response.json())
                       .then((data) => {
                         if (data.success) {
-                          alert(`狀態已更新為 ${newStatus}`);
+                          alert("預約修改成功！");
                           location.reload();
                         } else {
-                          alert("更新失敗：" + data.error);
+                          alert("修改失敗：" + data.error);
                         }
                       })
                       .catch((error) => console.error("請求失敗:", error));
-                  }
+                  });
                 });
 
               </script>
