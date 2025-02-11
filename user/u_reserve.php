@@ -373,7 +373,7 @@ if (isset($_SESSION["帳號"])) {
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link active" href="u_reserve.php">預約</a></li>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="u_reserve.php">預約</a></li>
 								<!-- <li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
