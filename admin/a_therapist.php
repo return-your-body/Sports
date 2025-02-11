@@ -456,7 +456,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				?>
 			</select>
 
-			<a href="">數據</a>
+			<!-- <a href="">數據</a> -->
 			<!-- <a href="a_therapist2.php">預約用戶資料</a> -->
 
 		</div>
