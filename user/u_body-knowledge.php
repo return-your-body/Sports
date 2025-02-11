@@ -237,20 +237,20 @@ if (isset($_SESSION["帳號"])) {
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="u_reserve.php">預約</a></li>
+								<!-- <li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_reserve.php">立即預約</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_reserve-record.php">查看預約資料</a>
-											<!-- 修改預約 -->
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_reserve-time.php">查看預約時段</a>
 										</li>
 									</ul>
-								</li>
+								</li> -->
 								<li class="rd-nav-item "><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
 								</li>
 								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
