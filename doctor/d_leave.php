@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
-
 <?php
 session_start();
 
@@ -16,14 +15,12 @@ header("Pragma: no-cache");
 
 // 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-  // 獲取用戶帳號
   $帳號 = $_SESSION['帳號'];
 
-  // 資料庫連接
   require '../db.php';
 
   // 查詢該帳號的詳細資料
-  $sql = "SELECT user.account, doctor.doctor AS name 
+  $sql = "SELECT user.account, doctor.doctor AS name, doctor.doctor_id 
             FROM user 
             JOIN doctor ON user.user_id = doctor.user_id 
             WHERE user.account = ?";
@@ -33,38 +30,26 @@ if (isset($_SESSION["帳號"])) {
   $result = mysqli_stmt_get_result($stmt);
 
   if (mysqli_num_rows($result) > 0) {
-    // 抓取對應姓名
     $row = mysqli_fetch_assoc($result);
     $姓名 = $row['name'];
     $帳號名稱 = $row['account'];
-
-    // 顯示帳號和姓名
-    // echo "歡迎您！<br>";
-    // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-    // echo "姓名：" . htmlspecialchars($姓名);
-    // echo "<script>
-    //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-    // </script>";
+    $doctor_id = $row['doctor_id'];
   } else {
-    // 如果資料不存在，提示用戶重新登入
     echo "<script>
-                alert('找不到對應的帳號資料，請重新登入。');
-                window.location.href = '../index.html';
-              </script>";
+            alert('找不到對應的帳號資料，請重新登入。');
+            window.location.href = '../index.html';
+        </script>";
     exit();
   }
-
-  // 關閉資料庫連接
   mysqli_close($link);
 } else {
   echo "<script>
-            alert('會話過期或資料遺失，請重新登入。');
-            window.location.href = '../index.html';
-          </script>";
+        alert('會話過期或資料遺失，請重新登入。');
+        window.location.href = '../index.html';
+    </script>";
   exit();
 }
 ?>
-
 
 <head>
   <!-- Site Title-->
@@ -78,6 +63,7 @@ if (isset($_SESSION["帳號"])) {
   <link rel="stylesheet" href="css/bootstrap.css">
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/style.css">
+
   <style>
     .ie-panel {
       display: none;
@@ -156,56 +142,32 @@ if (isset($_SESSION["帳號"])) {
     }
 
     /* 請假單 */
-    /* 通用樣式 */
-    h1 {
-      margin-bottom: 20px;
-    }
 
-    /* 表單容器框線樣式 */
     .form-container {
-      width: 400px;
-      margin: 30px auto;
+      width: 40%;
+      margin: auto;
       padding: 20px;
-      border: 2px solid black;
-      border-radius: 10px;
-      text-align: left;
-      background-color: #f9f9f9;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
     }
 
-    label {
-      display: block;
-      margin: 10px 0 5px;
-      font-weight: bold;
-    }
-
+    label,
     input,
     select,
-    textarea {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 14px;
-      text-align: left;
-    }
-
-    textarea {
-      resize: none;
-    }
-
-    /* 按鈕樣式 */
+    textarea,
     button {
-      margin: 20px auto 0;
       display: block;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
+      width: 100%;
+      margin-bottom: 10px;
     }
 
-    /* 備註標籤位置調整 */
-    #note-label {
-      vertical-align: top;
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
     }
   </style>
 
@@ -375,14 +337,22 @@ if (isset($_SESSION["帳號"])) {
       </section>
     </div>
 
-    <div class="form-container">
-    <h3 style="text-align: center;">請假單</h3>
-    <form id="leave-form" action="請假.php" method="post">
-        <!-- 申請人姓名 -->
-        <label for="name">申請人姓名：</label>
-        <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($姓名); ?>" readonly>
+    <!-- 請假單 -->
+  
 
-        <!-- 請假類別 -->
+
+<!-- Flatpickr 樣式 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<div class="form-container">
+    <h3 style="text-align: center;">請假單</h3>
+    <form id="leave-form">
+        <label for="doctor_name">姓名：</label>
+        <input type="text" id="doctor_name" name="doctor_name" value="<?php echo htmlspecialchars($姓名); ?>" readonly>
+        <input type="hidden" name="doctor_id" value="<?php echo htmlspecialchars($doctor_id); ?>">
+
         <label for="leave-type">請假類別：</label>
         <select id="leave-type" name="leave-type" required>
             <option value="" disabled selected>請選擇請假類別</option>
@@ -392,81 +362,82 @@ if (isset($_SESSION["帳號"])) {
             <option value="公假">公假</option>
             <option value="其他">其他</option>
         </select>
-        <input type="text" id="leave-type-other" name="leave-type-other" placeholder="若選擇其他，請填寫原因" style="display: none;" />
+        <input type="text" id="leave-type-other" name="leave-type-other" placeholder="若選擇其他，請填寫原因" style="display: none;">
 
-        <!-- 選擇日期 -->
         <label for="date">請假日期：</label>
-        <input type="date" id="date" name="date" required>
+        <input type="text" id="date" name="date" required>
 
-        <!-- 選擇請假時間 -->
         <label for="start-time">請假開始時間：</label>
-        <select id="start-time" name="start-time" required>
-            <option value="" disabled selected>請選擇開始時間</option>
-        </select>
+        <input type="text" id="start-time" name="start-time" required>
 
         <label for="end-time">請假結束時間：</label>
-        <select id="end-time" name="end-time" required>
-            <option value="" disabled selected>請選擇結束時間</option>
-        </select>
+        <input type="text" id="end-time" name="end-time" required>
 
-        <!-- 請假原因 -->
         <label for="reason">請假原因：</label>
-        <textarea id="reason" name="reason" rows="4" placeholder="請輸入請假原因" required></textarea>
+        <textarea id="reason" name="reason" rows="4" required></textarea>
 
         <button type="submit">提交</button>
     </form>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const dateInput = document.getElementById("date");
-    const doctorIdInput = document.querySelector("input[name='doctor_id']");
-    const startSelect = document.getElementById("start-time");
-    const endSelect = document.getElementById("end-time");
+document.addEventListener('DOMContentLoaded', function () {
+    const dateInput = document.getElementById('date');
+    const startTimeInput = document.getElementById('start-time');
+    const endTimeInput = document.getElementById('end-time');
 
-    function fetchAvailableLeaveTimes() {
-        const date = dateInput.value;
-        const doctorId = doctorIdInput ? doctorIdInput.value : null;
+    // 初始化 Flatpickr
+    const startFlatpickr = flatpickr(startTimeInput, { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
+    const endFlatpickr = flatpickr(endTimeInput, { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
 
-        if (!date || !doctorId) {
-            console.log("錯誤: 日期或醫生 ID 為空", { date, doctorId });
-            return;
+    flatpickr(dateInput, {
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        onChange: function () {
+            fetchAvailableLeaveTimes(startFlatpickr, endFlatpickr);
         }
+    });
 
-        console.log(`發送請求: date=${date}, doctor=${doctorId}`);
+    function fetchAvailableLeaveTimes(startFlatpickr, endFlatpickr) {
+        const date = dateInput.value;
+        const doctorId = "<?php echo $doctor_id; ?>";
+
+        if (!date) return;
 
         fetch(`檢查可請假時間.php?date=${date}&doctor=${doctorId}`)
             .then(response => response.json())
             .then(data => {
-                startSelect.innerHTML = '<option value="" disabled selected>請選擇開始時間</option>';
-                endSelect.innerHTML = '<option value="" disabled selected>請選擇結束時間</option>';
-
-                if (data.success && data.times.length > 0) {
-                    console.log("取得請假時段: ", data.times);
-
-                    data.times.forEach(time => {
-                        let optionStart = document.createElement("option");
-                        optionStart.value = time.shifttime_id;
-                        optionStart.textContent = time.shifttime;
-                        startSelect.appendChild(optionStart);
-
-                        let optionEnd = document.createElement("option");
-                        optionEnd.value = time.shifttime_id;
-                        optionEnd.textContent = time.shifttime;
-                        endSelect.appendChild(optionEnd);
-                    });
+                console.log("API 回傳資料:", data);
+                if (data.success) {
+                    const availableTimes = data.times.map(t => t.shifttime);
+                    startFlatpickr.set("enable", availableTimes);
+                    endFlatpickr.set("enable", availableTimes);
                 } else {
-                    console.log("無可請假時段: ", data);
-                    startSelect.innerHTML = '<option value="">無可請假時段</option>';
-                    endSelect.innerHTML = '<option value="">無可請假時段</option>';
+                    alert(data.message || "無可請假時段");
                 }
             })
             .catch(error => console.error("請假時間加載錯誤:", error));
     }
 
-    dateInput.addEventListener("change", fetchAvailableLeaveTimes);
-});
+    document.getElementById('leave-form').addEventListener('submit', function (event) {
+        event.preventDefault();
 
+        const formData = new FormData(this);
+
+        fetch("請假.php", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) {
+                location.reload();  // 重新整理頁面
+            }
+        })
+        .catch(error => console.error("請假提交錯誤:", error));
+    });
+});
 </script>
 
     <!--頁尾-->
