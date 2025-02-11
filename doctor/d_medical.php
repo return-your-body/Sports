@@ -536,12 +536,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_ids'])) {
 
         <!--看診-->
         <!-- **表單畫面** -->
+
+        <!-- **表單畫面** -->
         <div class="form-container">
             <h2>新增診療紀錄</h2>
             <form action="d_medical.php?id=<?php echo $appointment_id; ?>" method="POST">
                 <p>預約編號：<?php echo htmlspecialchars($appointment_data['appointment_id']); ?></p>
-                <!-- <p>治療師姓名：<?php echo htmlspecialchars($doctor['name']); ?></p> -->
-                <!-- <p>帳號：<?php echo htmlspecialchars($doctor['account']); ?></p> -->
                 <p>姓名：<?php echo htmlspecialchars($appointment_data['patient_name']); ?></p>
                 <p>性別：<?php echo htmlspecialchars($appointment_data['gender']); ?></p>
                 <p>生日：<?php echo htmlspecialchars($appointment_data['birthday']); ?></p>
@@ -560,42 +560,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_ids'])) {
                     <?php endwhile; ?>
                 </div>
 
+                <label>醫生備註：</label>
+                <textarea name="note_d" rows="4" cols="50"></textarea>
+
                 <div class="btn-group">
                     <button type="submit">提交</button>
                     <button type="button" onclick="location.href='d_appointment-records.php'">返回</button>
                 </div>
             </form>
         </div>
+    </div>
+
+    </div>
 
 
-        <!--看診-->
+    <!--看診-->
 
 
-        <!--頁尾-->
-        <footer class="section novi-bg novi-bg-img footer-simple">
-            <div class="container">
-                <div class="row row-40">
-                    <!-- <div class="col-md-4">
+    <!--頁尾-->
+    <footer class="section novi-bg novi-bg-img footer-simple">
+        <div class="container">
+            <div class="row row-40">
+                <!-- <div class="col-md-4">
             <h4>關於我們</h4>
             <p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
               professional knowledge using innovative approach.</p>
           </div> -->
-                    <div class="col-md-3">
-                        <h4>快速連結</h4>
-                        <ul class="list-marked">
-                            <li><a href="d_index.php">首頁</a></li>
-                            <li><a href="d_people.php">用戶資料</a></li>
-                            <!-- <li><a href="d_appointment.php">預約</a></li> -->
-                            <li><a href="d_numberpeople.php">當天人數及時段</a></li>
-                            <li><a href="d_doctorshift.php">班表時段</a></li>
-                            <li><a href="d_leave.php">請假申請</a></li>
-                            <li><a href="d_leave-query.php">請假資料查詢</a></li>
-                            <li><a href="d_medical-record.php">看診紀錄</a></li>
-                            <li><a href="d_appointment-records.php">預約紀錄</a></li>
-                            <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
-                        </ul>
-                    </div>
-                    <!-- <div class="col-md-5">
+                <div class="col-md-3">
+                    <h4>快速連結</h4>
+                    <ul class="list-marked">
+                        <li><a href="d_index.php">首頁</a></li>
+                        <li><a href="d_people.php">用戶資料</a></li>
+                        <!-- <li><a href="d_appointment.php">預約</a></li> -->
+                        <li><a href="d_numberpeople.php">當天人數及時段</a></li>
+                        <li><a href="d_doctorshift.php">班表時段</a></li>
+                        <li><a href="d_leave.php">請假申請</a></li>
+                        <li><a href="d_leave-query.php">請假資料查詢</a></li>
+                        <li><a href="d_medical-record.php">看診紀錄</a></li>
+                        <li><a href="d_appointment-records.php">預約紀錄</a></li>
+                        <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
+                    </ul>
+                </div>
+                <!-- <div class="col-md-5">
             <h4>聯絡我們</h4>
             <p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
               courses we offer.</p>
@@ -609,13 +615,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_ids'])) {
               <button class="form-button linearicons-paper-plane"></button>
             </form>
           </div> -->
-                </div>
-                <!-- <p class="rights"><span>&copy;&nbsp;</span><span
+            </div>
+            <!-- <p class="rights"><span>&copy;&nbsp;</span><span
             class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
             Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank"
             href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p> -->
-            </div>
-        </footer>
+        </div>
+    </footer>
     </div>
     <!--頁尾-->
 

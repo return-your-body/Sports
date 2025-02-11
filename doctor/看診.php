@@ -1,50 +1,66 @@
-<?php
+<?php  
 require '../db.php';
+session_start();
 
-if (!$link) {
-    echo "<script>alert('資料庫連線失敗：" . mysqli_connect_error() . "');</script>";
+// 確保使用者已登入
+if (!isset($_SESSION["帳號"])) {
+    echo "<script>alert('使用者未登入！'); window.location.href='login.php';</script>";
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $appointment_id = isset($_POST['appointment_id']) ? intval($_POST['appointment_id']) : 0;
-    $item_ids = isset($_POST['item_ids']) ? $_POST['item_ids'] : [];
+$帳號 = $_SESSION["帳號"];
 
-    if ($appointment_id === 0 || empty($item_ids)) {
-        echo "<script>alert('請確認已填寫預約 ID 並選擇診療項目！');</script>";
-        exit;
-    }
+// 確保 `id` 存在
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+    echo "<script>alert('無法取得預約 ID！'); window.location.href='d_appointment-records.php';</script>";
+    exit;
+}
+$appointment_id = intval($_GET['id']);
 
-    // 檢查是否已存在該 `appointment_id` 的紀錄
-    $check_query = "SELECT * FROM medicalrecord WHERE appointment_id = ?";
-    $check_stmt = $link->prepare($check_query);
-    $check_stmt->bind_param("i", $appointment_id);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
+// 查詢該帳號的醫生 ID
+$sql_doctor = "SELECT d.doctor_id FROM user u JOIN doctor d ON u.user_id = d.user_id WHERE u.account = ?";
+$stmt_doctor = mysqli_prepare($link, $sql_doctor);
+mysqli_stmt_bind_param($stmt_doctor, "s", $帳號);
+mysqli_stmt_execute($stmt_doctor);
+$result_doctor = mysqli_stmt_get_result($stmt_doctor);
+if ($doctor = mysqli_fetch_assoc($result_doctor)) {
+    $doctor_id = $doctor['doctor_id'];
+} else {
+    echo "<script>alert('無法找到您的醫生資料！'); window.location.href='d_appointment-records.php';</script>";
+    exit;
+}
 
-    if ($check_result->num_rows > 0) {
-        echo "<script>alert('此預約 ID 的診療紀錄已存在，無法重複新增！');</script>";
-        exit;
-    }
+// **處理表單提交**
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_ids'])) {
+    $item_ids = $_POST['item_ids'];
+    $note_d = isset($_POST['note_d']) ? trim($_POST['note_d']) : '';
 
-    // 插入診療紀錄
-    $insert_query = "INSERT INTO medicalrecord (appointment_id, item_id, created_at) VALUES (?, ?, NOW())";
-    $insert_stmt = $link->prepare($insert_query);
+    // 確保 `note_d` 正確傳遞
+    error_log("Received note_d: " . $note_d);
 
-    foreach ($item_ids as $item_id) {
-        $item_id = intval($item_id);
-        $insert_stmt->bind_param("ii", $appointment_id, $item_id);
-        if (!$insert_stmt->execute()) {
-            echo "<script>alert('新增診療紀錄失敗：" . $link->error . "');</script>";
-            exit;
+    if (empty($item_ids)) {
+        echo "<script>alert('請至少選擇一項診療項目！');</script>";
+    } else {
+        $success = false;
+
+        foreach ($item_ids as $item_id) {
+            $item_id = intval($item_id);
+
+            // **插入診療紀錄**
+            $sql_insert_medicalrecord = "INSERT INTO medicalrecord (appointment_id, item_id, note_d, created_at) VALUES (?, ?, ?, NOW())";
+            $stmt_insert_medicalrecord = mysqli_prepare($link, $sql_insert_medicalrecord);
+            mysqli_stmt_bind_param($stmt_insert_medicalrecord, "iis", $appointment_id, $item_id, $note_d);
+
+            if (!mysqli_stmt_execute($stmt_insert_medicalrecord)) {
+                echo "<script>alert('診療紀錄新增失敗：" . mysqli_error($link) . "');</script>";
+                exit;
+            }
+            $success = true;
+        }
+
+        if ($success) {
+            echo "<script>alert('診療紀錄新增成功！'); window.location.href='d_appointment-records.php';</script>";
         }
     }
-
-    echo "<script>alert('診療紀錄新增成功！');</script>";
-    echo "<script>window.location.href = 'd_medical.php?id={$appointment_id}';</script>";
-    exit;
-} else {
-    echo "<script>alert('無效的請求方式！');</script>";
-    exit;
 }
 ?>

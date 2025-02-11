@@ -542,114 +542,48 @@ if ($result_doctor->num_rows > 0) {
     </section>
 
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const dateInput = document.getElementById("date");
-        const timeSelect = document.getElementById("time");
-        const doctorId = document.querySelector("input[name='doctor_id']").value;
+        function fetchAvailableTimes() {
+            const date = document.getElementById("date").value;
+            const doctorId = document.querySelector("input[name='doctor_id']").value;
+            const timeSelect = document.getElementById("time");
 
-        // 檢查是否有之前選擇的時間並恢復
-        const savedDate = localStorage.getItem("selectedDate");
-        const savedTime = localStorage.getItem("selectedTime");
+            timeSelect.innerHTML = '<option value="">加載中...</option>';
 
-        if (savedDate) {
-          dateInput.value = savedDate;
-          fetchAvailableTimes(savedDate, savedTime);
-        }
-
-        // 監聽日期變更
-        dateInput.addEventListener("change", function () {
-          localStorage.setItem("selectedDate", dateInput.value);
-          fetchAvailableTimes(dateInput.value);
-        });
-
-        function fetchAvailableTimes(date, savedTime = null) {
-          if (!date || !doctorId) return;
-
-          timeSelect.innerHTML = '<option value="">加載中...</option>';
-
-          fetch("檢查預約.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `date=${date}&doctor_id=${doctorId}`,
-          })
-            .then(response => response.json())
-            .then(data => {
-              timeSelect.innerHTML = '<option value="">請選擇時間</option>';
-              if (data.success) {
-                data.times.forEach(time => {
-                  const option = document.createElement("option");
-                  option.value = time.shifttime_id;
-                  option.textContent = time.shifttime;
-                  if (savedTime && savedTime == time.shifttime_id) {
-                    option.selected = true;
-                  }
-                  timeSelect.appendChild(option);
+            if (date && doctorId) {
+                fetch("檢查預約.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `date=${date}&doctor_id=${doctorId}`,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    timeSelect.innerHTML = '<option value="">請選擇時間</option>';
+                    if (data.success) {
+                        data.times.forEach(time => {
+                            const option = document.createElement("option");
+                            option.value = time.shifttime_id;
+                            option.textContent = time.shifttime;
+                            timeSelect.appendChild(option);
+                        });
+                    } else {
+                        timeSelect.innerHTML = '<option value="">無可用時段</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error("錯誤：", error);
+                    timeSelect.innerHTML = '<option value="">無法加載時段</option>';
                 });
-              } else {
-                timeSelect.innerHTML = '<option value="">無可用時段</option>';
-              }
-            })
-            .catch(error => {
-              console.error("錯誤：", error);
-              timeSelect.innerHTML = '<option value="">無法加載時段</option>';
-            });
+            } else {
+                timeSelect.innerHTML = '<option value="">請選擇日期</option>';
+            }
         }
 
-        // 監聽時間選擇變更
-        timeSelect.addEventListener("change", function () {
-          localStorage.setItem("selectedTime", timeSelect.value);
+        document.addEventListener("DOMContentLoaded", function () {
+            const dateInput = document.getElementById("date");
+            if (dateInput) {
+                dateInput.addEventListener("change", fetchAvailableTimes);
+            }
         });
-      });
-
-
-
-
-
-      function fetchAvailableTimes() {
-        const date = document.getElementById("date").value;
-        const doctorId = document.querySelector("input[name='doctor_id']").value;
-        const timeSelect = document.getElementById("time");
-
-        timeSelect.innerHTML = '<option value="">加載中...</option>';
-
-        if (date && doctorId) {
-          fetch("檢查預約.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `date=${date}&doctor_id=${doctorId}`,
-          })
-            .then(response => response.json())
-            .then(data => {
-              timeSelect.innerHTML = '<option value="">請選擇時間</option>';
-              if (data.success) {
-                data.times.forEach(time => {
-                  const option = document.createElement("option");
-                  option.value = time.shifttime_id;
-                  option.textContent = time.shifttime;
-                  timeSelect.appendChild(option);
-                });
-              } else {
-                timeSelect.innerHTML = '<option value="">無可用時段</option>';
-              }
-            })
-            .catch(error => {
-              console.error("錯誤：", error);
-              timeSelect.innerHTML = '<option value="">無法加載時段</option>';
-            });
-        } else {
-          timeSelect.innerHTML = '<option value="">請選擇日期</option>';
-        }
-      }
-
-      document.addEventListener("DOMContentLoaded", function () {
-        const dateInput = document.getElementById("date");
-        if (dateInput) {
-          dateInput.addEventListener("change", fetchAvailableTimes);
-        }
-      });
-
-
-
     </script>
 
 

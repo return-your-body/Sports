@@ -375,10 +375,9 @@ if (isset($_SESSION["帳號"])) {
       </section>
     </div>
 
-    <!-- 請假單 -->
     <div class="form-container">
-      <h3 style="text-align: center;">請假單</h3>
-      <form id="leave-form" action="請假.php" method="post">
+    <h3 style="text-align: center;">請假單</h3>
+    <form id="leave-form" action="請假.php" method="post">
         <!-- 申請人姓名 -->
         <label for="name">申請人姓名：</label>
         <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($姓名); ?>" readonly>
@@ -386,69 +385,89 @@ if (isset($_SESSION["帳號"])) {
         <!-- 請假類別 -->
         <label for="leave-type">請假類別：</label>
         <select id="leave-type" name="leave-type" required>
-          <option value="" disabled selected>請選擇請假類別</option>
-          <option value="年假">年假</option>
-          <option value="病假">病假</option>
-          <option value="事假">事假</option>
-          <option value="公假">公假</option>
-          <option value="其他">其他</option>
+            <option value="" disabled selected>請選擇請假類別</option>
+            <option value="年假">年假</option>
+            <option value="病假">病假</option>
+            <option value="事假">事假</option>
+            <option value="公假">公假</option>
+            <option value="其他">其他</option>
         </select>
-        <input type="text" id="leave-type-other" name="leave-type-other" placeholder="若選擇其他，請填寫原因"
-          style="display: none;" />
+        <input type="text" id="leave-type-other" name="leave-type-other" placeholder="若選擇其他，請填寫原因" style="display: none;" />
 
-        <!-- 上班區間請假起始時間 -->
-        <label for="start-date">請假起始日期與時間：</label>
-        <input type="datetime-local" id="start-date" name="start-date" required />
+        <!-- 選擇日期 -->
+        <label for="date">請假日期：</label>
+        <input type="date" id="date" name="date" required>
 
-        <!-- 上班區間請假結束時間 -->
-        <label for="end-date">請假結束日期與時間：</label>
-        <input type="datetime-local" id="end-date" name="end-date" required />
+        <!-- 選擇請假時間 -->
+        <label for="start-time">請假開始時間：</label>
+        <select id="start-time" name="start-time" required>
+            <option value="" disabled selected>請選擇開始時間</option>
+        </select>
+
+        <label for="end-time">請假結束時間：</label>
+        <select id="end-time" name="end-time" required>
+            <option value="" disabled selected>請選擇結束時間</option>
+        </select>
 
         <!-- 請假原因 -->
         <label for="reason">請假原因：</label>
         <textarea id="reason" name="reason" rows="4" placeholder="請輸入請假原因" required></textarea>
 
         <button type="submit">提交</button>
-      </form>
-    </div>
+    </form>
+</div>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function () {
-        const leaveTypeSelect = document.getElementById('leave-type');
-        const leaveTypeOther = document.getElementById('leave-type-other');
-        const form = document.getElementById('leave-form');
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const dateInput = document.getElementById("date");
+    const doctorIdInput = document.querySelector("input[name='doctor_id']");
+    const startSelect = document.getElementById("start-time");
+    const endSelect = document.getElementById("end-time");
 
-        // 顯示或隱藏「其他」文字框
-        if (leaveTypeSelect && leaveTypeOther) {
-          leaveTypeSelect.addEventListener('change', function () {
-            if (this.value === '其他') {
-              leaveTypeOther.style.display = 'block';
-              leaveTypeOther.setAttribute('required', 'required');
-            } else {
-              leaveTypeOther.style.display = 'none';
-              leaveTypeOther.removeAttribute('required');
-              leaveTypeOther.value = '';
-            }
-          });
+    function fetchAvailableLeaveTimes() {
+        const date = dateInput.value;
+        const doctorId = doctorIdInput ? doctorIdInput.value : null;
+
+        if (!date || !doctorId) {
+            console.log("錯誤: 日期或醫生 ID 為空", { date, doctorId });
+            return;
         }
 
-        // 防呆功能檢查
-        if (form) {
-          form.addEventListener('submit', function (e) {
-            const startDate = document.getElementById('start-date').value;
-            const endDate = document.getElementById('end-date').value;
+        console.log(`發送請求: date=${date}, doctor=${doctorId}`);
 
-            // 確保起始時間早於結束時間
-            if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-              alert('請假結束時間必須晚於起始時間！');
-              e.preventDefault();
-              return;
-            }
-          });
-        }
-      });
-    </script>
+        fetch(`檢查可請假時間.php?date=${date}&doctor=${doctorId}`)
+            .then(response => response.json())
+            .then(data => {
+                startSelect.innerHTML = '<option value="" disabled selected>請選擇開始時間</option>';
+                endSelect.innerHTML = '<option value="" disabled selected>請選擇結束時間</option>';
 
+                if (data.success && data.times.length > 0) {
+                    console.log("取得請假時段: ", data.times);
+
+                    data.times.forEach(time => {
+                        let optionStart = document.createElement("option");
+                        optionStart.value = time.shifttime_id;
+                        optionStart.textContent = time.shifttime;
+                        startSelect.appendChild(optionStart);
+
+                        let optionEnd = document.createElement("option");
+                        optionEnd.value = time.shifttime_id;
+                        optionEnd.textContent = time.shifttime;
+                        endSelect.appendChild(optionEnd);
+                    });
+                } else {
+                    console.log("無可請假時段: ", data);
+                    startSelect.innerHTML = '<option value="">無可請假時段</option>';
+                    endSelect.innerHTML = '<option value="">無可請假時段</option>';
+                }
+            })
+            .catch(error => console.error("請假時間加載錯誤:", error));
+    }
+
+    dateInput.addEventListener("change", fetchAvailableLeaveTimes);
+});
+
+</script>
 
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">

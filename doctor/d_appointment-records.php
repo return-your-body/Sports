@@ -594,8 +594,8 @@ $result = $stmt->get_result();
                     <td><?php echo htmlspecialchars($row['birthday']); ?></td>
                     <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
                     <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
-                    <td><?php echo htmlspecialchars($row['status_name']); ?></td> 
                     <td><?php echo htmlspecialchars($row['note']); ?></td>
+                    <td><?php echo htmlspecialchars($row['status_name']); ?></td> 
                     <td><?php echo htmlspecialchars($row['created_at']); ?></td>
                     <td>
                       <?php if ($row['status_name'] === '報到'): ?>
