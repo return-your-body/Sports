@@ -462,12 +462,11 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                 </div>
             </section>
         </div>
-
         <?php
-        include "../db.php";
+include "../db.php";
 
-        // 查詢排班數據
-        $query = "
+// 查詢排班數據
+$query = "
 SELECT 
     d.doctor_id, 
     d.doctor, 
@@ -484,197 +483,143 @@ JOIN
     shifttime st2 ON ds.off = st2.shifttime_id
 ORDER BY ds.date, d.doctor_id";
 
-        $result = mysqli_query($link, $query);
+$result = mysqli_query($link, $query);
+$schedule = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $date = $row['date'];
+    if (!isset($schedule[$date])) {
+        $schedule[$date] = [];
+    }
+    $schedule[$date][] = [
+        'doctor' => $row['doctor'],
+        'go_time' => $row['go_time'],
+        'off_time' => $row['off_time'],
+        'doctor_id' => $row['doctor_id'],
+    ];
+}
 
-        $schedule = [];
-        while ($row = mysqli_fetch_assoc($result)) {
-            $date = $row['date'];
-            if (!isset($schedule[$date])) {
-                $schedule[$date] = [];
+// 查詢請假數據
+$query_leaves = "
+SELECT 
+    l.doctor_id, 
+    d.doctor, 
+    l.start_date, 
+    l.end_date, 
+    l.leave_type
+FROM leaves l 
+JOIN doctor d ON l.doctor_id = d.doctor_id
+WHERE l.is_approved = 1";
+
+$result_leaves = mysqli_query($link, $query_leaves);
+$leaves = [];
+while ($row = mysqli_fetch_assoc($result_leaves)) {
+    $leaves[] = [
+        'doctor_id' => $row['doctor_id'],
+        'doctor' => $row['doctor'],
+        'start_date' => $row['start_date'],
+        'end_date' => $row['end_date'],
+        'leave_type' => $row['leave_type'],
+    ];
+}
+
+header('Content-Type: application/json');
+?>
+
+<section class="section section-lg bg-default">
+    <div style="text-align: center; font-size: 18px; font-weight: bold; color: #333; margin-top: 10px;">
+        <label for="year">選擇年份：</label>
+        <select id="year"></select>
+        <label for="month">選擇月份：</label>
+        <select id="month"></select>
+        <a href="a_addds2.php">新增班表</a>
+        <div style="overflow-x: auto; max-width: 100%;">
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>日</th>
+                        <th>一</th>
+                        <th>二</th>
+                        <th>三</th>
+                        <th>四</th>
+                        <th>五</th>
+                        <th>六</th>
+                    </tr>
+                </thead>
+                <tbody id="calendar"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const data = <?php echo json_encode(['schedule' => $schedule, 'leaves' => $leaves], JSON_UNESCAPED_UNICODE); ?>;
+        const calendarData = data.schedule;
+        const leaveData = data.leaves;
+        const today = new Date();
+
+        function adjustShiftTime(doctorId, date, startTime, endTime) {
+            const shiftStart = new Date(`${date}T${startTime}`);
+            const shiftEnd = new Date(`${date}T${endTime}`);
+
+            for (const leave of leaveData) {
+                const leaveStart = new Date(leave.start_date);
+                const leaveEnd = new Date(leave.end_date);
+                if (leave.doctor_id === doctorId) {
+                    if (leaveStart <= shiftStart && leaveEnd >= shiftEnd) {
+                        return { doctor: leave.doctor, leave_type: leave.leave_type, is_leave: true };
+                    } else if (leaveStart <= shiftStart && leaveEnd > shiftStart && leaveEnd < shiftEnd) {
+                        return { go_time: leaveEnd.toTimeString().slice(0, 5), off_time: endTime, doctor: leave.doctor, leave_type: leave.leave_type };
+                    } else if (leaveStart > shiftStart && leaveStart < shiftEnd && leaveEnd >= shiftEnd) {
+                        return { go_time: startTime, off_time: leaveStart.toTimeString().slice(0, 5), doctor: leave.doctor, leave_type: leave.leave_type };
+                    }
+                }
             }
-            $schedule[$date][] = [
-                'doctor' => $row['doctor'],
-                'go_time' => $row['go_time'],
-                'off_time' => $row['off_time'],
-                'doctor_id' => $row['doctor_id'],
-            ];
+            return { go_time: startTime, off_time: endTime, is_leave: false };
         }
 
-        // 查詢請假數據
-        $query_leaves = "SELECT l.doctor_id, l.start_date, l.end_date FROM leaves l WHERE l.is_approved = 1";
+        function generateCalendar() {
+            const year = parseInt(document.getElementById('year').value);
+            const month = parseInt(document.getElementById('month').value) - 1;
+            const calendarBody = document.getElementById('calendar');
+            calendarBody.innerHTML = '';
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
 
-        $result_leaves = mysqli_query($link, $query_leaves);
+            let row = document.createElement('tr');
+            for (let i = 0; i < firstDay; i++) {
+                row.appendChild(document.createElement('td'));
+            }
 
-        $leaves = [];
-        while ($row = mysqli_fetch_assoc($result_leaves)) {
-            $leaves[] = [
-                'doctor_id' => $row['doctor_id'],
-                'start_date' => $row['start_date'],
-                'end_date' => $row['end_date'],
-            ];
-        }
-
-        // 輸出數據給前端
-        header('Content-Type: application/json');
-        // echo json_encode(['schedule' => $schedule, 'leaves' => $leaves], JSON_UNESCAPED_UNICODE);
-        ?>
-
-        <section class="section section-lg bg-default">
-            <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
-                <label for="year">選擇年份：</label>
-                <select id="year"></select>
-                <label for="month">選擇月份：</label>
-                <select id="month"></select>
-                <a href="a_addds2.php">新增班表</a>
-                <div style="overflow-x: auto; max-width: 100%;">
-                    <table class="table-custom">
-                        <thead>
-                            <tr>
-                                <th>日</th>
-                                <th>一</th>
-                                <th>二</th>
-                                <th>三</th>
-                                <th>四</th>
-                                <th>五</th>
-                                <th>六</th>
-                            </tr>
-                        </thead>
-                        <tbody id="calendar"></tbody>
-                    </table>
-                </div>
-
-            </div>
-
-            <script>
-                const data = <?php echo json_encode(['schedule' => $schedule, 'leaves' => $leaves], JSON_UNESCAPED_UNICODE); ?>;
-                const calendarData = data.schedule; // 排班數據
-                const leaveData = data.leaves; // 請假數據
-                const today = new Date(); // 今天日期
-                const tomorrow = new Date(today); // 明天日期
-                tomorrow.setDate(today.getDate() + 1);
-
-                console.log("Calendar Data:", calendarData);
-                console.log("Leave Data:", leaveData);
-
-                /**
-                 * 調整排班時間，處理部分請假情況
-                 */
-                function adjustShiftTime(doctorId, date, startTime, endTime) {
-                    const shiftStart = new Date(`${date}T${startTime}`);
-                    const shiftEnd = new Date(`${date}T${endTime}`);
-
-                    for (const leave of leaveData) {
-                        const leaveStart = new Date(leave.start_date);
-                        const leaveEnd = new Date(leave.end_date);
-
-                        if (leave.doctor_id === doctorId) {
-                            if (leaveStart <= shiftStart && leaveEnd >= shiftEnd) {
-                                return null; // 整天請假
-                            } else if (leaveStart <= shiftStart && leaveEnd > shiftStart && leaveEnd < shiftEnd) {
-                                return { go_time: leaveEnd.toTimeString().slice(0, 5), off_time: endTime }; // 調整上班時間
-                            } else if (leaveStart > shiftStart && leaveStart < shiftEnd && leaveEnd >= shiftEnd) {
-                                return { go_time: startTime, off_time: leaveStart.toTimeString().slice(0, 5) }; // 調整下班時間
-                            }
-                        }
-                    }
-                    return { go_time: startTime, off_time: endTime }; // 無請假
-                }
-
-                /**
-                    * 生成日曆表格
-                    */
-                function generateCalendar() {
-                    const year = parseInt(document.getElementById('year').value);
-                    const month = parseInt(document.getElementById('month').value) - 1;
-
-                    const calendarBody = document.getElementById('calendar');
-                    calendarBody.innerHTML = '';
-
-                    const firstDay = new Date(year, month, 1).getDay();
-                    const lastDate = new Date(year, month + 1, 0).getDate();
-
-                    let row = document.createElement('tr');
-                    for (let i = 0; i < firstDay; i++) {
-                        row.appendChild(document.createElement('td'));
-                    }
-
-                    for (let date = 1; date <= lastDate; date++) {
-                        const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-                        const cell = document.createElement('td');
-                        cell.innerHTML = `<strong>${date}</strong>`;
-
-                        const currentDate = new Date(year, month, date); // 當前渲染的日期
-
-                        if (calendarData[fullDate]) {
-                            calendarData[fullDate].forEach(shift => {
-                                const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
-
-                                const shiftDiv = document.createElement('div');
-                                if (adjustedShift) {
-                                    shiftDiv.textContent = `${shift.doctor}: ${adjustedShift.go_time} - ${adjustedShift.off_time}`;
-
-                                    // 只為今天及以後的日期添加預約按鈕
-
-                                } else {
-                                    shiftDiv.textContent = `${shift.doctor}: 請假`;
-                                    shiftDiv.style.color = 'red';
-                                }
-
-                                shiftDiv.className = 'shift-info';
-                                cell.appendChild(shiftDiv);
-                            });
+            for (let date = 1; date <= lastDate; date++) {
+                const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+                const cell = document.createElement('td');
+                cell.innerHTML = `<strong>${date}</strong>`;
+                if (calendarData[fullDate]) {
+                    calendarData[fullDate].forEach(shift => {
+                        const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
+                        const shiftDiv = document.createElement('div');
+                        if (adjustedShift.is_leave) {
+                            shiftDiv.textContent = `${adjustedShift.doctor}: ${adjustedShift.leave_type}（請假）`;
+                            shiftDiv.style.color = 'red';
                         } else {
-                            const noSchedule = document.createElement('div');
-                            noSchedule.textContent = '無排班';
-                            noSchedule.className = 'no-schedule';
-                            cell.appendChild(noSchedule);
+                            shiftDiv.textContent = `${shift.doctor}: ${adjustedShift.go_time} - ${adjustedShift.off_time}`;
                         }
-
-                        row.appendChild(cell);
-
-                        if (row.children.length === 7) {
-                            calendarBody.appendChild(row);
-                            row = document.createElement('tr');
-                        }
-                    }
-
-                    while (row.children.length < 7) {
-                        row.appendChild(document.createElement('td'));
-                    }
+                        shiftDiv.className = 'shift-info';
+                        cell.appendChild(shiftDiv);
+                    });
+                }
+                row.appendChild(cell);
+                if (row.children.length === 7) {
                     calendarBody.appendChild(row);
+                    row = document.createElement('tr');
                 }
-
-                /**
-                 * 初始化年份與月份選單
-                 */
-                function initSelectOptions() {
-                    const yearSelect = document.getElementById('year');
-                    const monthSelect = document.getElementById('month');
-
-                    for (let year = 2020; year <= 2030; year++) {
-                        const option = document.createElement('option');
-                        option.value = year;
-                        option.textContent = year;
-                        if (year === today.getFullYear()) option.selected = true;
-                        yearSelect.appendChild(option);
-                    }
-
-                    for (let month = 1; month <= 12; month++) {
-                        const option = document.createElement('option');
-                        option.value = month;
-                        option.textContent = month;
-                        if (month === today.getMonth() + 1) option.selected = true;
-                        monthSelect.appendChild(option);
-                    }
-
-                    generateCalendar();
-                }
-
-                document.getElementById('year').addEventListener('change', generateCalendar);
-                document.getElementById('month').addEventListener('change', generateCalendar);
-
-                initSelectOptions();
-            </script>
+            }
+            calendarBody.appendChild(row);
+        }
+        document.getElementById('year').addEventListener('change', generateCalendar);
+        document.getElementById('month').addEventListener('change', generateCalendar);
+        generateCalendar();
+    </script>
+</section>
 
 
 
