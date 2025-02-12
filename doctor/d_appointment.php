@@ -509,7 +509,8 @@ if ($result_doctor->num_rows > 0) {
                 <div class="form-group mb-3">
                   <label for="date">預約日期：</label>
                   <input type="date" id="date" name="date" class="form-control" onchange="fetchAvailableTimes()"
-                    required min="<?= date('Y-m-d'); ?>" max="<?= date('Y-m-d', strtotime('+30 days')); ?>" />
+                    required min="<?= date('Y-m-d'); ?>" max="<?= date('Y-m-d', strtotime('+360 days')); ?>" />
+
                 </div>
 
                 <!-- 預約時間 -->
@@ -542,48 +543,48 @@ if ($result_doctor->num_rows > 0) {
     </section>
 
     <script>
-        function fetchAvailableTimes() {
-            const date = document.getElementById("date").value;
-            const doctorId = document.querySelector("input[name='doctor_id']").value;
-            const timeSelect = document.getElementById("time");
+      function fetchAvailableTimes() {
+        const date = document.getElementById("date").value;
+        const doctorId = document.querySelector("input[name='doctor_id']").value;
+        const timeSelect = document.getElementById("time");
 
-            timeSelect.innerHTML = '<option value="">加載中...</option>';
+        timeSelect.innerHTML = '<option value="">加載中...</option>';
 
-            if (date && doctorId) {
-                fetch("檢查預約.php", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: `date=${date}&doctor_id=${doctorId}`,
-                })
-                .then(response => response.json())
-                .then(data => {
-                    timeSelect.innerHTML = '<option value="">請選擇時間</option>';
-                    if (data.success) {
-                        data.times.forEach(time => {
-                            const option = document.createElement("option");
-                            option.value = time.shifttime_id;
-                            option.textContent = time.shifttime;
-                            timeSelect.appendChild(option);
-                        });
-                    } else {
-                        timeSelect.innerHTML = '<option value="">無可用時段</option>';
-                    }
-                })
-                .catch(error => {
-                    console.error("錯誤：", error);
-                    timeSelect.innerHTML = '<option value="">無法加載時段</option>';
+        if (date && doctorId) {
+          fetch("檢查預約.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `date=${date}&doctor_id=${doctorId}`,
+          })
+            .then(response => response.json())
+            .then(data => {
+              timeSelect.innerHTML = '<option value="">請選擇時間</option>';
+              if (data.success) {
+                data.times.forEach(time => {
+                  const option = document.createElement("option");
+                  option.value = time.shifttime_id;
+                  option.textContent = time.shifttime;
+                  timeSelect.appendChild(option);
                 });
-            } else {
-                timeSelect.innerHTML = '<option value="">請選擇日期</option>';
-            }
+              } else {
+                timeSelect.innerHTML = '<option value="">無可用時段</option>';
+              }
+            })
+            .catch(error => {
+              console.error("錯誤：", error);
+              timeSelect.innerHTML = '<option value="">無法加載時段</option>';
+            });
+        } else {
+          timeSelect.innerHTML = '<option value="">請選擇日期</option>';
         }
+      }
 
-        document.addEventListener("DOMContentLoaded", function () {
-            const dateInput = document.getElementById("date");
-            if (dateInput) {
-                dateInput.addEventListener("change", fetchAvailableTimes);
-            }
-        });
+      document.addEventListener("DOMContentLoaded", function () {
+        const dateInput = document.getElementById("date");
+        if (dateInput) {
+          dateInput.addEventListener("change", fetchAvailableTimes);
+        }
+      });
     </script>
 
 

@@ -2,8 +2,7 @@
 session_start();
 require '../db.php';
 
-header('Content-Type: application/json'); // 確保回應 JSON
-
+// 確保提交了所有必要參數
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['people_id'], $_POST['doctor_id'], $_POST['date'], $_POST['time'], $_POST['note'])) {
     $people_id = intval($_POST['people_id']);
     $doctor_id = intval($_POST['doctor_id']);
@@ -23,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['people_id'], $_POST['
     mysqli_stmt_close($stmt_check_time);
 
     if ($existing_time_count > 0) {
-        echo json_encode(['success' => false, 'message' => '此時段已被預約，請選擇其他時段。']);
+        echo "<script>alert('此時段已被預約，請選擇其他時段！'); window.history.back();</script>";
         exit;
     }
 
@@ -39,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['people_id'], $_POST['
     mysqli_stmt_close($stmt_check_day);
 
     if ($existing_day_count > 0) {
-        echo json_encode(['success' => false, 'message' => '您已在這一天預約過其他時段，無法重複預約。']);
+        echo "<script>alert('您已在這一天預約過其他時段，無法重複預約！'); window.history.back();</script>";
         exit;
     }
 
@@ -54,25 +53,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['people_id'], $_POST['
             $doctorshift_id = $shift_row['doctorshift_id'];
 
             // **插入預約記錄**
-            $insert_query = "INSERT INTO appointment (people_id, doctorshift_id, shifttime_id, note, status_id, created_at) VALUES (?, ?, ?, ?, 1, NOW())";
+            $insert_query = "INSERT INTO appointment (people_id, doctorshift_id, shifttime_id, note, status_id, created_at) 
+                             VALUES (?, ?, ?, ?, 1, NOW())";
             if ($stmt_insert = mysqli_prepare($link, $insert_query)) {
                 mysqli_stmt_bind_param($stmt_insert, "iiis", $people_id, $doctorshift_id, $shifttime_id, $note);
-                
+
                 if (mysqli_stmt_execute($stmt_insert)) {
-                    echo json_encode(['success' => true, 'message' => '預約成功！']);
+                    echo "<script>alert('預約成功！'); window.location.href='d_people.php';</script>";
                 } else {
-                    echo json_encode(['success' => false, 'message' => '無法新增預約資料。', 'error' => mysqli_error($link)]);
+                    echo "<script>alert('無法新增預約資料！'); window.history.back();</script>";
                 }
             } else {
-                echo json_encode(['success' => false, 'message' => '資料庫插入錯誤。']);
+                echo "<script>alert('資料庫插入錯誤！'); window.history.back();</script>";
             }
         } else {
-            echo json_encode(['success' => false, 'message' => '無對應的排班資料。']);
+            echo "<script>alert('無對應的排班資料！'); window.history.back();</script>";
         }
     } else {
-        echo json_encode(['success' => false, 'message' => '查詢班表失敗。']);
+        echo "<script>alert('查詢班表失敗！'); window.history.back();</script>";
     }
 } else {
-    echo json_encode(['success' => false, 'message' => '缺少必要的參數。']);
+    echo "<script>alert('缺少必要的參數！'); window.history.back();</script>";
 }
 ?>

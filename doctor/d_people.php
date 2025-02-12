@@ -481,6 +481,10 @@ if (isset($_SESSION["帳號"])) {
                         <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
                         <td><?php echo !empty($row['idcard']) ? htmlspecialchars($row['idcard']) : '無資料'; ?></td>
                         <td>
+                          <a href="d_history.php?id=<?php echo urlencode($row['people_id']); ?>" target="_blank">
+                            <button type="button" class="popup-btn">歷史紀錄</button>
+                          </a>
+
                           <a href="d_appointment.php?id=<?php echo urlencode($row['people_id']); ?>" target="_blank">
                             <button type="button" class="popup-btn">預約</button>
                           </a>

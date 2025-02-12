@@ -603,7 +603,7 @@ $result = $stmt->get_result();
                           <button type="button">新增看診資料</button>
                         </a>
                       <?php else: ?>
-                        <span style="color: gray;">不可新增</span>
+                        <span style="color: gray;">不可新增看診資料</span>
                       <?php endif; ?>
                     </td>
                   </tr>
