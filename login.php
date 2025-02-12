@@ -61,7 +61,7 @@ if ($row = mysqli_fetch_assoc($ret)) {
             header("Location: helper/h_index.php?帳號=$帳號"); // 助手頁面
             break;
         case "4":
-            header("Location: admin/a_comprehensive.php?帳號=$帳號"); // 管理者頁面
+            header("Location: admin/a_patient.php?帳號=$帳號"); // 管理者頁面
             break;
         default:
             echo "<script>
