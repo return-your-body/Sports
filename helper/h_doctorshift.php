@@ -287,7 +287,7 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
-               
+
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
@@ -371,7 +371,7 @@ if (isset($_SESSION["帳號"])) {
       <?php
       require '../db.php';
 
-      // 查詢所有醫生的資料供下拉選單使用
+      // 取得所有治療師資料
       $doctor_list_query = "
         SELECT d.doctor_id, d.doctor
         FROM doctor d
@@ -389,60 +389,81 @@ if (isset($_SESSION["帳號"])) {
       $year = isset($_GET['year']) ? (int) $_GET['year'] : date('Y');
       $month = isset($_GET['month']) ? (int) $_GET['month'] : date('m');
 
-      // 初始化排班與請假資料
+      // 查詢所有治療師的排班與請假資料
       $work_schedule = [];
+      $query = "
+        SELECT ds.doctor_id, ds.date, d.doctor, 
+               st1.shifttime AS start_time, st2.shifttime AS end_time
+        FROM doctorshift ds
+        INNER JOIN doctor d ON ds.doctor_id = d.doctor_id
+        INNER JOIN shifttime st1 ON ds.go = st1.shifttime_id
+        INNER JOIN shifttime st2 ON ds.off = st2.shifttime_id
+        WHERE YEAR(ds.date) = ? AND MONTH(ds.date) = ?
+    ";
       if ($doctor_id > 0) {
-        // 查詢排班資料
-        $query = "
-            SELECT ds.date, st1.shifttime AS start_time, st2.shifttime AS end_time
-            FROM doctorshift ds
-            INNER JOIN shifttime st1 ON ds.go = st1.shifttime_id
-            INNER JOIN shifttime st2 ON ds.off = st2.shifttime_id
-            WHERE ds.doctor_id = ? AND YEAR(ds.date) = ? AND MONTH(ds.date) = ?
-        ";
-        $stmt = mysqli_prepare($link, $query);
-        mysqli_stmt_bind_param($stmt, "iii", $doctor_id, $year, $month);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-
-        while ($row = mysqli_fetch_assoc($result)) {
-          $work_schedule[$row['date']] = ['start_time' => $row['start_time'], 'end_time' => $row['end_time']];
-        }
-        mysqli_stmt_close($stmt);
-
-        // 查詢請假資料
-        $leave_query = "
-            SELECT start_date, end_date
-            FROM leaves
-            WHERE doctor_id = ? AND (YEAR(start_date) = ? OR YEAR(end_date) = ?)
-        ";
-        $stmt_leave = mysqli_prepare($link, $leave_query);
-        mysqli_stmt_bind_param($stmt_leave, "iii", $doctor_id, $year, $year);
-        mysqli_stmt_execute($stmt_leave);
-        $leave_result = mysqli_stmt_get_result($stmt_leave);
-
-        while ($row = mysqli_fetch_assoc($leave_result)) {
-          $leave_date = substr($row['start_date'], 0, 10);
-          if (isset($work_schedule[$leave_date])) {
-            // 修改排班時間，排除請假的時段
-            if ($row['start_date'] > $leave_date . ' ' . $work_schedule[$leave_date]['start_time']) {
-              $work_schedule[$leave_date]['end_time'] = substr($row['start_date'], 11, 5);
-            } else {
-              unset($work_schedule[$leave_date]); // 完全被請假覆蓋的排班
-            }
-          }
-        }
-        mysqli_stmt_close($stmt_leave);
+        $query .= " AND ds.doctor_id = ?";
       }
+      $stmt = mysqli_prepare($link, $query);
 
+      if ($doctor_id > 0) {
+        mysqli_stmt_bind_param($stmt, "iii", $year, $month, $doctor_id);
+      } else {
+        mysqli_stmt_bind_param($stmt, "ii", $year, $month);
+      }
+      mysqli_stmt_execute($stmt);
+      $result = mysqli_stmt_get_result($stmt);
+
+      while ($row = mysqli_fetch_assoc($result)) {
+        $date = $row['date'];
+        $doctor_name = $row['doctor'];
+        $work_schedule[$date][$doctor_name] = [
+          'start_time' => $row['start_time'],
+          'end_time' => $row['end_time']
+        ];
+      }
+      mysqli_stmt_close($stmt);
+
+      // 查詢已審核通過的請假資料
+      $leave_query = "
+        SELECT l.doctor_id, l.start_date, l.end_date, l.leave_type, d.doctor
+        FROM leaves l
+        INNER JOIN doctor d ON l.doctor_id = d.doctor_id
+        WHERE (YEAR(l.start_date) = ? OR YEAR(l.end_date) = ?)
+        AND l.is_approved = 1
+    ";
+      if ($doctor_id > 0) {
+        $leave_query .= " AND l.doctor_id = ?";
+      }
+      $stmt_leave = mysqli_prepare($link, $leave_query);
+
+      if ($doctor_id > 0) {
+        mysqli_stmt_bind_param($stmt_leave, "iii", $year, $year, $doctor_id);
+      } else {
+        mysqli_stmt_bind_param($stmt_leave, "ii", $year, $year);
+      }
+      mysqli_stmt_execute($stmt_leave);
+      $leave_result = mysqli_stmt_get_result($stmt_leave);
+
+      while ($row = mysqli_fetch_assoc($leave_result)) {
+        $leave_date = substr($row['start_date'], 0, 10);
+        $doctor_name = $row['doctor'];
+        $leave_start = substr($row['start_date'], 11, 5);
+        $leave_end = substr($row['end_date'], 11, 5);
+        $leave_type = $row['leave_type'];
+
+        if (!isset($work_schedule[$leave_date][$doctor_name])) {
+          $work_schedule[$leave_date][$doctor_name] = [];
+        }
+        $work_schedule[$leave_date][$doctor_name]['leave'] = "{$leave_type}: {$leave_start} ~ {$leave_end}";
+      }
+      mysqli_stmt_close($stmt_leave);
       mysqli_close($link);
       ?>
 
-      <div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
-        <!-- 醫生選單 -->
+      <div style="text-align: center;">
         <label for="doctor">選擇治療師：</label>
         <select id="doctor">
-          <option value="0" selected>-- 請選擇 --</option>
+          <option value="0" selected>-- 全部治療師 --</option>
           <?php foreach ($doctor_list as $doctor): ?>
             <option value="<?php echo $doctor['doctor_id']; ?>" <?php if ($doctor_id == $doctor['doctor_id'])
                  echo 'selected'; ?>>
@@ -451,120 +472,83 @@ if (isset($_SESSION["帳號"])) {
           <?php endforeach; ?>
         </select>
 
-        <!-- 年份與月份選單 -->
         <label for="year">選擇年份：</label>
         <select id="year"></select>
         <label for="month">選擇月份：</label>
         <select id="month"></select>
+        <button onclick="searchSchedule()">搜尋</button>
+      </div>
 
-        <!-- 搜尋按鈕 -->
-        <button id="searchButton" onclick="validateAndFetch()">搜尋</button>
+      <table class="table-custom">
+        <thead>
+          <tr>
+            <th>日</th>
+            <th>一</th>
+            <th>二</th>
+            <th>三</th>
+            <th>四</th>
+            <th>五</th>
+            <th>六</th>
+          </tr>
+        </thead>
+        <tbody id="calendar"></tbody>
+      </table>
 
-        <!-- 日曆表格 -->
-        <div class="table-container">
-          <table class="table-custom">
-            <thead>
-              <tr>
-                <th>日</th>
-                <th>一</th>
-                <th>二</th>
-                <th>三</th>
-                <th>四</th>
-                <th>五</th>
-                <th>六</th>
-              </tr>
-            </thead>
-            <tbody id="calendar"></tbody>
-          </table>
-        </div>
-        <script>
-          const yearSelect = document.getElementById('year');
-          const monthSelect = document.getElementById('month');
-          const doctorSelect = document.getElementById('doctor');
-          const calendarBody = document.getElementById('calendar');
+      <script>
+        const calendarBody = document.getElementById("calendar");
+        const workSchedule = <?php echo json_encode($work_schedule); ?>;
 
-          const workSchedule = <?php echo json_encode($work_schedule); ?>;
+        function initSelectOptions() {
+          const yearSelect = document.getElementById("year");
+          const monthSelect = document.getElementById("month");
+          const currentYear = new Date().getFullYear();
 
-          // 初始化年份和月份選單
-          function initSelectOptions() {
-            const currentYear = new Date().getFullYear();
-            yearSelect.innerHTML = '';
-            monthSelect.innerHTML = '';
-
-            for (let year = currentYear - 5; year <= currentYear + 5; year++) {
-              yearSelect.innerHTML += `<option value="${year}" ${year == <?php echo $year; ?> ? 'selected' : ''}>${year}</option>`;
-            }
-
-            for (let month = 1; month <= 12; month++) {
-              monthSelect.innerHTML += `<option value="${month}" ${month == <?php echo $month; ?> ? 'selected' : ''}>${month}</option>`;
-            }
+          for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+            yearSelect.innerHTML += `<option value="${year}" ${year == <?php echo $year; ?> ? "selected" : ""}>${year}</option>`;
           }
-
-          // 驗證選單並執行搜尋
-          function validateAndFetch() {
-            const doctor = doctorSelect.value;
-            const year = yearSelect.value;
-            const month = monthSelect.value;
-
-            if (doctor === "0") {
-              alert("請選擇治療師！");
-              return;
-            }
-            if (!year || !month) {
-              alert("請選擇年份和月份！");
-              return;
-            }
-
-            window.location.href = `?doctor_id=${doctor}&year=${year}&month=${month}`;
+          for (let month = 1; month <= 12; month++) {
+            monthSelect.innerHTML += `<option value="${month}" ${month == <?php echo $month; ?> ? "selected" : ""}>${month}</option>`;
           }
+        }
 
-          // 生成日曆
-          function generateCalendar() {
-            const year = yearSelect.value;
-            const month = monthSelect.value - 1;
-            calendarBody.innerHTML = '';
+        function searchSchedule() {
+          const doctor = document.getElementById("doctor").value;
+          const year = document.getElementById("year").value;
+          const month = document.getElementById("month").value;
+          window.location.href = `?doctor_id=${doctor}&year=${year}&month=${month}`;
+        }
 
-            const firstDay = new Date(year, month, 1).getDay();
-            const lastDate = new Date(year, month + 1, 0).getDate();
+        function generateCalendar() {
+          calendarBody.innerHTML = "";
+          const firstDay = new Date(<?php echo $year; ?>, <?php echo $month; ?> - 1, 1).getDay();
+          const lastDate = new Date(<?php echo $year; ?>, <?php echo $month; ?>, 0).getDate();
 
-            let row = document.createElement('tr');
-            for (let i = 0; i < firstDay; i++) {
-              const emptyCell = document.createElement('td');
-              row.appendChild(emptyCell);
+          let row = document.createElement("tr");
+          for (let i = 0; i < firstDay; i++) row.appendChild(document.createElement("td"));
+
+          for (let date = 1; date <= lastDate; date++) {
+            let cell = document.createElement("td");
+            let fullDate = `<?php echo $year; ?>-${String(<?php echo $month; ?>).padStart(2, "0")}-${String(date).padStart(2, "0")}`;
+            cell.textContent = date;
+
+            if (workSchedule[fullDate]) {
+              Object.keys(workSchedule[fullDate]).forEach(doctor => {
+                let div = document.createElement("div");
+                div.innerText = doctor + ": " + workSchedule[fullDate][doctor].start_time + " ~ " + workSchedule[fullDate][doctor].end_time;
+                if (workSchedule[fullDate][doctor].leave) div.innerHTML += `<br><span style="color: red;">${workSchedule[fullDate][doctor].leave}</span>`;
+                cell.appendChild(div);
+              });
             }
 
-            for (let date = 1; date <= lastDate; date++) {
-              const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-              const cell = document.createElement('td');
-              cell.textContent = date;
-
-              if (workSchedule[fullDate]) {
-                const workInfo = document.createElement('div');
-                workInfo.textContent = `${workSchedule[fullDate].start_time} - ${workSchedule[fullDate].end_time}`;
-                workInfo.style.color = 'gray'; // 時間設為灰色字
-                workInfo.style.fontSize = '18px'; // 字體大小稍微調整以區分
-                cell.appendChild(workInfo);
-              }
-
-              row.appendChild(cell);
-              if (row.children.length === 7) {
-                calendarBody.appendChild(row);
-                row = document.createElement('tr');
-              }
-            }
-
-            while (row.children.length < 7) {
-              const emptyCell = document.createElement('td');
-              row.appendChild(emptyCell);
-            }
-            calendarBody.appendChild(row);
+            row.appendChild(cell);
+            if ((date + firstDay) % 7 === 0) calendarBody.appendChild(row), row = document.createElement("tr");
           }
+          calendarBody.appendChild(row);
+        }
 
-          // 初始化選單和日曆
-          initSelectOptions();
-          generateCalendar();
-        </script>
-
+        initSelectOptions();
+        generateCalendar();
+      </script>
     </section>
 
 
@@ -590,7 +574,7 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="h_appointment-records.php">預約紀錄</a></li>
               <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
               <li><a href="h_print-appointment.php">列印預約單</a></li> -->
-             
+
             </ul>
           </div>
           <!-- <div class="col-md-5">
