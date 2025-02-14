@@ -162,7 +162,7 @@ if (isset($_SESSION["帳號"])) {
 		}
 
 
-		/* 醫生班表 */
+		/* 治療師班表 */
 		/* 電腦端樣式（保留原始設計） */
 		.table-container {
 			overflow-x: hidden;
@@ -330,7 +330,7 @@ if (isset($_SESSION["帳號"])) {
 								<li class="rd-nav-item"><a class="rd-nav-link" href="#">關於我們</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="u_link.php">醫生介紹</a>
+												href="u_link.php">治療師介紹</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_caseshare.php">個案分享</a>
@@ -444,7 +444,7 @@ if (isset($_SESSION["帳號"])) {
 					✨還原回到它自己該在的位置而達到放鬆✨</p>
 				<div class="group-md button-group">
 					<a class="button button-dark button-nina" href="u_reserve.php">立即預約</a>
-					<a class="button button-dark button-nina" href="u_link.php">醫生介紹</a>
+					<a class="button button-dark button-nina" href="u_link.php">治療師介紹</a>
 				</div>
 			</div>
 		</section>
@@ -546,7 +546,7 @@ if (isset($_SESSION["帳號"])) {
 			<?php
 			require '../db.php';
 
-			// 查詢所有醫生的資料供下拉選單使用
+			// 查詢所有治療師的資料供下拉選單使用
 			$doctor_list_query = "
         SELECT d.doctor_id, d.doctor
         FROM doctor d
@@ -614,7 +614,7 @@ if (isset($_SESSION["帳號"])) {
 			?>
 
 			<div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
-				<!-- 醫生選單 -->
+				<!-- 治療師選單 -->
 				<label for="doctor">選擇治療師：</label>
 				<select id="doctor">
 					<option value="0" selected>-- 請選擇 --</option>
@@ -765,7 +765,7 @@ if (isset($_SESSION["帳號"])) {
 						<h4>快速連結</h4>
 						<ul class="list-marked">
 							<li><a href="u_index.php">首頁</a></li>
-							<li><a href="u_link.php.php">醫生介紹</a></li>
+							<li><a href="u_link.php.php">治療師介紹</a></li>
 							<li><a href="u_caseshare.php">個案分享</a></li>
 							<li><a href="u_body-knowledge.php">日常小知識</a></li>
 							<li><a href="u_reserve.php">預約</a></li>

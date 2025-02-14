@@ -379,7 +379,7 @@ if ($result && mysqli_num_rows($result) > 0) {
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">關於我們</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="u_link.php">醫生介紹</a>
+                                                href="u_link.php">治療師介紹</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="u_caseshare.php">個案分享</a>
@@ -781,7 +781,7 @@ if ($result && mysqli_num_rows($result) > 0) {
 						<h4>快速連結</h4>
 						<ul class="list-marked">
 							<li><a href="u_index.php">首頁</a></li>
-							<li><a href="u_link.php.php">醫生介紹</a></li>
+							<li><a href="u_link.php.php">治療師介紹</a></li>
 							<li><a href="u_caseshare.php">個案分享</a></li>
 							<li><a href="u_body-knowledge.php">日常小知識</a></li>
 							<li><a href="u_reserve.php">預約</a></li>

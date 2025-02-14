@@ -228,7 +228,7 @@ if (isset($_SESSION["帳號"])) {
 								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">關於我們</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item active"><a class="rd-dropdown-link"
-												href="u_link.php">醫生介紹</a>
+												href="u_link.php">治療師介紹</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_caseshare.php">個案分享</a>
@@ -335,30 +335,30 @@ if (isset($_SESSION["帳號"])) {
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
 					<!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
-					<p class="heading-1 breadcrumbs-custom-title">醫生介紹</p>
+					<p class="heading-1 breadcrumbs-custom-title">治療師介紹</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="u_index.php">首頁</a></li>
 						<li><a href="#">關於我們</a></li>
-						<li class="active">醫生介紹</li>
+						<li class="active">治療師介紹</li>
 					</ul>
 				</div>
 			</section>
 		</div>
 		<!--標題-->
 
-		<!--醫生簡介-->
+		<!--治療師簡介-->
 		<section class="section section-lg bg-default novi-bg novi-bg-img">
 			<div class="container">
 				<div class="row align-items-center">
-					<!-- 左側：醫生簡介 -->
+					<!-- 左側：治療師簡介 -->
 					<div class="col-md-6">
-						<h3 class="box-small-title">醫生簡介</h3>
+						<h3 class="box-small-title">治療師簡介</h3>
 						<?php
 						require '../db.php'; // 載入資料庫連線設定
 						
-						$doctorName = isset($_GET['doctor']) ? $_GET['doctor'] : ''; // 獲取 GET 傳遞的醫生姓名
+						$doctorName = isset($_GET['doctor']) ? $_GET['doctor'] : ''; // 獲取 GET 傳遞的治療師姓名
 						if (empty($doctorName)) {
-							die("未提供醫生姓名！");
+							die("未提供治療師姓名！");
 						}
 
 						$sql = "SELECT *
@@ -376,16 +376,16 @@ if (isset($_SESSION["帳號"])) {
 						$result = mysqli_stmt_get_result($stmt);
 
 						if (!$result || mysqli_num_rows($result) == 0) {
-							die("未找到對應醫生資料！");
+							die("未找到對應治療師資料！");
 						}
 
 						$doctorProfile = mysqli_fetch_assoc($result);
 						mysqli_stmt_close($stmt);
 						mysqli_close($link);
 
-						// 顯示醫生資料
+						// 顯示治療師資料
 						echo "<div class='doctor-profile'>";
-						echo "<p><strong>醫生姓名：</strong>" . htmlspecialchars($doctorName) . "</p>";
+						echo "<p><strong>治療師姓名：</strong>" . htmlspecialchars($doctorName) . "</p>";
 						echo "<p><strong>學歷：</strong>" . nl2br(htmlspecialchars($doctorProfile['education'] ?? '無')) . "</p>";
 						echo "<p><strong>現任職務：</strong>" . nl2br(htmlspecialchars($doctorProfile['current_position'] ?? '無')) . "</p>";
 						echo "<p><strong>專長描述：</strong>" . nl2br(htmlspecialchars($doctorProfile['specialty'] ?? '無')) . "</p>";
@@ -396,7 +396,7 @@ if (isset($_SESSION["帳號"])) {
 						?>
 					</div>
 
-					<!-- 右側：醫生圖片 -->
+					<!-- 右側：治療師圖片 -->
 					<!-- <div class="col-md-6 text-center">
 						<div class="doctor-image">
 							<?php
@@ -405,12 +405,12 @@ if (isset($_SESSION["帳號"])) {
 								$imagePath = "../images/" . htmlspecialchars($doctorProfile['doctor_image']);
 								// 檢查圖片是否存在
 								if (file_exists($imagePath)) {
-									echo "<img src='$imagePath' alt='醫生照片' class='img-fluid' style='max-width: 100%; height: auto;'>";
+									echo "<img src='$imagePath' alt='治療師照片' class='img-fluid' style='max-width: 100%; height: auto;'>";
 								} else {
 									echo "<p>圖片不存在，請確認檔案路徑。</p>";
 								}
 							} else {
-								echo "<p>此醫生未提供圖片。</p>";
+								echo "<p>此治療師未提供圖片。</p>";
 							}
 							?>
 						</div>
@@ -441,7 +441,7 @@ if (isset($_SESSION["帳號"])) {
 						<h4>快速連結</h4>
 						<ul class="list-marked">
 							<li><a href="u_index.php">首頁</a></li>
-							<li><a href="u_link.php.php">醫生介紹</a></li>
+							<li><a href="u_link.php.php">治療師介紹</a></li>
 							<li><a href="u_caseshare.php">個案分享</a></li>
 							<li><a href="u_body-knowledge.php">日常小知識</a></li>
 							<li><a href="u_reserve.php">預約</a></li>
