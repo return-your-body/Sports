@@ -45,7 +45,7 @@ $ret = mysqli_query($link, $SQL指令) or die(mysqli_error($link));
 if ($row = mysqli_fetch_assoc($ret)) {
     // 成功登入，設置 session 變數
     $_SESSION["帳號"] = $row["account"]; // 用戶帳號
-    $_SESSION["等級"] = $row["grade"]; // 用戶等級名稱（例如：醫生、護士等）
+    $_SESSION["等級"] = $row["grade"]; // 用戶等級名稱（例如：治療師、護士等）
     $_SESSION['登入狀態'] = true; // 設置登入狀態
     echo "<script>sessionStorage.setItem('登入狀態', 'true');</script>";
     
@@ -55,7 +55,7 @@ if ($row = mysqli_fetch_assoc($ret)) {
             header("Location: user/u_index.php?帳號=$帳號"); // 使用者頁面
             break;
         case "2":
-            header("Location: doctor/d_index.php?帳號=$帳號"); // 醫生頁面
+            header("Location: doctor/d_index.php?帳號=$帳號"); // 治療師頁面
             break;
         case "3":
             header("Location: helper/h_index.php?帳號=$帳號"); // 助手頁面

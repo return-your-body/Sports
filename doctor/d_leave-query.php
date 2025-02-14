@@ -69,7 +69,7 @@ if (isset($_SESSION["帳號"])) {
 
 <head>
   <!-- Site Title-->
-  <title>運動筋膜放鬆</title>
+  <title>治療師-請假查詢</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">

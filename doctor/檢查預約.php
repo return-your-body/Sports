@@ -19,7 +19,7 @@ if (empty($date) || empty($doctor_id)) {
 // 取得當前時間，確保過期時段不顯示
 $current_time = date("H:i");
 
-// 查詢醫生班表可用時段
+// 查詢治療師班表可用時段
 $sql = "
     SELECT s.shifttime_id, s.shifttime
     FROM shifttime s

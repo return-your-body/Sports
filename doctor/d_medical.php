@@ -82,7 +82,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 }
 $appointment_id = intval($_GET['id']);
 
-// 查詢該帳號的醫生 ID
+// 查詢該帳號的治療師 ID
 $sql_doctor = "SELECT d.doctor_id, u.account, d.doctor AS name 
        FROM user u 
        JOIN doctor d ON u.user_id = d.user_id 
@@ -94,11 +94,11 @@ $result_doctor = mysqli_stmt_get_result($stmt_doctor);
 if ($doctor = mysqli_fetch_assoc($result_doctor)) {
     $doctor_id = $doctor['doctor_id'];
 } else {
-    echo "<script>alert('無法找到您的醫生資料！'); window.location.href='d_appointment-records.php';</script>";
+    echo "<script>alert('無法找到您的治療師資料！'); window.location.href='d_appointment-records.php';</script>";
     exit;
 }
 
-// 獲取完整的預約資訊，確保該預約是屬於此醫生
+// 獲取完整的預約資訊，確保該預約是屬於此治療師
 $sql_appointment = "SELECT 
     a.appointment_id, 
     p.name AS patient_name, 
@@ -201,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_ids'])) {
 
 <head>
     <!-- Site Title-->
-    <title>醫生-看診</title>
+    <title>治療師-看診</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -560,7 +560,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_ids'])) {
                     <?php endwhile; ?>
                 </div>
 
-                <label>醫生備註：</label>
+                <label>治療師備註：</label>
                 <textarea name="note_d" rows="4" cols="50"></textarea>
 
                 <div class="btn-group">

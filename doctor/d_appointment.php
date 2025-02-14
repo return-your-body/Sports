@@ -27,10 +27,10 @@ if ($result_people->num_rows > 0) {
   exit;
 }
 
-// 查詢當前登入醫生的資料
+// 查詢當前登入治療師的資料
 $user_account = $_SESSION['帳號'];
 $query_doctor = "
-    SELECT doctor_id, doctor AS 醫生姓名 
+    SELECT doctor_id, doctor AS 治療師姓名 
     FROM doctor 
     JOIN user ON doctor.user_id = user.user_id
     WHERE user.account = ? AND user.grade_id = 2";
@@ -42,9 +42,9 @@ $result_doctor = $stmt_doctor->get_result();
 if ($result_doctor->num_rows > 0) {
   $data_doctor = $result_doctor->fetch_assoc();
   $_SESSION['doctor_id'] = $data_doctor['doctor_id'];
-  $_SESSION['doctor_name'] = $data_doctor['醫生姓名'];
+  $_SESSION['doctor_name'] = $data_doctor['治療師姓名'];
 } else {
-  echo "<script>alert('無法找到醫生資料！');window.location.href='d_people.php';</script>";
+  echo "<script>alert('無法找到治療師資料！');window.location.href='d_people.php';</script>";
   exit;
 }
 ?>
@@ -55,7 +55,7 @@ if ($result_doctor->num_rows > 0) {
 
 <head>
   <!-- Site Title-->
-  <title>醫生-預約</title>
+  <title>治療師-預約</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -497,9 +497,9 @@ if ($result_doctor->num_rows > 0) {
                   <input type="hidden" name="people_id" value="<?= $_SESSION['people_id']; ?>">
                 </div>
 
-                <!-- 醫生姓名 (顯示姓名，實際提交 doctor_id) -->
+                <!-- 治療師姓名 (顯示姓名，實際提交 doctor_id) -->
                 <div class="form-group mb-3">
-                  <label for="doctor_name">醫生姓名：</label>
+                  <label for="doctor_name">治療師姓名：</label>
                   <input type="text" id="doctor_name" class="form-control"
                     value="<?= htmlspecialchars($_SESSION['doctor_name']); ?>" readonly required />
                   <input type="hidden" name="doctor_id" value="<?= $_SESSION['doctor_id']; ?>">

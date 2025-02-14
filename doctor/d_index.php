@@ -64,14 +64,14 @@ if (isset($_SESSION["帳號"])) {
 }
 
 
-// 醫生簡介
+// 治療師簡介
 
 ?>
 
 
 <head>
   <!-- Site Title-->
-  <title>醫生-首頁</title>
+  <title>治療師-首頁</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -161,7 +161,7 @@ if (isset($_SESSION["帳號"])) {
     }
 
 
-    /* 醫生簡介 */
+    /* 治療師簡介 */
     <style>body {
       font-family: Arial, sans-serif;
       line-height: 1.6;
@@ -356,12 +356,12 @@ if (isset($_SESSION["帳號"])) {
     <!--Welcome back doctor-->
 
 
-    <!--醫生簡介-->
+    <!--治療師簡介-->
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
         <div class="row row-30 align-items-center justify-content-xxl-between">
           <div class="col-md-10">
-            <h3 class="box-small-title">醫生簡介</h3>
+            <h3 class="box-small-title">治療師簡介</h3>
             <?php
             session_start();
             require '../db.php';  // 載入資料庫連線設定
@@ -432,7 +432,7 @@ if (isset($_SESSION["帳號"])) {
         </div>
       </div>
     </section>
-    <!--醫生簡介-->
+    <!--治療師簡介-->
 
 
 

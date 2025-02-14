@@ -67,7 +67,7 @@ if (!isset($_SESSION['帳號'])) {
   die('未登入或 Session 已失效，請重新登入。');
 }
 
-$帳號 = $_SESSION['帳號']; // 取得當前登入醫生的帳號
+$帳號 = $_SESSION['帳號']; // 取得當前登入治療師的帳號
 
 // 接收搜尋條件
 $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
@@ -152,7 +152,7 @@ $result = $stmt->get_result();
 
 <head>
   <!-- Site Title-->
-  <title>醫生-預約紀錄</title>
+  <title>治療師-預約紀錄</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">

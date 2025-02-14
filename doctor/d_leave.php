@@ -327,7 +327,7 @@ if (isset($_SESSION["帳號"])) {
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
           <!-- <p class="breadcrumbs-custom-subtitle">What We Offer</p> -->
-          <p class="heading-1 breadcrumbs-custom-title">醫生請假</p>
+          <p class="heading-1 breadcrumbs-custom-title">治療師請假</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="d_index.php">首頁</a></li>
             <li><a href="#">班表</a></li>

@@ -68,7 +68,7 @@ require '../db.php';
 
 $帳號 = $_SESSION['帳號'] ?? '';
 
-// 取得登入醫生資訊
+// 取得登入治療師資訊
 $query_doctor = "SELECT doctor_id, doctor 
                  FROM doctor 
                  WHERE user_id = (SELECT user_id FROM user WHERE account = ?)";
@@ -81,7 +81,7 @@ if ($row = mysqli_fetch_assoc($result_doctor)) {
   $doctor_id = $row['doctor_id'];
   $doctor_name = htmlspecialchars($row['doctor']);
 } else {
-  die("找不到醫生資訊");
+  die("找不到治療師資訊");
 }
 
 // 設定日期選擇的預設值
@@ -144,7 +144,7 @@ $result_appointments = mysqli_stmt_get_result($stmt_appointments);
 
 <head>
   <!-- Site Title-->
-  <title>醫生-當天人數時段</title>
+  <title>治療師-當天人數時段</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">

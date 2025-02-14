@@ -81,7 +81,7 @@ $records_per_page = isset($_GET['limit']) ? max(3, (int) $_GET['limit']) : 10;
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $offset = ($page - 1) * $records_per_page;
 
-// 確認醫生的 user_id
+// 確認治療師的 user_id
 $doctor_sql = "SELECT doctor_id FROM doctor WHERE user_id = (SELECT user_id FROM user WHERE account = ?)";
 $doctor_stmt = $link->prepare($doctor_sql);
 $doctor_stmt->bind_param('s', $帳號);
@@ -91,7 +91,7 @@ $doctor_row = $doctor_result->fetch_assoc();
 $doctor_id = $doctor_row['doctor_id'] ?? null;
 
 if (!$doctor_id) {
-  die("未找到該醫生的資料");
+  die("未找到該治療師的資料");
 }
 
 // 計算總筆數
@@ -161,7 +161,7 @@ $result = $data_stmt->get_result();
 
 <head>
   <!-- Site Title-->
-  <title>醫生-看診紀錄</title>
+  <title>治療師-看診紀錄</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">

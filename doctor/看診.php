@@ -17,7 +17,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 }
 $appointment_id = intval($_GET['id']);
 
-// 查詢該帳號的醫生 ID
+// 查詢該帳號的治療師 ID
 $sql_doctor = "SELECT d.doctor_id FROM user u JOIN doctor d ON u.user_id = d.user_id WHERE u.account = ?";
 $stmt_doctor = mysqli_prepare($link, $sql_doctor);
 mysqli_stmt_bind_param($stmt_doctor, "s", $帳號);
@@ -26,7 +26,7 @@ $result_doctor = mysqli_stmt_get_result($stmt_doctor);
 if ($doctor = mysqli_fetch_assoc($result_doctor)) {
     $doctor_id = $doctor['doctor_id'];
 } else {
-    echo "<script>alert('無法找到您的醫生資料！'); window.location.href='d_appointment-records.php';</script>";
+    echo "<script>alert('無法找到您的治療師資料！'); window.location.href='d_appointment-records.php';</script>";
     exit;
 }
 

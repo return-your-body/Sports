@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['people_id'], $_POST['
         exit;
     }
 
-    // **查詢醫生班表 ID**
+    // **查詢治療師班表 ID**
     $query_shift = "SELECT doctorshift_id FROM doctorshift WHERE doctor_id = ? AND date = ?";
     if ($stmt_shift = mysqli_prepare($link, $query_shift)) {
         mysqli_stmt_bind_param($stmt_shift, "is", $doctor_id, $date);
