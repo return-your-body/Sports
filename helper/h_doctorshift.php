@@ -159,7 +159,7 @@ if (isset($_SESSION["帳號"])) {
     }
 
 
-    /* 醫生班表 */
+    /* 治療師班表 */
     /* 電腦端樣式（保留原始設計） */
     .table-container {
       overflow-x: hidden;
@@ -262,7 +262,7 @@ if (isset($_SESSION["帳號"])) {
                 </li>
                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a>
                 </li> -->
-                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">醫生班表</a>
+                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">治療師班表</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="h_doctorshift.php">治療師班表</a>
                     </li>
@@ -357,7 +357,7 @@ if (isset($_SESSION["帳號"])) {
           <p class="heading-1 breadcrumbs-custom-title">治療師班表時段</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="h_index.php">首頁</a></li>
-            <li><a href="#">醫生班表</a></li>
+            <li><a href="#">治療師班表</a></li>
             <li class="active">治療師班表</li>
           </ul>
         </div>

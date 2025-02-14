@@ -15,7 +15,7 @@ date = $_GET['date'];
 $currentTime = date('H:i');
 $currentDate = date('Y-m-d');
 
-// 查詢該醫生當天的排班時段
+// 查詢該治療師當天的排班時段
 $sql = "SELECT s.shifttime_id, s.shifttime 
         FROM shifttime s
         JOIN doctorshift d ON s.shifttime_id BETWEEN d.go AND d.off
@@ -38,7 +38,7 @@ while ($row = $result->fetch_assoc()) {
     $appointmentResult = $stmtCheck->get_result();
     $appointmentCount = $appointmentResult->fetch_assoc()['count'];
     
-    // 檢查是否該時段醫生請假
+    // 檢查是否該時段治療師請假
     $checkLeave = "SELECT COUNT(*) as count FROM leaves WHERE doctor_id = ? AND start_date <= ? AND end_date >= ?";
     $stmtLeave = $link->prepare($checkLeave);
     $stmtLeave->bind_param("iss", $doctor_id, "$date $shifttime", "$date $shifttime");
@@ -46,7 +46,7 @@ while ($row = $result->fetch_assoc()) {
     $leaveResult = $stmtLeave->get_result();
     $leaveCount = $leaveResult->fetch_assoc()['count'];
 
-    // 過濾條件：已被預約或醫生請假或過期時間不顯示
+    // 過濾條件：已被預約或治療師請假或過期時間不顯示
     if ($appointmentCount == 0 && $leaveCount == 0 && ($date > $currentDate || ($date == $currentDate && $shifttime > $currentTime))) {
         $availableTimes[] = [
             'shifttime_id' => $shifttimeId,

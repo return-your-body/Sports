@@ -472,7 +472,7 @@ if (!$result) {
                                     </ul>
                                 </li>
                                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a></li> -->
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">醫生班表</a>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">治療師班表</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="h_doctorshift.php">治療師班表</a>

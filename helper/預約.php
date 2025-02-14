@@ -6,10 +6,10 @@ session_start();
 require '../db.php';
 
 
-// 檢查前端是否傳遞了必要的參數，包括醫生名稱 (doctor)、日期 (date)、時間 (time)、備註 (note)、以及使用者的 people_id
+// 檢查前端是否傳遞了必要的參數，包括治療師名稱 (doctor)、日期 (date)、時間 (time)、備註 (note)、以及使用者的 people_id
 if (isset($_POST['doctor'], $_POST['date'], $_POST['time'], $_POST['note'], $_SESSION['people_id'])) {
     // 從 POST 請求中接收參數並存入對應變數
-    $doctor = $_POST['doctor']; // 醫生名稱
+    $doctor = $_POST['doctor']; // 治療師名稱
     $date = $_POST['date'];     // 預約日期
     $time = $_POST['time'];     // 預約時間
     $note = $_POST['note'];     // 備註內容
@@ -18,7 +18,7 @@ if (isset($_POST['doctor'], $_POST['date'], $_POST['time'], $_POST['note'], $_SE
     // **調試步驟 1：檢查接收的參數是否正確**
     error_log("收到的參數: " . json_encode($_POST));
 
-    // 查詢醫生的班表 (`doctorshift_id`) 和對應的時間段 (`shifttime_id`)
+    // 查詢治療師的班表 (`doctorshift_id`) 和對應的時間段 (`shifttime_id`)
     $query_shift = "
         SELECT ds.doctorshift_id, st.shifttime_id
         FROM doctorshift ds
@@ -29,7 +29,7 @@ if (isset($_POST['doctor'], $_POST['date'], $_POST['time'], $_POST['note'], $_SE
     // 預處理 SQL 查詢，防止 SQL 注入攻擊
     $stmt_shift = mysqli_prepare($link, $query_shift);
 
-    // 綁定查詢參數：時間段、醫生名稱和日期
+    // 綁定查詢參數：時間段、治療師名稱和日期
     mysqli_stmt_bind_param($stmt_shift, "sss", $time, $doctor, $date);
 
     // 執行查詢以獲取班表及時間段
@@ -47,7 +47,7 @@ if (isset($_POST['doctor'], $_POST['date'], $_POST['time'], $_POST['note'], $_SE
 
     // 檢查是否找到對應的班表和時間段
     if ($shift_row = mysqli_fetch_assoc($result_shift)) {
-        $doctorshift_id = $shift_row['doctorshift_id']; // 醫生班表的 ID
+        $doctorshift_id = $shift_row['doctorshift_id']; // 治療師班表的 ID
         $shifttime_id = $shift_row['shifttime_id'];     // 時間段的 ID
 
         // **調試步驟 3：檢查查詢到的班表和時間段**

@@ -272,7 +272,7 @@ if (isset($_SESSION["帳號"])) {
 			box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
 		}
 
-		/* 醫生班表 */
+		/* 治療師班表 */
 		.table-custom {
 			width: 100%;
 			border-collapse: collapse;
@@ -365,7 +365,7 @@ if (isset($_SESSION["帳號"])) {
 								</li>
 								<!-- <li class="rd-nav-item active"><a class="rd-nav-link" href="h_appointment.php">預約</a>
 				</li> -->
-								<li class="rd-nav-item"><a class="rd-nav-link" href="#">醫生班表</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="#">治療師班表</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="h_doctorshift.php">治療師班表</a>
@@ -880,7 +880,7 @@ ORDER BY ds.date, d.doctor_id";
 				/* 添加陰影效果 */
 			}
 
-			/* 標題樣式調整 (醫生和日期) */
+			/* 標題樣式調整 (治療師和日期) */
 			#modal-title {
 				font-size: 18px;
 				/* 字體大小調整為 18px */
@@ -1009,13 +1009,13 @@ ORDER BY ds.date, d.doctor_id";
 
 			/**
 				* 打開彈窗，顯示時間段
-				* @param {string} doctor - 醫生名稱
+				* @param {string} doctor - 治療師名稱
 				* @param {string} date - 預約日期 (YYYY-MM-DD)
 				* @param {string} startTime - 上班時間 (HH:mm 格式)
 				* @param {string} endTime - 下班時間 (HH:mm 格式)
 				*/
 			function openModal(doctor, date, startTime, endTime) {
-				modalTitle.textContent = `醫生：${doctor} 日期：${date}`;
+				modalTitle.textContent = `治療師：${doctor} 日期：${date}`;
 				timeSlotsContainer.innerHTML = "";
 
 				let current = new Date(`${date}T${startTime}`);
@@ -1077,7 +1077,7 @@ ORDER BY ds.date, d.doctor_id";
 
 			/**
 			 * 檢查某個時間段是否已被預約
-			 * @param {string} doctor - 醫生名稱
+			 * @param {string} doctor - 治療師名稱
 			 * @param {string} date - 預約日期
 			 * @param {string} timeSlot - 時間段 (格式: HH:mm)
 			 * @param {HTMLElement} button - 預約按鈕
@@ -1127,8 +1127,8 @@ ORDER BY ds.date, d.doctor_id";
 
 
 			/**
-			* 預約功能，將醫生、日期、時間和備註資訊發送到伺服器進行處理
-			* @param {string} doctor - 醫生名稱
+			* 預約功能，將治療師、日期、時間和備註資訊發送到伺服器進行處理
+			* @param {string} doctor - 治療師名稱
 			* @param {string} date - 預約日期 (格式: YYYY-MM-DD)
 			* @param {string} time - 預約時間 (格式: HH:mm)
 			*/
@@ -1137,7 +1137,7 @@ ORDER BY ds.date, d.doctor_id";
 				const note = document.getElementById("note").value;
 
 				// 彈出確認提示，讓使用者確認是否要進行該預約
-				if (confirm(`確定要預約？\n醫生：${doctor}\n日期：${date}\n時間：${time}\n備註：${note}`)) {
+				if (confirm(`確定要預約？\n治療師：${doctor}\n日期：${date}\n時間：${time}\n備註：${note}`)) {
 					// 創建一個新的 AJAX 請求對象
 					const xhr = new XMLHttpRequest();
 

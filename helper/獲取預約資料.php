@@ -29,7 +29,7 @@ $result = $stmt->get_result();
 $row = $result->fetch_assoc();
 
 if (!$row) {
-    echo json_encode(["error" => "找不到該預約的醫生資料"]);
+    echo json_encode(["error" => "找不到該預約的治療師資料"]);
 } else {
     echo json_encode($row);
 }

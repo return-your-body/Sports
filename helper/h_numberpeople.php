@@ -249,7 +249,7 @@ if (isset($_SESSION["帳號"])) {
 									</ul>
 								</li>
 								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a></li> -->
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">醫生班表</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">治療師班表</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="h_doctorshift.php">治療師班表</a>
@@ -349,7 +349,7 @@ if (isset($_SESSION["帳號"])) {
 					<p class="heading-1 breadcrumbs-custom-title">當天人數及時段</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="h_index.php">首頁</a></li>
-						<li><a href="#">醫生班表</a></li>
+						<li><a href="#">治療師班表</a></li>
 						<li class="active">當天人數及時段</li>
 					</ul>
 				</div>
@@ -375,7 +375,7 @@ if (isset($_SESSION["帳號"])) {
 					exit;
 				}
 
-				// 查詢醫生列表
+				// 查詢治療師列表
 				$doctor_list_query = "
         SELECT d.doctor_id, d.doctor
         FROM doctor d
@@ -466,7 +466,7 @@ WHERE ds.date = ?";
 				$result_appointments = mysqli_stmt_get_result($stmt);
 				?>
 
-				<!-- 日期與醫生選擇 -->
+				<!-- 日期與治療師選擇 -->
 				<form method="GET" action="" style="margin-bottom: 20px;">
 					<label for="doctor">選擇治療師：</label>
 					<select id="doctor" name="doctor_id">

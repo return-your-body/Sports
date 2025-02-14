@@ -393,21 +393,15 @@ if (isset($_SESSION["帳號"])) {
                 <div class="row row-40">
                     <div class="col-md-4">
                         <h4>關於我們</h4>
-                        <ul class="list-inline" style="font-size: 40px; display: inline-block; color: #333333;">
-                            <li>
-                                <a class="icon novi-icon icon-default icon-custom-facebook"
-                                    href="https://www.facebook.com/ReTurnYourBody/" target="_blank"></a>
-                            </li>
-                            <li>
-                                <a class="icon novi-icon icon-default icon-custom-line" href="https://lin.ee/sUaUVMq"
-                                    target="_blank"></a>
-                            </li>
-                            <li>
-                                <a class="icon novi-icon icon-default icon-custom-instagram"
-                                    href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"
-                                    target="_blank"></a>
-                            </li>
-                        </ul>
+                        <ul class="list-inline" style="font-size: 40px; display: inline-block;color: #333333; ">
+							<li><a class="icon novi-icon icon-default icon-custom-facebook"
+									href="https://www.facebook.com/ReTurnYourBody/" target="_blank"></a></li>
+							<li><a class="icon novi-icon icon-default icon-custom-linkedin"
+									href="https://lin.ee/sUaUVMq" target="_blank"></a></li>
+							<li><a class="icon novi-icon icon-default icon-custom-instagram"
+									href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"
+									target="_blank"></a></li>
+						</ul>
 
 
                     </div>
