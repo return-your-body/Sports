@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = mysqli_real_escape_string($link, $_POST['name']);      // 姓名
     $grade = $_POST['grade'];                                      // 等級
 
-    // 設定 grade_id: 醫生 (2), 助手 (3)
+    // 設定 grade_id: 治療師 (2), 助手 (3)
     $grade_id = ($grade === 'doctor') ? 2 : (($grade === 'assistant') ? 3 : 0);
 
     // 確保 grade 正確

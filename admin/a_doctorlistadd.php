@@ -30,7 +30,7 @@ if (isset($_SESSION["帳號"])) {
     if ($result && mysqli_num_rows($result) > 0) {
         $row = mysqli_fetch_assoc($result);
         $帳號名稱 = $row['account']; // 使用者帳號
-        $等級 = $row['grade_id']; // 等級（例如 1: 醫生, 2: 護士, 等等）
+        $等級 = $row['grade_id']; // 等級（例如 1: 治療師, 2: 護士, 等等）
     } else {
         // 如果查詢不到對應的資料
         echo "<script>
@@ -267,10 +267,10 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                                 href="a_blacklist.php">黑名單</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_doctorlistadd.php">新增醫生資料</a>
+                                                href="a_doctorlistadd.php">新增治療師資料</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_doctorlistmod.php">修改醫生資料</a>
+                                                href="a_doctorlistmod.php">修改治療師資料</a>
                                         </li>
                                     </ul>
                                 </li>
@@ -338,11 +338,11 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
             <!-- Breadcrumbs-->
             <section class="breadcrumbs-custom breadcrumbs-custom-svg">
                 <div class="container">
-                    <p class="heading-1 breadcrumbs-custom-title">醫生資料新增</p>
+                    <p class="heading-1 breadcrumbs-custom-title">治療師資料新增</p>
                     <ul class="breadcrumbs-custom-path">
                         <li><a href="a_index.php">首頁</a></li>
-                        <li><a href="">醫生資料</a></li>
-                        <li class="active">醫生資料新增</li>
+                        <li><a href="">治療師資料</a></li>
+                        <li class="active">治療師資料新增</li>
                     </ul>
                 </div>
             </section>
@@ -357,7 +357,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                         <form id="doctorForm" enctype="multipart/form-data">
 
                             <div class="row row-20 row-fix">
-                                <!-- 醫生姓名 -->
+                                <!-- 治療師姓名 -->
                                 <div class="col-md-6">
                                     <div class="form-wrap form-wrap-validation">
                                         <label class="form-label-outside" for="doctor_id">治療師姓名</label>
@@ -366,7 +366,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                             <?php
                                             include '../db.php'; // 引入資料庫連線
                                             
-                                            // 查詢醫生資料（grade_id = 2 為醫生）
+                                            // 查詢治療師資料（grade_id = 2 為治療師）
                                             $query = "
                                         SELECT d.doctor_id, d.doctor
                                         FROM doctor d
@@ -466,7 +466,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
                                 <!-- 送出按鈕 -->
                                 <div class="col-md-12 text-center">
-                                    <button class="button button-primary" type="submit">新增醫生資料</button>
+                                    <button class="button button-primary" type="submit">新增治療師資料</button>
                                 </div>
                             </div>
                         </form>

@@ -49,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     // **執行 SQL 並檢查是否成功**
     if (mysqli_stmt_execute($stmt)) {
         $response["status"] = "success";
-        $response["message"] = "✅ 醫生資料新增成功";
+        $response["message"] = "✅ 治療師資料新增成功";
     } else {
         $response["message"] = "❌ 錯誤：" . mysqli_error($link);
     }

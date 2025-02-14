@@ -400,10 +400,10 @@ mysqli_close($link);
 												href="a_blacklist.php">黑名單</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_doctorlistadd.php">新增醫生資料</a>
+												href="a_doctorlistadd.php">新增治療師資料</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_doctorlistmod.php">修改醫生資料</a>
+												href="a_doctorlistmod.php">修改治療師資料</a>
 										</li>
 									</ul>
 								</li>
@@ -520,7 +520,7 @@ mysqli_close($link);
 					<table class="violation-table">
 						<thead>
 							<tr>
-								<th>醫生</th>
+								<th>治療師</th>
 								<th>看診日期</th>
 								<th>時間</th>
 								<th>狀態</th>

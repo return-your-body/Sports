@@ -5,7 +5,7 @@ include '../db.php';
 // 確保請求方法為 POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 獲取表單提交的數據
-    $doctor_id = $_POST['doctor_id']; // 醫生 ID
+    $doctor_id = $_POST['doctor_id']; // 治療師 ID
     $dates = $_POST['dates']; // 日期陣列 (格式為 YYYY-MM-DD)
     $go_times = $_POST['go_times']; // 上班時間
     $off_times = $_POST['off_times']; // 下班時間

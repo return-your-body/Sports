@@ -30,7 +30,7 @@ if (isset($_SESSION["帳號"])) {
 	if ($result && mysqli_num_rows($result) > 0) {
 		$row = mysqli_fetch_assoc($result);
 		$帳號名稱 = $row['account']; // 使用者帳號
-		$等級 = $row['grade_id']; // 等級（例如 1: 醫生, 2: 護士, 等等）
+		$等級 = $row['grade_id']; // 等級（例如 1: 治療師, 2: 護士, 等等）
 	} else {
 		// 如果查詢不到對應的資料
 		echo "<script>
@@ -257,10 +257,10 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 												href="a_blacklist.php">黑名單</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_doctorlistadd.php">新增醫生資料</a>
+												href="a_doctorlistadd.php">新增治療師資料</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_doctorlistmod.php">修改醫生資料</a>
+												href="a_doctorlistmod.php">修改治療師資料</a>
 										</li>
 									</ul>
 								</li>
@@ -386,7 +386,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 									<label for="grade">選擇等級</label>
 									<select id="grade" name="grade" required>
 										<option value="">-- 請選擇等級 --</option>
-										<option value="doctor">醫生</option>
+										<option value="doctor">治療師</option>
 										<option value="assistant">助手</option>
 									</select>
 								</div>

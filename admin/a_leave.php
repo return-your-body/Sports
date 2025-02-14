@@ -30,7 +30,7 @@ if (isset($_SESSION["帳號"])) {
 	if ($result && mysqli_num_rows($result) > 0) {
 		$row = mysqli_fetch_assoc($result);
 		$帳號名稱 = $row['account']; // 使用者帳號
-		$等級 = $row['grade_id']; // 等級（例如 1: 醫生, 2: 護士, 等等）
+		$等級 = $row['grade_id']; // 等級（例如 1: 治療師, 2: 護士, 等等）
 	} else {
 		// 如果查詢不到對應的資料
 		echo "<script>
@@ -41,13 +41,13 @@ if (isset($_SESSION["帳號"])) {
 	}
 }
 
-// 取得醫生資料
+// 取得治療師資料
 $query = "
     SELECT d.doctor_id, d.doctor
     FROM doctor d
     INNER JOIN user u ON d.user_id = u.user_id
     INNER JOIN grade g ON u.grade_id = g.grade_id
-    WHERE g.grade = '醫生'
+    WHERE g.grade = '治療師'
 ";
 $result = mysqli_query($link, $query);
 
@@ -331,10 +331,10 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 												href="a_blacklist.php">黑名單</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_doctorlistadd.php">新增醫生資料</a>
+												href="a_doctorlistadd.php">新增治療師資料</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_doctorlistmod.php">修改醫生資料</a>
+												href="a_doctorlistmod.php">修改治療師資料</a>
 										</li>
 									</ul>
 								</li>
@@ -423,7 +423,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		$offset = ($page - 1) * $perPage;
 		$search = isset($_GET['search']) ? $_GET['search'] : '';
 
-		// 查詢請假資料並聯結醫生表格以取得醫生名稱，未通過的排在前面
+		// 查詢請假資料並聯結治療師表格以取得治療師名稱，未通過的排在前面
 		$result = $link->query(
 			"SELECT leaves.*, doctor.doctor AS doctor_name 
      FROM leaves 
@@ -474,7 +474,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 20px; width: 100%;">
 			<div style="flex: 4;">
 				<input class="form-input" type="text" name="search" value="<?php echo htmlspecialchars($search); ?>"
-					placeholder="請輸入醫生姓名" style="
+					placeholder="請輸入治療師姓名" style="
 			padding: 10px 15px;          
 			font-size: 16px;             
 			width: 100%;                 
@@ -573,7 +573,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		<table class="table-custom table-hover">
 			<thead>
 				<tr>
-					<th>醫生姓名</th>
+					<th>治療師姓名</th>
 					<th>請假類型</th>
 					<th>開始時間</th>
 					<th>結束時間</th>

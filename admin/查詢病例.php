@@ -13,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['people_id'])) {
     // ✅ 查詢該病人的所有預約記錄
     $sql = "
     SELECT 
-        d.doctor AS 醫生,  
+        d.doctor AS 治療師,  
         ds.date AS 看診日期,  
         st.shifttime AS 看診時間, 
         s.status_name AS 狀態,  
@@ -41,7 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['people_id'])) {
     if (mysqli_num_rows($result) > 0) {
         while ($row = mysqli_fetch_assoc($result)) {
             echo "<tr>";
-            echo "<td>" . htmlspecialchars($row['醫生']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['治療師']) . "</td>";
             echo "<td>" . htmlspecialchars($row['看診日期']) . "</td>";
             echo "<td>" . htmlspecialchars($row['看診時間']) . "</td>";
             echo "<td>" . htmlspecialchars($row['狀態']) . "</td>";
