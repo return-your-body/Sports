@@ -663,12 +663,13 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			dropdownOptions.addEventListener('change', () => {
 				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value), rangeSelect.value);
 			});
+			
 			/**
- * 根據選擇的年份、月份和範圍生成對應的日曆。
- * @param {number} year - 選擇的年份。
- * @param {number} month - 選擇的月份 (0 表示 1 月，11 表示 12 月)。
- * @param {string} range - 日曆顯示範圍，可選值為 "1-week" (一週)、"2-weeks" (兩週)、"1-month" (整個月)。
- */
+			* 根據選擇的年份、月份和範圍生成對應的日曆。
+			* @param {number} year - 選擇的年份。
+			* @param {number} month - 選擇的月份 (0 表示 1 月，11 表示 12 月)。
+			* @param {string} range - 日曆顯示範圍，可選值為 "1-week" (一週)、"2-weeks" (兩週)、"1-month" (整個月)。
+			*/
 			function generateCalendar(year, month, range) {
 				// 清空日曆的內容
 				calendarBody.innerHTML = '';
