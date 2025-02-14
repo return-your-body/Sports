@@ -631,6 +631,7 @@ $result = $stmt->get_result();
                               <option value="報到" <?php echo ($row['status_name'] == '報到') ? 'selected' : ''; ?>>報到</option>
                               <option value="請假" <?php echo ($row['status_name'] == '請假') ? 'selected' : ''; ?>>請假</option>
                               <option value="爽約" <?php echo ($row['status_name'] == '爽約') ? 'selected' : ''; ?>>爽約</option>
+                              <option value="爽約" <?php echo ($row['status_name'] == '取消') ? 'selected' : ''; ?>>取消</option>
                               <option value="已看診" <?php echo ($row['status_name'] == '已看診') ? 'selected' : ''; ?>>已看診</option>
                             </select>
                           </td>
