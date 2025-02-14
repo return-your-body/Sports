@@ -62,72 +62,7 @@ if (isset($_SESSION["帳號"])) {
 }
 
 //預約紀錄
-require '../db.php';
 
-// 接收搜尋條件
-$search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
-
-// 取得筆數選擇 (預設 10)
-$records_per_page = isset($_GET['limit']) ? max(1, (int) $_GET['limit']) : 10;
-
-// 取得當前頁數
-$page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-$offset = ($page - 1) * $records_per_page;
-
-// 總筆數計算
-$count_stmt = $link->prepare("
-    SELECT COUNT(*) AS total 
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id
-    LEFT JOIN status s ON a.status_id = s.status_id
-    WHERE p.name LIKE CONCAT('%', ?, '%')
-");
-if (!$count_stmt) {
-  die('SQL 錯誤: ' . $link->error);
-}
-$count_stmt->bind_param('s', $search_name);
-$count_stmt->execute();
-$count_result = $count_stmt->get_result();
-$total_records = $count_result->fetch_assoc()['total'] ?? 0;
-$total_pages = ceil($total_records / $records_per_page);
-
-// 查詢分頁資料
-$stmt = $link->prepare("
-    SELECT 
-        a.appointment_id AS id,
-        COALESCE(p.name, '未預約') AS name,
-        CASE 
-            WHEN p.gender_id = 1 THEN '男' 
-            WHEN p.gender_id = 2 THEN '女' 
-            ELSE '無資料' 
-        END AS gender,
-        IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '無資料') AS birthday_with_age,
-        DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
-        st.shifttime AS shifttime,
-        d.doctor AS doctor_name,
-        COALESCE(a.note, '無') AS note,
-        COALESCE(s.status_name, '未設定') AS status_name,  
-        a.created_at
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id
-    LEFT JOIN status s ON a.status_id = s.status_id  
-    WHERE p.name LIKE CONCAT('%', ?, '%')
-    ORDER BY ds.date, st.shifttime
-    LIMIT ?, ?
-");
-if (!$stmt) {
-  die('SQL 錯誤: ' . $link->error);
-}
-$stmt->bind_param('sii', $search_name, $offset, $records_per_page);
-$stmt->execute();
-$result = $stmt->get_result();
 ?>
 
 
@@ -226,9 +161,73 @@ $result = $stmt->get_result();
     }
 
     /*預約紀錄 */
-    .table-responsive {
-      overflow-x: auto;
+    /* 搜尋 & 篩選 & 筆數選擇 置於同一行，並靠右對齊 */
+    .search-container {
+      display: flex;
+      justify-content: flex-end;
+      /* 讓內容靠右對齊 */
+      align-items: center;
+      gap: 10px;
+      /* 設置元素間距 */
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-container form {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-container select,
+    .search-container input,
+    .search-container button {
+      padding: 5px;
+      font-size: 14px;
+    }
+
+    /* 分頁 & 資訊 */
+    .pagination-wrapper {
+      display: flex;
+      justify-content: space-between;
+      /* 左右對齊 */
+      align-items: center;
       margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* 分頁資訊 (靠右對齊) */
+    .pagination-info {
+      font-size: 14px;
+      color: #555;
+      display: flex;
+      justify-content: flex-end;
+      /* 讓內容靠右 */
+      width: 100%;
+    }
+
+    /* 頁碼按鈕 (置中) */
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      /* 讓頁碼置中 */
+      flex-grow: 1;
+      gap: 10px;
+    }
+
+    .pagination-container a,
+    .pagination-container strong {
+      padding: 5px 10px;
+      text-decoration: none;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      color: #007bff;
+    }
+
+    .pagination-container strong {
+      font-weight: bold;
+      background-color: #007bff;
+      color: white;
     }
 
     table {
@@ -251,79 +250,28 @@ $result = $stmt->get_result();
       font-weight: bold;
     }
 
+
+    /* 響應式處理 */
     @media (max-width: 768px) {
-
-      th,
-      td {
-        padding: 8px;
-        font-size: 14px;
+      .search-container {
+        justify-content: center;
+        flex-wrap: wrap;
       }
-    }
 
-    @media (max-width: 480px) {
-
-      th,
-      td {
-        padding: 6px;
-        font-size: 12px;
+      .pagination-wrapper {
+        flex-direction: column;
+        align-items: center;
       }
-    }
 
-    /* 讓搜尋框與筆數選擇在同一行，並靠右對齊 */
-    .search-limit-container {
-      display: flex;
-      justify-content: flex-end;
-      /* 內容靠右對齊 */
-      align-items: center;
-      gap: 15px;
-      /* 設定搜尋框與筆數選擇之間的間距 */
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      /* 確保在小螢幕時換行 */
-    }
+      .pagination-info {
+        justify-content: center;
+        margin-bottom: 10px;
+        width: auto;
+      }
 
-    /* 搜尋框 */
-    .search-form {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .search-form input {
-      padding: 6px 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    .search-form button {
-      padding: 6px 12px;
-      border: none;
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: background 0.3s ease-in-out;
-    }
-
-    .search-form button:hover {
-      background-color: #0056b3;
-    }
-
-    /* 筆數選擇 */
-    .limit-selector {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .limit-selector label {
-      font-size: 14px;
-    }
-
-    .limit-selector select {
-      padding: 6px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      .pagination-container {
+        justify-content: center;
+      }
     }
 
     /* 狀態 */
@@ -557,247 +505,367 @@ $result = $stmt->get_result();
     </div>
     <!--標題-->
 
+    <br />
+
     <!--預約紀錄-->
-    <section class="section section-lg bg-default novi-bg novi-bg-img">
+    <?php
+    require '../db.php';
+
+    // 接收篩選條件
+    $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
+    $selected_doctor = isset($_GET['doctor']) ? trim($_GET['doctor']) : '全部';
+
+    // 取得筆數選擇 (預設 10)
+    $records_per_page = isset($_GET['limit']) ? max(1, (int) $_GET['limit']) : 10;
+
+    // 取得當前頁數
+    $page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+    $offset = ($page - 1) * $records_per_page;
+
+    // SQL 查詢條件
+    $where_clauses = ["s.status_name != '已看診'", "u.grade_id != 3"]; // 過濾已看診 & 助手
+    $params = [];
+    $types = "";
+
+    // 若選擇特定醫生，篩選條件
+    if ($selected_doctor !== '全部') {
+      $where_clauses[] = "d.doctor = ?";
+      $params[] = $selected_doctor;
+      $types .= "s";
+    }
+
+    // 若有輸入姓名搜尋條件
+    if (!empty($search_name)) {
+      $where_clauses[] = "p.name LIKE ?";
+      $params[] = "%{$search_name}%";
+      $types .= "s";
+    }
+
+    // 組合 SQL 查詢條件
+    $where_sql = count($where_clauses) > 0 ? "WHERE " . implode(" AND ", $where_clauses) : "";
+
+    // 計算總筆數
+    $count_sql = "
+    SELECT COUNT(*) AS total 
+    FROM appointment a
+    LEFT JOIN people p ON a.people_id = p.people_id
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+    LEFT JOIN user u ON d.user_id = u.user_id  -- 連結 user 表取得 grade_id
+    LEFT JOIN status s ON a.status_id = s.status_id
+    $where_sql
+";
+    $count_stmt = $link->prepare($count_sql);
+    if (!empty($params)) {
+      $count_stmt->bind_param($types, ...$params);
+    }
+    $count_stmt->execute();
+    $count_result = $count_stmt->get_result();
+    $total_records = $count_result->fetch_assoc()['total'] ?? 0;
+    $total_pages = ceil($total_records / $records_per_page);
+
+    // 查詢預約資料
+    $data_sql = "
+    SELECT 
+        a.appointment_id AS id,
+        COALESCE(p.name, '未預約') AS name,
+        CASE 
+            WHEN p.gender_id = 1 THEN '男' 
+            WHEN p.gender_id = 2 THEN '女' 
+            ELSE '無資料' 
+        END AS gender,
+        IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '無資料') AS birthday_with_age,
+        DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
+        st.shifttime AS shifttime,
+        d.doctor AS doctor_name,
+        COALESCE(a.note, '無') AS note,
+        COALESCE(s.status_name, '未設定') AS status_name  
+    FROM appointment a
+    LEFT JOIN people p ON a.people_id = p.people_id
+    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+    LEFT JOIN user u ON d.user_id = u.user_id  -- 連結 user 表取得 grade_id
+    LEFT JOIN status s ON a.status_id = s.status_id  
+    $where_sql
+    ORDER BY ds.date, st.shifttime
+    LIMIT ?, ?
+";
+    $data_stmt = $link->prepare($data_sql);
+    $params[] = $offset;
+    $params[] = $records_per_page;
+    $types .= "ii";
+
+    $data_stmt->bind_param($types, ...$params);
+    $data_stmt->execute();
+    $result = $data_stmt->get_result();
+    ?>
+
+
+    <section class="section">
       <div class="container">
-        <div class="row row-50 justify-content-lg-center">
+        <div class="row justify-content-center">
           <div class="col-lg-12">
-            <div id="accordion1" role="tablist" aria-multiselectable="false">
-              <!-- 搜尋與筆數選擇 -->
-              <div class="search-limit-container">
-                <!-- 搜尋框 -->
-                <form method="GET" action="" class="search-form">
-                  <input type="hidden" name="is_search" value="1">
-                  <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
-                    value="<?php echo htmlspecialchars($search_name); ?>">
-                  <button type="submit">搜尋</button>
-                </form>
 
-                <!-- 每頁筆數選擇 -->
-                <div class="limit-selector">
-                  <!-- <label for="limit">每頁顯示筆數:</label> -->
-                  <select id="limit" name="limit" onchange="updateLimit()">
-                    <?php
-                    $limits = [3, 5, 10, 20, 50, 100];
-                    foreach ($limits as $limit) {
-                      $selected = ($limit == $records_per_page) ? "selected" : "";
-                      echo "<option value='$limit' $selected>$limit 筆/頁</option>";
-                    }
-                    ?>
-                  </select>
-                </div>
-              </div>
+            <!-- 搜尋 & 篩選 & 筆數選擇 -->
+            <div class="search-container">
+              <form method="GET" action="">
+                <input type="text" name="search_name" placeholder="請輸入搜尋姓名"
+                  value="<?php echo htmlspecialchars($search_name); ?>">
 
-
-              <!-- 表格容器 -->
-              <div class="table-responsive">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>姓名</th>
-                      <th>性別</th>
-                      <th>生日 (年齡)</th>
-                      <th>看診日期 (星期)</th>
-                      <th>看診時間</th>
-                      <th>治療師</th>
-                      <th>備註</th>
-                      <th>狀態</th>
-                      <th>選項</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <?php if ($result->num_rows > 0): ?>
-                      <?php while ($row = $result->fetch_assoc()): ?>
-                        <tr>
-                          <td><?php echo htmlspecialchars($row['id']); ?></td>
-                          <td><?php echo htmlspecialchars($row['name']); ?></td>
-                          <td><?php echo htmlspecialchars($row['gender']); ?></td>
-                          <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
-                          <td>
-                            <?php
-                            $appointment_date = htmlspecialchars($row['appointment_date']);
-                            $weekday = ['日', '一', '二', '三', '四', '五', '六'][date('w', strtotime($appointment_date))];
-                            echo "$appointment_date (星期$weekday)";
-                            ?>
-                          </td>
-                          <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
-                          <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
-                          <td><?php echo htmlspecialchars($row['note']); ?></td>
-                          <td>
-                            <select class="status-dropdown" data-id="<?php echo $row['id']; ?>" <?php echo ($row['status_name'] == '已看診') ? 'disabled' : ''; ?>>
-                              <option value="預約" <?php echo ($row['status_name'] == '預約') ? 'selected' : ''; ?>>預約</option>
-                              <option value="修改" <?php echo ($row['status_name'] == '修改') ? 'selected' : ''; ?>>修改</option>
-                              <option value="報到" <?php echo ($row['status_name'] == '報到') ? 'selected' : ''; ?>>報到</option>
-                              <option value="請假" <?php echo ($row['status_name'] == '請假') ? 'selected' : ''; ?>>請假</option>
-                              <option value="爽約" <?php echo ($row['status_name'] == '爽約') ? 'selected' : ''; ?>>爽約</option>
-                              <option value="爽約" <?php echo ($row['status_name'] == '取消') ? 'selected' : ''; ?>>取消</option>
-                              <option value="已看診" <?php echo ($row['status_name'] == '已看診') ? 'selected' : ''; ?>>已看診</option>
-                            </select>
-                          </td>
-
-
-                          <td>
-                            <a href="h_print-appointment.php?id=<?php echo $row['id']; ?>" target="_blank">
-                              <button type="button">列印預約單</button>
-                            </a>
-                          </td>
-                        </tr>
-                      <?php endwhile; ?>
-                    <?php else: ?>
-                      <tr>
-                        <td colspan="10">目前無資料</td>
-                      </tr>
-                    <?php endif; ?>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- 狀態清單 -->
-              <!-- 修改 -->
-              <!-- 狀態下拉選單 -->
-              <!-- 修改時間的 Modal -->
-              <div id="modal-overlay" class="modal-overlay">
-                <div id="modal-container" class="modal-container">
-                  <span id="modal-close" class="modal-close">&times;</span>
-                  <h2 class="modal-title">修改預約</h2>
-
-                  <label for="appointment-date">預約日期：</label>
-                  <input type="date" id="appointment-date" min="">
-
-                  <label for="appointment-time">預約時間：</label>
-                  <select id="appointment-time">
-                    <option value="">請選擇時間</option>
-                  </select>
-
-                  <div class="modal-actions">
-                    <button id="confirm-modify" class="confirm">確認修改</button>
-                    <button id="cancel-modify" class="cancel">取消</button>
-                  </div>
-                </div>
-              </div>
-
-
-              <script>
-                document.addEventListener("DOMContentLoaded", function () {
-                  const modalOverlay = document.getElementById("modal-overlay");
-                  const modalClose = document.querySelector(".modal-close");
-                  const cancelModifyBtn = document.querySelector(".cancel");
-                  const appointmentDate = document.getElementById("appointment-date");
-                  const appointmentTime = document.getElementById("appointment-time");
-                  const confirmModifyBtn = document.getElementById("confirm-modify");
-
-                  let selectedAppointmentId = null;
-                  let originalDate = "";
-                  let originalTime = "";
-                  let originalStatus = {}; // 用來儲存預約的原始狀態
-
-                  // 設定最小可選日期
-                  let today = new Date().toISOString().split("T")[0];
-                  appointmentDate.setAttribute("min", today);
-
-                  // **監聽狀態變更（打開修改視窗）**
-                  document.querySelectorAll(".status-dropdown").forEach((select) => {
-                    select.addEventListener("change", function () {
-                      selectedAppointmentId = this.getAttribute("data-id");
-                      let newStatus = this.value;
-
-                      if (newStatus === "修改") {
-                        modalOverlay.style.display = "flex";
-
-                        // **記錄原本的狀態，當按下取消時恢復**
-                        originalStatus[selectedAppointmentId] = this.value;
-                        originalDate = appointmentDate.value;
-                        originalTime = appointmentTime.value;
-
-                        appointmentDate.value = "";
-                        appointmentTime.innerHTML = "<option value=''>請選擇時間</option>";
-                        fetchAvailableDates();
-                      } else {
-                        updateStatus(selectedAppointmentId, newStatus);
-                      }
-                    });
-                  });
-
-                  // **關閉視窗並恢復原本狀態**
-                  function resetForm() {
-                    appointmentDate.value = originalDate;
-                    appointmentTime.value = originalTime;
-
-                    // **恢復選單狀態**
-                    document.querySelector(`.status-dropdown[data-id="${selectedAppointmentId}"]`).value = originalStatus[selectedAppointmentId];
-
-                    modalOverlay.style.display = "none";
+                <select name="doctor" onchange="this.form.submit()">
+                  <option value="全部" <?php echo ($selected_doctor === '全部') ? 'selected' : ''; ?>>全部</option>
+                  <?php
+                  $doctor_query = $link->query("
+        SELECT d.doctor 
+        FROM doctor d
+        JOIN user u ON d.user_id = u.user_id
+        WHERE u.grade_id = 2
+    ");
+                  while ($row = $doctor_query->fetch_assoc()) {
+                    $doctor_name = $row['doctor'];
+                    $selected = ($selected_doctor === $doctor_name) ? 'selected' : '';
+                    echo "<option value='$doctor_name' $selected>$doctor_name</option>";
                   }
-
-                  modalClose.addEventListener("click", resetForm);
-                  cancelModifyBtn.addEventListener("click", resetForm);
-
-                  // **送出修改請求**
-                  confirmModifyBtn.addEventListener("click", function () {
-                    let doctorshiftId = appointmentDate.value;
-                    let shifttimeId = appointmentTime.value;
-
-                    if (!selectedAppointmentId || !doctorshiftId || !shifttimeId) {
-                      alert("請選擇有效的日期與時間");
-                      return;
-                    }
-
-                    let formData = new URLSearchParams();
-                    formData.append("id", selectedAppointmentId);
-                    formData.append("doctorshift_id", doctorshiftId);
-                    formData.append("shifttime_id", shifttimeId);
-
-                    fetch("更新狀態.php", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                      body: formData.toString(),
-                    })
-                      .then(response => response.json())
-                      .then(data => {
-                        if (data.success) {
-                          alert("預約修改成功！");
-                          location.reload();
-                        } else {
-                          alert("修改失敗：" + data.error);
-                        }
-                      })
-                      .catch(error => console.error("請求失敗:", error));
-                  });
-                });
-
-              </script>
+                  ?>
+                </select>
 
 
-              <!-- 分頁顯示 -->
-              <script>
-                function updateLimit() {
-                  var limit = document.getElementById("limit").value;
-                  window.location.href = "?limit=" + limit + "&search_name=<?php echo urlencode($search_name); ?>";
+                <button type="submit">搜尋</button>
+              </form>
+
+              <!-- <div class="limit-selector"> -->
+              <!-- <label for="limit">每頁顯示筆數:</label> -->
+              <select id="limit" name="limit" onchange="updateLimit()">
+                <?php
+                $limits = [3, 5, 10, 20, 50, 100];
+                foreach ($limits as $limit) {
+                  $selected = ($limit == $records_per_page) ? "selected" : "";
+                  echo "<option value='$limit' $selected>$limit 筆/頁</option>";
                 }
-              </script>
+                ?>
+              </select>
+              <!-- </div> -->
+            </div>
 
-              <div style="text-align: right; margin: 20px 0;">
-                <strong>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共 <?php echo $total_records; ?>
-                  筆資料）</strong>
-              </div>
+            <script>
+              function updateLimit() {
+                var limit = document.getElementById("limit").value;
+                window.location.href = "?search_name=<?php echo urlencode($search_name); ?>&doctor=<?php echo urlencode($selected_doctor); ?>&limit=" + limit;
+              }
+            </script>
 
-              <div style="text-align: center; margin: 20px 0;">
-                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                  <a href="?search_name=<?php echo urlencode($search_name); ?>&page=<?php echo $i; ?>"
-                    style="margin: 0 5px; <?php echo $i == $page ? 'font-weight: bold;' : ''; ?>">
-                    <?php echo $i; ?>
-                  </a>
-                <?php endfor; ?>
+            <!-- 表格 -->
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>姓名</th>
+                    <th>性別</th>
+                    <th>生日 (年齡)</th>
+                    <th>看診日期 (星期)</th>
+                    <th>看診時間</th>
+                    <th>治療師</th>
+                    <th>備註</th>
+                    <th>狀態</th>
+                    <th>選項</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php if ($result->num_rows > 0): ?>
+                    <?php while ($row = $result->fetch_assoc()): ?>
+                      <tr>
+                        <td><?php echo htmlspecialchars($row['id']); ?></td>
+                        <td><?php echo htmlspecialchars($row['name']); ?></td>
+                        <td><?php echo htmlspecialchars($row['gender']); ?></td>
+                        <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
+                        <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
+                        <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
+                        <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
+                        <td><?php echo htmlspecialchars($row['note']); ?></td>
+                        <!-- <td><?php echo htmlspecialchars($row['status_name']); ?></td> -->
+                        <td><select class="status-dropdown" data-id="<?php echo $row['id']; ?>" <?php echo ($row['status_name'] == '已看診') ? 'disabled' : ''; ?>>
+                            <option value="預約" <?php echo ($row['status_name'] == '預約') ? 'selected' : ''; ?>>預約</option>
+                            <option value="修改" <?php echo ($row['status_name'] == '修改') ? 'selected' : ''; ?>>修改</option>
+                            <option value="報到" <?php echo ($row['status_name'] == '報到') ? 'selected' : ''; ?>>報到</option>
+                            <option value="請假" <?php echo ($row['status_name'] == '請假') ? 'selected' : ''; ?>>請假</option>
+                            <option value="爽約" <?php echo ($row['status_name'] == '爽約') ? 'selected' : ''; ?>>爽約</option>
+                            <option value="爽約" <?php echo ($row['status_name'] == '取消') ? 'selected' : ''; ?>>取消</option>
+                            <option value="已看診" <?php echo ($row['status_name'] == '已看診') ? 'selected' : ''; ?>>已看診</option>
+                          </select>
+                        </td>
+                        <td>
+                          <a href="h_print-appointment.php?id=<?php echo $row['id']; ?>" target="_blank">
+                            <button type="button">列印預約單</button>
+                          </a>
+                        </td>
+                      </tr>
+                    <?php endwhile; ?>
+                  <?php else: ?>
+                    <tr>
+                      <td colspan="9">無符合條件的資料</td>
+                    </tr>
+                  <?php endif; ?>
+                </tbody>
+              </table>
+              <!-- 分頁資訊 + 頁碼 -->
+              <div class="pagination-wrapper">
+                <!-- 分頁資訊 (靠右) -->
+                <div class="pagination-info">
+                  第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共
+                  <strong><?php echo $total_records; ?></strong> 筆資料）
+                </div>
+
+                <!-- 頁碼按鈕 (置中) -->
+                <div class="pagination-container">
+                  <?php if ($page > 1): ?>
+                    <a
+                      href="?page=<?php echo $page - 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
+                  <?php endif; ?>
+
+                  <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                    <?php if ($i == $page): ?>
+                      <strong><?php echo $i; ?></strong>
+                    <?php else: ?>
+                      <a
+                        href="?page=<?php echo $i; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
+                    <?php endif; ?>
+                  <?php endfor; ?>
+
+                  <?php if ($page < $total_pages): ?>
+                    <a
+                      href="?page=<?php echo $page + 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
+                  <?php endif; ?>
+                </div>
               </div>
             </div>
+
           </div>
+
         </div>
       </div>
     </section>
 
 
 
+    <!-- 狀態清單 -->
+    <!-- 修改 -->
+    <!-- 狀態下拉選單 -->
+    <!-- 修改時間的 Modal -->
+    <div id="modal-overlay" class="modal-overlay">
+      <div id="modal-container" class="modal-container">
+        <span id="modal-close" class="modal-close">&times;</span>
+        <h2 class="modal-title">修改預約</h2>
+
+        <label for="appointment-date">預約日期：</label>
+        <input type="date" id="appointment-date" min="">
+
+        <label for="appointment-time">預約時間：</label>
+        <select id="appointment-time">
+          <option value="">請選擇時間</option>
+        </select>
+
+        <div class="modal-actions">
+          <button id="confirm-modify" class="confirm">確認修改</button>
+          <button id="cancel-modify" class="cancel">取消</button>
+        </div>
+      </div>
+    </div>
+
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const modalOverlay = document.getElementById("modal-overlay");
+        const modalClose = document.querySelector(".modal-close");
+        const cancelModifyBtn = document.querySelector(".cancel");
+        const appointmentDate = document.getElementById("appointment-date");
+        const appointmentTime = document.getElementById("appointment-time");
+        const confirmModifyBtn = document.getElementById("confirm-modify");
+
+        let selectedAppointmentId = null;
+        let originalDate = "";
+        let originalTime = "";
+        let originalStatus = {}; // 用來儲存預約的原始狀態
+
+        // 設定最小可選日期
+        let today = new Date().toISOString().split("T")[0];
+        appointmentDate.setAttribute("min", today);
+
+        // **監聽狀態變更（打開修改視窗）**
+        document.querySelectorAll(".status-dropdown").forEach((select) => {
+          select.addEventListener("change", function () {
+            selectedAppointmentId = this.getAttribute("data-id");
+            let newStatus = this.value;
+
+            if (newStatus === "修改") {
+              modalOverlay.style.display = "flex";
+
+              // **記錄原本的狀態，當按下取消時恢復**
+              originalStatus[selectedAppointmentId] = this.value;
+              originalDate = appointmentDate.value;
+              originalTime = appointmentTime.value;
+
+              appointmentDate.value = "";
+              appointmentTime.innerHTML = "<option value=''>請選擇時間</option>";
+              fetchAvailableDates();
+            } else {
+              updateStatus(selectedAppointmentId, newStatus);
+            }
+          });
+        });
+
+        // **關閉視窗並恢復原本狀態**
+        function resetForm() {
+          appointmentDate.value = originalDate;
+          appointmentTime.value = originalTime;
+
+          // **恢復選單狀態**
+          document.querySelector(`.status-dropdown[data-id="${selectedAppointmentId}"]`).value = originalStatus[selectedAppointmentId];
+
+          modalOverlay.style.display = "none";
+        }
+
+        modalClose.addEventListener("click", resetForm);
+        cancelModifyBtn.addEventListener("click", resetForm);
+
+        // **送出修改請求**
+        confirmModifyBtn.addEventListener("click", function () {
+          let doctorshiftId = appointmentDate.value;
+          let shifttimeId = appointmentTime.value;
+
+          if (!selectedAppointmentId || !doctorshiftId || !shifttimeId) {
+            alert("請選擇有效的日期與時間");
+            return;
+          }
+
+          let formData = new URLSearchParams();
+          formData.append("id", selectedAppointmentId);
+          formData.append("doctorshift_id", doctorshiftId);
+          formData.append("shifttime_id", shifttimeId);
+
+          fetch("更新狀態.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: formData.toString(),
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                alert("預約修改成功！");
+                location.reload();
+              } else {
+                alert("修改失敗：" + data.error);
+              }
+            })
+            .catch(error => console.error("請求失敗:", error));
+        });
+      });
+
+    </script>
+
+
+    <br />
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">

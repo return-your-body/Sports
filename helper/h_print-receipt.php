@@ -64,86 +64,6 @@ if (isset($_SESSION["帳號"])) {
 }
 
 
-//列印收據
-require '../db.php'; // 引入資料庫連接檔案
-
-// 確認 GET 請求是否攜帶有效的 ID
-if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-  $appointment_id = intval($_GET['id']);
-
-  // 查詢基本資訊
-  $query = "
-    SELECT 
-        p.name AS people_name,
-        CASE 
-            WHEN p.gender_id = 1 THEN '男'
-            WHEN p.gender_id = 2 THEN '女'
-            ELSE '無資料'
-        END AS gender,
-        CASE 
-            WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)')
-            ELSE '無資料'
-        END AS birthday_with_age,
-        d.doctor AS doctor_name,
-        ds.date AS appointment_date,
-        CASE DAYOFWEEK(ds.date)
-            WHEN 1 THEN '星期日'
-            WHEN 2 THEN '星期一'
-            WHEN 3 THEN '星期二'
-            WHEN 4 THEN '星期三'
-            WHEN 5 THEN '星期四'
-            WHEN 6 THEN '星期五'
-            WHEN 7 THEN '星期六'
-        END AS consultation_weekday,
-        st.shifttime AS appointment_time
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-    WHERE a.appointment_id = $appointment_id
-    GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime";
-
-  $result = mysqli_query($link, $query);
-
-  if (!$result) {
-    echo "SQL 錯誤：" . mysqli_error($link);
-    exit;
-  }
-
-  if (mysqli_num_rows($result) > 0) {
-    $record = mysqli_fetch_assoc($result);
-
-    // 提取基本資料
-    $people_name = $record['people_name'];
-    $gender = $record['gender'];
-    $birthday_with_age = $record['birthday_with_age'];
-    $appointment_date = $record['appointment_date'];
-    $consultation_weekday = $record['consultation_weekday'];
-    $appointment_time = $record['appointment_time'];
-    $doctor_name = $record['doctor_name'];
-
-    // 查詢該次 appointment 的所有項目與價錢
-    $item_query = "
-        SELECT i.item AS treatment_item, i.price AS treatment_price
-        FROM medicalrecord m
-        LEFT JOIN item i ON m.item_id = i.item_id
-        WHERE m.appointment_id = $appointment_id";
-
-    $item_result = mysqli_query($link, $item_query);
-
-    if (!$item_result) {
-      echo "SQL 錯誤：" . mysqli_error($link);
-      exit;
-    }
-  } else {
-    echo "未找到對應的病歷資料";
-    exit;
-  }
-} else {
-  echo "無效的 ID";
-  exit;
-}
 ?>
 
 
@@ -488,6 +408,99 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
 
     <!--列印收據-->
 
+    <?php
+    require '../db.php'; // 引入資料庫連接檔案
+    
+    // 確認 GET 請求是否攜帶有效的 ID
+    if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+      $appointment_id = intval($_GET['id']);
+
+      // 查詢基本資訊 (包含 使用者備註)
+      $query = "
+    SELECT 
+        p.name AS people_name,
+        CASE 
+            WHEN p.gender_id = 1 THEN '男'
+            WHEN p.gender_id = 2 THEN '女'
+            ELSE '無資料'
+        END AS gender,
+        CASE 
+            WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)')
+            ELSE '無資料'
+        END AS birthday_with_age,
+        d.doctor AS doctor_name,
+        ds.date AS appointment_date,
+        CASE DAYOFWEEK(ds.date)
+            WHEN 1 THEN '星期日'
+            WHEN 2 THEN '星期一'
+            WHEN 3 THEN '星期二'
+            WHEN 4 THEN '星期三'
+            WHEN 5 THEN '星期四'
+            WHEN 6 THEN '星期五'
+            WHEN 7 THEN '星期六'
+        END AS consultation_weekday,
+        st.shifttime AS appointment_time,
+        COALESCE(a.note, '無') AS user_note  -- 預約表的使用者備註
+    FROM appointment a
+    LEFT JOIN people p ON a.people_id = p.people_id
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+    WHERE a.appointment_id = $appointment_id
+    GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime, a.note";
+
+      $result = mysqli_query($link, $query);
+
+      if (!$result) {
+        echo "SQL 錯誤：" . mysqli_error($link);
+        exit;
+      }
+
+      if (mysqli_num_rows($result) > 0) {
+        $record = mysqli_fetch_assoc($result);
+
+        // 提取基本資料
+        $people_name = $record['people_name'];
+        $gender = $record['gender'];
+        $birthday_with_age = $record['birthday_with_age'];
+        $appointment_date = $record['appointment_date'];
+        $consultation_weekday = $record['consultation_weekday'];
+        $appointment_time = $record['appointment_time'];
+        $doctor_name = $record['doctor_name'];
+        $user_note = $record['user_note']; // 使用者備註
+    
+        // 查詢該次 appointment 的所有項目與價錢
+        $item_query = "
+        SELECT i.item AS treatment_item, i.price AS treatment_price
+        FROM medicalrecord m
+        LEFT JOIN item i ON m.item_id = i.item_id
+        WHERE m.appointment_id = $appointment_id";
+
+        $item_result = mysqli_query($link, $item_query);
+
+        if (!$item_result) {
+          echo "SQL 錯誤：" . mysqli_error($link);
+          exit;
+        }
+
+        // 查詢 醫生備註
+        $doctor_note_query = "
+        SELECT GROUP_CONCAT(m.note_d ORDER BY m.created_at SEPARATOR '; ') AS doctor_note
+        FROM medicalrecord m
+        WHERE m.appointment_id = $appointment_id";
+
+        $doctor_note_result = mysqli_query($link, $doctor_note_query);
+        $doctor_note_data = mysqli_fetch_assoc($doctor_note_result);
+        $doctor_note = $doctor_note_data['doctor_note'] ?? '無'; // 沒有醫生備註則顯示「無」
+      } else {
+        echo "未找到對應的病歷資料";
+        exit;
+      }
+    } else {
+      echo "無效的 ID";
+      exit;
+    }
+    ?>
 
     <section class="section section-lg bg-default text-center">
       <div class="container">
@@ -505,6 +518,8 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
                   <p>看診日期：<?php echo $appointment_date . " (" . $consultation_weekday . ")"; ?></p>
                   <p>看診時間：<?php echo $appointment_time; ?></p>
                   <p>治療師：<?php echo $doctor_name; ?></p>
+                  <p><strong>使用者備註：</strong> <?php echo htmlspecialchars($user_note); ?></p>
+                  <p><strong>醫生備註：</strong> <?php echo htmlspecialchars($doctor_note); ?></p>
 
                   <table>
                     <tr>
@@ -539,6 +554,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         </div>
       </div>
     </section>
+
 
     <!--列印收據-->
 
