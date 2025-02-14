@@ -45,7 +45,7 @@ $intervalSQL = "INTERVAL $blacklistDuration $blacklistUnit";
 // **處理黑名單操作**
 switch ($action) {
     case 'permanent':
-        $sql = "UPDATE people SET blacklist_start_date = NOW(), blacklist_end_date = '9999-12-31' WHERE people_id = ?";
+        $sql = "UPDATE people SET black = 3,blacklist_start_date = NOW(), blacklist_end_date = '9999-12-31' WHERE people_id = ?";
         break;
 
     case 'remove':
