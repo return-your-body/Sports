@@ -10,7 +10,7 @@ if (!$doctor_id || !$date) {
     exit;
 }
 
-// 查詢醫生班表
+// 查詢治療師班表
 $sql = "SELECT go, off FROM doctorshift WHERE doctor_id = ? AND date = ?";
 $stmt = mysqli_prepare($link, $sql);
 mysqli_stmt_bind_param($stmt, "is", $doctor_id, $date);
@@ -19,7 +19,7 @@ $result = mysqli_stmt_get_result($stmt);
 $row = mysqli_fetch_assoc($result);
 
 if (!$row) {
-    echo json_encode(["success" => false, "message" => "醫生當天無排班"]);
+    echo json_encode(["success" => false, "message" => "治療師當天無排班"]);
     exit;
 }
 

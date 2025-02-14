@@ -629,7 +629,7 @@ $result_history = mysqli_stmt_get_result($stmt_history);
                         <h2>詳細資料</h2>
                         <table style="width: 100%;">
                             <tr>
-                                <th>醫生姓名</th>
+                                <th>治療師姓名</th>
                                 <td id="popup-doctor-name">無資料</td>
                             </tr>
                             <tr>
@@ -641,7 +641,7 @@ $result_history = mysqli_stmt_get_result($stmt_history);
                                 <td id="popup-treatment-price">無資料</td>
                             </tr>
                             <tr>
-                                <th>醫生備註</th>
+                                <th>治療師備註</th>
                                 <td id="popup-doctor-note">無資料</td>
                             </tr>
                             <tr>

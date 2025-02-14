@@ -61,11 +61,11 @@ if (isset($_SESSION["帳號"])) {
   exit();
 }
 
-//醫生班表
+// 治療師班表
 
 $帳號 = $_SESSION['帳號']; // 取得當前登入的帳號
 
-// SQL 查詢：根據登入帳號取得對應的醫生姓名
+// SQL 查詢：根據登入帳號取得對應的治療師姓名
 $query = "
 SELECT d.doctor_id, d.doctor 
 FROM doctor d 
@@ -82,8 +82,8 @@ if ($row = mysqli_fetch_assoc($result)) {
     $doctor_name = htmlspecialchars($row['doctor']);
 } else {
     $doctor_id = '';
-    $doctor_name = '未知醫生';
-    error_log("未找到醫生資料，帳號: $帳號");
+    $doctor_name = '未知治療師';
+    error_log("未找到治療師資料，帳號: $帳號");
 }
 
 // 查詢排班資料（關聯 shifttime 表）
@@ -153,7 +153,7 @@ mysqli_close($link);
 
 <head>
   <!-- Site Title-->
-  <title>醫生-班表時段</title>
+  <title>治療師-班表時段</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -241,7 +241,7 @@ mysqli_close($link);
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
 
-    /* 醫生班表 */
+    /* 治療師班表 */
   </style>
 </head>
 
@@ -397,7 +397,7 @@ mysqli_close($link);
           <ul class="breadcrumbs-custom-path">
             <li><a href="d_index.php">首頁</a></li>
             <li><a href="#">班表</a></li>
-            <li class="active">醫生班表時段</li>
+            <li class="active">治療師班表時段</li>
           </ul>
         </div>
       </section>

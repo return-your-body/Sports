@@ -13,7 +13,7 @@ SELECT
     d.doctor AS doctor_name,
     i.item AS treatment_item,
     i.price AS treatment_price,
-    mr.note_d AS doctor_note,  -- 醫生備註
+    mr.note_d AS doctor_note,  -- 治療師備註
     mr.created_at AS created_time
 FROM medicalrecord mr
 LEFT JOIN appointment a ON mr.appointment_id = a.appointment_id

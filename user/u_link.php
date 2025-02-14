@@ -228,7 +228,7 @@ if (isset($_SESSION["帳號"])) {
                                 <li class="rd-nav-item active"><a class="rd-nav-link" href="#">關於我們</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
-                                                href="u_link.php">醫生介紹</a>
+                                                href="u_link.php">治療師介紹</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="u_caseshare.php">個案分享</a>
@@ -335,11 +335,11 @@ if (isset($_SESSION["帳號"])) {
             <section class="breadcrumbs-custom breadcrumbs-custom-svg">
                 <div class="container">
                     <!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
-                    <p class="heading-1 breadcrumbs-custom-title">醫生介紹</p>
+                    <p class="heading-1 breadcrumbs-custom-title">治療師介紹</p>
                     <ul class="breadcrumbs-custom-path">
                         <li><a href="u_index.php">首頁</a></li>
                         <li><a href="#">關於我們</a></li>
-                        <li class="active">醫生介紹</li>
+                        <li class="active">治療師介紹</li>
                     </ul>
                 </div>
             </section>
@@ -351,7 +351,7 @@ if (isset($_SESSION["帳號"])) {
             <?php
             require '../db.php';  // 載入資料庫連線設定
             
-            // 查詢所有非助手醫生
+            // 查詢所有非助手治療師
             $sql = "SELECT doctor FROM doctor WHERE doctor NOT LIKE '%助手%'";
             $result = mysqli_query($link, $sql);
 
@@ -415,7 +415,7 @@ if (isset($_SESSION["帳號"])) {
                         <h4>快速連結</h4>
                         <ul class="list-marked">
                             <li><a href="u_index.php">首頁</a></li>
-                            <li><a href="u_link.php.php">醫生介紹</a></li>
+                            <li><a href="u_link.php.php">治療師介紹</a></li>
                             <li><a href="u_caseshare.php">個案分享</a></li>
                             <li><a href="u_body-knowledge.php">日常小知識</a></li>
                             <li><a href="u_reserve.php">預約</a></li>
