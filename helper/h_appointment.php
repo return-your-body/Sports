@@ -473,7 +473,6 @@ if (isset($_SESSION["帳號"])) {
 			</section>
 		</div>
 		<!--標題-->
-
 		<?php
 		include "../db.php";
 		if (isset($_GET['id'])) {
@@ -561,19 +560,43 @@ ORDER BY ds.date, d.doctor_id";
 		</section>
 
 		<script>
-			const data = <?php echo json_encode(['schedule' => $schedule, 'leaves' => $leaves, 'appointments' => $appointments], JSON_UNESCAPED_UNICODE); ?>;
+			const data = <?php echo json_encode(['schedule' => $schedule, 'leaves' => $leaves], JSON_UNESCAPED_UNICODE); ?>;
 			const calendarData = data.schedule; // 排班數據
 			const leaveData = data.leaves; // 請假數據
-			const appointmentData = data.appointments; // 已預約時段
-			const now = new Date(); // 目前時間
+			const today = new Date(); // 今天日期
+			const tomorrow = new Date(today); // 明天日期
+			tomorrow.setDate(today.getDate() + 1);
 
 			console.log("Calendar Data:", calendarData);
 			console.log("Leave Data:", leaveData);
-			console.log("Appointment Data:", appointmentData);
 
 			/**
-			 * 生成日曆表格
+			 * 調整排班時間，處理部分請假情況
 			 */
+			function adjustShiftTime(doctorId, date, startTime, endTime) {
+				const shiftStart = new Date(`${date}T${startTime}`);
+				const shiftEnd = new Date(`${date}T${endTime}`);
+
+				for (const leave of leaveData) {
+					const leaveStart = new Date(leave.start_date);
+					const leaveEnd = new Date(leave.end_date);
+
+					if (leave.doctor_id === doctorId) {
+						if (leaveStart <= shiftStart && leaveEnd >= shiftEnd) {
+							return null; // 整天請假
+						} else if (leaveStart <= shiftStart && leaveEnd > shiftStart && leaveEnd < shiftEnd) {
+							return { go_time: leaveEnd.toTimeString().slice(0, 5), off_time: endTime }; // 調整上班時間
+						} else if (leaveStart > shiftStart && leaveStart < shiftEnd && leaveEnd >= shiftEnd) {
+							return { go_time: startTime, off_time: leaveStart.toTimeString().slice(0, 5) }; // 調整下班時間
+						}
+					}
+				}
+				return { go_time: startTime, off_time: endTime }; // 無請假
+			}
+
+			/**
+				* 生成日曆表格
+				*/
 			function generateCalendar() {
 				const year = parseInt(document.getElementById('year').value);
 				const month = parseInt(document.getElementById('month').value) - 1;
@@ -594,38 +617,39 @@ ORDER BY ds.date, d.doctor_id";
 					const cell = document.createElement('td');
 					cell.innerHTML = `<strong>${date}</strong>`;
 
-					const currentDate = new Date(year, month, date);
+					const currentDate = new Date(year, month, date); // 當前渲染的日期
 
 					if (calendarData[fullDate]) {
 						calendarData[fullDate].forEach(shift => {
-							const goTime = shift.go_time;
-							const offTime = shift.off_time;
-							const shiftStart = new Date(`${fullDate}T${goTime}`);
-							const shiftEnd = new Date(`${fullDate}T${offTime}`);
+							const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
 
-							// **修正條件：今天的話，允許當前時間之後的時段預約**
-							if (currentDate > now || (currentDate.toDateString() === now.toDateString() && shiftEnd > now)) {
-								const shiftDiv = document.createElement('div');
-								shiftDiv.textContent = `${shift.doctor}: ${goTime} - ${offTime}`;
+							const shiftDiv = document.createElement('div');
+							if (adjustedShift) {
+								shiftDiv.textContent = `${shift.doctor}: ${adjustedShift.go_time} - ${adjustedShift.off_time}`;
 
-								// 檢查請假
-								if (isDoctorOnLeave(shift.doctor_id, fullDate)) {
-									shiftDiv.textContent = `${shift.doctor}: 請假`;
-									shiftDiv.style.color = 'red';
-								} else {
+								// 只為今天及以後的日期添加預約按鈕
+								if (currentDate >= today) {
 									const reserveButton = document.createElement('button');
 									reserveButton.textContent = '查看';
 									reserveButton.style.marginLeft = '10px';
 
+									// 修改為調用 openModal 函數
 									reserveButton.onclick = () => {
-										openModal(shift.doctor, fullDate, goTime, offTime);
+										const startTime = adjustedShift.go_time;
+										const endTime = adjustedShift.off_time;
+										openModal(shift.doctor, fullDate, startTime, endTime); // 呼叫彈窗函數
 									};
 
 									shiftDiv.appendChild(reserveButton);
 								}
-								shiftDiv.className = 'shift-info';
-								cell.appendChild(shiftDiv);
+
+							} else {
+								shiftDiv.textContent = `${shift.doctor}: 請假`;
+								shiftDiv.style.color = 'red';
 							}
+
+							shiftDiv.className = 'shift-info';
+							cell.appendChild(shiftDiv);
 						});
 					} else {
 						const noSchedule = document.createElement('div');
@@ -648,16 +672,6 @@ ORDER BY ds.date, d.doctor_id";
 				calendarBody.appendChild(row);
 			}
 
-			/**
-			 * 檢查該醫生是否請假
-			 */
-			function isDoctorOnLeave(doctorId, date) {
-				return leaveData.some(leave =>
-					leave.doctor_id === doctorId &&
-					new Date(leave.start_date) <= new Date(`${date}T23:59:59`) &&
-					new Date(leave.end_date) >= new Date(`${date}T00:00:00`)
-				);
-			}
 
 			/**
 			 * 初始化年份與月份選單
@@ -666,11 +680,11 @@ ORDER BY ds.date, d.doctor_id";
 				const yearSelect = document.getElementById('year');
 				const monthSelect = document.getElementById('month');
 
-				for (let year = now.getFullYear(); year <= now.getFullYear() + 1; year++) {
+				for (let year = 2020; year <= 2030; year++) {
 					const option = document.createElement('option');
 					option.value = year;
 					option.textContent = year;
-					if (year === now.getFullYear()) option.selected = true;
+					if (year === today.getFullYear()) option.selected = true;
 					yearSelect.appendChild(option);
 				}
 
@@ -678,7 +692,7 @@ ORDER BY ds.date, d.doctor_id";
 					const option = document.createElement('option');
 					option.value = month;
 					option.textContent = month;
-					if (month === now.getMonth() + 1) option.selected = true;
+					if (month === today.getMonth() + 1) option.selected = true;
 					monthSelect.appendChild(option);
 				}
 
@@ -689,7 +703,6 @@ ORDER BY ds.date, d.doctor_id";
 			document.getElementById('month').addEventListener('change', generateCalendar);
 
 			initSelectOptions();
-
 		</script>
 
 		<!-- 預約時間段的主彈窗 -->
