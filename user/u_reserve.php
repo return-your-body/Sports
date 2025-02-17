@@ -1202,66 +1202,6 @@ ORDER BY ds.date, d.doctor_id";
 						xhr.send(params);
 					}
 				}
-
-
-
-				// 修改生成日曆時的查看按鈕功能
-				// function generateCalendar() {
-				// 	const year = parseInt(document.getElementById('year').value);
-				// 	const month = parseInt(document.getElementById('month').value) - 1;
-
-				// 	const calendarBody = document.getElementById('calendar');
-				// 	calendarBody.innerHTML = '';
-
-				// 	const firstDay = new Date(year, month, 1).getDay();
-				// 	const lastDate = new Date(year, month + 1, 0).getDate();
-
-				// 	let row = document.createElement('tr');
-				// 	for (let i = 0; i < firstDay; i++) {
-				// 		row.appendChild(document.createElement('td'));
-				// 	}
-
-				// 	for (let date = 1; date <= lastDate; date++) {
-				// 		const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-				// 		const cell = document.createElement('td');
-				// 		cell.innerHTML = `<strong>${date}</strong>`;
-
-				// 		if (calendarData[fullDate]) {
-				// 			calendarData[fullDate].forEach(shift => {
-				// 				const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
-
-				// 				if (adjustedShift) {
-				// 					const button = document.createElement('button');
-				// 					button.textContent = '查看';
-				// 					button.onclick = () => openModal(shift.doctor, fullDate, adjustedShift.go_time, adjustedShift.off_time);
-				// 					cell.appendChild(button);
-				// 				} else {
-				// 					const noSchedule = document.createElement('div');
-				// 					noSchedule.textContent = `${shift.doctor}: 請假`;
-				// 					noSchedule.style.color = 'red';
-				// 					cell.appendChild(noSchedule);
-				// 				}
-				// 			});
-				// 		} else {
-				// 			const noSchedule = document.createElement('div');
-				// 			noSchedule.textContent = '無排班';
-				// 			noSchedule.className = 'no-schedule';
-				// 			cell.appendChild(noSchedule);
-				// 		}
-
-				// 		row.appendChild(cell);
-
-				// 		if (row.children.length === 7) {
-				// 			calendarBody.appendChild(row);
-				// 			row = document.createElement('tr');
-				// 		}
-				// 	}
-
-				// 	while (row.children.length < 7) {
-				// 		row.appendChild(document.createElement('td'));
-				// 	}
-				// 	calendarBody.appendChild(row);
-				// }
 			</script>
 
 

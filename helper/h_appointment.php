@@ -478,6 +478,14 @@ if (isset($_SESSION["帳號"])) {
 		if (isset($_GET['id'])) {
 			$_SESSION['people_id'] = $_GET['id']; // 將 people_id 存入 Session
 		}
+
+		// 查詢治療師 (grade_id = 2)
+		$therapists = [];
+		$queryd = "SELECT doctor FROM doctor WHERE user_id IN (SELECT user_id FROM user WHERE grade_id = 2)";
+		$result = mysqli_query($link, $queryd);
+		while ($row = mysqli_fetch_assoc($result)) {
+			$therapists[] = $row['doctor'];
+		}
 		// 查詢排班數據
 		$query = "
 SELECT 
@@ -538,6 +546,13 @@ ORDER BY ds.date, d.doctor_id";
 				<select id="year"></select>
 				<label for="month">選擇月份：</label>
 				<select id="month"></select>
+				<label for="therapist_filter">選擇治療師：</label>
+				<select id="therapist_filter" onchange="generateCalendar()">
+					<option value="">全部</option>
+					<?php foreach ($therapists as $therapist): ?>
+						<option value="<?= $therapist ?>"><?= $therapist ?></option>
+					<?php endforeach; ?>
+				</select>
 
 				<div style="overflow-x: auto; max-width: 100%;">
 					<table class="table-custom">
@@ -620,15 +635,25 @@ ORDER BY ds.date, d.doctor_id";
 					const currentDate = new Date(year, month, date); // 當前渲染的日期
 
 					if (calendarData[fullDate]) {
-						calendarData[fullDate].forEach(shift => {
-							const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
+						let filteredShifts = calendarData[fullDate];
 
+						// 取得使用者選擇的治療師
+						const therapistFilter = document.getElementById('therapist_filter').value;
+
+						// 如果有選擇特定治療師，就篩選對應的排班
+						if (therapistFilter) {
+							filteredShifts = filteredShifts.filter(shift => shift.doctor === therapistFilter);
+						}
+
+						filteredShifts.forEach(shift => {
+							const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
 							const shiftDiv = document.createElement('div');
+
 							if (adjustedShift) {
 								shiftDiv.textContent = `${shift.doctor}: ${adjustedShift.go_time} - ${adjustedShift.off_time}`;
 
 								// 只為今天及以後的日期添加預約按鈕
-								if (currentDate >= today) {
+								if (currentDate.toDateString() === today.toDateString() || currentDate > today) {
 									const reserveButton = document.createElement('button');
 									reserveButton.textContent = '查看';
 									reserveButton.style.marginLeft = '10px';
@@ -657,6 +682,7 @@ ORDER BY ds.date, d.doctor_id";
 						noSchedule.className = 'no-schedule';
 						cell.appendChild(noSchedule);
 					}
+
 
 					row.appendChild(cell);
 
@@ -992,6 +1018,17 @@ ORDER BY ds.date, d.doctor_id";
 					/* 手機版字體再稍微縮小 */
 				}
 			}
+
+			/* 已過期的樣式 */
+			.expired-btn {
+				background-color: #ccc;
+				color: #666;
+				border: none;
+				padding: 5px 10px;
+				font-size: 12px;
+				cursor: not-allowed;
+				border-radius: 3px;
+			}
 		</style>
 
 
@@ -1024,19 +1061,34 @@ ORDER BY ds.date, d.doctor_id";
 				while (current < end) {
 					const timeSlot = current.toTimeString().slice(0, 5);
 					const slotElement = document.createElement("div");
-					slotElement.innerHTML = `
+
+					// 取得目前的時間
+					const now = new Date();
+					const isPast = current < now;
+
+					if (isPast) {
+						// 如果當前時間已過，顯示 "已過期" 並禁用按鈕
+						slotElement.innerHTML = `
+			<span>${timeSlot}</span>
+			<button class="expired-btn" disabled>已過期</button>
+		`;
+					} else {
+						// 如果時間仍可用，顯示 "預約" 按鈕
+						slotElement.innerHTML = `
 			<span>${timeSlot}</span>
 			<button class="reserve-btn" disabled>檢查中...</button>
 		`;
 
-					const button = slotElement.querySelector(".reserve-btn");
-					// 檢查該時間段的可用性
-					checkAvailability(doctor, date, timeSlot, button);
+						const button = slotElement.querySelector(".reserve-btn");
+						// 檢查該時間段的可用性
+						checkAvailability(doctor, date, timeSlot, button);
+					}
 
 					timeSlotsContainer.appendChild(slotElement);
-
 					current = new Date(current.getTime() + 20 * 60000);
 				}
+
+
 
 				modal.style.display = "block";
 			}
@@ -1082,6 +1134,13 @@ ORDER BY ds.date, d.doctor_id";
 			 * @param {string} timeSlot - 時間段 (格式: HH:mm)
 			 * @param {HTMLElement} button - 預約按鈕
 			 */
+			/**
+ * 檢查某個時間段是否已被預約
+ * @param {string} doctor - 治療師名稱
+ * @param {string} date - 預約日期
+ * @param {string} timeSlot - 時間段 (格式: HH:mm)
+ * @param {HTMLElement} button - 預約按鈕
+ */
 			function checkAvailability(doctor, date, timeSlot, button) {
 				const xhr = new XMLHttpRequest();
 				xhr.open("POST", "檢查預約.php", true);
@@ -1091,16 +1150,26 @@ ORDER BY ds.date, d.doctor_id";
 					if (xhr.readyState === 4 && xhr.status === 200) {
 						const response = JSON.parse(xhr.responseText);
 
-						if (response.available) {
-							// 如果時段可用，啟用按鈕並設置為「預約」
+						if (response.alreadyReserved) {
+							// **🔹 如果該 `people_id` 今天已經預約過，所有按鈕變成 "已預約" 並禁用**
+							document.querySelectorAll(".reserve-btn").forEach(btn => {
+								btn.textContent = "已預約";
+								btn.disabled = true;
+								btn.style.backgroundColor = "#d9534f"; // 紅色按鈕
+								btn.style.color = "white";
+								btn.style.cursor = "not-allowed";
+							});
+						} else if (response.available) {
+							// **🔹 如果時段可用，顯示「預約」按鈕**
 							button.textContent = "預約";
 							button.disabled = false;
-							button.onclick = () => openNoteModal(doctor, date, timeSlot); // 點擊時開啟備註彈窗
+							button.onclick = () => openNoteModal(doctor, date, timeSlot);
 						} else {
-							// 如果時段已滿，設置為「額滿」並禁用按鈕
+							// **🔹 如果該時段已滿，按鈕顯示 "額滿" 並禁用**
 							button.textContent = "額滿";
 							button.disabled = true;
-							button.classList.add("disabled");
+							button.style.backgroundColor = "#6c757d"; // 灰色按鈕
+							button.style.color = "white";
 							button.style.cursor = "not-allowed";
 						}
 					}
@@ -1109,7 +1178,6 @@ ORDER BY ds.date, d.doctor_id";
 				const params = `doctor=${encodeURIComponent(doctor)}&date=${date}&time=${timeSlot}`;
 				xhr.send(params);
 			}
-
 
 
 
@@ -1169,66 +1237,6 @@ ORDER BY ds.date, d.doctor_id";
 					// 發送請求到伺服器，並將參數作為請求的主體內容
 					xhr.send(params);
 				}
-			}
-
-
-
-			// 修改生成日曆時的查看按鈕功能
-			function generateCalendar() {
-				const year = parseInt(document.getElementById('year').value);
-				const month = parseInt(document.getElementById('month').value) - 1;
-
-				const calendarBody = document.getElementById('calendar');
-				calendarBody.innerHTML = '';
-
-				const firstDay = new Date(year, month, 1).getDay();
-				const lastDate = new Date(year, month + 1, 0).getDate();
-
-				let row = document.createElement('tr');
-				for (let i = 0; i < firstDay; i++) {
-					row.appendChild(document.createElement('td'));
-				}
-
-				for (let date = 1; date <= lastDate; date++) {
-					const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-					const cell = document.createElement('td');
-					cell.innerHTML = `<strong>${date}</strong>`;
-
-					if (calendarData[fullDate]) {
-						calendarData[fullDate].forEach(shift => {
-							const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
-
-							if (adjustedShift) {
-								const button = document.createElement('button');
-								button.textContent = '查看';
-								button.onclick = () => openModal(shift.doctor, fullDate, adjustedShift.go_time, adjustedShift.off_time);
-								cell.appendChild(button);
-							} else {
-								const noSchedule = document.createElement('div');
-								noSchedule.textContent = `${shift.doctor}: 請假`;
-								noSchedule.style.color = 'red';
-								cell.appendChild(noSchedule);
-							}
-						});
-					} else {
-						const noSchedule = document.createElement('div');
-						noSchedule.textContent = '無排班';
-						noSchedule.className = 'no-schedule';
-						cell.appendChild(noSchedule);
-					}
-
-					row.appendChild(cell);
-
-					if (row.children.length === 7) {
-						calendarBody.appendChild(row);
-						row = document.createElement('tr');
-					}
-				}
-
-				while (row.children.length < 7) {
-					row.appendChild(document.createElement('td'));
-				}
-				calendarBody.appendChild(row);
 			}
 		</script>
 
