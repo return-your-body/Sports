@@ -542,6 +542,7 @@ if (isset($_SESSION["帳號"])) {
     LEFT JOIN user u ON d.user_id = u.user_id
     $where_sql
 ");
+
         if (!empty($params)) {
             $count_stmt->bind_param($types, ...$params);
         }
@@ -551,7 +552,7 @@ if (isset($_SESSION["帳號"])) {
         $total_pages = ($total_records > 0) ? ceil($total_records / $records_per_page) : 1;
 
         // 查詢資料
-        $data_stmt = $link->prepare("
+        $query = "
         SELECT 
             a.appointment_id,
             p.name AS patient_name,
@@ -564,10 +565,8 @@ if (isset($_SESSION["帳號"])) {
                 WHEN 4 THEN '星期三' WHEN 5 THEN '星期四' WHEN 6 THEN '星期五' 
                 WHEN 7 THEN '星期六' END AS consultation_weekday,
             st.shifttime AS consultation_time,
-            GROUP_CONCAT(i.item ORDER BY i.item SEPARATOR ', ') AS treatment_items,
-            SUM(i.price) AS total_treatment_price,
-            a.note AS user_note,  -- 預約表的使用者備註
-            GROUP_CONCAT(m.note_d ORDER BY m.created_at SEPARATOR '; ') AS doctor_note -- 看診表的醫生備註
+            a.note AS user_note,  -- 使用者備註 (appointment.note)
+            GROUP_CONCAT(m.note_d ORDER BY m.created_at SEPARATOR '; ') AS doctor_notes  -- 醫生備註 (medicalrecord.note_d)
         FROM medicalrecord m
         LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
         LEFT JOIN people p ON a.people_id = p.people_id
@@ -575,12 +574,15 @@ if (isset($_SESSION["帳號"])) {
         LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
         LEFT JOIN user u ON d.user_id = u.user_id
         LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-        LEFT JOIN item i ON m.item_id = i.item_id
         $where_sql
         GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime, a.note
         ORDER BY ds.date ASC
         LIMIT ?, ?
-    ");
+    ";
+
+        $data_stmt = $link->prepare($query);
+
+        // 修正 bind_param 的順序
         $params[] = $offset;
         $params[] = $records_per_page;
         $types .= "ii";
@@ -588,9 +590,9 @@ if (isset($_SESSION["帳號"])) {
         $data_stmt->bind_param($types, ...$params);
         $data_stmt->execute();
         $result = $data_stmt->get_result();
-
         ?>
 
+        <!-- HTML 內容 -->
         <section class="section section-lg bg-default text-center">
             <div class="container">
                 <div class="search-limit-container">
@@ -602,11 +604,11 @@ if (isset($_SESSION["帳號"])) {
                             <option value="全部" <?php echo ($selected_doctor === '全部') ? 'selected' : ''; ?>>全部</option>
                             <?php
                             $doctor_query = $link->query("
-                        SELECT d.doctor 
-                        FROM doctor d
-                        JOIN user u ON d.user_id = u.user_id
-                        WHERE u.grade_id = 2
-                    ");
+                    SELECT d.doctor 
+                    FROM doctor d
+                    JOIN user u ON d.user_id = u.user_id
+                    WHERE u.grade_id = 2
+                ");
                             while ($row = $doctor_query->fetch_assoc()) {
                                 $doctor_name = $row['doctor'];
                                 $selected = ($selected_doctor === $doctor_name) ? 'selected' : '';
@@ -627,9 +629,18 @@ if (isset($_SESSION["帳號"])) {
                             }
                             ?>
                         </select>
-
                     </div>
                 </div>
+
+                <script>
+                    function updateLimit() {
+                        var limit = document.getElementById("limit").value;
+                        var searchName = document.querySelector("input[name='search_name']").value;
+                        var selectedDoctor = document.querySelector("select[name='doctor']").value;
+
+                        window.location.href = "?limit=" + limit + "&page=1&search_name=" + encodeURIComponent(searchName) + "&doctor=" + encodeURIComponent(selectedDoctor);
+                    }
+                </script>
 
                 <div class="table-container">
                     <div class="table-responsive">
@@ -642,11 +653,10 @@ if (isset($_SESSION["帳號"])) {
                                     <th>看診日期 (星期)</th>
                                     <th>看診時間</th>
                                     <th>治療師</th>
-                                    <th>治療項目</th>
-                                    <th>治療費用</th>
                                     <th>使用者備註</th>
                                     <th>醫生備註</th>
                                     <th>選項</th>
+
                                 </tr>
                             </thead>
                             <tbody>
@@ -659,10 +669,8 @@ if (isset($_SESSION["帳號"])) {
                                         </td>
                                         <td><?php echo htmlspecialchars($row['consultation_time']); ?></td>
                                         <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['treatment_items']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['total_treatment_price']); ?></td>
                                         <td><?php echo htmlspecialchars($row['user_note']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['doctor_note']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['doctor_notes']); ?></td>
                                         <td>
                                             <a href="h_print-receipt.php?id=<?php echo $row['appointment_id']; ?>"
                                                 target="_blank">
@@ -672,7 +680,6 @@ if (isset($_SESSION["帳號"])) {
                                     </tr>
                                 <?php endwhile; ?>
                             </tbody>
-
                         </table>
 
                         <!-- 分頁資訊 + 頁碼 -->
@@ -706,20 +713,8 @@ if (isset($_SESSION["帳號"])) {
                             </div>
                         </div>
                     </div>
-                    <script>
-                        function updateLimit() {
-                            var limit = document.getElementById("limit").value;
-                            var searchName = document.getElementById("search_name").value;
-                            var selectedDoctor = document.querySelector("select[name='doctor']").value;
-
-                            window.location.href = "?limit=" + limit + "&page=1&search_name=" + encodeURIComponent(searchName) + "&doctor=" + encodeURIComponent(selectedDoctor);
-                        }
-                    </script>
-
                 </div>
-            </div>
         </section>
-
 
 
         <!--看診紀錄-->
