@@ -1108,12 +1108,12 @@ ORDER BY ds.date, d.doctor_id";
 				};
 
 				/**
-				 * 檢查某個時間段是否已被預約
-				 * @param {string} doctor - 治療師名稱
-				 * @param {string} date - 預約日期
-				 * @param {string} timeSlot - 時間段 (格式: HH:mm)
-				 * @param {HTMLElement} button - 預約按鈕
-				 */
+				* 檢查某個時間段是否已被預約
+				* @param {string} doctor - 治療師名稱
+				* @param {string} date - 預約日期
+				* @param {string} timeSlot - 時間段 (格式: HH:mm)
+				* @param {HTMLElement} button - 預約按鈕
+				*/
 				function checkAvailability(doctor, date, timeSlot, button) {
 					const xhr = new XMLHttpRequest();
 					xhr.open("POST", "檢查預約.php", true);
@@ -1123,18 +1123,28 @@ ORDER BY ds.date, d.doctor_id";
 						if (xhr.readyState === 4 && xhr.status === 200) {
 							const response = JSON.parse(xhr.responseText);
 
-							if (response.available) {
-								// 如果時段可用，啟用按鈕並設置為「預約」
+							if (response.alreadyReserved) {
+								// 若該人當天已預約，將所有按鈕顯示 "已預約" 並禁用
+								document.querySelectorAll(".reserve-btn").forEach(btn => {
+									btn.textContent = "已預約";
+									btn.disabled = true;
+									btn.style.backgroundColor = "#d9534f"; // 紅色按鈕
+									btn.style.color = "white";
+									btn.style.cursor = "not-allowed";
+								});
+							} else if (response.available) {
+								// 若時段可用，啟用按鈕
 								button.textContent = "預約";
 								button.disabled = false;
-								button.onclick = () => openNoteModal(doctor, date, timeSlot); // 點擊時開啟備註彈窗
+								button.onclick = () => openNoteModal(doctor, date, timeSlot);
 							} else {
-								// 如果時段已滿，設置為「額滿」並禁用按鈕
+								// 若時段已滿，顯示 "額滿" 並禁用按鈕
 								button.textContent = "額滿";
 								button.disabled = true;
 								button.classList.add("disabled");
 								button.style.cursor = "not-allowed";
 							}
+
 						}
 					};
 
