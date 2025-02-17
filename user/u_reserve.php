@@ -484,6 +484,14 @@ if (isset($_SESSION["帳號"])) {
 		<?php
 		include "../db.php";
 
+		// 查詢治療師 (grade_id = 2)
+		$therapists = [];
+		$queryd = "SELECT doctor FROM doctor WHERE user_id IN (SELECT user_id FROM user WHERE grade_id = 2)";
+		$result = mysqli_query($link, $queryd);
+		while ($row = mysqli_fetch_assoc($result)) {
+			$therapists[] = $row['doctor'];
+		}
+
 		// 查詢排班數據
 		$query = "
 SELECT 
@@ -544,6 +552,14 @@ ORDER BY ds.date, d.doctor_id";
 				<select id="year"></select>
 				<label for="month">選擇月份：</label>
 				<select id="month"></select>
+				<label for="therapist_filter">選擇治療師：</label>
+				<select id="therapist_filter" onchange="generateCalendar()">
+					<option value="">全部</option>
+					<?php foreach ($therapists as $therapist): ?>
+						<option value="<?= $therapist ?>"><?= $therapist ?></option>
+					<?php endforeach; ?>
+				</select>
+
 
 				<div style="overflow-x: auto; max-width: 100%;">
 					<table class="table-custom">
@@ -567,6 +583,7 @@ ORDER BY ds.date, d.doctor_id";
 			<script>
 				const data = <?php echo json_encode(['schedule' => $schedule, 'leaves' => $leaves], JSON_UNESCAPED_UNICODE); ?>;
 				const calendarData = data.schedule; // 排班數據
+				const therapistFilter = document.getElementById('therapist_filter').value;
 				const leaveData = data.leaves; // 請假數據
 				const today = new Date(); // 今天日期
 				const tomorrow = new Date(today); // 明天日期
@@ -625,10 +642,20 @@ ORDER BY ds.date, d.doctor_id";
 						const currentDate = new Date(year, month, date); // 當前渲染的日期
 
 						if (calendarData[fullDate]) {
-							calendarData[fullDate].forEach(shift => {
-								const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
+							let filteredShifts = calendarData[fullDate];
 
+							// 取得使用者選擇的治療師
+							const therapistFilter = document.getElementById('therapist_filter') ? document.getElementById('therapist_filter').value : "";
+
+							// 如果有選擇特定治療師，就篩選對應的排班
+							if (therapistFilter) {
+								filteredShifts = filteredShifts.filter(shift => shift.doctor === therapistFilter);
+							}
+
+							filteredShifts.forEach(shift => {
+								const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
 								const shiftDiv = document.createElement('div');
+
 								if (adjustedShift) {
 									shiftDiv.textContent = `${shift.doctor}: ${adjustedShift.go_time} - ${adjustedShift.off_time}`;
 
@@ -647,7 +674,6 @@ ORDER BY ds.date, d.doctor_id";
 
 										shiftDiv.appendChild(reserveButton);
 									}
-
 								} else {
 									shiftDiv.textContent = `${shift.doctor}: 請假`;
 									shiftDiv.style.color = 'red';
@@ -662,6 +688,7 @@ ORDER BY ds.date, d.doctor_id";
 							noSchedule.className = 'no-schedule';
 							cell.appendChild(noSchedule);
 						}
+
 
 						row.appendChild(cell);
 
@@ -1179,62 +1206,62 @@ ORDER BY ds.date, d.doctor_id";
 
 
 				// 修改生成日曆時的查看按鈕功能
-				function generateCalendar() {
-					const year = parseInt(document.getElementById('year').value);
-					const month = parseInt(document.getElementById('month').value) - 1;
+				// function generateCalendar() {
+				// 	const year = parseInt(document.getElementById('year').value);
+				// 	const month = parseInt(document.getElementById('month').value) - 1;
 
-					const calendarBody = document.getElementById('calendar');
-					calendarBody.innerHTML = '';
+				// 	const calendarBody = document.getElementById('calendar');
+				// 	calendarBody.innerHTML = '';
 
-					const firstDay = new Date(year, month, 1).getDay();
-					const lastDate = new Date(year, month + 1, 0).getDate();
+				// 	const firstDay = new Date(year, month, 1).getDay();
+				// 	const lastDate = new Date(year, month + 1, 0).getDate();
 
-					let row = document.createElement('tr');
-					for (let i = 0; i < firstDay; i++) {
-						row.appendChild(document.createElement('td'));
-					}
+				// 	let row = document.createElement('tr');
+				// 	for (let i = 0; i < firstDay; i++) {
+				// 		row.appendChild(document.createElement('td'));
+				// 	}
 
-					for (let date = 1; date <= lastDate; date++) {
-						const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-						const cell = document.createElement('td');
-						cell.innerHTML = `<strong>${date}</strong>`;
+				// 	for (let date = 1; date <= lastDate; date++) {
+				// 		const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+				// 		const cell = document.createElement('td');
+				// 		cell.innerHTML = `<strong>${date}</strong>`;
 
-						if (calendarData[fullDate]) {
-							calendarData[fullDate].forEach(shift => {
-								const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
+				// 		if (calendarData[fullDate]) {
+				// 			calendarData[fullDate].forEach(shift => {
+				// 				const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
 
-								if (adjustedShift) {
-									const button = document.createElement('button');
-									button.textContent = '查看';
-									button.onclick = () => openModal(shift.doctor, fullDate, adjustedShift.go_time, adjustedShift.off_time);
-									cell.appendChild(button);
-								} else {
-									const noSchedule = document.createElement('div');
-									noSchedule.textContent = `${shift.doctor}: 請假`;
-									noSchedule.style.color = 'red';
-									cell.appendChild(noSchedule);
-								}
-							});
-						} else {
-							const noSchedule = document.createElement('div');
-							noSchedule.textContent = '無排班';
-							noSchedule.className = 'no-schedule';
-							cell.appendChild(noSchedule);
-						}
+				// 				if (adjustedShift) {
+				// 					const button = document.createElement('button');
+				// 					button.textContent = '查看';
+				// 					button.onclick = () => openModal(shift.doctor, fullDate, adjustedShift.go_time, adjustedShift.off_time);
+				// 					cell.appendChild(button);
+				// 				} else {
+				// 					const noSchedule = document.createElement('div');
+				// 					noSchedule.textContent = `${shift.doctor}: 請假`;
+				// 					noSchedule.style.color = 'red';
+				// 					cell.appendChild(noSchedule);
+				// 				}
+				// 			});
+				// 		} else {
+				// 			const noSchedule = document.createElement('div');
+				// 			noSchedule.textContent = '無排班';
+				// 			noSchedule.className = 'no-schedule';
+				// 			cell.appendChild(noSchedule);
+				// 		}
 
-						row.appendChild(cell);
+				// 		row.appendChild(cell);
 
-						if (row.children.length === 7) {
-							calendarBody.appendChild(row);
-							row = document.createElement('tr');
-						}
-					}
+				// 		if (row.children.length === 7) {
+				// 			calendarBody.appendChild(row);
+				// 			row = document.createElement('tr');
+				// 		}
+				// 	}
 
-					while (row.children.length < 7) {
-						row.appendChild(document.createElement('td'));
-					}
-					calendarBody.appendChild(row);
-				}
+				// 	while (row.children.length < 7) {
+				// 		row.appendChild(document.createElement('td'));
+				// 	}
+				// 	calendarBody.appendChild(row);
+				// }
 			</script>
 
 
