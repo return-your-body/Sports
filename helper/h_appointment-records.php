@@ -685,16 +685,21 @@ if (isset($_SESSION["帳號"])) {
                         <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
                         <td><?php echo htmlspecialchars($row['note']); ?></td>
                         <!-- <td><?php echo htmlspecialchars($row['status_name']); ?></td> -->
-                        <td><select class="status-dropdown" data-id="<?php echo $row['id']; ?>" <?php echo ($row['status_name'] == '已看診') ? 'disabled' : ''; ?>>
+                        <td>
+                          <select class="status-dropdown" data-id="<?php echo $row['id']; ?>"
+                            data-doctor-id="<?php echo $row['doctor_id']; ?>" <?php echo (in_array($row['status_name'], ['請假', '爽約', '已看診'])) ? 'disabled' : ''; ?>>
+
                             <option value="預約" <?php echo ($row['status_name'] == '預約') ? 'selected' : ''; ?>>預約</option>
                             <option value="修改" <?php echo ($row['status_name'] == '修改') ? 'selected' : ''; ?>>修改</option>
-                            <option value="報到" <?php echo ($row['status_name'] == '報到') ? 'selected' : ''; ?>>報到</option>
+                            <option value="取消" <?php echo ($row['status_name'] == '取消') ? 'selected' : ''; ?>>取消</option>
                             <option value="請假" <?php echo ($row['status_name'] == '請假') ? 'selected' : ''; ?>>請假</option>
                             <option value="爽約" <?php echo ($row['status_name'] == '爽約') ? 'selected' : ''; ?>>爽約</option>
-                            <option value="爽約" <?php echo ($row['status_name'] == '取消') ? 'selected' : ''; ?>>取消</option>
+                            <option value="報到" <?php echo ($row['status_name'] == '報到') ? 'selected' : ''; ?>>報到</option>
+                            <option value="看診中" <?php echo ($row['status_name'] == '看診中') ? 'selected' : ''; ?>>看診中</option>
                             <option value="已看診" <?php echo ($row['status_name'] == '已看診') ? 'selected' : ''; ?>>已看診</option>
                           </select>
                         </td>
+
                         <td>
                           <a href="h_print-appointment.php?id=<?php echo $row['id']; ?>" target="_blank">
                             <button type="button">列印預約單</button>
@@ -704,7 +709,7 @@ if (isset($_SESSION["帳號"])) {
                     <?php endwhile; ?>
                   <?php else: ?>
                     <tr>
-                      <td colspan="9">無符合條件的資料</td>
+                      <td colspan="10">無符合條件的資料</td>
                     </tr>
                   <?php endif; ?>
                 </tbody>
@@ -750,119 +755,106 @@ if (isset($_SESSION["帳號"])) {
 
 
     <!-- 狀態清單 -->
-    <!-- 修改 -->
-    <!-- 狀態下拉選單 -->
-    <!-- 修改時間的 Modal -->
-    <div id="modal-overlay" class="modal-overlay">
-      <div id="modal-container" class="modal-container">
-        <span id="modal-close" class="modal-close">&times;</span>
-        <h2 class="modal-title">修改預約</h2>
+<!-- 修改預約 Modal -->
+<div id="modal-overlay" class="modal-overlay" style="display: none;">
+  <div id="modal-container" class="modal-container">
+    <span id="modal-close" class="modal-close">&times;</span>
+    <h2 class="modal-title">修改預約</h2>
 
-        <label for="appointment-date">預約日期：</label>
-        <input type="date" id="appointment-date" min="">
+    <label for="appointment-date">預約日期：</label>
+    <input type="date" id="appointment-date" min="">
 
-        <label for="appointment-time">預約時間：</label>
-        <select id="appointment-time">
-          <option value="">請選擇時間</option>
-        </select>
+    <label for="appointment-time">預約時間：</label>
+    <select id="appointment-time">
+      <option value="">請選擇時間</option>
+    </select>
 
-        <div class="modal-actions">
-          <button id="confirm-modify" class="confirm">確認修改</button>
-          <button id="cancel-modify" class="cancel">取消</button>
-        </div>
-      </div>
+    <div class="modal-actions">
+      <button id="confirm-modify" class="confirm">確認修改</button>
+      <button id="cancel-modify" class="cancel">取消</button>
     </div>
+  </div>
+</div>
 
 
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const modalOverlay = document.getElementById("modal-overlay");
-        const modalClose = document.querySelector(".modal-close");
-        const cancelModifyBtn = document.querySelector(".cancel");
-        const appointmentDate = document.getElementById("appointment-date");
-        const appointmentTime = document.getElementById("appointment-time");
-        const confirmModifyBtn = document.getElementById("confirm-modify");
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modalOverlay = document.getElementById("modal-overlay");
+    const appointmentDate = document.getElementById("appointment-date");
+    const appointmentTime = document.getElementById("appointment-time");
+    let selectedAppointmentId = null;
+    let selectedDoctorId = null;
+    let selectedDoctorName = null;
 
-        let selectedAppointmentId = null;
-        let originalDate = "";
-        let originalTime = "";
-        let originalStatus = {}; // 用來儲存預約的原始狀態
+    document.querySelectorAll(".status-dropdown").forEach((select) => {
+      select.addEventListener("change", function () {
+        let selectedStatus = this.value;
+        selectedAppointmentId = this.getAttribute("data-id");
+        selectedDoctorId = this.getAttribute("data-doctor-id");
+        selectedDoctorName = this.closest("tr").querySelector("td:nth-child(6)").innerText; // 抓取對應醫生姓名
 
-        // 設定最小可選日期
-        let today = new Date().toISOString().split("T")[0];
-        appointmentDate.setAttribute("min", today);
+        console.log("選擇的醫生 ID:", selectedDoctorId);
+        console.log("選擇的醫生姓名:", selectedDoctorName);
 
-        // **監聽狀態變更（打開修改視窗）**
-        document.querySelectorAll(".status-dropdown").forEach((select) => {
-          select.addEventListener("change", function () {
-            selectedAppointmentId = this.getAttribute("data-id");
-            let newStatus = this.value;
+        if (selectedStatus === "修改") {
+          modalOverlay.style.display = "flex";
 
-            if (newStatus === "修改") {
-              modalOverlay.style.display = "flex";
-
-              // **記錄原本的狀態，當按下取消時恢復**
-              originalStatus[selectedAppointmentId] = this.value;
-              originalDate = appointmentDate.value;
-              originalTime = appointmentTime.value;
-
-              appointmentDate.value = "";
-              appointmentTime.innerHTML = "<option value=''>請選擇時間</option>";
-              fetchAvailableDates();
-            } else {
-              updateStatus(selectedAppointmentId, newStatus);
-            }
-          });
-        });
-
-        // **關閉視窗並恢復原本狀態**
-        function resetForm() {
-          appointmentDate.value = originalDate;
-          appointmentTime.value = originalTime;
-
-          // **恢復選單狀態**
-          document.querySelector(`.status-dropdown[data-id="${selectedAppointmentId}"]`).value = originalStatus[selectedAppointmentId];
-
-          modalOverlay.style.display = "none";
-        }
-
-        modalClose.addEventListener("click", resetForm);
-        cancelModifyBtn.addEventListener("click", resetForm);
-
-        // **送出修改請求**
-        confirmModifyBtn.addEventListener("click", function () {
-          let doctorshiftId = appointmentDate.value;
-          let shifttimeId = appointmentTime.value;
-
-          if (!selectedAppointmentId || !doctorshiftId || !shifttimeId) {
-            alert("請選擇有效的日期與時間");
-            return;
+          // 確保顯示醫生姓名
+          if (!document.getElementById("doctor-name-display")) {
+            let doctorLabel = document.createElement("label");
+            doctorLabel.textContent = "醫生姓名：";
+            let doctorNameDisplay = document.createElement("span");
+            doctorNameDisplay.id = "doctor-name-display";
+            doctorLabel.appendChild(doctorNameDisplay);
+            appointmentDate.parentElement.insertBefore(doctorLabel, appointmentDate);
           }
+          document.getElementById("doctor-name-display").textContent = selectedDoctorName;
 
-          let formData = new URLSearchParams();
-          formData.append("id", selectedAppointmentId);
-          formData.append("doctorshift_id", doctorshiftId);
-          formData.append("shifttime_id", shifttimeId);
+          appointmentDate.value = "";
+          appointmentTime.innerHTML = "<option value=''>請選擇時間</option>";
 
-          fetch("更新狀態.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: formData.toString(),
-          })
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                alert("預約修改成功！");
-                location.reload();
-              } else {
-                alert("修改失敗：" + data.error);
-              }
-            })
-            .catch(error => console.error("請求失敗:", error));
-        });
+          appointmentDate.addEventListener("change", function () {
+            let date = this.value;
+            if (!date || !selectedDoctorId) {
+              console.error("❌ 醫生 ID 或日期無效");
+              return;
+            }
+
+            fetch(`獲取時間.php?doctor_id=${selectedDoctorId}&date=${date}`)
+              .then(response => response.json())
+              .then(data => {
+                appointmentTime.innerHTML = "<option value=''>請選擇時間</option>";
+
+                if (!Array.isArray(data)) {
+                  console.error("❌ API 回傳錯誤:", data);
+                  appointmentTime.innerHTML = "<option value=''>無可用時段</option>";
+                  return;
+                }
+
+                if (data.length === 0) {
+                  appointmentTime.innerHTML = "<option value=''>無可用時段</option>";
+                } else {
+                  data.forEach(item => {
+                    let option = document.createElement("option");
+                    option.value = item.shifttime_id;
+                    option.textContent = item.shifttime;
+                    appointmentTime.appendChild(option);
+                  });
+                }
+              })
+              .catch(error => {
+                console.error("❌ 獲取時段失敗:", error);
+                appointmentTime.innerHTML = "<option value=''>獲取時段失敗</option>";
+              });
+          });
+        }
       });
+    });
+  });
+</script>
 
-    </script>
+
+
 
 
     <br />
