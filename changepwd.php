@@ -1,69 +1,86 @@
 <?php
-// 開啟 session 用於跨頁面存取用戶資料
+// 啟用錯誤顯示，方便除錯
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// 啟用 Session，確保跨頁傳遞變數
 session_start();
 
-// 引入資料庫連接檔案
+// 引入資料庫連接
 require 'db.php';
 
-// 檢查是否提交表單
+// **確保請求方法為 POST**
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // 從 session 中取得電子郵件
-    $email = isset($_SESSION['email']) ? $_SESSION['email'] : null; // 從 session 取得電子郵件
-    $new_password = trim($_POST['passwd']); // 新密碼
-    $confirm_password = trim($_POST['confirm-password']); // 確認密碼
+    // 取得表單提交的 `email` 和 `code`
+    $email = isset($_POST['email']) ? trim($_POST['email']) : null;
+    $code = isset($_POST['code']) ? trim($_POST['code']) : null;
 
-    // 檢查電子郵件是否存在於 session 中
-    if (is_null($email)) {
-        echo "<script>
-                alert('未找到電子郵件資訊，請重新驗證您的電子郵件！');
-                window.location.href = 'verify.php'; // 返回驗證頁面
-              </script>";
-        exit;
+    // 取得使用者輸入的新密碼
+    $new_password = trim($_POST['passwd']);
+    $confirm_password = trim($_POST['confirm-password']);
+
+    // **第一步：檢查 email、驗證碼和密碼是否正確**
+    if (empty($email) || empty($code)) {
+        die("<script>alert('錯誤：缺少電子郵件或驗證碼！'); window.history.back();</script>");
+    }
+    if ($new_password !== $confirm_password) {
+        die("<script>alert('錯誤：密碼與確認密碼不一致！'); window.history.back();</script>");
     }
 
-    // **查詢 people 表以獲取 user_id**
-    $email_safe = mysqli_real_escape_string($link, $email); // 避免 SQL 注入
-    $query_people = "SELECT user_id FROM people WHERE email = '$email_safe'";
-    $result_people = mysqli_query($link, $query_people);
+    // **第二步：檢查驗證碼是否有效**
+    $stmt = mysqli_prepare($link, "SELECT user_id FROM email WHERE verification_code = ? AND expires_at > NOW()");
+    if (!$stmt) {
+        die("SQL 錯誤 (查詢驗證碼)：" . mysqli_error($link));
+    }
+    mysqli_stmt_bind_param($stmt, "s", $code);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
 
-    if ($result_people && mysqli_num_rows($result_people) > 0) {
-        // 獲取 user_id
-        $row_people = mysqli_fetch_assoc($result_people);
-        $user_id = $row_people['user_id'];
+    if ($row = mysqli_fetch_assoc($result)) {
+        $user_id = $row["user_id"];
 
-        // **更新 user 表的密碼**
-        $new_password_safe = mysqli_real_escape_string($link, $new_password); // 避免 SQL 注入
-        $query_update = "UPDATE user SET password = '$new_password_safe' WHERE user_id = $user_id";
+        // **第三步：確認 `user_id` 是否存在於 `user` 表**
+        $stmt = mysqli_prepare($link, "SELECT password FROM user WHERE user_id = ?");
+        if (!$stmt) {
+            die("SQL 錯誤 (查找 user 表)：" . mysqli_error($link));
+        }
+        mysqli_stmt_bind_param($stmt, "i", $user_id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
 
-        if (mysqli_query($link, $query_update)) {
-            // 更新成功，清除 session 並跳轉到登入頁面
-            session_destroy(); // 清除 session
+        if ($row = mysqli_fetch_assoc($result)) {
+            // **第四步：更新 `user` 表的密碼**
+            $stmt = mysqli_prepare($link, "UPDATE user SET password = ? WHERE user_id = ?");
+            if (!$stmt) {
+                die("SQL 錯誤 (更新密碼)：" . mysqli_error($link));
+            }
+            mysqli_stmt_bind_param($stmt, "si", $new_password, $user_id);
+            mysqli_stmt_execute($stmt);
+
+            // **第五步：刪除 `email` 表中的驗證碼**
+            $stmt = mysqli_prepare($link, "DELETE FROM email WHERE user_id = ?");
+            if (!$stmt) {
+                die("SQL 錯誤 (刪除驗證碼)：" . mysqli_error($link));
+            }
+            mysqli_stmt_bind_param($stmt, "i", $user_id);
+            mysqli_stmt_execute($stmt);
+
+            // **第六步：成功提示並跳轉**
+            session_destroy();
             echo "<script>
                     alert('密碼變更成功！請使用新密碼登入。');
-                    window.location.href = 'index.html'; // 跳轉到登入頁面
+                    window.location.href = 'index.html';
                   </script>";
         } else {
-            // 更新失敗，顯示錯誤
-            echo "<script>
-                    alert('密碼變更失敗，請稍後再試！');
-                    window.history.back(); // 返回上一頁
-                  </script>";
+            die("<script>alert('錯誤：未找到對應的使用者！'); window.history.back();</script>");
         }
     } else {
-        // 未找到對應的 user_id，顯示錯誤
-        echo "<script>
-                alert('無法找到與此電子郵件關聯的用戶！');
-                window.location.href = 'verify.php'; // 返回驗證頁面
-              </script>";
+        die("<script>alert('錯誤：驗證碼無效或已過期！'); window.location.href = 'forget.html';</script>");
     }
 } else {
-    // 非表單提交，顯示錯誤訊息
-    echo "<script>
-            alert('非法訪問，請重新操作！');
-            window.location.href = 'index.html'; // 返回首頁
-          </script>";
+    die("<script>alert('錯誤：非法訪問！'); window.location.href = 'index.html';</script>");
 }
 
-// 關閉資料庫連接
+// 關閉資料庫
 mysqli_close($link);
 ?>
