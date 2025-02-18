@@ -137,6 +137,7 @@ $data_sql = "SELECT
         WHEN 7 THEN '星期六'
     END AS consultation_weekday,
     st.shifttime AS consultation_time,
+    COALESCE(m.note_d, '無備註') AS doctor_note, 
     MIN(m.created_at) AS created_at
 FROM medicalrecord m
 LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
@@ -149,6 +150,7 @@ WHERE ds.doctor_id = ? AND p.name LIKE CONCAT('%', ?, '%')
 GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime
 ORDER BY created_at ASC
 LIMIT ?, ?";
+
 
 $data_stmt = $link->prepare($data_sql);
 $data_stmt->bind_param('isii', $doctor_id, $search_name, $offset, $records_per_page);
@@ -589,7 +591,6 @@ $result = $data_stmt->get_result();
         </div>
 
         <!-- 表格 -->
-        <!-- 表格 -->
         <div class="table-container">
           <div class="table-responsive">
             <table class="responsive-table">
@@ -603,6 +604,7 @@ $result = $data_stmt->get_result();
                   <th>看診時間</th>
                   <th>治療項目</th>
                   <th>治療費用</th>
+                  <th>治療師備註</th>
                   <th>建立時間</th>
                 </tr>
               </thead>
@@ -620,6 +622,7 @@ $result = $data_stmt->get_result();
                       <td><?php echo htmlspecialchars($row['consultation_time']); ?></td>
                       <td><?php echo htmlspecialchars($row['treatment_items']); ?></td>
                       <td><?php echo htmlspecialchars($row['total_treatment_price']); ?></td>
+                      <td><?php echo htmlspecialchars($row['doctor_note']); ?></td> 
                       <td><?php echo htmlspecialchars($row['created_at']); ?></td>
                     </tr>
                   <?php endwhile; ?>
