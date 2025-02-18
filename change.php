@@ -35,7 +35,6 @@
     <![endif]-->
 
 </head>
-
 <body>
 	<div id="particles-js" class="main-form-box">
 		<div class="md-form">
@@ -52,7 +51,10 @@
 										<!-- 忘記密碼 開始 -->
 										<form id="login-form" action="changepwd.php" method="post" role="form"
 											style="display: block;">
-                                            
+											<input type="hidden" name="code"
+												value="<?php echo htmlspecialchars($_GET['code'] ?? ''); ?>">
+											<input type="hidden" name="email"
+												value="<?php echo htmlspecialchars($_GET['email'] ?? ''); ?>">
 											<!-- 密碼輸入欄 -->
 											<div class="form-group">
 												<label class="icon-lp"><i class="fas fa-key"></i></label>
@@ -78,7 +80,7 @@
 													<div class="col-sm-6 offset-sm-3">
 														<input type="submit" name="register-submit" id="register-submit"
 															tabindex="4" class="form-control btn btn-register"
-															value="立即註冊">
+															value="變更密碼">
 													</div>
 												</div>
 											</div>
@@ -144,7 +146,7 @@
 	<script src="js1/bootstrap.min.js"></script>
 	<script src="js1/particles.min.js"></script>
 	<script src="js1/index.js"></script>
-	
+
 </body>
 
 </html>
