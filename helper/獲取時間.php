@@ -1,72 +1,87 @@
 <?php
-require '../db.php'; 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+require '../db.php';
 
-date_default_timezone_set('Asia/Taipei'); 
+date_default_timezone_set('Asia/Taipei');
 
-if (!isset($_GET['doctor_id']) || !isset($_GET['date'])) {
-    echo json_encode(["error" => "缺少 doctor_id 或 date"]);
+$doctor_id = isset($_GET['doctor_id']) ? intval($_GET['doctor_id']) : 0;
+date_default_timezone_set('Asia/Taipei');
+$selected_date = isset($_GET['date']) ? $_GET['date'] : '';
+$current_time = date('H:i');
+$current_date = date('Y-m-d');
+
+if (!$doctor_id || !$selected_date) {
+    echo json_encode([]);
     exit;
 }
 
-$doctor_id = intval($_GET['doctor_id']);  // 確保是數字
-$date = $_GET['date'];
+// 1. 檢查醫生該天的上班時段 (go ~ off)
+$sql_shift = "SELECT go, off FROM doctorshift WHERE doctor_id = ? AND date = ?";
+$stmt_shift = mysqli_prepare($link, $sql_shift);
+mysqli_stmt_bind_param($stmt_shift, "is", $doctor_id, $selected_date);
+mysqli_stmt_execute($stmt_shift);
+$result_shift = mysqli_stmt_get_result($stmt_shift);
+$shift = mysqli_fetch_assoc($result_shift);
 
-if ($doctor_id <= 0) {
-    echo json_encode(["error" => "doctor_id 無效"]);
+if (!$shift) {
+    echo json_encode([]); // 沒有班表，無可預約時間
     exit;
 }
 
-$currentTime = date('H:i');
-$currentDate = date('Y-m-d');
+$go = intval($shift['go']);
+$off = intval($shift['off']);
 
-$availableTimes = [];
+// 2. 取得當前時間之後的時段 (避免選擇過期時段)
+$sql_times = "SELECT shifttime_id, shifttime FROM shifttime WHERE shifttime_id BETWEEN ? AND ?";
+if ($selected_date == $current_date) {
+    $sql_times .= " AND shifttime > ?";
+}
+$stmt_times = mysqli_prepare($link, $sql_times);
+if ($selected_date == $current_date) {
+    mysqli_stmt_bind_param($stmt_times, "iis", $go, $off, $current_time);
+} else {
+    mysqli_stmt_bind_param($stmt_times, "ii", $go, $off);
+}
+mysqli_stmt_execute($stmt_times);
+$result_times = mysqli_stmt_get_result($stmt_times);
+$available_times = [];
 
-$sql = "SELECT s.shifttime_id, s.shifttime 
-        FROM shifttime s
-        JOIN doctorshift d ON s.shifttime_id BETWEEN d.go AND d.off
-        WHERE d.doctor_id = ? AND d.date = ?";
-$stmt = $link->prepare($sql);
-$stmt->bind_param("is", $doctor_id, $date);
-$stmt->execute();
-$result = $stmt->get_result();
+while ($row = mysqli_fetch_assoc($result_times)) {
+    $available_times[$row['shifttime_id']] = $row['shifttime'];
+}
 
-while ($row = $result->fetch_assoc()) {
-    $shifttime = $row['shifttime'];
-    $shifttimeId = $row['shifttime_id'];
+// 3. 排除已有預約的時段
+$sql_booked = "SELECT shifttime_id FROM appointment WHERE doctorshift_id IN (SELECT doctorshift_id FROM doctorshift WHERE doctor_id = ? AND date = ?)";
+$stmt_booked = mysqli_prepare($link, $sql_booked);
+mysqli_stmt_bind_param($stmt_booked, "is", $doctor_id, $selected_date);
+mysqli_stmt_execute($stmt_booked);
+$result_booked = mysqli_stmt_get_result($stmt_booked);
 
-    $checkAppointment = "SELECT COUNT(*) as count 
-                         FROM appointment 
-                         WHERE doctorshift_id = (SELECT doctorshift_id FROM doctorshift WHERE doctor_id = ? AND date = ?) 
-                         AND shifttime_id = ?";
-    $stmtCheck = $link->prepare($checkAppointment);
-    $stmtCheck->bind_param("isi", $doctor_id, $date, $shifttimeId);
-    $stmtCheck->execute();
-    $appointmentResult = $stmtCheck->get_result();
-    $appointmentCount = $appointmentResult->fetch_assoc()['count'];
-    
-    $checkLeave = "SELECT COUNT(*) as count 
-                   FROM leaves 
-                   WHERE doctor_id = ? 
-                   AND start_date <= ? 
-                   AND end_date >= ?";
-    $stmtLeave = $link->prepare($checkLeave);
-    $stmtLeave->bind_param("iss", $doctor_id, $date, $date);
-    $stmtLeave->execute();
-    $leaveResult = $stmtLeave->get_result();
-    $leaveCount = $leaveResult->fetch_assoc()['count'];
+while ($row = mysqli_fetch_assoc($result_booked)) {
+    unset($available_times[$row['shifttime_id']]);
+}
 
-    if ($appointmentCount == 0 && $leaveCount == 0 && ($date > $currentDate || ($date == $currentDate && $shifttime > $currentTime))) {
-        $availableTimes[] = [
-            'shifttime_id' => $shifttimeId,
-            'shifttime' => $shifttime
-        ];
+// 4. 排除請假時間
+$sql_leave = "SELECT start_date, end_date FROM leaves WHERE doctor_id = ? AND DATE(start_date) <= ? AND DATE(end_date) >= ?";
+$stmt_leave = mysqli_prepare($link, $sql_leave);
+mysqli_stmt_bind_param($stmt_leave, "iss", $doctor_id, $selected_date, $selected_date);
+mysqli_stmt_execute($stmt_leave);
+$result_leave = mysqli_stmt_get_result($stmt_leave);
+
+while ($leave = mysqli_fetch_assoc($result_leave)) {
+    foreach ($available_times as $id => $time) {
+        if ($selected_date . ' ' . $time . ':00' >= $leave['start_date'] && $selected_date . ' ' . $time . ':00' <= $leave['end_date']) {
+            unset($available_times[$id]);
+        }
     }
 }
 
-$stmt->close();
-$link->close();
+// 輸出可預約時間
+$output = [];
+foreach ($available_times as $id => $time) {
+    $output[] = ['shifttime_id' => $id, 'shifttime' => $time];
+}
 
-echo json_encode($availableTimes);
+echo json_encode($output);
+exit;
+
 ?>
