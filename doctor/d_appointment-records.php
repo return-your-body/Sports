@@ -101,7 +101,6 @@ $count_result = $count_stmt->get_result();
 $total_records = $count_result->fetch_assoc()['total'] ?? 0;
 $total_pages = max(ceil($total_records / $records_per_page), 1);
 
-// 查詢分頁資料，排除已經有看診紀錄的預約
 $stmt = $link->prepare("
     SELECT 
         a.appointment_id AS id,
@@ -131,6 +130,7 @@ $stmt = $link->prepare("
     WHERE u.account = ? 
       AND p.name LIKE CONCAT('%', ?, '%') 
       AND m.appointment_id IS NULL
+      AND a.status_id NOT IN (4, 5)  -- 排除狀態為請假或爽約的紀錄
     ORDER BY ds.date, st.shifttime
     LIMIT ?, ?
 ");
