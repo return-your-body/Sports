@@ -308,19 +308,19 @@ if ($result && mysqli_num_rows($result) > 0) {
         }
 
         /* 聯絡我們 */
-		.custom-link {
-			color: rgb(246, 247, 248);
-			/* 設定超連結顏色 */
-			text-decoration: none;
-			/* 移除超連結的下劃線 */
-		}
+        .custom-link {
+            color: rgb(246, 247, 248);
+            /* 設定超連結顏色 */
+            text-decoration: none;
+            /* 移除超連結的下劃線 */
+        }
 
-		.custom-link:hover {
-			color: #0056b3;
-			/* 滑鼠懸停時的顏色，例如深藍色 */
-			text-decoration: underline;
-			/* 懸停時增加下劃線效果 */
-		}
+        .custom-link:hover {
+            color: #0056b3;
+            /* 滑鼠懸停時的顏色，例如深藍色 */
+            text-decoration: underline;
+            /* 懸停時增加下劃線效果 */
+        }
     </style>
 </head>
 
@@ -390,19 +390,19 @@ if ($result && mysqli_num_rows($result) > 0) {
                                     </ul>
                                 </li>
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="u_reserve.php">預約</a></li>
-								<!-- <li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
-									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="u_reserve.php">立即預約</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="u_reserve-record.php">查看預約資料</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="u_reserve-time.php">查看預約時段</a>
-										</li>
-									</ul>
-								</li> -->
+                                <!-- <li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
+                                    <ul class="rd-menu rd-navbar-dropdown">
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_reserve.php">立即預約</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_reserve-record.php">查看預約資料</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_reserve-time.php">查看預約時段</a>
+                                        </li>
+                                    </ul>
+                                </li> -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
                                 </li>
                                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
@@ -415,7 +415,7 @@ if ($result && mysqli_num_rows($result) > 0) {
                                 <li class="rd-nav-item active"><a class="rd-nav-link" href="u_profile.php">個人資料</a>
                                 </li>
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="u_change.php">變更密碼</a>
-								</li>                                
+                                </li>
 
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
@@ -533,7 +533,7 @@ if ($result && mysqli_num_rows($result) > 0) {
                     <div class="form-row">
                         <label for="useremail">電子郵件 :</label>
                         <input id="useremail" type="email" name="useremail"
-                            value="<?php echo htmlspecialchars($userData['email']); ?>" disabled>
+                            value="<?php echo htmlspecialchars($userData['email']); ?>" disabled readonly>
                     </div>
 
                     <div class="form-row">
@@ -558,9 +558,15 @@ if ($result && mysqli_num_rows($result) > 0) {
                 document.querySelectorAll('input').forEach(function (input) {
                     input.disabled = false;
                 });
+
+                // 確保電子郵件欄位仍然鎖住
+                document.getElementById('useremail').disabled = true;
+                document.getElementById('useremail').readOnly = true; // 確保即使透過開發者工具修改，也無法輸入
+
                 document.getElementById('editButton').style.display = 'none'; // 隱藏“修改資料”按鈕
                 document.getElementById('confirmButton').style.display = 'inline'; // 顯示“確認資料”按鈕
             });
+
 
             // 上傳並預覽圖片
             function uploadImage(event) {
@@ -762,66 +768,66 @@ if ($result && mysqli_num_rows($result) > 0) {
         </script>
         <!-- 個人檔案表單 End -->
 
-		<footer class="section novi-bg novi-bg-img footer-simple">
-			<div class="container">
-				<div class="row row-40">
-					<div class="col-md-4">
-						<h4>關於我們</h4>
-						<ul class="list-inline" style="font-size: 40px; display: inline-block;color: #333333; ">
-							<li><a class="icon novi-icon icon-default icon-custom-facebook"
-									href="https://www.facebook.com/ReTurnYourBody/" target="_blank"></a></li>
-							<li><a class="icon novi-icon icon-default icon-custom-linkedin"
-									href="https://lin.ee/sUaUVMq" target="_blank"></a></li>
-							<li><a class="icon novi-icon icon-default icon-custom-instagram"
-									href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"
-									target="_blank"></a></li>
-						</ul>
+        <footer class="section novi-bg novi-bg-img footer-simple">
+            <div class="container">
+                <div class="row row-40">
+                    <div class="col-md-4">
+                        <h4>關於我們</h4>
+                        <ul class="list-inline" style="font-size: 40px; display: inline-block;color: #333333; ">
+                            <li><a class="icon novi-icon icon-default icon-custom-facebook"
+                                    href="https://www.facebook.com/ReTurnYourBody/" target="_blank"></a></li>
+                            <li><a class="icon novi-icon icon-default icon-custom-linkedin"
+                                    href="https://lin.ee/sUaUVMq" target="_blank"></a></li>
+                            <li><a class="icon novi-icon icon-default icon-custom-instagram"
+                                    href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"
+                                    target="_blank"></a></li>
+                        </ul>
 
-					</div>
-					<div class="col-md-3">
-						<h4>快速連結</h4>
-						<ul class="list-marked">
-							<li><a href="u_index.php">首頁</a></li>
-							<li><a href="u_link.php.php">治療師介紹</a></li>
-							<li><a href="u_caseshare.php">個案分享</a></li>
-							<li><a href="u_body-knowledge.php">日常小知識</a></li>
-							<li><a href="u_reserve.php">預約</a></li>
-							<li><a href="u_reserve-record.php">查看預約資料</a></li>
-							<li><a href="u_reserve-time.php">查看預約時段</a></li>
-							<li><a href="u_history.php">歷史紀錄</a></li>
-							<li> <a href="u_profile.php">個人資料</a></li>
-							</a></li>
-						</ul>
-					</div>
-                    
-					<div class="col-md-4">
-						<h4>聯絡我們</h4>
-						<br />
-						<ul>
-							<li>📍 <strong>診療地點:</strong>大重仁骨科復健科診所</li><br />
-							<li>📍 <strong>地址:</strong>
-								<a href="https://maps.app.goo.gl/u3TojSMqjGmdx5Pt5" class="custom-link" target="_blank"
-									rel="noopener noreferrer">
-									241 新北市三重區重新路五段 592 號
-								</a>
-							</li>
-							<br />
-							<li>📍 <strong>電話:</strong>(02) 2995-8283</li>
-						</ul>
+                    </div>
+                    <div class="col-md-3">
+                        <h4>快速連結</h4>
+                        <ul class="list-marked">
+                            <li><a href="u_index.php">首頁</a></li>
+                            <li><a href="u_link.php.php">治療師介紹</a></li>
+                            <li><a href="u_caseshare.php">個案分享</a></li>
+                            <li><a href="u_body-knowledge.php">日常小知識</a></li>
+                            <li><a href="u_reserve.php">預約</a></li>
+                            <li><a href="u_reserve-record.php">查看預約資料</a></li>
+                            <li><a href="u_reserve-time.php">查看預約時段</a></li>
+                            <li><a href="u_history.php">歷史紀錄</a></li>
+                            <li> <a href="u_profile.php">個人資料</a></li>
+                            </a></li>
+                        </ul>
+                    </div>
 
-						<!-- <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global"
-							data-form-type="subscribe" method="post" action="bat/rd-mailform.php">
-							<div class="form-wrap">
-								<input class="form-input" type="email" name="email" data-constraints="@Email @Required"
-									id="footer-mail">
-								<label class="form-label" for="footer-mail">請輸入您的電子郵件</label>
-							</div>
-							<button class="form-button linearicons-paper-plane"></button>
-						</form> -->
-					</div>
-				</div>
-			</div>
-		</footer>
+                    <div class="col-md-4">
+                        <h4>聯絡我們</h4>
+                        <br />
+                        <ul>
+                            <li>📍 <strong>診療地點:</strong>大重仁骨科復健科診所</li><br />
+                            <li>📍 <strong>地址:</strong>
+                                <a href="https://maps.app.goo.gl/u3TojSMqjGmdx5Pt5" class="custom-link" target="_blank"
+                                    rel="noopener noreferrer">
+                                    241 新北市三重區重新路五段 592 號
+                                </a>
+                            </li>
+                            <br />
+                            <li>📍 <strong>電話:</strong>(02) 2995-8283</li>
+                        </ul>
+
+                        <!-- <form class="rd-mailform rd-form-boxed" data-form-output="form-output-global"
+                            data-form-type="subscribe" method="post" action="bat/rd-mailform.php">
+                            <div class="form-wrap">
+                                <input class="form-input" type="email" name="email" data-constraints="@Email @Required"
+                                    id="footer-mail">
+                                <label class="form-label" for="footer-mail">請輸入您的電子郵件</label>
+                            </div>
+                            <button class="form-button linearicons-paper-plane"></button>
+                        </form> -->
+                    </div>
+                </div>
+            </div>
+        </footer>
 
 
         <!-- Global Mailform Output-->
