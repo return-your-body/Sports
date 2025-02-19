@@ -16,7 +16,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // 驗證 Email 格式
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        die("電子郵件格式不正確！");
+        echo "<script>alert('電子郵件格式不正確！'); window.history.back();</script>";
+        exit;
     }
 
     // 🔹 改為查詢 `people` 表，而不是 `user` 表
@@ -25,7 +26,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // 🔹 檢查 SQL 是否成功
     if (!$stmt) {
-        die("SQL 錯誤：" . mysqli_error($link));
+        echo "<script>alert('SQL 錯誤：" . mysqli_error($link) . "'); window.history.back();</script>";
+        exit;
     }
 
     mysqli_stmt_bind_param($stmt, "s", $email);
@@ -43,7 +45,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // 刪除舊的驗證碼（確保只有一個有效的驗證碼）
         $stmt = mysqli_prepare($link, "DELETE FROM email WHERE user_id = ?");
         if (!$stmt) {
-            die("SQL 錯誤：" . mysqli_error($link));
+            echo "<script>alert('SQL 錯誤：" . mysqli_error($link) . "'); window.history.back();</script>";
+            exit;
         }
         mysqli_stmt_bind_param($stmt, "i", $user_id);
         mysqli_stmt_execute($stmt);
@@ -51,7 +54,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // 插入新的驗證碼
         $stmt = mysqli_prepare($link, "INSERT INTO email (user_id, verification_code, expires_at) VALUES (?, ?, ?)");
         if (!$stmt) {
-            die("SQL 錯誤：" . mysqli_error($link));
+            echo "<script>alert('SQL 錯誤：" . mysqli_error($link) . "'); window.history.back();</script>";
+            exit;
         }
         mysqli_stmt_bind_param($stmt, "iss", $user_id, $code, $expires_at);
         mysqli_stmt_execute($stmt);
@@ -62,12 +66,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <a href='http://demo2.im.ukn.edu.tw/~Health24/change.php?code=$code&email=$email'>重設密碼連結</a>";
 
         if (send_email($email, $subject, $message)) {
-            echo "驗證郵件已發送，請檢查您的信箱。";
+            echo "<script>alert('驗證郵件已發送，請檢查您的信箱。'); window.location.href='forget.html';</script>";
         } else {
-            echo "發送郵件失敗，請檢查 SMTP 設定。";
+            echo "<script>alert('發送郵件失敗，請檢查 SMTP 設定。'); window.history.back();</script>";
         }
     } else {
-        echo "此電子郵件未註冊！";
+        echo "<script>alert('此電子郵件未註冊！'); window.history.back();</script>";
     }
 }
 ?>
