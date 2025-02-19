@@ -325,7 +325,8 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
-
+                <li class="rd-nav-item"><a class="rd-nav-link" href="h_change.php">變更密碼</a>
+                </li>
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
