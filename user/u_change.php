@@ -19,8 +19,8 @@ if (isset($_SESSION["帳號"])) {
     // 資料庫連接
     require '../db.php';
 
-    // 查詢該帳號的詳細資料
-    $sql = "SELECT user.account, people.name 
+    // 查詢該帳號的詳細資料，加入 user_id
+    $sql = "SELECT user.user_id, user.account, people.name 
             FROM user 
             JOIN people ON user.user_id = people.user_id 
             WHERE user.account = ?";
@@ -30,18 +30,20 @@ if (isset($_SESSION["帳號"])) {
     $result = mysqli_stmt_get_result($stmt);
 
     if (mysqli_num_rows($result) > 0) {
-        // 抓取對應姓名
+        // 抓取對應的 user_id、姓名、帳號
         $row = mysqli_fetch_assoc($result);
+        $user_id = $row['user_id'];
         $姓名 = $row['name'];
         $帳號名稱 = $row['account'];
 
-        // 顯示帳號和姓名
+        // 將 user_id 存入 session 以供其他頁面使用
+        $_SESSION["user_id"] = $user_id;
+
+        // 顯示帳號、姓名（可用於測試）
         // echo "歡迎您！<br>";
         // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-        // echo "姓名：" . htmlspecialchars($姓名);
-        // echo "<script>
-        //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-        // </script>";
+        // echo "姓名：" . htmlspecialchars($姓名) . "<br>";
+        // echo "用戶 ID：" . htmlspecialchars($user_id);
     } else {
         // 如果資料不存在，提示用戶重新登入
         echo "<script>
@@ -61,9 +63,6 @@ if (isset($_SESSION["帳號"])) {
     exit();
 }
 ?>
-
-
-
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
 
@@ -156,6 +155,7 @@ if (isset($_SESSION["帳號"])) {
             box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
         }
 
+
         /* 聯絡我們 */
         .custom-link {
             color: rgb(246, 247, 248);
@@ -222,12 +222,12 @@ if (isset($_SESSION["帳號"])) {
                         </div>
                         <div class="rd-navbar-nav-wrap">
                             <ul class="rd-navbar-nav">
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="u_index.php">首頁</a>
+                                <li class="rd-nav-item "><a class="rd-nav-link" href="u_index.php">首頁</a>
                                 </li>
 
-                                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">關於我們</a>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">關於我們</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="u_link.php">治療師介紹</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
@@ -239,19 +239,19 @@ if (isset($_SESSION["帳號"])) {
                                     </ul>
                                 </li>
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="u_reserve.php">預約</a></li>
-								<!-- <li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
-									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="u_reserve.php">立即預約</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="u_reserve-record.php">查看預約資料</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="u_reserve-time.php">查看預約時段</a>
-										</li>
-									</ul>
-								</li> -->
+                                <!-- <li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
+                                    <ul class="rd-menu rd-navbar-dropdown">
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_reserve.php">立即預約</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_reserve-record.php">查看預約資料</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_reserve-time.php">查看預約時段</a>
+                                        </li>
+                                    </ul>
+                                </li> -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
                                 </li>
                                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
@@ -262,9 +262,9 @@ if (isset($_SESSION["帳號"])) {
                                     </ul>
                                 </li> -->
 
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="u_profile.php">個人資料</a>
+                                <li class="rd-nav-item "><a class="rd-nav-link" href="u_profile.php">個人資料</a>
                                 </li>
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="u_change.php">變更密碼</a>
+                                <li class="rd-nav-item active"><a class="rd-nav-link" href="u_change.php">變更密碼</a>
 								</li>
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
@@ -319,6 +319,7 @@ if (isset($_SESSION["帳號"])) {
                                 </ul>
                             </div>
                         </div> -->
+
                         <?php
                         echo "歡迎 ~ ";
                         // 顯示姓名
@@ -330,64 +331,137 @@ if (isset($_SESSION["帳號"])) {
         </header>
 
 
-        <!--標題-->
-        <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-            <!-- Breadcrumbs-->
-            <section class="breadcrumbs-custom breadcrumbs-custom-svg">
-                <div class="container">
-                    <!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
-                    <p class="heading-1 breadcrumbs-custom-title">治療師介紹</p>
-                    <ul class="breadcrumbs-custom-path">
-                        <li><a href="u_index.php">首頁</a></li>
-                        <li><a href="#">關於我們</a></li>
-                        <li class="active">治療師介紹</li>
-                    </ul>
-                </div>
-            </section>
-        </div>
-        <!--標題-->
+		<!--標題-->
+		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+			<!-- Breadcrumbs-->
+			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
+				<div class="container">
+					<!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
+					<p class="heading-1 breadcrumbs-custom-title">變更密碼</p>
+					<ul class="breadcrumbs-custom-path">
+						<li><a href="u_index.php">首頁</a></li>
+						<li class="active">變更密碼</li>
+					</ul>
+				</div>
+			</section>
+		</div>
+		<!--標題-->
 
-        <!-- Team-->
-        <section class="section section-lg novi-bg novi-bg-img bg-default">
-            <?php
-            require '../db.php';  // 載入資料庫連線設定
-            
-            // 查詢所有非助手治療師
-            $sql = "SELECT doctor FROM doctor WHERE doctor NOT LIKE '%助手%'";
-            $result = mysqli_query($link, $sql);
 
-            if (!$result) {
-                die("SQL 查詢錯誤: " . mysqli_error($link));
-            }
-
-            $doctors = [];
-            while ($row = mysqli_fetch_assoc($result)) {
-                $doctors[] = $row['doctor'];
-            }
-
-            mysqli_close($link);
-            ?>
-            <div class="container">
-                <div class="row row-40 row-lg-50">
-                    <?php foreach ($doctors as $doctorName): ?>
-                        <div class="col-sm-6 col-lg-3">
-                            <div class="team-default box-width-3">
-                                <div class="team-default-media">
-                                    <img class="team-default-img" src="images/doctor.png" alt="" width="260" height="345"
-                                        loading="lazy" />
-                                </div>
-                                <h6 class="team-default-title">
-                                    <a href="u_link1.php?doctor=<?php echo urlencode($doctorName); ?>">
-                                        <?php echo htmlspecialchars($doctorName); ?>
-                                    </a>
-                                </h6>
-                                <div class="team-default-meta small">治療師</div>
-                            </div>
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header text-center">
+                            <h4 class="mb-0">變更密碼</h4>
                         </div>
-                    <?php endforeach; ?>
+                        <div class="card-body">
+                            <form id="change-password-form">
+                                <div class="mb-3">
+                                    舊密碼
+                                    <input type="password" class="form-control" id="old-password" name="old-password"
+                                        required>
+                                    <small id="old-password-error" class="text-danger d-none">舊密碼錯誤</small>
+                                </div>
+                                <div class="mb-3">
+                                    新密碼
+                                    <input type="password" class="form-control" id="new-password" name="new-password"
+                                        required>
+                                    <small id="password-error" class="text-danger d-none">請輸入密碼</small>
+                                </div>
+                                <div class="mb-3">
+                                    確認密碼
+                                    <input type="password" class="form-control" id="confirm-password"
+                                        name="confirm-password" required>
+                                    <small id="confirm-password-error" class="text-danger d-none">密碼與確認密碼不一致</small>
+                                </div>
+                                <input type="hidden" id="user_id" name="user_id" value="<?php echo $user_id; ?>">
+                                <button type="submit" class="btn w-100"
+                                    style="background-color: #d6d6d6; color: black;">確認變更</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </section>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="change-password.js"></script>
+
+        <script>
+            $(document).ready(function () {
+                $("#change-password-form").submit(function (event) {
+                    event.preventDefault(); // 阻止表單的預設提交行為
+
+                    let oldPassword = $("#old-password").val();
+                    let newPassword = $("#new-password").val();
+                    let confirmPassword = $("#confirm-password").val();
+                    let userId = $("#user_id").val();
+
+                    console.log("發送請求 - user_id:", userId);
+                    console.log("舊密碼:", oldPassword);
+                    console.log("新密碼:", newPassword);
+
+                    // 清除錯誤訊息
+                    $("#old-password-error").addClass("d-none");
+                    $("#password-error").addClass("d-none");
+                    $("#confirm-password-error").addClass("d-none");
+
+                    if (newPassword === "") {
+                        alert("請輸入新密碼");
+                        return;
+                    }
+                    if (newPassword !== confirmPassword) {
+                        alert("新密碼與確認密碼不一致");
+                        return;
+                    }
+
+                    let submitButton = $("#change-password-form button[type=submit]");
+                    submitButton.prop("disabled", true).text("變更中...");
+
+                    // 驗證舊密碼
+                    $.ajax({
+                        url: "驗證舊密碼.php",
+                        type: "POST",
+                        data: { user_id: userId, old_password: oldPassword },
+                        success: function (response) {
+                            console.log("驗證舊密碼回應:", response);
+                            if (response.trim() === "success") {
+                                console.log("舊密碼正確，變更密碼中...");
+                                // 舊密碼正確，送出新密碼
+                                $.ajax({
+                                    url: "變更密碼.php",
+                                    type: "POST",
+                                    data: { user_id: userId, new_password: newPassword },
+                                    success: function (res) {
+                                        console.log("變更密碼回應:", res);
+                                        alert(res);
+                                        if (res.trim() === "密碼變更成功") {
+                                            location.reload(); // 重新整理頁面
+                                        }
+                                    },
+                                    error: function (xhr, status, error) {
+                                        alert("變更密碼發生錯誤：" + error);
+                                    },
+                                    complete: function () {
+                                        submitButton.prop("disabled", false).text("確認變更");
+                                    }
+                                });
+                            } else {
+                                alert("舊密碼錯誤，請重新輸入");
+                                $("#old-password-error").removeClass("d-none");
+                                submitButton.prop("disabled", false).text("確認變更");
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            alert("系統錯誤：" + error);
+                            submitButton.prop("disabled", false).text("確認變更");
+                        }
+                    });
+                });
+            });
+
+        </script>
+
 
         <footer class="section novi-bg novi-bg-img footer-simple">
             <div class="container">
@@ -395,15 +469,14 @@ if (isset($_SESSION["帳號"])) {
                     <div class="col-md-4">
                         <h4>關於我們</h4>
                         <ul class="list-inline" style="font-size: 40px; display: inline-block;color: #333333; ">
-							<li><a class="icon novi-icon icon-default icon-custom-facebook"
-									href="https://www.facebook.com/ReTurnYourBody/" target="_blank"></a></li>
-							<li><a class="icon novi-icon icon-default icon-custom-linkedin"
-									href="https://lin.ee/sUaUVMq" target="_blank"></a></li>
-							<li><a class="icon novi-icon icon-default icon-custom-instagram"
-									href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"
-									target="_blank"></a></li>
-						</ul>
-
+                            <li><a class="icon novi-icon icon-default icon-custom-facebook"
+                                    href="https://www.facebook.com/ReTurnYourBody/" target="_blank"></a></li>
+                            <li><a class="icon novi-icon icon-default icon-custom-linkedin"
+                                    href="https://lin.ee/sUaUVMq" target="_blank"></a></li>
+                            <li><a class="icon novi-icon icon-default icon-custom-instagram"
+                                    href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"
+                                    target="_blank"></a></li>
+                        </ul>
 
                     </div>
                     <div class="col-md-3">
@@ -450,6 +523,7 @@ if (isset($_SESSION["帳號"])) {
                 </div>
             </div>
         </footer>
+
 
         <!-- Global Mailform Output-->
         <div class="snackbars" id="form-output-global"></div>

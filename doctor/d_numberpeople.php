@@ -395,6 +395,8 @@ $result_appointments = mysqli_stmt_get_result($stmt_appointments);
                     </li>
                   </ul>
                 </li>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="d_change.php">變更密碼</a>
+                </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
                 </li>

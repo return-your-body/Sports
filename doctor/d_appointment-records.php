@@ -460,6 +460,8 @@ $result = $stmt->get_result();
                     </li>
                   </ul>
                 </li>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="d_change.php">變更密碼</a>
+                </li>
 
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
@@ -595,7 +597,7 @@ $result = $stmt->get_result();
                     <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
                     <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
                     <td><?php echo htmlspecialchars($row['note']); ?></td>
-                    <td><?php echo htmlspecialchars($row['status_name']); ?></td> 
+                    <td><?php echo htmlspecialchars($row['status_name']); ?></td>
                     <td><?php echo htmlspecialchars($row['created_at']); ?></td>
                     <td>
                       <?php if ($row['status_name'] === '報到'): ?>

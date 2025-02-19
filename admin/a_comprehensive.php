@@ -266,6 +266,8 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 										</li>
 									</ul>
 								</li>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="a_change.php">變更密碼</a>
+								</li>
 								<!-- 登出按鈕 -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
 										onclick="showLogoutBox()">登出</a>
@@ -324,7 +326,168 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				</nav>
 			</div>
 		</header>
+
+		<!-- 收入 -->
+		<?php
+		require '../db.php'; // 引入資料庫連線
 		
+		// 確保 $link 可用
+		if (!isset($link)) {
+			die("資料庫連線變數未定義，請檢查 db.php");
+		}
+
+		// 查詢各治療師的每個項目看診人數與總金額
+		$query_therapist_items = "
+    SELECT 
+        d.doctor AS doctor_name,
+        i.item AS item_name,
+        COUNT(m.medicalrecord_id) AS patient_count,
+        SUM(i.price) AS total_revenue
+    FROM medicalrecord m
+    LEFT JOIN item i ON m.item_id = i.item_id
+    LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+    GROUP BY d.doctor, i.item
+    ORDER BY d.doctor, patient_count DESC;
+";
+
+		// 執行查詢
+		$result_therapist_items = $link->query($query_therapist_items);
+
+		// 取得各治療師的每個項目看診人數與總金額
+		$therapist_items_data = [];
+		while ($row = $result_therapist_items->fetch_assoc()) {
+			$therapist_items_data[] = $row;
+		}
+
+		// 關閉資料庫連線
+		$link->close();
+		?>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<style>
+			table {
+				width: 90%;
+				border-collapse: collapse;
+				margin: 20px auto;
+			}
+
+			th,
+			td {
+				border: 1px solid #ddd;
+				padding: 10px;
+				text-align: center;
+			}
+
+			th {
+				background-color: #f2f2f2;
+			}
+
+			.chart-container {
+				width: 80%;
+				margin: auto;
+			}
+		</style>
+
+		<section class="section section-lg bg-default text-center">
+			<div class="container">
+				<div class="row justify-content-sm-center">
+					<div class="col-md-10 col-xl-8">
+
+
+						<h2>各治療師的每個項目看診人數統計圖</h2>
+						<div class="chart-container">
+							<canvas id="therapistItemChart"></canvas>
+						</div>
+
+						<h2>各治療師的每個項目總收入統計圖</h2>
+						<div class="chart-container">
+							<canvas id="therapistRevenueChart"></canvas>
+						</div>
+
+						<script>
+							var therapistItemLabels = [];
+							var therapistItemData = {};
+							var therapistRevenueData = {};
+
+							<?php foreach ($therapist_items_data as $item): ?>
+								var therapist = "<?php echo $item['doctor_name']; ?>";
+								var itemName = "<?php echo $item['item_name']; ?>";
+								var patientCount = <?php echo $item['patient_count']; ?>;
+								var totalRevenue = <?php echo $item['total_revenue']; ?>;
+
+								if (!therapistItemData[therapist]) {
+									therapistItemData[therapist] = {};
+									therapistRevenueData[therapist] = {};
+								}
+
+								therapistItemData[therapist][itemName] = patientCount;
+								therapistRevenueData[therapist][itemName] = totalRevenue;
+							<?php endforeach; ?>
+
+							var therapistNames = Object.keys(therapistItemData);
+							var itemNames = [...new Set([].concat(...therapistNames.map(therapist => Object.keys(therapistItemData[therapist]))))];
+
+							var itemDatasets = therapistNames.map(therapist => {
+								return {
+									label: therapist,
+									data: itemNames.map(item => therapistItemData[therapist][item] || 0),
+									backgroundColor: 'rgba(75, 192, 192, 0.5)',
+									borderColor: 'rgba(75, 192, 192, 1)',
+									borderWidth: 1
+								};
+							});
+
+							var revenueDatasets = therapistNames.map(therapist => {
+								return {
+									label: therapist,
+									data: itemNames.map(item => therapistRevenueData[therapist][item] || 0),
+									backgroundColor: 'rgba(255, 99, 132, 0.5)',
+									borderColor: 'rgba(255, 99, 132, 1)',
+									borderWidth: 1
+								};
+							});
+
+							var ctx1 = document.getElementById('therapistItemChart').getContext('2d');
+							new Chart(ctx1, {
+								type: 'bar',
+								data: {
+									labels: itemNames,
+									datasets: itemDatasets
+								},
+								options: {
+									responsive: true,
+									scales: {
+										y: {
+											beginAtZero: true
+										}
+									}
+								}
+							});
+
+							var ctx2 = document.getElementById('therapistRevenueChart').getContext('2d');
+							new Chart(ctx2, {
+								type: 'bar',
+								data: {
+									labels: itemNames,
+									datasets: revenueDatasets
+								},
+								options: {
+									responsive: true,
+									scales: {
+										y: {
+											beginAtZero: true
+										}
+									}
+								}
+							});
+						</script>
+					</div>
+				</div>
+			</div>
+		</section>
+
+
 
 
 	</div>

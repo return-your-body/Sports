@@ -412,7 +412,8 @@ if ($result && mysqli_num_rows($result) > 0) {
                                         </li>
                                     </ul>
                                 </li> -->
-
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="u_change.php">變更密碼</a>
+								</li>
                                 <li class="rd-nav-item active"><a class="rd-nav-link" href="u_profile.php">個人資料</a>
                                 </li>
 

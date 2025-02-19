@@ -400,6 +400,8 @@ if ($result_doctor->num_rows > 0) {
                     </li>
                   </ul>
                 </li>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="d_change.php">變更密碼</a>
+                </li>
 
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"

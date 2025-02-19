@@ -1,6 +1,3 @@
-<!DOCTYPE html>
-<html class="wide wow-animation" lang="en">
-
 <?php
 session_start();
 
@@ -19,32 +16,26 @@ if (isset($_SESSION["帳號"])) {
     // 獲取用戶帳號
     $帳號 = $_SESSION['帳號'];
 
-    // 資料庫連接
+    // 連接資料庫
     require '../db.php';
 
-    // 查詢該帳號的詳細資料
-    $sql = "SELECT user.account, doctor.doctor AS name 
+    // 查詢帳號的詳細資料（包含 user_id、帳號名稱、姓名）
+    $sql = "SELECT user.user_id, user.account, doctor.doctor AS name 
             FROM user 
             JOIN doctor ON user.user_id = doctor.user_id 
             WHERE user.account = ?";
+
     $stmt = mysqli_prepare($link, $sql);
     mysqli_stmt_bind_param($stmt, "s", $帳號);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
 
     if (mysqli_num_rows($result) > 0) {
-        // 抓取對應姓名
+        // 抓取對應資料
         $row = mysqli_fetch_assoc($result);
-        $姓名 = $row['name'];
-        $帳號名稱 = $row['account'];
-
-        // 顯示帳號和姓名
-        // echo "歡迎您！<br>";
-        // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-        // echo "姓名：" . htmlspecialchars($姓名);
-        // echo "<script>
-        //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-        // </script>";
+        $user_id = $row['user_id'];  // 取得 `user_id`
+        $姓名 = $row['name'];  // 取得 `姓名`
+        $帳號名稱 = $row['account'];  // 取得 `帳號名稱`
     } else {
         // 如果資料不存在，提示用戶重新登入
         echo "<script>
@@ -61,100 +52,15 @@ if (isset($_SESSION["帳號"])) {
           </script>";
     exit();
 }
-
-
-// 看診
-require '../db.php';
-
-// 確保使用者已登入
-if (!isset($_SESSION["帳號"])) {
-    echo "
-    <script>alert('使用者未登入！'); window.location.href = 'login.php';</script>";
-    exit;
-}
-
-$帳號 = $_SESSION["帳號"];
-
-// 確保 `id` 存在
-if (!isset($_GET['id']) || empty($_GET['id'])) {
-    echo "
-    <script>alert('無法取得預約 ID！'); window.location.href = 'd_appointment-records.php';</script>";
-    exit;
-}
-$appointment_id = intval($_GET['id']);
-
-// 查詢該帳號的治療師 ID
-$sql_doctor = "SELECT d.doctor_id, u.account, d.doctor AS name
-    FROM user u
-    JOIN doctor d ON u.user_id = d.user_id
-    WHERE u.account = ?";
-$stmt_doctor = mysqli_prepare($link, $sql_doctor);
-mysqli_stmt_bind_param($stmt_doctor, "s", $帳號);
-mysqli_stmt_execute($stmt_doctor);
-$result_doctor = mysqli_stmt_get_result($stmt_doctor);
-if ($doctor = mysqli_fetch_assoc($result_doctor)) {
-    $doctor_id = $doctor['doctor_id'];
-} else {
-    echo "
-    <script>alert('無法找到您的治療師資料！'); window.location.href = 'd_appointment-records.php';</script>";
-    exit;
-}
-
-// 獲取完整的預約資訊，確保該預約是屬於此治療師
-$sql_appointment = "SELECT
-    a.appointment_id,
-    p.name AS patient_name,
-    CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '無資料' END AS gender,
-    IFNULL(DATE_FORMAT(p.birthday, '%Y-%m-%d'), '無資料') AS birthday,
-    DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
-    st.shifttime AS consultation_time,
-    COALESCE(a.note, '無') AS note,
-    a.created_at
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-    WHERE a.appointment_id = ?
-    AND ds.doctor_id = ?";
-
-$stmt_appointment = mysqli_prepare($link, $sql_appointment);
-mysqli_stmt_bind_param($stmt_appointment, "ii", $appointment_id, $doctor_id);
-mysqli_stmt_execute($stmt_appointment);
-$result_appointment = mysqli_stmt_get_result($stmt_appointment);
-
-if (mysqli_num_rows($result_appointment) == 0) {
-    echo "
-    <script>alert('此預約不屬於您的患者！'); window.location.href = 'd_appointment-records.php';</script>";
-    exit;
-}
-$appointment_data = mysqli_fetch_assoc($result_appointment);
-
-// 獲取診療項目
-$sql_items = "SELECT item_id, item, price FROM item";
-$result_items = mysqli_query($link, $sql_items);
-
-// 檢查是否已有診療紀錄
-$sql_check_medicalrecord = "SELECT COUNT(*) FROM medicalrecord WHERE appointment_id = ?";
-$stmt_check_medicalrecord = mysqli_prepare($link, $sql_check_medicalrecord);
-mysqli_stmt_bind_param($stmt_check_medicalrecord, "i", $appointment_id);
-mysqli_stmt_execute($stmt_check_medicalrecord);
-mysqli_stmt_bind_result($stmt_check_medicalrecord, $record_exists);
-mysqli_stmt_fetch($stmt_check_medicalrecord);
-mysqli_stmt_close($stmt_check_medicalrecord);
-
-if ($record_exists > 0) {
-    echo "
-    <script>alert('此預約已經有診療紀錄，無法重複新增！'); window.location.href = 'd_appointment-records.php';</script>";
-    exit;
-}
-
 ?>
 
 
+<!DOCTYPE html>
+<html lang="zh-TW">
 
 <head>
     <!-- Site Title-->
-    <title>治療師-看診</title>
+    <title>運動筋膜放鬆</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -165,6 +71,75 @@ if ($record_exists > 0) {
     <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
+        /* 彈窗樣式 */
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            text-align: center;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .btn {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .close-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            background-color: #0056b3;
+        }
+
+
+
         .ie-panel {
             display: none;
             background: #212121;
@@ -180,8 +155,7 @@ if ($record_exists > 0) {
         html.lt-ie-10 .ie-panel {
             display: block;
         }
-    </style>
-    <style>
+
         /* 登出確認視窗 - 初始隱藏 */
         .logout-box {
             display: none;
@@ -242,63 +216,87 @@ if ($record_exists > 0) {
             box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
         }
 
+        /* 歷史資料(預約+看診紀錄) */
 
-        /* 看診 */
+        /* 基本樣式 */
         body {
             font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
+            background-color: #f9f9f9;
             margin: 0;
             padding: 0;
         }
 
-        .form-container {
-            width: 50%;
-            margin: 50px auto;
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
             background-color: #fff;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
         }
 
-        h2 {
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
             text-align: center;
-            margin-bottom: 20px;
+            white-space: nowrap;
         }
 
-        label {
-            display: block;
-            margin-bottom: 10px;
+        th {
+            background-color: #f4f4f4;
             font-weight: bold;
         }
 
-        .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+        p {
+            text-align: center;
+            margin-top: 20px;
+            color: #555;
         }
 
-        .checkbox-group label {
-            display: flex;
-            align-items: center;
+        /* 彈跳視窗樣式 */
+        #popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            /* 設為 50% 確保視窗在正中央 */
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            /* 確保彈窗在最上層 */
+            width: 50%;
+            /* 設定適當的寬度 */
+            max-width: 600px;
+            /* 最大寬度 */
+            text-align: center;
         }
 
-        .checkbox-group input[type="checkbox"] {
-            margin-right: 10px;
+        /* 遮罩背景 */
+        #popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            /* 半透明黑色背景 */
+            z-index: 999;
+            /* 遮罩層應低於 popup，但高於其他元素 */
         }
 
-        .btn-group {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
 
+        /* 按鈕樣式 */
         button {
-            padding: 10px 20px;
+            padding: 10px 15px;
+            font-size: 14px;
+            background-color: #007bff;
+            color: #fff;
             border: none;
-            border-radius: 4px;
-            background-color: #555;
-            color: white;
-            font-size: 16px;
+            border-radius: 5px;
             cursor: pointer;
         }
 
@@ -306,12 +304,54 @@ if ($record_exists > 0) {
             background-color: #0056b3;
         }
 
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            table {
+                width: 100%;
+                font-size: 14px;
+            }
+
+            th,
+            td {
+                padding: 8px;
+                font-size: 12px;
+                white-space: normal;
+            }
+        }
+
+        @media (max-width: 480px) {
+            table {
+                font-size: 12px;
+            }
+
+            th,
+            td {
+                padding: 6px;
+            }
+
+            button {
+                font-size: 12px;
+                padding: 8px 10px;
+            }
+        }
+
+
+
+        /* 聯絡我們 */
+        .custom-link {
+            color: rgb(246, 247, 248);
+            /* 設定超連結顏色 */
+            text-decoration: none;
+            /* 移除超連結的下劃線 */
+        }
+
+        .custom-link:hover {
+            color: #0056b3;
+            /* 滑鼠懸停時的顏色，例如深藍色 */
+            text-decoration: underline;
+            /* 懸停時增加下劃線效果 */
         }
     </style>
-
 </head>
 
 <body>
@@ -336,8 +376,7 @@ if ($record_exists > 0) {
             </svg>
         </div>
     </div>
-
-    <!--標題列-->
+    <!-- Page-->
     <div class="page">
         <header class="section page-header">
             <!-- RD Navbar-->
@@ -358,7 +397,7 @@ if ($record_exists > 0) {
                                 data-rd-navbar-toggle=".rd-navbar-nav-wrap"><span></span></button>
                             <!-- RD Navbar Brand-->
                             <div class="rd-navbar-brand">
-                                <!--Brand--><a class="brand-name" href="d_index.php"><img class="logo-default"
+                                <!--Brand--><a class="brand-name" href="d_index.html"><img class="logo-default"
                                         src="images/logo-default-172x36.png" alt="" width="86" height="18"
                                         loading="lazy" /><img class="logo-inverse" src="images/logo-inverse-172x36.png"
                                         alt="" width="86" height="18" loading="lazy" /></a>
@@ -366,19 +405,18 @@ if ($record_exists > 0) {
                         </div>
                         <div class="rd-navbar-nav-wrap">
                             <ul class="rd-navbar-nav">
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="d_index.php">首頁</a>
-                                </li>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="d_index.php">首頁</a></li>
 
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">預約</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
                                                 href="d_people.php">用戶資料</a>
                                         </li>
                                     </ul>
                                 </li>
 
-                                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="d_appointment.php">預約</a>
-                </li> -->
+                                <!-- <li class="rd-nav-item active"><a class="rd-nav-link" href="d_appointment.php">預約</a></li> -->
+
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="#">班表</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
@@ -395,22 +433,23 @@ if ($record_exists > 0) {
                                         </li>
                                     </ul>
                                 </li>
-                                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">紀錄</a>
+
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="d_medical-record.php">看診紀錄</a>
                                         </li>
-                                        <li class="rd-dropdown-item active"><a class="rd-dropdown-link"
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="d_appointment-records.php">預約紀錄</a>
                                         </li>
                                     </ul>
                                 </li>
-                                <li class="rd-nav-item"><a class="rd-nav-link" href="d_change.php">變更密碼</a>
+                                <li class="rd-nav-item active"><a class="rd-nav-link" href="d_change.php">變更密碼</a>
                                 </li>
+
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
-                                        onclick="showLogoutBox()">登出</a>
-                                </li>
+                                        onclick="showLogoutBox()">登出</a></li>
 
                                 <!-- 自訂登出確認視窗 -->
                                 <div id="logoutBox" class="logout-box">
@@ -443,8 +482,7 @@ if ($record_exists > 0) {
 
                             </ul>
                         </div>
-                        <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse">
-                            <span></span>
+                        <div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span>
                         </div>
                         <!-- <div class="rd-navbar-aside-right rd-navbar-collapse">
               <div class="rd-navbar-social">
@@ -465,66 +503,152 @@ if ($record_exists > 0) {
                         echo "歡迎 ~ ";
                         // 顯示姓名
                         echo $姓名;
+                        ;
                         ?>
                     </div>
                 </nav>
             </div>
         </header>
-        <!--標題列-->
 
         <!--標題-->
         <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-            <!-- Breadcrumbs-->
+
             <section class="breadcrumbs-custom breadcrumbs-custom-svg">
                 <div class="container">
-                    <!-- <p class="breadcrumbs-custom-subtitle">Ask us</p> -->
-                    <p class="heading-1 breadcrumbs-custom-title">看診</p>
+
+                    <p class="heading-1 breadcrumbs-custom-title">變更密碼</p>
                     <ul class="breadcrumbs-custom-path">
                         <li><a href="d_index.php">首頁</a></li>
-                        <li><a href="#">紀錄</a></li>
-                        <li class="active">看診</li>
+                        <li class="active">變更密碼</li>
                     </ul>
                 </div>
             </section>
         </div>
-        <!--標題-->
 
-        <!--看診-->
-        <!-- **表單畫面** -->
-        <div class="form-container">
-            <h2>新增診療紀錄</h2>
-            <form action="看診.php?id=<?php echo htmlspecialchars($_GET['id']); ?>" method="POST">
-                <p>預約編號：<?php echo htmlspecialchars($appointment_data['appointment_id']); ?></p>
-                <p>姓名：<?php echo htmlspecialchars($appointment_data['patient_name']); ?></p>
-                <p>性別：<?php echo htmlspecialchars($appointment_data['gender']); ?></p>
-                <p>生日：<?php echo htmlspecialchars($appointment_data['birthday']); ?></p>
-                <p>看診日期：<?php echo htmlspecialchars($appointment_data['consultation_date']); ?></p>
-                <p>看診時間：<?php echo htmlspecialchars($appointment_data['consultation_time']); ?></p>
-                <p>備註：<?php echo htmlspecialchars($appointment_data['note']); ?></p>
 
-                <label>診療項目：</label>
-                <div class="checkbox-group">
-                    <?php while ($row = mysqli_fetch_assoc($result_items)): ?>
-                        <label>
-                            <input type="checkbox" name="item_ids[]"
-                                value="<?php echo htmlspecialchars($row['item_id']); ?>">
-                            <?php echo htmlspecialchars($row['item']) . " (" . htmlspecialchars($row['price']) . "元)"; ?>
-                        </label>
-                    <?php endwhile; ?>
+        <style>
+        body {
+            background-color: #f4f6f9;
+        }
+        .card {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        .form-control {
+            border-radius: 8px;
+        }
+        .btn-custom {
+            background: linear-gradient(90deg, #4a90e2, #007bff);
+            color: white;
+            transition: 0.3s;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+        .btn-custom:hover {
+            background: linear-gradient(90deg, #007bff, #4a90e2);
+            color: white;
+        }
+    </style>
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header text-center">
+                            <h4 class="mb-0">變更密碼</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="change-password-form">
+                                <div class="mb-3">
+                                    舊密碼
+                                    <input type="password" class="form-control" id="old-password" name="old-password"
+                                        required>
+                                    <small id="old-password-error" class="text-danger d-none">舊密碼錯誤</small>
+                                </div>
+                                <div class="mb-3">
+                                    新密碼
+                                    <input type="password" class="form-control" id="new-password" name="new-password"
+                                        required>
+                                    <small id="password-error" class="text-danger d-none">請輸入密碼</small>
+                                </div>
+                                <div class="mb-3">
+                                    確認密碼
+                                    <input type="password" class="form-control" id="confirm-password"
+                                        name="confirm-password" required>
+                                    <small id="confirm-password-error" class="text-danger d-none">密碼與確認密碼不一致</small>
+                                </div>
+                                <!-- 隱藏輸入框，填充 `user_id` -->
+                                <input type="hidden" id="user_id" name="user_id" value="<?php echo $user_id; ?>">
+                                <button type="submit" class="btn w-100"
+                                    style="background-color: #d6d6d6; color: black;">確認變更</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-
-                <label for="note_d">治療師備註：</label>
-                <textarea name="note_d"
-                    id="note_d"><?php echo isset($_POST['note_d']) ? htmlspecialchars($_POST['note_d']) : ''; ?></textarea>
-                <br />
-                <button type="submit">提交</button>
-                <button type="button" onclick="window.location.href='d_appointment-records.php'">返回</button>
-            </form>
+            </div>
         </div>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="change-password.js"></script>
 
-        <!--看診-->
+        <script>
+            $(document).ready(function () {
+                $("#change-password-form").submit(function (event) {
+                    event.preventDefault();
 
+                    let oldPassword = $("#old-password").val();
+                    let newPassword = $("#new-password").val();
+                    let confirmPassword = $("#confirm-password").val();
+                    let userId = $("#user_id").val();
 
+                    $("#old-password-error, #password-error, #confirm-password-error").addClass("d-none");
+
+                    if (newPassword === "") {
+                        $("#password-error").removeClass("d-none");
+                        alert("請輸入新密碼！");
+                        return;
+                    }
+                    if (newPassword !== confirmPassword) {
+                        $("#confirm-password-error").removeClass("d-none");
+                        alert("密碼與確認密碼不一致，請重新輸入！");
+                        return;
+                    }
+
+                    $.ajax({
+                        url: "驗證舊密碼.php",
+                        type: "POST",
+                        data: { user_id: userId, old_password: oldPassword },
+                        success: function (response) {
+                            if (response.trim() === "success") {
+                                $.ajax({
+                                    url: "變更密碼.php",
+                                    type: "POST",
+                                    data: { user_id: userId, new_password: newPassword },
+                                    success: function (res) {
+                                        alert(res);
+                                        if (res.trim() === "密碼變更成功") {
+                                            location.reload();
+                                        } else {
+                                            alert("密碼變更失敗：" + res);
+                                        }
+                                    },
+                                    error: function () {
+                                        alert("變更密碼時發生錯誤，請稍後再試！");
+                                    }
+                                });
+                            } else {
+                                alert("舊密碼錯誤，請重新輸入！");
+                                $("#old-password-error").removeClass("d-none");
+                            }
+                        },
+                        error: function () {
+                            alert("系統錯誤，請稍後再試！");
+                        }
+                    });
+                });
+            });
+
+        </script>
+
+        <br />
         <!--頁尾-->
         <footer class="section novi-bg novi-bg-img footer-simple">
             <div class="container">
@@ -572,7 +696,7 @@ if ($record_exists > 0) {
         </footer>
     </div>
     <!--頁尾-->
-
+    </div>
     <!-- Global Mailform Output-->
     <div class="snackbars" id="form-output-global"></div>
     <!-- Javascript-->

@@ -2,8 +2,9 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-	header("Location: ../index.html");
-	exit;
+    // 如果未登入或會話過期，跳轉至登入頁面
+    header("Location: ../index.html");
+    exit;
 }
 
 // 防止頁面被瀏覽器緩存
@@ -11,72 +12,41 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
+// 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-	$帳號 = $_SESSION['帳號'];
+    // 獲取用戶帳號
+    $帳號 = $_SESSION['帳號'];
 
-	require '../db.php';
+    // 引入資料庫連接
+    require '../db.php';
 
-	// 查詢用戶詳細資料
-	$sql = "SELECT account, grade_id FROM user WHERE account = ?";
-	$stmt = mysqli_prepare($link, $sql);
-	mysqli_stmt_bind_param($stmt, "s", $帳號);
-	mysqli_stmt_execute($stmt);
-	$result = mysqli_stmt_get_result($stmt);
+    // 查詢用戶詳細資料，包含 `user_id`
+    $sql = "SELECT user_id, account, grade_id FROM user WHERE account = ?";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "s", $帳號);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
 
-	if ($result && mysqli_num_rows($result) > 0) {
-		$row = mysqli_fetch_assoc($result);
-		$帳號名稱 = $row['account'];
-		$等級 = $row['grade_id'];
-	} else {
-		echo "<script>
+    if ($result && mysqli_num_rows($result) > 0) {
+        $row = mysqli_fetch_assoc($result);
+        $user_id = $row['user_id'];  // 取得 user_id
+        $帳號名稱 = $row['account']; // 使用者帳號
+        $等級 = $row['grade_id'];    // 等級（例如 1: 醫生, 2: 護士）
+
+        // 存入 Session 讓其他頁面使用
+        $_SESSION["user_id"] = $user_id;
+    } else {
+        // 查無此帳號，要求重新登入
+        echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
               </script>";
-		exit();
-	}
+        exit();
+    }
 }
 
-require '../db.php';
-
-// 處理 AJAX 請求，返回按日期的總人數
-if (isset($_GET['fetch'])) {
-	$year = $_GET['year'] ?? date('Y');
-	$month = $_GET['month'] ?? date('m');
-	$doctor_id = $_GET['doctor_id'] ?? '';
-
-	$sql = "SELECT DATE(d.date) as appointment_date, COUNT(*) as total
-            FROM appointment a
-            INNER JOIN doctorshift d ON a.doctorshift_id = d.doctorshift_id
-            WHERE YEAR(d.date) = ? AND MONTH(d.date) = ?";
-	$params = [$year, $month];
-
-	if ($doctor_id !== 'all' && $doctor_id !== '') {
-		$sql .= " AND d.doctor_id = ?";
-		$params[] = $doctor_id;
-	}
-	$sql .= " GROUP BY DATE(d.date)";
-
-	$stmt = mysqli_prepare($link, $sql);
-	mysqli_stmt_bind_param($stmt, str_repeat("s", count($params)), ...$params);
-	mysqli_stmt_execute($stmt);
-	$result = mysqli_stmt_get_result($stmt);
-
-	$data = [];
-	while ($row = mysqli_fetch_assoc($result)) {
-		$data[$row['appointment_date']] = $row['total'];
-	}
-	echo json_encode($data);
-	exit;
-}
-
-// 查詢尚未審核的請假申請數量
-$pendingCountResult = $link->query(
-	"SELECT COUNT(*) as pending_count 
-     FROM leaves 
-     WHERE is_approved IS NULL"
-);
-$pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
-
+// 關閉資料庫連接
+mysqli_close($link);
 ?>
 
 
@@ -106,11 +76,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			display: inline-block;
 		}
 
-		.highlight-red {
-			color: red;
-			font-weight: bold;
-		}
-
 		.ie-panel {
 			display: none;
 			background: #212121;
@@ -125,60 +90,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		html.ie-10 .ie-panel,
 		html.lt-ie-10 .ie-panel {
 			display: block;
-		}
-
-		body {
-			font-family: Arial, sans-serif;
-			text-align: center;
-			margin: 20px;
-		}
-
-		.calendar {
-			display: grid;
-			grid-template-columns: repeat(7, 1fr);
-			gap: 5px;
-			margin-top: 20px;
-		}
-
-		.calendar div {
-			border: 1px solid #ccc;
-			padding: 10px;
-			background: #f9f9f9;
-			cursor: pointer;
-		}
-
-		.calendar .header {
-			font-weight: bold;
-			background: #ddd;
-		}
-
-		.calendar .empty {
-			background: transparent;
-			cursor: default;
-		}
-
-		/* 日期樣式：改為柔和文字色系 */
-		.calendar .date-link {
-			display: block;
-			padding: 10px;
-			color: #00796B;
-			/* 第二張圖片的綠色系 */
-			text-decoration: none;
-			/* 移除底線 */
-			font-size: 14px;
-			font-weight: bold;
-		}
-
-		.calendar .date-link:hover {
-			text-decoration: underline;
-			/* 滑鼠懸停時加底線 */
-			color: #004D40;
-			/* 深綠色，增加互動感 */
-		}
-
-		select {
-			padding: 5px;
-			margin: 5px;
 		}
 
 		/* 登出確認視窗 - 初始隱藏 */
@@ -294,9 +205,9 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 						</div>
 						<div class="rd-navbar-nav-wrap">
 							<ul class="rd-navbar-nav">
-								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_index.php">網頁編輯</a> -->
+								<li class="rd-nav-item "><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
 								</li>
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="">關於治療師</a>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="">關於治療師</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_therapist.php">總人數時段表</a>
@@ -304,8 +215,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_addds.php">治療師班表</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_treatment.php">新增治療項目</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="a_treatment.php">新增治療項目</a>
 										</li>
 										<li class="rd-dropdown-item">
 											<a class="rd-dropdown-link" href="a_leave.php">
@@ -329,6 +239,12 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 								</li>
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
 								</li>
+								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
+									<ul class="rd-menu rd-navbar-dropdown">
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">Single teacher</a>
+										</li>
+									</ul>
+								</li> -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
@@ -348,7 +264,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 										</li>
 									</ul>
 								</li>
-								<li class="rd-nav-item"><a class="rd-nav-link" href="a_change.php">變更密碼</a>
+                                <li class="rd-nav-item active"><a class="rd-nav-link" href="a_change.php">變更密碼</a>
 								</li>
 								<!-- 登出按鈕 -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
@@ -383,6 +299,38 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 										document.getElementById('logoutBox').style.display = 'none';
 									}
 								</script>
+
+								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="#">Pages</a>
+									<ul class="rd-menu rd-navbar-dropdown">
+
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="privacy-policy.html">Privacy policy</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="404-page.html">404 page</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="503-page.html">503 page</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="buttons.html">Buttons</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="forms.html">Forms</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="grid-system.html">Grid system</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="tables.html">Tables</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="typography.html">Typography</a>
+										</li>
+									</ul>
+								</li>
+								<li class="rd-nav-item"><a class="rd-nav-link" href="contacts.html">Contacts</a>
+								</li> -->
 							</ul>
 						</div>
 						<div class="rd-navbar-collapse-toggle" data-rd-navbar-toggle=".rd-navbar-collapse"><span></span>
@@ -393,6 +341,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 								<ul class="list-inline">
 									<li><a class="icon novi-icon icon-default icon-custom-facebook"
 											href="https://www.facebook.com/ReTurnYourBody/"></a></li>
+									<li><a class="icon novi-icon icon-default icon-custom-linkedin" href="#"></a></li>
 									<li><a class="icon novi-icon icon-default icon-custom-instagram"
 											href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"></a>
 									</li>
@@ -408,191 +357,147 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				</nav>
 			</div>
 		</header>
-		<!-- Page Header-->
+	
+
+
+		<!--標題-->
 		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
 			<!-- Breadcrumbs-->
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
-					<p class="heading-1 breadcrumbs-custom-title">總人數時段表</p>
+					<!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
+					<p class="heading-1 breadcrumbs-custom-title">變更密碼</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="a_index.php">首頁</a></li>
-						<li><a href="">關於治療師</a></li>
-						<li class="active">總人數時段表</li>
+						<li class="active">變更密碼</li>
 					</ul>
 				</div>
 			</section>
 		</div>
-		<div>
-			<label for="year">選擇年份：</label>
-			<select id="year"></select>
-			<label for="month">選擇月份：</label>
-			<select id="month"></select>
-			<!-- 選擇治療師 -->
-			<label for="the">選擇治療師：</label>
-			<select id="the" name="doctor_id">
-				<!-- 新增「所有治療師」選項 -->
-				<option value="all">所有治療師</option>
-				<?php
-				include '../db.php'; // 引入資料庫連線檔案
-				
-				// 查詢等級為「治療師」的資料
-				$query = "
-        SELECT d.doctor_id, d.doctor
-        FROM doctor d
-        INNER JOIN user u ON d.user_id = u.user_id
-        INNER JOIN grade g ON u.grade_id = g.grade_id
-        WHERE g.grade_id = 2
-    ";
-				$result = mysqli_query($link, $query);
+		<!--標題-->
 
-				// 檢查查詢結果
-				if (!$result) {
-					echo "Error fetching doctor data: " . mysqli_error($link);
-					exit;
-				}
-
-				// 輸出查詢結果到下拉選單
-				while ($row = mysqli_fetch_assoc($result)) {
-					echo "<option value='" . $row['doctor_id'] . "'>" . htmlspecialchars($row['doctor']) . "</option>";
-				}
-				?>
-			</select>
-
-			<!-- <a href="">數據</a> -->
-			<!-- <a href="a_therapist2.php">預約用戶資料</a> -->
-
+		<div class="container mt-5">
+			<div class="row justify-content-center">
+				<div class="col-md-6">
+					<div class="card">
+						<div class="card-header text-center">
+							<h4 class="mb-0">變更密碼</h4>
+						</div>
+						<div class="card-body">
+							<form id="change-password-form">
+								<div class="mb-3">
+									舊密碼
+									<input type="password" class="form-control" id="old-password" name="old-password"
+										required>
+									<small id="old-password-error" class="text-danger d-none">舊密碼錯誤</small>
+								</div>
+								<div class="mb-3">
+									新密碼
+									<input type="password" class="form-control" id="new-password" name="new-password"
+										required>
+									<small id="password-error" class="text-danger d-none">請輸入密碼</small>
+								</div>
+								<div class="mb-3">
+									確認密碼
+									<input type="password" class="form-control" id="confirm-password"
+										name="confirm-password" required>
+									<small id="confirm-password-error" class="text-danger d-none">密碼與確認密碼不一致</small>
+								</div>
+								<input type="hidden" id="user_id" name="user_id" value="<?php echo $user_id; ?>">
+								<button type="submit" class="btn w-100"
+									style="background-color: #d6d6d6; color: black;">確認變更</button>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
-		<div style="overflow-x: auto; white-space: nowrap;"><table class="table-custom table-color-header table-custom-bordered">
-			<thead>
-				<tr>
-					<th>日</th>
-					<th>一</th>
-					<th>二</th>
-					<th>三</th>
-					<th>四</th>
-					<th>五</th>
-					<th>六</th>
-				</tr>
-			</thead>
-			<tbody id="calendar"></tbody>
-		</table></div>
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+		<script src="change-password.js"></script>
 
 		<script>
-			const currentDate = new Date();
-			const currentYear = currentDate.getFullYear();
-			const currentMonth = currentDate.getMonth();
+			$(document).ready(function () {
+				$("#change-password-form").submit(function (event) {
+					event.preventDefault(); // 阻止表單的預設提交行為
 
-			const yearSelect = document.getElementById('year');
-			const monthSelect = document.getElementById('month');
-			const doctorSelect = document.getElementById('the');
-			const calendarBody = document.getElementById('calendar');
+					let oldPassword = $("#old-password").val();
+					let newPassword = $("#new-password").val();
+					let confirmPassword = $("#confirm-password").val();
+					let userId = $("#user_id").val();
 
-			function initYearOptions() {
-				for (let year = currentYear - 5; year <= currentYear + 5; year++) {
-					const option = document.createElement('option');
-					option.value = year;
-					option.textContent = year;
-					if (year === currentYear) option.selected = true;
-					yearSelect.appendChild(option);
-				}
-			}
+					console.log("發送請求 - user_id:", userId);
+					console.log("舊密碼:", oldPassword);
+					console.log("新密碼:", newPassword);
 
-			function initMonthOptions() {
-				for (let month = 0; month < 12; month++) {
-					const option = document.createElement('option');
-					option.value = month;
-					option.textContent = month + 1;
-					if (month === currentMonth) option.selected = true;
-					monthSelect.appendChild(option);
-				}
-			}
+					// 清除錯誤訊息
+					$("#old-password-error").addClass("d-none");
+					$("#password-error").addClass("d-none");
+					$("#confirm-password-error").addClass("d-none");
 
-			async function fetchAppointments(year, month, doctorId) {
-				const response = await fetch(`?fetch=1&year=${year}&month=${month}&doctor_id=${doctorId}`);
-				return response.json();
-			}
-
-			async function generateCalendar(year, month) {
-				const appointments = await fetchAppointments(year, month + 1, doctorSelect.value);
-
-				calendarBody.innerHTML = '';
-				const firstDay = new Date(year, month, 1).getDay();
-				const lastDate = new Date(year, month + 1, 0).getDate();
-				const today = new Date();
-
-				let row = document.createElement('tr');
-
-				// 空白單元格
-				for (let i = 0; i < firstDay; i++) {
-					const emptyCell = document.createElement('td');
-					row.appendChild(emptyCell);
-				}
-
-				for (let date = 1; date <= lastDate; date++) {
-					if (row.children.length === 7) {
-						calendarBody.appendChild(row);
-						row = document.createElement('tr');
+					if (newPassword === "") {
+						alert("請輸入新密碼");
+						return;
+					}
+					if (newPassword !== confirmPassword) {
+						alert("新密碼與確認密碼不一致");
+						return;
 					}
 
-					const cellDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-					const isToday = new Date(cellDate).toDateString() === today.toDateString();
-					const isFuture = new Date(cellDate) > today;
+					let submitButton = $("#change-password-form button[type=submit]");
+					submitButton.prop("disabled", true).text("變更中...");
 
-					const dateCell = document.createElement('td');
-					const dateText = document.createElement('div');
-					dateText.textContent = date;
-
-					const bookingInfo = document.createElement('div');
-					bookingInfo.classList.add('booking-info');
-
-					// 保留你的判斷邏輯，並填入預約人數
-					if (isToday) {
-						bookingInfo.innerHTML = `<a href="a_therapist2.php?date=${cellDate}&type=today" class="highlight-red">目前總人數：${appointments[cellDate] || 0}</a>`;
-					} else if (isFuture) {
-						bookingInfo.innerHTML = `<a href="a_therapist2.php?date=${cellDate}&type=future">目前預約人數：${appointments[cellDate] || 0}</a>`;
-					} else {
-						bookingInfo.innerHTML = `<a href="a_therapist2.php?date=${cellDate}&type=past">總人數：${appointments[cellDate] || 0}</a>`;
-					}
-
-
-
-					dateCell.appendChild(dateText);
-					dateCell.appendChild(bookingInfo);
-					row.appendChild(dateCell);
-				}
-
-				while (row.children.length < 7) {
-					row.appendChild(document.createElement('td'));
-				}
-				calendarBody.appendChild(row);
-			}
-
-			// 綁定事件
-			yearSelect.addEventListener('change', () => {
-				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
+					// 驗證舊密碼
+					$.ajax({
+						url: "驗證舊密碼.php",
+						type: "POST",
+						data: { user_id: userId, old_password: oldPassword },
+						success: function (response) {
+							console.log("驗證舊密碼回應:", response);
+							if (response.trim() === "success") {
+								console.log("舊密碼正確，變更密碼中...");
+								// 舊密碼正確，送出新密碼
+								$.ajax({
+									url: "變更密碼.php",
+									type: "POST",
+									data: { user_id: userId, new_password: newPassword },
+									success: function (res) {
+										console.log("變更密碼回應:", res);
+										alert(res);
+										if (res.trim() === "密碼變更成功") {
+											location.reload(); // 重新整理頁面
+										}
+									},
+									error: function (xhr, status, error) {
+										alert("變更密碼發生錯誤：" + error);
+									},
+									complete: function () {
+										submitButton.prop("disabled", false).text("確認變更");
+									}
+								});
+							} else {
+								alert("舊密碼錯誤，請重新輸入");
+								$("#old-password-error").removeClass("d-none");
+								submitButton.prop("disabled", false).text("確認變更");
+							}
+						},
+						error: function (xhr, status, error) {
+							alert("系統錯誤：" + error);
+							submitButton.prop("disabled", false).text("確認變更");
+						}
+					});
+				});
 			});
-
-			monthSelect.addEventListener('change', () => {
-				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-			});
-
-			doctorSelect.addEventListener('change', () => {
-				generateCalendar(parseInt(yearSelect.value), parseInt(monthSelect.value));
-			});
-
-			// 初始化
-			initYearOptions();
-			initMonthOptions();
-			generateCalendar(currentYear, currentMonth);
 
 		</script>
 
 
-		<!-- Global Mailform Output-->
-		<div class="snackbars" id="form-output-global"></div>
-		<!-- Javascript-->
-		<script src="js/core.min.js"></script>
-		<script src="js/script.js"></script>
+
+	</div>
+	<!-- Global Mailform Output-->
+	<div class="snackbars" id="form-output-global"></div>
+	<!-- Javascript-->
+	<script src="js/core.min.js"></script>
+	<script src="js/script.js"></script>
 </body>
 
 </html>
