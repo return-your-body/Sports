@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // 全部處理完成，顯示成功彈窗並返回上一頁
-    echo "<script>alert('班表已成功儲存！'); window.location.href='a_addds.php';</script>";
+    echo "<script>alert('班表已成功儲存！'); window.location.href='a_addds2.php';</script>";
     exit;
 } else {
     echo "<script>alert('非法的請求方法！'); history.back();</script>";
