@@ -714,6 +714,7 @@ $result_history = mysqli_stmt_get_result($stmt_history);
                             <li><a href="d_leave-query.php">請假資料查詢</a></li>
                             <li><a href="d_medical-record.php">看診紀錄</a></li>
                             <li><a href="d_appointment-records.php">預約紀錄</a></li>
+                            <li><a href="d_change.php">變更密碼</a></li>
                             <!-- <li><a href="d_body-knowledge.php">身體小知識</a></li> -->
                         </ul>
                     </div>

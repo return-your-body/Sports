@@ -2,8 +2,8 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-    header("Location: ../index.html");
-    exit;
+	header("Location: ../index.html");
+	exit;
 }
 
 // 防止頁面被瀏覽器緩存
@@ -13,44 +13,44 @@ header("Pragma: no-cache");
 
 // 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-    // 獲取用戶帳號
-    $帳號 = $_SESSION['帳號'];
+	// 獲取用戶帳號
+	$帳號 = $_SESSION['帳號'];
 
-    // 連接資料庫
-    require '../db.php';
+	// 連接資料庫
+	require '../db.php';
 
-    // 查詢帳號的詳細資料（包含 user_id、帳號名稱、姓名）
-    $sql = "SELECT user.user_id, user.account, doctor.doctor AS name 
+	// 查詢帳號的詳細資料（包含 user_id、帳號名稱、姓名）
+	$sql = "SELECT user.user_id, user.account, doctor.doctor AS name 
             FROM user 
             JOIN doctor ON user.user_id = doctor.user_id 
             WHERE user.account = ?";
 
-    $stmt = mysqli_prepare($link, $sql);
-    mysqli_stmt_bind_param($stmt, "s", $帳號);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
+	$stmt = mysqli_prepare($link, $sql);
+	mysqli_stmt_bind_param($stmt, "s", $帳號);
+	mysqli_stmt_execute($stmt);
+	$result = mysqli_stmt_get_result($stmt);
 
-    if (mysqli_num_rows($result) > 0) {
-        // 抓取對應資料
-        $row = mysqli_fetch_assoc($result);
-        $user_id = $row['user_id'];  // 取得 `user_id`
-        $姓名 = $row['name'];  // 取得 `姓名`
-        $帳號名稱 = $row['account'];  // 取得 `帳號名稱`
-    } else {
-        // 如果資料不存在，提示用戶重新登入
-        echo "<script>
+	if (mysqli_num_rows($result) > 0) {
+		// 抓取對應資料
+		$row = mysqli_fetch_assoc($result);
+		$user_id = $row['user_id'];  // 取得 `user_id`
+		$姓名 = $row['name'];  // 取得 `姓名`
+		$帳號名稱 = $row['account'];  // 取得 `帳號名稱`
+	} else {
+		// 如果資料不存在，提示用戶重新登入
+		echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
               </script>";
-        exit();
-    }
+		exit();
+	}
 
 } else {
-    echo "<script>
+	echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
             window.location.href = '../index.html';
           </script>";
-    exit();
+	exit();
 }
 ?>
 
@@ -421,172 +421,217 @@ if (isset($_SESSION["帳號"])) {
 
 
 
-  <!--標題-->
-  <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
-            <!-- Breadcrumbs-->
-            <section class="breadcrumbs-custom breadcrumbs-custom-svg">
-                <div class="container">
-                    <!-- <p class="breadcrumbs-custom-subtitle">Ask us</p> -->
-                    <p class="heading-1 breadcrumbs-custom-title">變更密碼</p>
-                    <ul class="breadcrumbs-custom-path">
-                        <li><a href="h_index.php">首頁</a></li>
-                        <li class="active">變更密碼</li>
-                    </ul>
-                </div>
-            </section>
-        </div>
-        <!--標題-->
-
-
-	
-        <!-- 變更密碼 -->
-        <section class="section section-lg bg-default text-center">
-            <div class="container">
-                <div class="row justify-content-sm-center">
-                    <div class="col-md-10 col-xl-8">
-                        <h3>變更密碼</h3>
-                        <!-- Change Password Form -->
-                        <form id="change-password-form">
-                            <div class="row row-20 row-fix justify-content-center">
-
-                                <!-- 舊密碼獨立一行 -->
-                                <div class="col-md-10">
-                                    <div class="form-wrap form-wrap-validation text-start">
-                                        <label class="form-label-outside" for="old-password">舊密碼</label>
-                                        <input class="form-input w-100" id="old-password" type="password"
-                                            name="old-password" required />
-                                        <small id="old-password-error" class="text-danger d-none">舊密碼錯誤</small>
-                                    </div>
-                                </div>
-
-                                <!-- 新密碼獨立一行 -->
-                                <div class="col-md-5">
-                                    <div class="form-wrap form-wrap-validation text-start">
-                                        <label class="form-label-outside" for="new-password">新密碼</label>
-                                        <input class="form-input w-100" id="new-password" type="password"
-                                            name="new-password" required />
-                                        <small id="password-error" class="text-danger d-none">請輸入密碼</small>
-                                    </div>
-                                </div>
-
-                                <!-- 確認密碼獨立一行 -->
-                                <div class="col-md-5">
-                                    <div class="form-wrap form-wrap-validation text-start">
-                                        <label class="form-label-outside" for="confirm-password">確認密碼</label>
-                                        <input class="form-input w-100" id="confirm-password" type="password"
-                                            name="confirm-password" required />
-                                        <small id="confirm-password-error"
-                                            class="text-danger d-none">新密碼與確認密碼不一致</small>
-                                    </div>
-                                </div>
-
-                                <!-- 隱藏的使用者 ID -->
-                                <input type="hidden" id="user_id" name="user_id" value="<?php echo $user_id; ?>">
-
-                                <!-- 提交按鈕獨立一行 -->
-                                <div class="col-md-6">
-                                    <div class="form-button mt-3">
-                                        <button class="button button-primary button-nina w-100"
-                                            type="submit">確認變更</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script>
-            $(document).ready(function () {
-                $("#change-password-form").submit(function (event) {
-                    event.preventDefault(); // 阻止表單的預設提交行為
-
-                    let oldPassword = $("#old-password").val();
-                    let newPassword = $("#new-password").val();
-                    let confirmPassword = $("#confirm-password").val();
-                    let userId = $("#user_id").val();
-                    let submitButton = $("#change-password-form button[type=submit]");
-
-                    console.log("發送請求 - user_id:", userId);
-                    console.log("舊密碼:", oldPassword);
-                    console.log("新密碼:", newPassword);
-
-                    // 清除錯誤訊息
-                    $("#old-password-error, #password-error, #confirm-password-error").addClass("d-none");
-
-                    submitButton.prop("disabled", true).text("驗證中...");
-
-                    // **第一步：驗證舊密碼**
-                    $.ajax({
-                        url: "驗證舊密碼.php",
-                        type: "POST",
-                        data: { user_id: userId, old_password: oldPassword },
-                        success: function (response) {
-                            console.log("驗證舊密碼回應:", response);
-                            if (response.trim() === "success") {
-                                console.log("舊密碼正確，繼續驗證新密碼...");
-
-                                // **第二步：檢查新密碼是否符合要求**
-                                if (newPassword === "") {
-                                    alert("請輸入新密碼");
-                                    $("#password-error").removeClass("d-none");
-                                    submitButton.prop("disabled", false).text("確認變更");
-                                    return;
-                                }
-                                if (newPassword !== confirmPassword) {
-                                    alert("新密碼與確認密碼不一致");
-                                    $("#confirm-password-error").removeClass("d-none");
-                                    submitButton.prop("disabled", false).text("確認變更");
-                                    return;
-                                }
-
-                                submitButton.prop("disabled", true).text("變更密碼中...");
-
-                                // **第三步：變更密碼**
-                                $.ajax({
-                                    url: "變更密碼.php",
-                                    type: "POST",
-                                    data: { user_id: userId, new_password: newPassword },
-                                    success: function (res) {
-                                        console.log("變更密碼回應:", res);
-                                        alert(res);
-                                        if (res.trim() === "密碼變更成功") {
-                                            location.reload(); // 重新整理頁面
-                                        }
-                                    },
-                                    error: function (xhr, status, error) {
-                                        alert("變更密碼發生錯誤：" + error);
-                                    },
-                                    complete: function () {
-                                        submitButton.prop("disabled", false).text("確認變更");
-                                    }
-                                });
-
-                            } else {
-                                alert("舊密碼錯誤，請重新輸入");
-                                $("#old-password-error").removeClass("d-none");
-                                submitButton.prop("disabled", false).text("確認變更");
-                            }
-                        },
-                        error: function (xhr, status, error) {
-                            alert("系統錯誤：" + error);
-                            submitButton.prop("disabled", false).text("確認變更");
-                        }
-                    });
-                });
-            });
-
-        </script>
+		<!--標題-->
+		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
+			<!-- Breadcrumbs-->
+			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
+				<div class="container">
+					<!-- <p class="breadcrumbs-custom-subtitle">Ask us</p> -->
+					<p class="heading-1 breadcrumbs-custom-title">變更密碼</p>
+					<ul class="breadcrumbs-custom-path">
+						<li><a href="h_index.php">首頁</a></li>
+						<li class="active">變更密碼</li>
+					</ul>
+				</div>
+			</section>
+		</div>
+		<!--標題-->
 
 
 
-		<!-- Global Mailform Output-->
-		<div class="snackbars" id="form-output-global"></div>
-		<!-- Javascript-->
-		<script src="js/core.min.js"></script>
-		<script src="js/script.js"></script>
+		<!-- 變更密碼 -->
+		<section class="section section-lg bg-default text-center">
+			<div class="container">
+				<div class="row justify-content-sm-center">
+					<div class="col-md-10 col-xl-8">
+						<h3>變更密碼</h3>
+						<!-- Change Password Form -->
+						<form id="change-password-form">
+							<div class="row row-20 row-fix justify-content-center">
+
+								<!-- 舊密碼獨立一行 -->
+								<div class="col-md-10">
+									<div class="form-wrap form-wrap-validation text-start">
+										<label class="form-label-outside" for="old-password">舊密碼</label>
+										<input class="form-input w-100" id="old-password" type="password"
+											name="old-password" required />
+										<small id="old-password-error" class="text-danger d-none">舊密碼錯誤</small>
+									</div>
+								</div>
+
+								<!-- 新密碼獨立一行 -->
+								<div class="col-md-5">
+									<div class="form-wrap form-wrap-validation text-start">
+										<label class="form-label-outside" for="new-password">新密碼</label>
+										<input class="form-input w-100" id="new-password" type="password"
+											name="new-password" required />
+										<small id="password-error" class="text-danger d-none">請輸入密碼</small>
+									</div>
+								</div>
+
+								<!-- 確認密碼獨立一行 -->
+								<div class="col-md-5">
+									<div class="form-wrap form-wrap-validation text-start">
+										<label class="form-label-outside" for="confirm-password">確認密碼</label>
+										<input class="form-input w-100" id="confirm-password" type="password"
+											name="confirm-password" required />
+										<small id="confirm-password-error"
+											class="text-danger d-none">新密碼與確認密碼不一致</small>
+									</div>
+								</div>
+
+								<!-- 隱藏的使用者 ID -->
+								<input type="hidden" id="user_id" name="user_id" value="<?php echo $user_id; ?>">
+
+								<!-- 提交按鈕獨立一行 -->
+								<div class="col-md-6">
+									<div class="form-button mt-3">
+										<button class="button button-primary button-nina w-100"
+											type="submit">確認變更</button>
+									</div>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+		<script>
+			$(document).ready(function () {
+				$("#change-password-form").submit(function (event) {
+					event.preventDefault(); // 阻止表單的預設提交行為
+
+					let oldPassword = $("#old-password").val();
+					let newPassword = $("#new-password").val();
+					let confirmPassword = $("#confirm-password").val();
+					let userId = $("#user_id").val();
+					let submitButton = $("#change-password-form button[type=submit]");
+
+					console.log("發送請求 - user_id:", userId);
+					console.log("舊密碼:", oldPassword);
+					console.log("新密碼:", newPassword);
+
+					// 清除錯誤訊息
+					$("#old-password-error, #password-error, #confirm-password-error").addClass("d-none");
+
+					submitButton.prop("disabled", true).text("驗證中...");
+
+					// **第一步：驗證舊密碼**
+					$.ajax({
+						url: "驗證舊密碼.php",
+						type: "POST",
+						data: { user_id: userId, old_password: oldPassword },
+						success: function (response) {
+							console.log("驗證舊密碼回應:", response);
+							if (response.trim() === "success") {
+								console.log("舊密碼正確，繼續驗證新密碼...");
+
+								// **第二步：檢查新密碼是否符合要求**
+								if (newPassword === "") {
+									alert("請輸入新密碼");
+									$("#password-error").removeClass("d-none");
+									submitButton.prop("disabled", false).text("確認變更");
+									return;
+								}
+								if (newPassword !== confirmPassword) {
+									alert("新密碼與確認密碼不一致");
+									$("#confirm-password-error").removeClass("d-none");
+									submitButton.prop("disabled", false).text("確認變更");
+									return;
+								}
+
+								submitButton.prop("disabled", true).text("變更密碼中...");
+
+								// **第三步：變更密碼**
+								$.ajax({
+									url: "變更密碼.php",
+									type: "POST",
+									data: { user_id: userId, new_password: newPassword },
+									success: function (res) {
+										console.log("變更密碼回應:", res);
+										alert(res);
+										if (res.trim() === "密碼變更成功") {
+											location.reload(); // 重新整理頁面
+										}
+									},
+									error: function (xhr, status, error) {
+										alert("變更密碼發生錯誤：" + error);
+									},
+									complete: function () {
+										submitButton.prop("disabled", false).text("確認變更");
+									}
+								});
+
+							} else {
+								alert("舊密碼錯誤，請重新輸入");
+								$("#old-password-error").removeClass("d-none");
+								submitButton.prop("disabled", false).text("確認變更");
+							}
+						},
+						error: function (xhr, status, error) {
+							alert("系統錯誤：" + error);
+							submitButton.prop("disabled", false).text("確認變更");
+						}
+					});
+				});
+			});
+
+		</script>
+
+		<!--頁尾-->
+		<footer class="section novi-bg novi-bg-img footer-simple">
+			<div class="container">
+				<div class="row row-40">
+					<!-- <div class="col-md-4">
+			<h4>關於我們</h4>
+			<p class="me-xl-5">Pract is a learning platform for education and skills training. We provide you
+			  professional knowledge using innovative approach.</p>
+		  </div> -->
+					<div class="col-md-3">
+						<h4>快速連結</h4>
+						<ul class="list-marked">
+							<li><a href="h_index.php">首頁</a></li>
+							<li><a href="h_people.php">用戶資料</a></li>
+							<!-- <li><a href="h_appointment.php">預約</a></li> -->
+							<li><a href="h_numberpeople.php">當天人數及時段</a></li>
+							<li><a href="h_doctorshift.php">班表時段</a></li>
+							<li><a href="h_change.php">變更密碼</a></li>
+							<!-- <li><a href="h_print-receipt.php">列印收據</a></li>
+			  <li><a href="h_print-appointment.php">列印預約單</a></li> -->
+
+						</ul>
+					</div>
+					<!-- <div class="col-md-5">
+			<h4>聯絡我們</h4>
+			<p>Subscribe to our newsletter today to get weekly news, tips, and special offers from our team on the
+			  courses we offer.</p>
+			<form class="rd-mailform rd-form-boxed" data-form-output="form-output-global" data-form-type="subscribe"
+			  method="post" action="bat/rd-mailform.php">
+			  <div class="form-wrap">
+				<input class="form-input" type="email" name="email" data-constraints="@Email @Required"
+				  id="footer-mail">
+				<label class="form-label" for="footer-mail">Enter your e-mail</label>
+			  </div>
+			  <button class="form-button linearicons-paper-plane"></button>
+			</form>
+		  </div> -->
+				</div>
+				<!-- <p class="rights"><span>&copy;&nbsp;</span><span
+			class="copyright-year"></span><span>&nbsp;</span><span>Pract</span><span>.&nbsp;All Rights
+			Reserved.&nbsp;</span><a href="privacy-policy.html">Privacy Policy</a> <a target="_blank"
+			href="https://www.mobanwang.com/" title="网站模板">网站模板</a></p> -->
+			</div>
+		</footer>
+	</div>
+	<!--頁尾-->
+
+	<!-- Global Mailform Output-->
+	<div class="snackbars" id="form-output-global"></div>
+	<!-- Javascript-->
+	<script src="js/core.min.js"></script>
+	<script src="js/script.js"></script>
 </body>
 
 </html>

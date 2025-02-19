@@ -369,9 +369,10 @@ if (isset($_SESSION["帳號"])) {
 							<li><a href="u_caseshare.php">個案分享</a></li>
 							<li><a href="u_body-knowledge.php">日常小知識</a></li>
 							<li><a href="u_reserve.php">預約</a></li>
-							<li><a href="u_reserve-record.php">查看預約資料</a></li>
-							<li><a href="u_reserve-time.php">查看預約時段</a></li>
+							<!-- <li><a href="u_reserve-record.php">查看預約資料</a></li>
+							<li><a href="u_reserve-time.php">查看預約時段</a></li> -->
 							<li><a href="u_history.php">歷史紀錄</a></li>
+							<li><a href="u_change.php">變更密碼</a></li>
 							<li> <a href="u_profile.php">個人資料</a></li>
 							</a></li>
 						</ul>
