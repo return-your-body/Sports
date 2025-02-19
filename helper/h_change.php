@@ -2,8 +2,8 @@
 session_start();
 
 if (!isset($_SESSION["登入狀態"])) {
-	header("Location: ../index.html");
-	exit;
+    header("Location: ../index.html");
+    exit;
 }
 
 // 防止頁面被瀏覽器緩存
@@ -13,57 +13,45 @@ header("Pragma: no-cache");
 
 // 檢查 "帳號" 是否存在於 $_SESSION 中
 if (isset($_SESSION["帳號"])) {
-	// 獲取用戶帳號
-	$帳號 = $_SESSION['帳號'];
+    // 獲取用戶帳號
+    $帳號 = $_SESSION['帳號'];
 
-	// 資料庫連接
-	require '../db.php';
+    // 連接資料庫
+    require '../db.php';
 
-	// 查詢該帳號的詳細資料
-	$sql = "SELECT user.account, doctor.doctor AS name 
+    // 查詢帳號的詳細資料（包含 user_id、帳號名稱、姓名）
+    $sql = "SELECT user.user_id, user.account, doctor.doctor AS name 
             FROM user 
             JOIN doctor ON user.user_id = doctor.user_id 
             WHERE user.account = ?";
-	$stmt = mysqli_prepare($link, $sql);
-	mysqli_stmt_bind_param($stmt, "s", $帳號);
-	mysqli_stmt_execute($stmt);
-	$result = mysqli_stmt_get_result($stmt);
 
-	if (mysqli_num_rows($result) > 0) {
-		// 抓取對應姓名
-		$row = mysqli_fetch_assoc($result);
-		$姓名 = $row['name'];
-		$帳號名稱 = $row['account'];
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "s", $帳號);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
 
-		// 顯示帳號和姓名
-		// echo "歡迎您！<br>";
-		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-		// echo "姓名：" . htmlspecialchars($姓名);
-		// echo "<script>
-		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-		// </script>";
-	} else {
-		// 如果資料不存在，提示用戶重新登入
-		echo "<script>
+    if (mysqli_num_rows($result) > 0) {
+        // 抓取對應資料
+        $row = mysqli_fetch_assoc($result);
+        $user_id = $row['user_id'];  // 取得 `user_id`
+        $姓名 = $row['name'];  // 取得 `姓名`
+        $帳號名稱 = $row['account'];  // 取得 `帳號名稱`
+    } else {
+        // 如果資料不存在，提示用戶重新登入
+        echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
               </script>";
-		exit();
-	}
+        exit();
+    }
 
-	// 關閉資料庫連接
-	mysqli_close($link);
 } else {
-	echo "<script>
+    echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
             window.location.href = '../index.html';
           </script>";
-	exit();
+    exit();
 }
-
-
-//預約
-
 ?>
 
 <!DOCTYPE html>
@@ -477,7 +465,7 @@ if (isset($_SESSION["帳號"])) {
 										name="confirm-password" required>
 									<small id="confirm-password-error" class="text-danger d-none">密碼與確認密碼不一致</small>
 								</div>
-								<input type="hidden" id="user_id" name="user_id" value="4"> <!-- 這裡應該改成實際的使用者ID -->
+								<input type="hidden" id="user_id" name="user_id" value="<?php echo $user_id; ?>">
 								<button type="submit" class="btn w-100"
 									style="background-color: #d6d6d6; color: black;">確認變更</button>
 							</form>
