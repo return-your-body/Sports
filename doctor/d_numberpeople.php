@@ -467,6 +467,7 @@ $result_appointments = mysqli_stmt_get_result($stmt_appointments);
           <p class="heading-1 breadcrumbs-custom-title">當天看診人數</p>
           <ul class="breadcrumbs-custom-path">
             <li><a href="d_index.php">首頁</a></li>
+            <li><a href="#">班表</a></li>
             <li class="active">當天時段人數</li>
           </ul>
         </div>
@@ -547,26 +548,26 @@ $result_appointments = mysqli_stmt_get_result($stmt_appointments);
 
         <!-- 分頁 -->
         <div class="pagination">
-              <?php if ($page > 1): ?>
-                <a href="?page=<?php echo $page - 1; ?>">« 上一頁</a>
-              <?php else: ?>
-                <span class="disabled">« 上一頁</span>
-              <?php endif; ?>
+          <?php if ($page > 1): ?>
+            <a href="?page=<?php echo $page - 1; ?>">« 上一頁</a>
+          <?php else: ?>
+            <span class="disabled">« 上一頁</span>
+          <?php endif; ?>
 
-              <?php for ($p = 1; $p <= $total_pages; $p++): ?>
-                <?php if ($p == $page): ?>
-                  <span class="active"><?php echo $p; ?></span>
-                <?php else: ?>
-                  <a href="?page=<?php echo $p; ?>"><?php echo $p; ?></a>
-                <?php endif; ?>
-              <?php endfor; ?>
+          <?php for ($p = 1; $p <= $total_pages; $p++): ?>
+            <?php if ($p == $page): ?>
+              <span class="active"><?php echo $p; ?></span>
+            <?php else: ?>
+              <a href="?page=<?php echo $p; ?>"><?php echo $p; ?></a>
+            <?php endif; ?>
+          <?php endfor; ?>
 
-              <?php if ($page < $total_pages): ?>
-                <a href="?page=<?php echo $page + 1; ?>">下一頁 »</a>
-              <?php else: ?>
-                <span class="disabled">下一頁 »</span>
-              <?php endif; ?>
-            </div>
+          <?php if ($page < $total_pages): ?>
+            <a href="?page=<?php echo $page + 1; ?>">下一頁 »</a>
+          <?php else: ?>
+            <span class="disabled">下一頁 »</span>
+          <?php endif; ?>
+        </div>
 
       </div>
     </section>

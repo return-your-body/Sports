@@ -574,7 +574,8 @@ $result_history = mysqli_stmt_get_result($stmt_history);
 
                     <p class="heading-1 breadcrumbs-custom-title">歷史紀錄</p>
                     <ul class="breadcrumbs-custom-path">
-                        <li><a href="u_index.php">首頁</a></li>
+                        <li><a href="d_index.php">首頁</a></li>
+                        <li><a href="#">用戶資料</a></li>
                         <li class="active">歷史紀錄</li>
                     </ul>
                 </div>

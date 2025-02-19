@@ -526,128 +526,148 @@ if (isset($_SESSION["帳號"])) {
         </div>
 
 
-        <style>
-        body {
-            background-color: #f4f6f9;
-        }
-        .card {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-        }
-        .form-control {
-            border-radius: 8px;
-        }
-        .btn-custom {
-            background: linear-gradient(90deg, #4a90e2, #007bff);
-            color: white;
-            transition: 0.3s;
-            font-weight: bold;
-            border-radius: 8px;
-        }
-        .btn-custom:hover {
-            background: linear-gradient(90deg, #007bff, #4a90e2);
-            color: white;
-        }
-    </style>
-        <div class="container mt-5">
-            <div class="row justify-content-center">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header text-center">
-                            <h4 class="mb-0">變更密碼</h4>
-                        </div>
-                        <div class="card-body">
-                            <form id="change-password-form">
-                                <div class="mb-3">
-                                    舊密碼
-                                    <input type="password" class="form-control" id="old-password" name="old-password"
-                                        required>
-                                    <small id="old-password-error" class="text-danger d-none">舊密碼錯誤</small>
+       
+        <!-- 變更密碼 -->
+        <section class="section section-lg bg-default text-center">
+            <div class="container">
+                <div class="row justify-content-sm-center">
+                    <div class="col-md-10 col-xl-8">
+                        <h3>變更密碼</h3>
+                        <!-- Change Password Form -->
+                        <form id="change-password-form">
+                            <div class="row row-20 row-fix justify-content-center">
+
+                                <!-- 舊密碼獨立一行 -->
+                                <div class="col-md-10">
+                                    <div class="form-wrap form-wrap-validation text-start">
+                                        <label class="form-label-outside" for="old-password">舊密碼</label>
+                                        <input class="form-input w-100" id="old-password" type="password"
+                                            name="old-password" required />
+                                        <small id="old-password-error" class="text-danger d-none">舊密碼錯誤</small>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    新密碼
-                                    <input type="password" class="form-control" id="new-password" name="new-password"
-                                        required>
-                                    <small id="password-error" class="text-danger d-none">請輸入密碼</small>
+
+                                <!-- 新密碼獨立一行 -->
+                                <div class="col-md-5">
+                                    <div class="form-wrap form-wrap-validation text-start">
+                                        <label class="form-label-outside" for="new-password">新密碼</label>
+                                        <input class="form-input w-100" id="new-password" type="password"
+                                            name="new-password" required />
+                                        <small id="password-error" class="text-danger d-none">請輸入密碼</small>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    確認密碼
-                                    <input type="password" class="form-control" id="confirm-password"
-                                        name="confirm-password" required>
-                                    <small id="confirm-password-error" class="text-danger d-none">密碼與確認密碼不一致</small>
+
+                                <!-- 確認密碼獨立一行 -->
+                                <div class="col-md-5">
+                                    <div class="form-wrap form-wrap-validation text-start">
+                                        <label class="form-label-outside" for="confirm-password">確認密碼</label>
+                                        <input class="form-input w-100" id="confirm-password" type="password"
+                                            name="confirm-password" required />
+                                        <small id="confirm-password-error"
+                                            class="text-danger d-none">新密碼與確認密碼不一致</small>
+                                    </div>
                                 </div>
-                                <!-- 隱藏輸入框，填充 `user_id` -->
+
+                                <!-- 隱藏的使用者 ID -->
                                 <input type="hidden" id="user_id" name="user_id" value="<?php echo $user_id; ?>">
-                                <button type="submit" class="btn w-100"
-                                    style="background-color: #d6d6d6; color: black;">確認變更</button>
-                            </form>
-                        </div>
+
+                                <!-- 提交按鈕獨立一行 -->
+                                <div class="col-md-6">
+                                    <div class="form-button mt-3">
+                                        <button class="button button-primary button-nina w-100"
+                                            type="submit">確認變更</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
-        </div>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="change-password.js"></script>
+        </section>
 
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script>
             $(document).ready(function () {
                 $("#change-password-form").submit(function (event) {
-                    event.preventDefault();
+                    event.preventDefault(); // 阻止表單的預設提交行為
 
                     let oldPassword = $("#old-password").val();
                     let newPassword = $("#new-password").val();
                     let confirmPassword = $("#confirm-password").val();
                     let userId = $("#user_id").val();
+                    let submitButton = $("#change-password-form button[type=submit]");
 
+                    console.log("發送請求 - user_id:", userId);
+                    console.log("舊密碼:", oldPassword);
+                    console.log("新密碼:", newPassword);
+
+                    // 清除錯誤訊息
                     $("#old-password-error, #password-error, #confirm-password-error").addClass("d-none");
 
-                    if (newPassword === "") {
-                        $("#password-error").removeClass("d-none");
-                        alert("請輸入新密碼！");
-                        return;
-                    }
-                    if (newPassword !== confirmPassword) {
-                        $("#confirm-password-error").removeClass("d-none");
-                        alert("密碼與確認密碼不一致，請重新輸入！");
-                        return;
-                    }
+                    submitButton.prop("disabled", true).text("驗證中...");
 
+                    // **第一步：驗證舊密碼**
                     $.ajax({
                         url: "驗證舊密碼.php",
                         type: "POST",
                         data: { user_id: userId, old_password: oldPassword },
                         success: function (response) {
+                            console.log("驗證舊密碼回應:", response);
                             if (response.trim() === "success") {
+                                console.log("舊密碼正確，繼續驗證新密碼...");
+
+                                // **第二步：檢查新密碼是否符合要求**
+                                if (newPassword === "") {
+                                    alert("請輸入新密碼");
+                                    $("#password-error").removeClass("d-none");
+                                    submitButton.prop("disabled", false).text("確認變更");
+                                    return;
+                                }
+                                if (newPassword !== confirmPassword) {
+                                    alert("新密碼與確認密碼不一致");
+                                    $("#confirm-password-error").removeClass("d-none");
+                                    submitButton.prop("disabled", false).text("確認變更");
+                                    return;
+                                }
+
+                                submitButton.prop("disabled", true).text("變更密碼中...");
+
+                                // **第三步：變更密碼**
                                 $.ajax({
                                     url: "變更密碼.php",
                                     type: "POST",
                                     data: { user_id: userId, new_password: newPassword },
                                     success: function (res) {
+                                        console.log("變更密碼回應:", res);
                                         alert(res);
                                         if (res.trim() === "密碼變更成功") {
-                                            location.reload();
-                                        } else {
-                                            alert("密碼變更失敗：" + res);
+                                            location.reload(); // 重新整理頁面
                                         }
                                     },
-                                    error: function () {
-                                        alert("變更密碼時發生錯誤，請稍後再試！");
+                                    error: function (xhr, status, error) {
+                                        alert("變更密碼發生錯誤：" + error);
+                                    },
+                                    complete: function () {
+                                        submitButton.prop("disabled", false).text("確認變更");
                                     }
                                 });
+
                             } else {
-                                alert("舊密碼錯誤，請重新輸入！");
+                                alert("舊密碼錯誤，請重新輸入");
                                 $("#old-password-error").removeClass("d-none");
+                                submitButton.prop("disabled", false).text("確認變更");
                             }
                         },
-                        error: function () {
-                            alert("系統錯誤，請稍後再試！");
+                        error: function (xhr, status, error) {
+                            alert("系統錯誤：" + error);
+                            submitButton.prop("disabled", false).text("確認變更");
                         }
                     });
                 });
             });
 
         </script>
-
+        
         <br />
         <!--頁尾-->
         <footer class="section novi-bg novi-bg-img footer-simple">
