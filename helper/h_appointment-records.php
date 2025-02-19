@@ -691,10 +691,9 @@ if (isset($_SESSION["帳號"])) {
 
                             <option value="預約" <?php echo ($row['status_name'] == '預約') ? 'selected' : ''; ?>>預約</option>
                             <option value="修改" <?php echo ($row['status_name'] == '修改') ? 'selected' : ''; ?>>修改</option>
-                            <option value="取消" <?php echo ($row['status_name'] == '取消') ? 'selected' : ''; ?>>取消</option>
+                            <option value="報到" <?php echo ($row['status_name'] == '報到') ? 'selected' : ''; ?>>報到</option>
                             <option value="請假" <?php echo ($row['status_name'] == '請假') ? 'selected' : ''; ?>>請假</option>
                             <option value="爽約" <?php echo ($row['status_name'] == '爽約') ? 'selected' : ''; ?>>爽約</option>
-                            <option value="報到" <?php echo ($row['status_name'] == '報到') ? 'selected' : ''; ?>>報到</option>
                             <option value="看診中" <?php echo ($row['status_name'] == '看診中') ? 'selected' : ''; ?>>看診中</option>
                             <option value="已看診" <?php echo ($row['status_name'] == '已看診') ? 'selected' : ''; ?>>已看診</option>
                           </select>
@@ -756,7 +755,6 @@ if (isset($_SESSION["帳號"])) {
 
     <!-- 狀態清單 -->
     <!-- 修改預約 Modal -->
-    <!-- 修改預約 Modal -->
     <div id="modal-overlay" class="modal-overlay" style="display: none;">
       <div id="modal-container" class="modal-container">
         <span id="modal-close" class="modal-close">&times;</span>
@@ -784,7 +782,6 @@ if (isset($_SESSION["帳號"])) {
         const appointmentTime = document.getElementById("appointment-time");
         let selectedAppointmentId = null;
         let selectedDoctorId = null;
-        let selectedDoctorName = null;
 
         // **當狀態改為「修改」時，彈出修改視窗**
         document.querySelectorAll(".status-dropdown").forEach((select) => {
@@ -794,6 +791,7 @@ if (isset($_SESSION["帳號"])) {
             selectedDoctorId = this.getAttribute("data-doctor-id");
 
             if (selectedStatus === "修改") {
+              console.log("🔍 修改預約，醫生 ID:", selectedDoctorId, "預約 ID:", selectedAppointmentId);
               modalOverlay.style.display = "flex";
 
               appointmentDate.value = "";
@@ -803,27 +801,34 @@ if (isset($_SESSION["帳號"])) {
               appointmentDate.addEventListener("change", function () {
                 let date = this.value;
                 if (!date || !selectedDoctorId) {
-                  console.error("❌ 醫生 ID 或日期無效");
+                  console.error("❌ 醫生 ID 或日期無效:", selectedDoctorId, date);
+                  appointmentTime.innerHTML = "<option value=''>無可用時段</option>";
                   return;
                 }
+
+                console.log(`📡 發送請求: 獲取時間.php?doctor_id=${selectedDoctorId}&date=${date}`);
 
                 fetch(`獲取時間.php?doctor_id=${selectedDoctorId}&date=${date}`)
                   .then(response => response.json())
                   .then(data => {
-                    console.log("✅ API 回傳數據:", data);
-                    appointmentTime.innerHTML = "<option value=''>請選擇時間</option>";
+                    console.log("✅ API 回傳時段:", data);
 
+                    // **確保資料為陣列，並檢查是否有可用時段**
                     if (!Array.isArray(data) || data.length === 0) {
                       appointmentTime.innerHTML = "<option value=''>無可用時段</option>";
                       return;
                     }
 
-                    data.forEach(item => {
+                    // **清空選單並加入新選項**
+                    appointmentTime.innerHTML = "<option value=''>請選擇時間</option>";
+                    data.forEach((time, index) => {
                       let option = document.createElement("option");
-                      option.value = item.shifttime_id;
-                      option.textContent = item.shifttime;
+                      option.value = time;  // 確保選項有值
+                      option.textContent = time; // 顯示時間
                       appointmentTime.appendChild(option);
                     });
+
+                    console.log("🎯 最終可用時段:", appointmentTime.innerHTML);
                   })
                   .catch(error => {
                     console.error("❌ 獲取時段失敗:", error);
@@ -853,6 +858,8 @@ if (isset($_SESSION["帳號"])) {
             return;
           }
 
+          console.log(`📡 發送修改請求: 修改預約.php (appointment_id=${selectedAppointmentId}, date=${date}, shifttime_id=${timeId})`);
+
           fetch("修改預約.php", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -877,6 +884,7 @@ if (isset($_SESSION["帳號"])) {
             });
         });
       });
+
     </script>
 
     <br />
