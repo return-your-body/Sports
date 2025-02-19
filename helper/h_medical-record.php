@@ -739,6 +739,7 @@ if (isset($_SESSION["帳號"])) {
                             <li><a href="h_doctorshift.php">班表時段</a></li>
                             <li><a href="h_medical-record.php">看診紀錄</a></li>
                             <li><a href="h_appointment-records.php">預約紀錄</a></li>
+                            <li><a href="h_change.php">變更密碼</a></li>
                             <!-- <li><a href="h_print-receipt.php">列印收據</a></li>
                             <li><a href="h_print-appointment.php">列印預約單</a></li> -->
 
