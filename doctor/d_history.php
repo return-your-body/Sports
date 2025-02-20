@@ -583,114 +583,166 @@ $result_history = mysqli_stmt_get_result($stmt_history);
         </div>
 
         <!-- 歷史紀錄 -->
+        <?php
+        require '../db.php'; // 引入資料庫連線
+        
+        // 檢查是否有 `id` 參數，確保有正確的 people_id
+        if (!isset($_GET['id']) || empty($_GET['id'])) {
+            echo "<p>缺少必要的參數。</p>";
+            exit;
+        }
+
+        $people_id = intval($_GET['id']); // 取得 URL 參數中的 people_id
+        
+        // 查詢使用者基本資訊
+        $query_user = "
+SELECT p.name, g.gender, p.birthday, p.idcard 
+FROM people p
+LEFT JOIN gender g ON p.gender_id = g.gender_id
+WHERE p.people_id = ?";
+        $stmt_user = mysqli_prepare($link, $query_user);
+        mysqli_stmt_bind_param($stmt_user, "i", $people_id);
+        mysqli_stmt_execute($stmt_user);
+        $result_user = mysqli_stmt_get_result($stmt_user);
+
+        if ($row_user = mysqli_fetch_assoc($result_user)) {
+            $user_name = $row_user['name'];
+            $user_gender = $row_user['gender'] ?? '無資料';
+            $user_birthday = $row_user['birthday'] ?? '無資料';
+            $user_idcard = $row_user['idcard'] ?? '無資料';
+        } else {
+            echo "<p>找不到使用者資料。</p>";
+            exit;
+        }
+
+
+        // 查詢該使用者的歷史預約紀錄及詳細資料
+        $query_history = "
+SELECT 
+    a.appointment_id,
+    ds.date AS appointment_date,
+    st.shifttime AS shifttime,
+    COALESCE(a.note, '無備註') AS note,
+    d.doctor AS doctor_name,
+    GROUP_CONCAT(DISTINCT t.item ORDER BY t.item SEPARATOR ', ') AS treatment_items,
+    SUM(t.price) AS total_price,
+    COALESCE(m.note_d, '無備註') AS doctor_note,
+    a.created_at
+FROM appointment a
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+LEFT JOIN medicalrecord m ON a.appointment_id = m.appointment_id
+LEFT JOIN item t ON m.item_id = t.item_id
+WHERE a.people_id = ?
+GROUP BY a.appointment_id
+ORDER BY ds.date DESC, st.shifttime ASC";
+
+        $stmt_history = mysqli_prepare($link, $query_history);
+        mysqli_stmt_bind_param($stmt_history, "i", $people_id);
+        mysqli_stmt_execute($stmt_history);
+        $result_history = mysqli_stmt_get_result($stmt_history);
+        ?>
+
+        <!-- 歷史紀錄 -->
         <section class="section section-lg bg-default novi-bg novi-bg-img">
             <div class="container">
-                <h3 style="text-align: center;">歷史預約紀錄</h3>
+                <!-- <h3 style="text-align: center; color: #333; font-weight: bold;">歷史預約看診紀錄</h3> -->
 
-                <!-- 顯示使用者資訊 -->
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <p><strong>姓名：</strong> <?php echo htmlspecialchars($user_name); ?></p>
-                    <p><strong>性別：</strong> <?php echo htmlspecialchars($user_gender); ?></p>
-                    <p><strong>生日：</strong> <?php echo htmlspecialchars($user_birthday); ?></p>
+                <!-- 使用者資訊卡片 -->
+                <div style="max-width: 400px; margin: 20px auto; padding: 20px; 
+            background: #ffffff; border-radius: 10px; 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); text-align: center;">
+
+                    <h3 style="margin-bottom: 15px; color: #007BFF; font-weight: bold;">使用者資訊</h3>
+
+                    <div style="border-bottom: 1px solid #ddd; padding: 10px;">
+                        <strong style="color: #333;">姓名：</strong>
+                        <span style="color: #555;"><?php echo htmlspecialchars($user_name); ?></span>
+                    </div>
+
+                    <div style="border-bottom: 1px solid #ddd; padding: 10px;">
+                        <strong style="color: #333;">性別：</strong>
+                        <span style="color: #555;"><?php echo htmlspecialchars($user_gender); ?></span>
+                    </div>
+
+                    <div style="border-bottom: 1px solid #ddd; padding: 10px;">
+                        <strong style="color: #333;">生日：</strong>
+                        <span style="color: #555;"><?php echo htmlspecialchars($user_birthday); ?></span>
+                    </div>
+
+                    <div style="padding: 10px;">
+                        <strong style="color: #333;">身分證：</strong>
+                        <span style="color: #555;"><?php echo htmlspecialchars($user_idcard); ?></span>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <a href="d_people.php"
+                            style="display: inline-block; padding: 10px 20px; font-size: 16px; color: white; background-color: #007BFF; border-radius: 5px; text-decoration: none;">返回前一頁</a>
+                    </div>
+
                 </div>
 
                 <?php if (mysqli_num_rows($result_history) === 0): ?>
-                    <p style="text-align: center;">目前沒有歷史資料。</p>
+                    <p style="text-align: center; font-size: 18px;">目前沒有歷史資料。</p>
                 <?php else: ?>
-                    <table border="1" style="width: 100%; text-align: center; border-collapse: collapse;">
-                        <thead>
-                            <tr>
-                                <th>預約日期</th>
-                                <th>預約時段</th>
-                                <th>備註</th>
-                                <th>詳細資料</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($appointment = mysqli_fetch_assoc($result_history)): ?>
+                    <?php while ($appointment = mysqli_fetch_assoc($result_history)): ?>
+                        <div style="padding: 20px; margin-bottom: 20px; background: #f8f9fa; border-radius: 10px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
                                 <tr>
-                                    <td><?php echo htmlspecialchars($appointment['appointment_date']); ?></td>
-                                    <td><?php echo htmlspecialchars($appointment['shifttime']); ?></td>
-                                    <td><?php echo htmlspecialchars($appointment['note']); ?></td>
-                                    <td>
-                                        <button
-                                            onclick="openPopup('<?php echo htmlspecialchars($appointment['appointment_id']); ?>')">查看</button>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">預約日期</td>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">
+                                        <?php echo htmlspecialchars($appointment['appointment_date']); ?>
                                     </td>
                                 </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-
-                    <!-- 彈跳視窗 -->
-                    <!-- 遮罩背景 -->
-                    <div id="popup-overlay" onclick="closePopup()"></div>
-
-                    <!-- 彈跳視窗 -->
-                    <div id="popup" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                        background: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
-                        <h2>詳細資料</h2>
-                        <table style="width: 100%;">
-                            <tr>
-                                <th>治療師姓名</th>
-                                <td id="popup-doctor-name">無資料</td>
-                            </tr>
-                            <tr>
-                                <th>治療項目</th>
-                                <td id="popup-treatment-item">無資料</td>
-                            </tr>
-                            <tr>
-                                <th>治療費用</th>
-                                <td id="popup-treatment-price">無資料</td>
-                            </tr>
-                            <tr>
-                                <th>治療師備註</th>
-                                <td id="popup-doctor-note">無資料</td>
-                            </tr>
-                            <tr>
-                                <th>建立時間</th>
-                                <td id="popup-created-time">無資料</td>
-                            </tr>
-                        </table>
-                        <button onclick="closePopup()">關閉</button>
-                    </div>
-
-
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">預約時段</td>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">
+                                        <?php echo htmlspecialchars($appointment['shifttime']); ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">備註</td>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">
+                                        <?php echo htmlspecialchars($appointment['note']); ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">治療師姓名</td>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">
+                                        <?php echo htmlspecialchars($appointment['doctor_name'] ?? '無資料'); ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">治療項目</td>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">
+                                        <?php echo htmlspecialchars($appointment['treatment_items'] ?? '未看診'); ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">治療費用</td>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">
+                                        <?php echo htmlspecialchars(number_format($appointment['total_price'] ?? 0)); ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">治療師備註</td>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">
+                                        <?php echo htmlspecialchars($appointment['doctor_note'] ?? '無資料'); ?>
+                                    </td>
+                                </tr>
+                                <!-- <tr>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">建立時間</td>
+                                    <td style="border: 1px solid #ddd; padding: 10px;">
+                                        <?php echo htmlspecialchars($appointment['created_at'] ?? '無資料'); ?>
+                                    </td>
+                                </tr> -->
+                            </table>
+                        </div>
+                    <?php endwhile; ?>
                 <?php endif; ?>
+
             </div>
         </section>
-
-        <script>
-            function openPopup(appointment_id) {
-                fetch(`處理詳細資料.php?id=${appointment_id}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.error || !data.doctor_name) {
-                            alert('目前無看診資料！');
-                        } else {
-                            document.getElementById('popup-doctor-name').textContent = data.doctor_name || '無資料';
-                            document.getElementById('popup-treatment-item').textContent = data.treatment_item || '無資料';
-                            document.getElementById('popup-treatment-price').textContent = data.treatment_price || '無資料';
-                            document.getElementById('popup-doctor-note').textContent = data.doctor_note || '無資料';
-                            document.getElementById('popup-created-time').textContent = data.created_time || '無資料';
-
-                            // 顯示彈跳視窗
-                            document.getElementById('popup').style.display = 'block';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('獲取詳細資料失敗：', error);
-                        alert('無法加載詳細資料，請稍後再試！');
-                    });
-            }
-
-            function closePopup() {
-                const popup = document.getElementById('popup');
-                if (popup) {
-                    popup.style.display = 'none';
-                }
-            }
-
-        </script>
 
 
         <!--頁尾-->

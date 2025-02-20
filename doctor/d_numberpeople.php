@@ -252,6 +252,11 @@ $result_appointments = mysqli_stmt_get_result($stmt_appointments);
       background-color: #f2f2f2;
     }
 
+
+
+
+    
+
     /* 分頁樣式 */
     .pagination {
       display: flex;

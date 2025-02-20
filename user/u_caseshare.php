@@ -231,9 +231,11 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_link.php">治療師介紹</a>
 										</li>
-										<li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="u_caseshare.php">個案分享</a>
+										<li class="rd-dropdown-item active"><a class="rd-dropdown-link"
+												href="u_caseshare.php">個案分享</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="u_body-knowledge.php">日常小知識</a>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_body-knowledge.php">日常小知識</a>
 										</li>
 									</ul>
 								</li>
@@ -345,6 +347,43 @@ if (isset($_SESSION["帳號"])) {
 			</section>
 		</div>
 
+
+		<?php
+		require '../db.php'; // 連接資料庫
+		
+		// 查詢 Instagram 貼文資料
+		$query = "SELECT post_url, image_url, caption, created_at FROM instagram_posts ORDER BY created_at DESC";
+		$result = mysqli_query($link, $query);
+		?>
+
+		<!-- Instagram 貼文區塊 -->
+		<section class="section section-lg novi-bg novi-bg-img bg-gray-100">
+			<div class="container">
+				<h3 class="text-center">📸 Instagram 貼文</h3>
+				<div class="row row-40 row-lg-50">
+					<?php while ($row = mysqli_fetch_assoc($result)): ?>
+						<div class="col-sm-6 col-md-4 wow fadeInUp" data-wow-delay=".1s">
+							<div class="box-project box-width-3">
+								<div class="box-project-media">
+									<img class="box-project-img" src="<?php echo htmlspecialchars($row['image_url']); ?>"
+										alt="Instagram 貼文">
+								</div>
+								<div class="box-project-subtitle small">INSTAGRAM</div>
+								<h6 class="box-project-title"><?php echo htmlspecialchars($row['caption']); ?></h6>
+								<div class="box-project-meta">
+									<span>📅 <?php echo date("Y-m-d", strtotime($row['created_at'])); ?></span>
+									<a href="<?php echo htmlspecialchars($row['post_url']); ?>" target="_blank"
+										class="btn">查看貼文</a>
+								</div>
+							</div>
+						</div>
+					<?php endwhile; ?>
+				</div>
+			</div>
+		</section>
+
+
+
 		<footer class="section novi-bg novi-bg-img footer-simple">
 			<div class="container">
 				<div class="row row-40">
@@ -377,7 +416,7 @@ if (isset($_SESSION["帳號"])) {
 							</a></li>
 						</ul>
 					</div>
-					
+
 					<div class="col-md-4">
 						<h4>聯絡我們</h4>
 						<br />

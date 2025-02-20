@@ -54,7 +54,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 <head>
     <!-- Site Title-->
-    <title>Teachers</title>
+    <title>新增哀居文章</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -238,7 +238,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                         </li>
                                     </ul>
                                 </li>
-                                <li class="rd-nav-item "><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
                                 </li>
                                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
@@ -246,34 +246,33 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                         </li>
                                     </ul>
                                 </li> -->
-
                                 <li class="rd-nav-item active"><a class="rd-nav-link" href="">用戶管理</a>
-									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_patient.php">用戶管理</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_addhd.php">新增治療師/助手</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_blacklist.php">黑名單</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_doctorlistadd.php">新增治療師資料</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_doctorlistmod.php">修改治療師資料</a>
-										</li>
+                                    <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_igadd.php">新增哀居貼文</a>
+                                                href="a_patient.php">用戶管理</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_addhd.php">新增治療師/助手</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_blacklist.php">黑名單</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_doctorlistadd.php">新增治療師資料</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_doctorlistmod.php">修改治療師資料</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="a_igadd.php">新增哀居貼文</a>
                                         </li>
-									</ul>
-								</li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="a_igadd.php">新增哀居貼文</a>
+                                        </li>
+                                    </ul>
+                                </li>
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="a_change.php">變更密碼</a>
-								</li>
+                                </li>
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                                         onclick="showLogoutBox()">登出</a>
@@ -332,41 +331,70 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                 </nav>
             </div>
         </header>
-
         <!-- Page Header-->
         <div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
             <!-- Breadcrumbs-->
             <section class="breadcrumbs-custom breadcrumbs-custom-svg">
                 <div class="container">
-                    <p class="heading-1 breadcrumbs-custom-title">治療師資料修改</p>
+                    <p class="heading-1 breadcrumbs-custom-title">新增哀居文章</p>
                     <ul class="breadcrumbs-custom-path">
                         <li><a href="a_index.php">首頁</a></li>
-                        <li><a href="">治療師資料</a></li>
-                        <li class="active">治療師資料修改</li>
+                        <li><a href="">用戶管理</a></li>
+                        <li class="active">新增哀居文章</li>
                     </ul>
                 </div>
             </section>
         </div>
 
-
-
-        <!-- <section class="fullwidth-page bg-image bg-image-9 novi-bg novi-bg-img">
-            <div class="fullwidth-page-inner">
-                <div class="section-md text-center">
-                    <div class="container">
-                        <p class="breadcrumbs-custom-subtitle">您所點選的頁面尚未開放，敬請期待～！</p>
-                        <p class="heading-1 breadcrumbs-custom-title">Error 404</p>
-                        <p>The page you selected is not yet open, please stay tuned.</p>
+       
+      <!-- Instagram 貼文儲存表單 -->
+<section class="section section-lg bg-default text-center">
+    <div class="container">
+        <h3>儲存 Instagram 貼文</h3>
+        <div class="row justify-content-sm-center">
+            <div class="col-md-8 col-lg-6 col-xl-4">
+                <!-- RD Mailform -->
+                <form class="rd-mailform" action="儲存哀居貼文.php" method="POST">
+                    
+                    <!-- 貼文網址 -->
+                    <div class="form-wrap form-wrap-validation">
+                        <!-- <label class="form-label" for="post_url"></label> -->
+                        📎 貼文網址<input class="form-input" id="post_url" type="text" name="post_url" placeholder="https://www.instagram.com/p/xxx/" required>
+                        
                     </div>
-                </div>
+
+                    <!-- 圖片網址 -->
+                    <div class="form-wrap form-wrap-validation">
+                        <!-- <label class="form-label" for="image_url"></label> -->
+                        🖼️ 圖片網址<input class="form-input" id="image_url" type="text" name="image_url" placeholder="https://instagram.com/images/xxx.jpg" required>
+                        
+                    </div>
+
+                    <!-- 貼文內容 -->
+                    <div class="form-wrap form-wrap-validation"> 
+                        <!-- <label class="form-label" for="caption"></label> -->
+                       ✏️ 貼文內容 <textarea class="form-input" id="caption" name="caption" placeholder="輸入貼文說明..." rows="4" required></textarea>
+                       
+                    </div>
+
+                    <!-- 按鈕 -->
+                    <div class="form-button">
+                        <button class="button button-block button-primary button-nina" type="submit">儲存貼文</button>
+                    </div>
+
+                </form>
             </div>
-        </section> -->
+        </div>
     </div>
-    <!-- Global Mailform Output-->
-    <div class="snackbars" id="form-output-global"></div>
-    <!-- Javascript-->
-    <script src="js/core.min.js"></script>
-    <script src="js/script.js"></script>
+</section>
+
+
+
+        <!-- Global Mailform Output-->
+        <div class="snackbars" id="form-output-global"></div>
+        <!-- Javascript-->
+        <script src="js/core.min.js"></script>
+        <script src="js/script.js"></script>
 </body>
 
 </html>
