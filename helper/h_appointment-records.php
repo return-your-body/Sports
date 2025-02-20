@@ -582,6 +582,7 @@ if (isset($_SESSION["帳號"])) {
         st.shifttime AS shifttime,
         d.doctor AS doctor_name,
         COALESCE(a.note, '無') AS note,
+        COALESCE(s.status_id, 1) AS status_id,  -- 確保 `status_id` 預設為 1 (預約)
         COALESCE(s.status_name, '未設定') AS status_name  
     FROM appointment a
     LEFT JOIN people p ON a.people_id = p.people_id
@@ -594,6 +595,7 @@ if (isset($_SESSION["帳號"])) {
     ORDER BY ds.date, st.shifttime
     LIMIT ?, ?
 ";
+
     $data_stmt = $link->prepare($data_sql);
     $params[] = $offset;
     $params[] = $records_per_page;
@@ -688,19 +690,31 @@ if (isset($_SESSION["帳號"])) {
                         <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
                         <td><?php echo htmlspecialchars($row['note']); ?></td>
                         <!-- <td><?php echo htmlspecialchars($row['status_name']); ?></td> -->
-                        <td>
+                        <!-- <td>
                           <select class="status-dropdown" data-id="<?php echo $row['id']; ?>"
                             data-doctor-id="<?php echo $row['doctor_id']; ?>" <?php echo (in_array($row['status_name'], ['請假', '爽約', '已看診'])) ? 'disabled' : ''; ?>>
-
                             <option value="預約" <?php echo ($row['status_name'] == '預約') ? 'selected' : ''; ?>>預約</option>
                             <option value="修改" <?php echo ($row['status_name'] == '修改') ? 'selected' : ''; ?>>修改</option>
                             <option value="報到" <?php echo ($row['status_name'] == '報到') ? 'selected' : ''; ?>>報到</option>
                             <option value="請假" <?php echo ($row['status_name'] == '請假') ? 'selected' : ''; ?>>請假</option>
                             <option value="爽約" <?php echo ($row['status_name'] == '爽約') ? 'selected' : ''; ?>>爽約</option>
-                            <option value="看診中" <?php echo ($row['status_name'] == '看診中') ? 'selected' : ''; ?>>看診中</option>
-                            <option value="已看診" <?php echo ($row['status_name'] == '已看診') ? 'selected' : ''; ?>>已看診</option>
+                          </select>
+                        </td> -->
+                        <td>
+                          <select class="status-dropdown" data-id="<?php echo $row['id']; ?>"
+                            data-doctor-id="<?php echo $row['doctor_id']; ?>" <?php echo (in_array($row['status_id'], [4, 5, 6])) ? 'disabled' : ''; ?>>
+
+                            <option value="1" <?php echo ($row['status_id'] == 1) ? 'selected' : ''; ?>>預約</option>
+                            <option value="2" <?php echo ($row['status_id'] == 2) ? 'selected' : ''; ?>>修改</option>
+                            <option value="3" <?php echo ($row['status_id'] == 3) ? 'selected' : ''; ?>>報到</option>
+                            <option value="4" <?php echo ($row['status_id'] == 4) ? 'selected' : ''; ?>>請假</option>
+                            <option value="5" <?php echo ($row['status_id'] == 5) ? 'selected' : ''; ?>>爽約</option>
+                            <option value="6" <?php echo ($row['status_id'] == 6) ? 'selected' : ''; ?>>已看診</option>
+                            <option value="8" <?php echo ($row['status_id'] == 8) ? 'selected' : ''; ?>>看診中</option>
+
                           </select>
                         </td>
+
 
                         <td>
                           <a href="h_print-appointment.php?id=<?php echo $row['id']; ?>" target="_blank">
@@ -777,116 +791,49 @@ if (isset($_SESSION["帳號"])) {
         </div>
       </div>
     </div>
-
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const modalOverlay = document.getElementById("modal-overlay");
-        const appointmentDate = document.getElementById("appointment-date");
-        const appointmentTime = document.getElementById("appointment-time");
-        let selectedAppointmentId = null;
-        let selectedDoctorId = null;
+    document.addEventListener("DOMContentLoaded", function () {
+    console.log("✅ JavaScript 載入成功");
 
-        // **當狀態改為「修改」時，彈出修改視窗**
-        document.querySelectorAll(".status-dropdown").forEach((select) => {
-          select.addEventListener("change", function () {
-            let selectedStatus = this.value;
-            selectedAppointmentId = this.getAttribute("data-id");
-            selectedDoctorId = this.getAttribute("data-doctor-id");
+    document.querySelectorAll(".status-dropdown").forEach((select) => {
+        select.addEventListener("change", function () {
+            let appointmentId = this.getAttribute("data-id");
+            let selectedStatus = parseInt(this.value, 10);
 
-            if (selectedStatus === "修改") {
-              console.log("🔍 修改預約，醫生 ID:", selectedDoctorId, "預約 ID:", selectedAppointmentId);
-              modalOverlay.style.display = "flex";
+            console.log(`📡 變更狀態: appointment_id=${appointmentId}, status_id=${selectedStatus}`);
 
-              appointmentDate.value = "";
-              appointmentTime.innerHTML = "<option value=''>請選擇時間</option>";
-
-              // **當日期變更時，請求可用時段**
-              appointmentDate.addEventListener("change", function () {
-                let date = this.value;
-                if (!date || !selectedDoctorId) {
-                  console.error("❌ 醫生 ID 或日期無效:", selectedDoctorId, date);
-                  appointmentTime.innerHTML = "<option value=''>無可用時段</option>";
-                  return;
-                }
-
-                console.log(`📡 發送請求: 獲取時間.php?doctor_id=${selectedDoctorId}&date=${date}`);
-
-                fetch(`獲取時間.php?doctor_id=${selectedDoctorId}&date=${date}`)
-                  .then(response => response.json())
-                  .then(data => {
-                    console.log("✅ API 回傳時段:", data);
-
-                    // **確保資料為陣列，並檢查是否有可用時段**
-                    if (!Array.isArray(data) || data.length === 0) {
-                      appointmentTime.innerHTML = "<option value=''>無可用時段</option>";
-                      return;
-                    }
-
-                    // **清空選單並加入新選項**
-                    appointmentTime.innerHTML = "<option value=''>請選擇時間</option>";
-                    data.forEach((time, index) => {
-                      let option = document.createElement("option");
-                      option.value = time;  // 確保選項有值
-                      option.textContent = time; // 顯示時間
-                      appointmentTime.appendChild(option);
-                    });
-
-                    console.log("🎯 最終可用時段:", appointmentTime.innerHTML);
-                  })
-                  .catch(error => {
-                    console.error("❌ 獲取時段失敗:", error);
-                    appointmentTime.innerHTML = "<option value=''>獲取時段失敗</option>";
-                  });
-              });
-            }
-          });
-        });
-
-        // **關閉 Modal**
-        document.getElementById("modal-close").addEventListener("click", function () {
-          modalOverlay.style.display = "none";
-        });
-
-        document.getElementById("cancel-modify").addEventListener("click", function () {
-          modalOverlay.style.display = "none";
-        });
-
-        // **確認修改**
-        document.getElementById("confirm-modify").addEventListener("click", function () {
-          let date = appointmentDate.value;
-          let timeId = appointmentTime.value;
-
-          if (!date || !timeId) {
-            alert("請選擇日期與時間");
-            return;
-          }
-
-          console.log(`📡 發送修改請求: 修改預約.php (appointment_id=${selectedAppointmentId}, date=${date}, shifttime_id=${timeId})`);
-
-          fetch("修改預約.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              appointment_id: selectedAppointmentId,
-              date: date,
-              shifttime_id: timeId
+            fetch("更新狀態.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    appointment_id: appointmentId,
+                    status_id: selectedStatus
+                })
             })
-          })
             .then(response => response.json())
             .then(data => {
-              if (data.success) {
-                alert("✅ 預約修改成功");
-                location.reload();
-              } else {
-                alert("❌ 預約修改失敗：" + data.error);
-              }
+                console.log("✅ 伺服器回應:", data);
+
+                if (data.success) {
+                    alert(data.message);
+
+                    // **鎖死選單 (請假, 爽約, 已看診)**
+                    if ([4, 5, 6].includes(selectedStatus)) {
+                        select.disabled = true;
+                    }
+
+                    location.reload();
+                } else {
+                    alert("❌ 錯誤：" + (data.error || "未知錯誤"));
+                }
             })
             .catch(error => {
-              alert("❌ 系統錯誤，請稍後再試");
-              console.error("修改失敗", error);
+                alert("❌ 系統錯誤，請稍後再試");
+                console.error("❌ 更新失敗:", error);
             });
         });
-      });
+    });
+});
 
     </script>
 
