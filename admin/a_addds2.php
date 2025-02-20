@@ -604,14 +604,25 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		<?php
 		include '../db.php'; // 連線資料庫
 		
-		// 取得已填寫的班表資料
+		// 取得已填寫的班表資料（含上下班時間）
 		$existingShifts = [];
-		$query = "SELECT doctor_id, date FROM doctorshift";
+		$query = "
+    SELECT ds.doctor_id, DATE_FORMAT(ds.date, '%Y-%m-%d') AS date, 
+           st1.shifttime AS go_time, st2.shifttime AS off_time
+    FROM doctorshift ds
+    JOIN shifttime st1 ON ds.go = st1.shifttime_id
+    JOIN shifttime st2 ON ds.off = st2.shifttime_id";
+
+
 		$result = mysqli_query($link, $query);
 
 		while ($row = mysqli_fetch_assoc($result)) {
-			$existingShifts[$row['doctor_id']][$row['date']] = true;
+			$existingShifts[$row['doctor_id']][$row['date']] = [
+				'go' => $row['go_time'],
+				'off' => $row['off_time']
+			];
 		}
+
 
 		?>
 
@@ -744,16 +755,55 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 						const dayOfWeek = currentDate.getDay();
 						const isOffDuty = !getSelectedWeekdays().includes(dayOfWeek);
 
+						// 如果這天已填寫
 						if (existingShifts[selectedDoctorId] && existingShifts[selectedDoctorId][dateStr]) {
-							cell.innerHTML = `<div>${currentDate.getDate()}</div><div>已填寫</div>`;
-							cell.style.backgroundColor = "#e0e0e0";
-						} else {
+							const shiftData = existingShifts[selectedDoctorId][dateStr]; // 獲取時間
+
 							cell.innerHTML = `
+				<div>${currentDate.getDate()}</div>
+				<div>已填寫</div>
+				<div>上班: ${shiftData.go}</div>
+				<div>下班: ${shiftData.off}</div>
+				<button type="button" class="edit-shift">編輯</button>
+			`;
+							cell.style.backgroundColor = "#e0e0e0"; // 灰色背景表示已填寫
+
+							// 編輯按鈕點擊事件
+							cell.querySelector(".edit-shift").addEventListener("click", function () {
+								cell.innerHTML = `
 					<div>${currentDate.getDate()}</div>
 					<div><label>上班：</label><select class="start-hour"></select></div>
 					<div><label>下班：</label><select class="end-hour"></select></div>
-					<div><label><input type="checkbox" class="off-duty-checkbox" ${isOffDuty ? "checked" : ""}> 不上班</label></div>
+					<div><label><input type="checkbox" class="off-duty-checkbox"> 不上班</label></div>
 				`;
+
+								const startHourSelect = cell.querySelector(".start-hour");
+								const endHourSelect = cell.querySelector(".end-hour");
+								const offDutyCheckbox = cell.querySelector(".off-duty-checkbox");
+
+								generateHourOptions(startHourSelect, shiftData.go);
+								generateHourOptions(endHourSelect, shiftData.off);
+
+								// 取消編輯時，顯示原本的已填寫內容
+								offDutyCheckbox.addEventListener("change", function () {
+									if (this.checked) {
+										startHourSelect.disabled = true;
+										endHourSelect.disabled = true;
+									} else {
+										startHourSelect.disabled = false;
+										endHourSelect.disabled = false;
+									}
+								});
+							});
+
+						} else {
+							// 尚未填寫的班表
+							cell.innerHTML = `
+				<div>${currentDate.getDate()}</div>
+				<div><label>上班：</label><select class="start-hour"></select></div>
+				<div><label>下班：</label><select class="end-hour"></select></div>
+				<div><label><input type="checkbox" class="off-duty-checkbox" ${isOffDuty ? "checked" : ""}> 不上班</label></div>
+			`;
 
 							const startHourSelect = cell.querySelector(".start-hour");
 							const endHourSelect = cell.querySelector(".end-hour");
@@ -784,6 +834,8 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 					calendarBody.appendChild(row);
 				}
 
+
+
 				function generateHourOptions(selectElement, defaultTime) {
 					selectElement.innerHTML = "";
 					for (let hour = 7; hour < 24; hour++) {
@@ -795,6 +847,8 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 						selectElement.appendChild(option);
 					}
 				}
+
+
 
 				function updateCalendar() {
 					const selectedYear = parseInt(yearSelect.value);
