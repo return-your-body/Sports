@@ -281,7 +281,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
             color: red;
             margin-top: 5px;
         }
-
     </style>
 </head>
 
@@ -394,7 +393,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                     </ul>
                                 </li>
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="a_change.php">變更密碼</a>
-								</li>
+                                </li>
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                                         onclick="showLogoutBox()">登出</a>
@@ -474,6 +473,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
         // 查詢排班數據
         $query = "
 SELECT 
+    ds.doctorshift_id,
     d.doctor_id, 
     d.doctor, 
     ds.date, 
@@ -490,8 +490,8 @@ JOIN
 ORDER BY ds.date, d.doctor_id";
 
         $result = mysqli_query($link, $query);
-
         $schedule = [];
+
         while ($row = mysqli_fetch_assoc($result)) {
             $date = $row['date'];
             if (!isset($schedule[$date])) {
@@ -502,15 +502,15 @@ ORDER BY ds.date, d.doctor_id";
                 'go_time' => $row['go_time'],
                 'off_time' => $row['off_time'],
                 'doctor_id' => $row['doctor_id'],
+                'shift_id' => $row['doctorshift_id']
             ];
         }
 
         // 查詢請假數據
         $query_leaves = "SELECT l.doctor_id, l.start_date, l.end_date FROM leaves l WHERE l.is_approved = 1";
-
         $result_leaves = mysqli_query($link, $query_leaves);
-
         $leaves = [];
+
         while ($row = mysqli_fetch_assoc($result_leaves)) {
             $leaves[] = [
                 'doctor_id' => $row['doctor_id'],
@@ -519,9 +519,17 @@ ORDER BY ds.date, d.doctor_id";
             ];
         }
 
+        // **查詢整點的 shifttime (00:00 ~ 23:00)**
+        $query_times = "SELECT shifttime_id, shifttime FROM shifttime WHERE shifttime LIKE '%:00'";
+        $result_times = mysqli_query($link, $query_times);
+        $shifttimes = [];
+
+        while ($row = mysqli_fetch_assoc($result_times)) {
+            $shifttimes[] = $row;
+        }
         // 輸出數據給前端
         header('Content-Type: application/json');
-        // echo json_encode(['schedule' => $schedule, 'leaves' => $leaves], JSON_UNESCAPED_UNICODE);
+        // echo json_encode(['schedule' => $schedule, 'leaves' => $leaves, 'shifttimes' => $shifttimes], JSON_UNESCAPED_UNICODE);
         ?>
 
         <section class="section section-lg bg-default">
@@ -550,6 +558,118 @@ ORDER BY ds.date, d.doctor_id";
 
             </div>
 
+            <div id="editShiftModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeModal()">&times;</span> <!-- 關閉按鈕 -->
+                    <h4 id="editShiftTitle"></h4> <!-- 顯示標題與日期 -->
+
+                    <form id="editShiftForm">
+                        <input type="hidden" id="editDoctorId"> <!-- 醫生 ID -->
+                        <input type="hidden" id="editDate"> <!-- 日期 -->
+
+                        <div class="shift-time-container">
+                            <label for="editGoTime">上班時間：</label>
+                            <select id="editGoTime"></select>
+                        </div>
+
+                        <div class="shift-time-container">
+                            <label for="editOffTime">下班時間：</label>
+                            <select id="editOffTime"></select>
+                        </div>
+
+                        <!-- 儲存按鈕 -->
+                        <button type="button" onclick="saveShift()">儲存</button>
+                        <!-- 🔥 新增「刪除」按鈕 -->
+                        <button type="button" onclick="deleteShift()"
+                            style="background-color: red; color: white; margin-top: 10px;">
+                            刪除
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+
+            <!-- Modal 樣式 -->
+            <style>
+                /* Modal 樣式 */
+                .modal {
+                    display: none;
+                    /* 預設隱藏 */
+                    position: fixed;
+                    z-index: 10;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    justify-content: center;
+                    align-items: center;
+                }
+
+
+                /* Modal 內容 */
+                .modal-content {
+                    background-color: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                    width: 400px;
+                    text-align: center;
+                    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+                }
+
+                /* 關閉按鈕 */
+                .close {
+                    float: right;
+                    font-size: 28px;
+                    cursor: pointer;
+                }
+
+                /* 按鈕樣式 */
+                .edit-btn {
+                    background-color: #007bff;
+                    color: white;
+                    border: none;
+                    padding: 5px 10px;
+                    margin-top: 5px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                }
+
+                .edit-btn:hover {
+                    background-color: #0056b3;
+                }
+
+                /* 讓日期置中並換行 */
+                .shift-date {
+                    display: block;
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin-top: 5px;
+                }
+
+                .shift-time-container {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 10px;
+                }
+
+                .shift-time-container label {
+                    font-size: 16px;
+                    font-weight: bold;
+                    margin-right: 10px;
+                }
+
+                .shift-time-container select {
+                    padding: 5px;
+                    font-size: 16px;
+                    width: 100px;
+                    text-align: center;
+                }
+            </style>
+
+
+
             <script>
                 const data = <?php echo json_encode(['schedule' => $schedule, 'leaves' => $leaves], JSON_UNESCAPED_UNICODE); ?>;
                 const calendarData = data.schedule; // 排班數據
@@ -560,6 +680,111 @@ ORDER BY ds.date, d.doctor_id";
 
                 console.log("Calendar Data:", calendarData);
                 console.log("Leave Data:", leaveData);
+
+                function populateShiftTimeOptions() {
+                    const goSelect = document.getElementById('editGoTime');
+                    const offSelect = document.getElementById('editOffTime');
+
+                    goSelect.innerHTML = '';
+                    offSelect.innerHTML = '';
+
+                    // 只加入整點的選項
+                    window.shifttimes.forEach(time => {
+                        if (time.shifttime.endsWith(":00")) {  // 確保是整點
+                            let option1 = new Option(time.shifttime, time.shifttime_id);
+                            let option2 = new Option(time.shifttime, time.shifttime_id);
+                            goSelect.appendChild(option1);
+                            offSelect.appendChild(option2);
+                        }
+                    });
+                }
+
+
+                document.addEventListener('DOMContentLoaded', function () {
+                    fetch('a_addds.php')
+                        .then(response => response.json())
+                        .then(data => {
+                            window.scheduleData = data.schedule; // 排班數據
+                            window.shifttimes = data.shifttimes; // 整點時間數據
+                        });
+                });
+
+                function editShift(shiftId, date, doctorId, goTime, offTime) {
+                    document.getElementById('shiftId').value = shiftId;
+                    document.getElementById('shiftDate').value = date;
+                    document.getElementById('shiftDoctorId').value = doctorId;
+
+                    const goTimeSelect = document.getElementById('shiftGo');
+                    const offTimeSelect = document.getElementById('shiftOff');
+
+                    goTimeSelect.innerHTML = '';
+                    offTimeSelect.innerHTML = '';
+
+                    window.shifttimes.forEach(time => {
+                        let optionGo = new Option(time.shifttime, time.shifttime_id);
+                        let optionOff = new Option(time.shifttime, time.shifttime_id);
+
+                        if (time.shifttime === goTime) optionGo.selected = true;
+                        if (time.shifttime === offTime) optionOff.selected = true;
+
+                        goTimeSelect.add(optionGo);
+                        offTimeSelect.add(optionOff);
+                    });
+
+                    document.getElementById('editModal').style.display = 'block';
+                }
+
+                function closeModal() {
+                    document.getElementById('editModal').style.display = 'none';
+                }
+
+                function saveShift() {
+                    const shiftId = document.getElementById('shiftId').value;
+                    const goTime = document.getElementById('shiftGo').value;
+                    const offTime = document.getElementById('shiftOff').value;
+
+                    fetch('編輯治療師班表.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `shiftId=${shiftId}&goTime=${goTime}&offTime=${offTime}`
+                    })
+                        .then(response => response.text())
+                        .then(result => {
+                            alert(result);
+                            location.reload();
+                        });
+                }
+
+                // **刪除班表**
+                function deleteShift() {
+                    const doctorId = document.getElementById('editDoctorId').value;
+                    const date = document.getElementById('editDate').value;
+
+                    if (!confirm("確定要刪除這個班表嗎？此操作無法恢復！")) {
+                        return; // 如果使用者取消，則不執行刪除
+                    }
+
+                    fetch('刪除治療師班表.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ doctor_id: doctorId, date: date })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('班表已刪除');
+                                closeModal(); // 關閉彈窗
+                                location.reload(); // 重新載入頁面
+                            } else {
+                                alert('刪除失敗，請稍後再試');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('刪除錯誤:', error);
+                            alert('刪除過程中發生錯誤，請檢查伺服器日誌');
+                        });
+                }
+
 
                 /**
                  * 調整排班時間，處理部分請假情況
@@ -608,22 +833,13 @@ ORDER BY ds.date, d.doctor_id";
                         const cell = document.createElement('td');
                         cell.innerHTML = `<strong>${date}</strong>`;
 
-                        const currentDate = new Date(year, month, date); // 當前渲染的日期
-
                         if (calendarData[fullDate]) {
                             calendarData[fullDate].forEach(shift => {
-                                const adjustedShift = adjustShiftTime(shift.doctor_id, fullDate, shift.go_time, shift.off_time);
-
                                 const shiftDiv = document.createElement('div');
-                                if (adjustedShift) {
-                                    shiftDiv.textContent = `${shift.doctor}: ${adjustedShift.go_time} - ${adjustedShift.off_time}`;
-
-                                    // 只為今天及以後的日期添加預約按鈕
-
-                                } else {
-                                    shiftDiv.textContent = `${shift.doctor}: 請假`;
-                                    shiftDiv.style.color = 'red';
-                                }
+                                shiftDiv.innerHTML = `
+                    ${shift.doctor}: ${shift.go_time} - ${shift.off_time} 
+                    <button class="edit-btn" onclick="openEditModal(${shift.doctor_id}, '${shift.doctor}', '${fullDate}', '${shift.go_time}', '${shift.off_time}')">編輯</button>
+                `;
 
                                 shiftDiv.className = 'shift-info';
                                 cell.appendChild(shiftDiv);
@@ -636,7 +852,6 @@ ORDER BY ds.date, d.doctor_id";
                         }
 
                         row.appendChild(cell);
-
                         if (row.children.length === 7) {
                             calendarBody.appendChild(row);
                             row = document.createElement('tr');
@@ -648,6 +863,86 @@ ORDER BY ds.date, d.doctor_id";
                     }
                     calendarBody.appendChild(row);
                 }
+
+                document.addEventListener("DOMContentLoaded", function () {
+                    generateTimeOptions();
+                });
+
+                function generateTimeOptions() {
+                    const goTimeSelect = document.getElementById("editGoTime");
+                    const offTimeSelect = document.getElementById("editOffTime");
+
+                    goTimeSelect.innerHTML = "";
+                    offTimeSelect.innerHTML = "";
+
+                    for (let hour = 7; hour <= 24; hour++) {
+                        let timeStr = (hour < 10 ? "0" + hour : hour) + ":00"; // 格式化為 "07:00", "08:00", ..., "24:00"
+                        let optionGo = new Option(timeStr, timeStr);
+                        let optionOff = new Option(timeStr, timeStr);
+
+                        goTimeSelect.appendChild(optionGo);
+                        offTimeSelect.appendChild(optionOff);
+                    }
+                }
+
+                // **開啟編輯視窗**
+                function openEditModal(doctorId, doctorName, date, goTime, offTime) {
+                    document.getElementById("editShiftTitle").innerHTML = `
+        <strong>編輯 ${doctorName} 的班表</strong><br>
+        <span class="shift-date">${formatDate(date)}</span>
+    `;
+
+                    document.getElementById("editDoctorId").value = doctorId;
+                    document.getElementById("editDate").value = date;
+
+                    const goTimeSelect = document.getElementById("editGoTime");
+                    const offTimeSelect = document.getElementById("editOffTime");
+
+                    // 設定選擇的時間
+                    goTimeSelect.value = goTime;
+                    offTimeSelect.value = offTime;
+
+                    document.getElementById("editShiftModal").style.display = "flex";
+                }
+
+
+                // **格式化日期**
+                function formatDate(dateString) {
+                    const date = new Date(dateString);
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}年${month}月${day}日`;
+                }
+
+                // **關閉視窗**
+                function closeModal() {
+                    document.getElementById('editShiftModal').style.display = 'none';
+                }
+
+                // **儲存修改**
+                function saveShift() {
+                    const doctorId = document.getElementById('editDoctorId').value;
+                    const date = document.getElementById('editDate').value;
+                    const goTime = document.getElementById('editGoTime').value;
+                    const offTime = document.getElementById('editOffTime').value;
+
+                    fetch('編輯治療師班表.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ doctor_id: doctorId, date: date, go_time: goTime, off_time: offTime })
+                    }).then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('班表已更新');
+                                closeModal();
+                                location.reload();
+                            } else {
+                                alert('更新失敗');
+                            }
+                        });
+                }
+
 
                 /**
                  * 初始化年份與月份選單
@@ -694,4 +989,3 @@ ORDER BY ds.date, d.doctor_id";
 </body>
 
 </html>
-
