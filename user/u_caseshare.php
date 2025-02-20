@@ -348,27 +348,31 @@ if (isset($_SESSION["帳號"])) {
 		</div>
 
 
+
 		<?php
-		require '../db.php'; // 連接資料庫
-		
-		// 查詢 Instagram 貼文資料
-		$query = "SELECT post_url, image_url, caption, created_at FROM instagram_posts ORDER BY created_at DESC";
+		require '../db.php';
+
+		$query = "
+    SELECT ip.post_url, ip.image_url, ip.caption, ip.created_at, ic.igpost_class
+    FROM instagram_posts ip
+    LEFT JOIN igpost_class ic ON ip.igpost_class_id = ic.igpost_class_id
+    ORDER BY ip.created_at DESC";
 		$result = mysqli_query($link, $query);
 		?>
 
-		<!-- Instagram 貼文區塊 -->
-		<section class="section section-lg novi-bg novi-bg-img bg-gray-100">
+		<section class="section section-lg bg-gray-100 text-center">
 			<div class="container">
-				<h3 class="text-center">📸 Instagram 貼文</h3>
+				<h3>📷 Instagram 貼文</h3>
 				<div class="row row-40 row-lg-50">
 					<?php while ($row = mysqli_fetch_assoc($result)): ?>
-						<div class="col-sm-6 col-md-4 wow fadeInUp" data-wow-delay=".1s">
+						<div class="col-sm-6 col-md-4 wow fadeInUp">
 							<div class="box-project box-width-3">
 								<div class="box-project-media">
 									<img class="box-project-img" src="<?php echo htmlspecialchars($row['image_url']); ?>"
 										alt="Instagram 貼文">
 								</div>
-								<div class="box-project-subtitle small">INSTAGRAM</div>
+								<div class="box-project-subtitle small">
+									<?php echo htmlspecialchars($row['igpost_class']); ?></div>
 								<h6 class="box-project-title"><?php echo htmlspecialchars($row['caption']); ?></h6>
 								<div class="box-project-meta">
 									<span>📅 <?php echo date("Y-m-d", strtotime($row['created_at'])); ?></span>
@@ -381,6 +385,7 @@ if (isset($_SESSION["帳號"])) {
 				</div>
 			</div>
 		</section>
+
 
 
 

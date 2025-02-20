@@ -1,42 +1,38 @@
 <?php
 require '../db.php'; // 連接資料庫
 
-// 檢查是否為 POST 請求
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // 檢查是否有必填欄位未填寫
-    if (empty($_POST['post_url']) || empty($_POST['image_url']) || empty($_POST['caption'])) {
-        echo "<script>
-                alert('⚠️ 所有欄位皆為必填！');
-                history.back();
-              </script>";
-        exit;
-    }
+  if (empty($_POST['post_url']) || empty($_POST['image_url']) || empty($_POST['caption']) || empty($_POST['igpost_class_id'])) {
+    echo "<script>alert('⚠️ 所有欄位皆為必填！'); history.back();</script>";
+  } else {
+    $post_url = trim($_POST['post_url']);
+    $image_url = trim($_POST['image_url']);
+    $caption = trim($_POST['caption']);
+    $igpost_class_id = intval($_POST['igpost_class_id']); // 轉換為數字，避免 SQL 錯誤
 
-    // 取得貼文資料
-    $post_url = trim($_POST['post_url']);   // 貼文網址
-    $image_url = trim($_POST['image_url']); // 貼文圖片網址
-    $caption = trim($_POST['caption']);     // 貼文文字內容
-
-    // 準備 SQL 插入語句
-    $query = "INSERT INTO instagram_posts (post_url, image_url, caption) VALUES (?, ?, ?)";
+    $query = "INSERT INTO instagram_posts (post_url, image_url, caption, igpost_class_id) VALUES (?, ?, ?, ?)";
     $stmt = mysqli_prepare($link, $query);
-    mysqli_stmt_bind_param($stmt, "sss", $post_url, $image_url, $caption);
-
-    // 執行 SQL 語句
+    mysqli_stmt_bind_param($stmt, "sssi", $post_url, $image_url, $caption, $igpost_class_id);
     if (mysqli_stmt_execute($stmt)) {
-        echo "<script>
-                alert('✅ 貼文已成功儲存！');
-                window.location.href = 'a_igadd.php'; // 成功後跳轉到貼文列表頁
-              </script>";
+      echo "<script>
+              alert('✅ 貼文已成功儲存！');
+              setTimeout(function() {
+                  window.location.href='a_igadd.php';
+              }, 1000); // 1秒延遲，確保 alert 顯示
+          </script>";
     } else {
-        echo "<script>
-                alert('❌ 儲存失敗：" . mysqli_error($link) . "');
-                history.back();
-              </script>";
+      $error_message = addslashes(mysqli_error($link));
+      echo "<script>
+              alert('❌ 儲存失敗：" . $error_message . "');
+              setTimeout(function() {
+                  history.back();
+              }, 1000); 
+          </script>";
     }
 
-    // 關閉連線
+
     mysqli_stmt_close($stmt);
     mysqli_close($link);
+  }
 }
 ?>
