@@ -1,65 +1,81 @@
 <?php
 require '../db.php';
+header('Content-Type: application/json');
 
-// 接收前端傳來的參數
-$id = $_POST['id'];
-$doctorshift_id = $_POST['doctorshift_id'];
-$shifttime_id = $_POST['shifttime_id'];
+// 啟用錯誤報告
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-// 紀錄傳入參數，方便 Debug
-error_log("Received - doctorshift_id: " . $doctorshift_id . ", shifttime_id: " . $shifttime_id . ", appointment_id: " . $id);
-
-// **檢查 doctorshift_id 是否存在**
-$check_shift = $link->prepare("
-    SELECT go, off FROM doctorshift WHERE doctorshift_id = ?
-");
-$check_shift->bind_param("i", $doctorshift_id);
-$check_shift->execute();
-$check_shift->store_result();
-
-if ($check_shift->num_rows == 0) {
-    echo json_encode(["success" => false, "error" => "無效的班表 ID"]);
+// 解析 JSON 請求
+$data = json_decode(file_get_contents("php://input"), true);
+if (!isset($data['appointment_id']) || !isset($data['status_id'])) {
+    echo json_encode(["success" => false, "error" => "缺少必要參數"]);
     exit;
 }
 
-$check_shift->bind_result($go, $off);
-$check_shift->fetch();
-$check_shift->close();
+$appointment_id = intval($data['appointment_id']);
+$status_id = intval($data['status_id']);
+$black_points = 0;
+$black_id = null;  // 違規類別 ID
 
-// **檢查 shifttime_id 是否有效 並且 在 go 和 off 範圍內**
-$check_time = $link->prepare("
-    SELECT shifttime_id FROM shifttime WHERE shifttime_id = ? 
-");
-$check_time->bind_param("i", $shifttime_id);
-$check_time->execute();
-$check_time->store_result();
-
-if ($check_time->num_rows == 0) {
-    echo json_encode(["success" => false, "error" => "無效的時間 ID"]);
-    exit;
+// 設定違規分數與違規類別 ID
+if ($status_id == 4) { // 請假 +0.5
+    $black_points = 0.5;
+    $black_id = 1; // 假設 1 代表請假違規
+} elseif ($status_id == 5) { // 爽約 +1
+    $black_points = 1;
+    $black_id = 2; // 假設 2 代表爽約違規
 }
-$check_time->close();
 
-// 確保選擇的時段在 `go` 和 `off` 範圍內
-if ($shifttime_id < $go || $shifttime_id > $off) {
-    echo json_encode(["success" => false, "error" => "選擇的時間超出排班範圍"]);
+// 確保資料庫連線
+if (!$link) {
+    echo json_encode(["success" => false, "error" => "資料庫連線失敗"]);
     exit;
 }
 
-// **更新 appointment 資料**
-$update_stmt = $link->prepare("
-    UPDATE appointment 
-    SET doctorshift_id = ?, shifttime_id = ? 
-    WHERE appointment_id = ?
-");
-$update_stmt->bind_param("iii", $doctorshift_id, $shifttime_id, $id);
-$success = $update_stmt->execute();
-$update_stmt->close();
+// 取得 people_id
+$query = "SELECT people_id FROM appointment WHERE appointment_id = ?";
+$stmt = $link->prepare($query);
+$stmt->bind_param("i", $appointment_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$people_id = ($row = $result->fetch_assoc()) ? $row['people_id'] : null;
+$stmt->close();
 
-if ($success) {
-    echo json_encode(["success" => true]);
+if (!$people_id) {
+    echo json_encode(["success" => false, "error" => "無效的預約 ID"]);
+    exit;
+}
+
+// 更新 appointment 狀態
+$stmt = $link->prepare("UPDATE appointment SET status_id = ? WHERE appointment_id = ?");
+$stmt->bind_param("ii", $status_id, $appointment_id);
+
+if ($stmt->execute()) {
+    // 違規處理
+    if ($black_points > 0) {
+        // 更新 people.black
+        $update_black = $link->prepare("UPDATE people SET black = black + ? WHERE people_id = ?");
+        $update_black->bind_param("di", $black_points, $people_id);
+        $update_black->execute();
+
+        // 新增違規紀錄到 blacklist
+        $insert_blacklist = $link->prepare("INSERT INTO blacklist (people_id, black_id, violation_date) VALUES (?, ?, NOW())");
+        $insert_blacklist->bind_param("ii", $people_id, $black_id);
+        $insert_blacklist->execute();
+    }
+
+    // 設定回應訊息
+    $messages = [
+        3 => "狀態已更新為報到！",
+        4 => "狀態已更新為請假，已記錄違規！",
+        5 => "狀態已更新為爽約，已記錄違規！",
+        8 => "狀態已更新為看診中！",
+        6 => "已看診，無法變更狀態"
+    ];
+
+    echo json_encode(["success" => true, "message" => $messages[$status_id] ?? "狀態已成功更新！"]);
 } else {
-    echo json_encode(["success" => false, "error" => "資料更新失敗: " . $link->error]);
+    echo json_encode(["success" => false, "error" => "更新失敗"]);
 }
-exit;
 ?>
