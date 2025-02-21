@@ -3,31 +3,19 @@ require '../db.php';
 header('Content-Type: application/json');
 
 if (!isset($_GET['doctor_id']) || !isset($_GET['date'])) {
-    echo json_encode([]);
+    echo json_encode(["error" => "缺少必要參數"]);
     exit();
 }
 
 $doctor_id = intval($_GET['doctor_id']);
 $date = $_GET['date'];
 
-$query = "
-    SELECT st.shifttime 
-    FROM shifttime st
-    JOIN doctorshift ds ON ds.doctor_id = ? AND ds.date = ?
-    WHERE EXISTS (
-        SELECT 1 FROM doctorshift WHERE doctorshift.doctor_id = ds.doctor_id 
-        AND doctorshift.date = ds.date 
-        AND ds.go <= st.shifttime_id 
-        AND ds.off >= st.shifttime_id
-    )
-    AND NOT EXISTS (
-        SELECT 1 FROM appointment a 
-        WHERE a.doctorshift_id = ds.doctorshift_id 
-        AND a.shifttime_id = st.shifttime_id 
-        AND a.status_id IN (1, 2, 4, 5, 6) -- 排除已預約、請假、爽約、已看診
-    )
-    ORDER BY st.shifttime ASC
-";
+// 查詢醫生當日的可用時段，確保未被預約
+$query = "SELECT st.shifttime FROM shifttime st
+          JOIN doctorshift ds ON ds.go <= st.shifttime_id AND ds.off >= st.shifttime_id
+          LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id AND a.shifttime_id = st.shifttime_id
+          WHERE ds.doctor_id = ? AND ds.date = ? AND a.shifttime_id IS NULL
+          ORDER BY st.shifttime ASC";
 
 $stmt = $link->prepare($query);
 $stmt->bind_param("is", $doctor_id, $date);
@@ -39,5 +27,5 @@ while ($row = $result->fetch_assoc()) {
     $available_times[] = $row['shifttime'];
 }
 
-echo json_encode($available_times);
+echo json_encode($available_times, JSON_UNESCAPED_UNICODE);
 ?>

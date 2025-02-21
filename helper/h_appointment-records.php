@@ -689,29 +689,16 @@ if (isset($_SESSION["帳號"])) {
                         <td><?php echo htmlspecialchars($row['shifttime']); ?></td>
                         <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
                         <td><?php echo htmlspecialchars($row['note']); ?></td>
-                        <!-- <td><?php echo htmlspecialchars($row['status_name']); ?></td> -->
-                        <!-- <td>
-                          <select class="status-dropdown" data-id="<?php echo $row['id']; ?>"
-                            data-doctor-id="<?php echo $row['doctor_id']; ?>" <?php echo (in_array($row['status_name'], ['請假', '爽約', '已看診'])) ? 'disabled' : ''; ?>>
-                            <option value="預約" <?php echo ($row['status_name'] == '預約') ? 'selected' : ''; ?>>預約</option>
-                            <option value="修改" <?php echo ($row['status_name'] == '修改') ? 'selected' : ''; ?>>修改</option>
-                            <option value="報到" <?php echo ($row['status_name'] == '報到') ? 'selected' : ''; ?>>報到</option>
-                            <option value="請假" <?php echo ($row['status_name'] == '請假') ? 'selected' : ''; ?>>請假</option>
-                            <option value="爽約" <?php echo ($row['status_name'] == '爽約') ? 'selected' : ''; ?>>爽約</option>
-                          </select>
-                        </td> -->
                         <td>
                           <select class="status-dropdown" data-id="<?php echo $row['id']; ?>"
                             data-doctor-id="<?php echo $row['doctor_id']; ?>" <?php echo (in_array($row['status_id'], [4, 5, 6])) ? 'disabled' : ''; ?>>
-
                             <option value="1" <?php echo ($row['status_id'] == 1) ? 'selected' : ''; ?>>預約</option>
                             <option value="2" <?php echo ($row['status_id'] == 2) ? 'selected' : ''; ?>>修改</option>
                             <option value="3" <?php echo ($row['status_id'] == 3) ? 'selected' : ''; ?>>報到</option>
                             <option value="4" <?php echo ($row['status_id'] == 4) ? 'selected' : ''; ?>>請假</option>
                             <option value="5" <?php echo ($row['status_id'] == 5) ? 'selected' : ''; ?>>爽約</option>
-                            <option value="6" <?php echo ($row['status_id'] == 6) ? 'selected' : ''; ?>>已看診</option>
                             <option value="8" <?php echo ($row['status_id'] == 8) ? 'selected' : ''; ?>>看診中</option>
-
+                            <option value="6" <?php echo ($row['status_id'] == 6) ? 'selected' : ''; ?>>已看診</option>
                           </select>
                         </td>
 
@@ -771,6 +758,7 @@ if (isset($_SESSION["帳號"])) {
 
 
     <!-- 狀態清單 -->
+
     <!-- 修改預約 Modal -->
     <div id="modal-overlay" class="modal-overlay" style="display: none;">
       <div id="modal-container" class="modal-container">
@@ -791,51 +779,38 @@ if (isset($_SESSION["帳號"])) {
         </div>
       </div>
     </div>
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-    console.log("✅ JavaScript 載入成功");
 
-    document.querySelectorAll(".status-dropdown").forEach((select) => {
-        select.addEventListener("change", function () {
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".status-dropdown").forEach((select) => {
+          select.addEventListener("change", function () {
             let appointmentId = this.getAttribute("data-id");
+            let doctorId = this.getAttribute("data-doctor-id");
             let selectedStatus = parseInt(this.value, 10);
 
-            console.log(`📡 變更狀態: appointment_id=${appointmentId}, status_id=${selectedStatus}`);
-
-            fetch("更新狀態.php", {
+            if (selectedStatus === 2) { // 進入修改模式
+              document.getElementById("modal-overlay").style.display = "flex";
+            } else { // 更新狀態
+              fetch("更新狀態.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    appointment_id: appointmentId,
-                    status_id: selectedStatus
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("✅ 伺服器回應:", data);
-
-                if (data.success) {
-                    alert(data.message);
-
-                    // **鎖死選單 (請假, 爽約, 已看診)**
-                    if ([4, 5, 6].includes(selectedStatus)) {
-                        select.disabled = true;
-                    }
-
-                    location.reload();
-                } else {
-                    alert("❌ 錯誤：" + (data.error || "未知錯誤"));
-                }
-            })
-            .catch(error => {
-                alert("❌ 系統錯誤，請稍後再試");
-                console.error("❌ 更新失敗:", error);
-            });
+                body: JSON.stringify({ appointment_id: appointmentId, status_id: selectedStatus })
+              })
+                .then(response => response.json())
+                .then(data => {
+                  alert(data.success ? data.message : "❌ " + data.error);
+                  if ([4, 5, 6].includes(selectedStatus)) {
+                    select.disabled = true;
+                  }
+                  location.reload();
+                });
+            }
+          });
         });
-    });
-});
-
+      });
     </script>
+
+
 
     <br />
     <!--頁尾-->
