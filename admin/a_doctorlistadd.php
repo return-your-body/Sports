@@ -221,7 +221,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                                 href="a_therapist.php">總人數時段表</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_addds.php">治療師班表</a>
+                                                href="a_addds.php">班表</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="a_treatment.php">新增治療項目</a>
@@ -270,9 +270,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                                 href="a_doctorlistadd.php">新增治療師資料</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_doctorlistmod.php">修改治療師資料</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="a_igadd.php">新增哀居貼文</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
@@ -281,7 +278,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                     </ul>
                                 </li>
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="a_change.php">變更密碼</a>
-								</li>
+                                </li>
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                                         onclick="showLogoutBox()">登出</a>
@@ -346,11 +343,11 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
             <!-- Breadcrumbs-->
             <section class="breadcrumbs-custom breadcrumbs-custom-svg">
                 <div class="container">
-                    <p class="heading-1 breadcrumbs-custom-title">治療師資料新增</p>
+                    <p class="heading-1 breadcrumbs-custom-title">治療師資料新增/編輯</p>
                     <ul class="breadcrumbs-custom-path">
                         <li><a href="a_index.php">首頁</a></li>
                         <li><a href="">治療師資料</a></li>
-                        <li class="active">治療師資料新增</li>
+                        <li class="active">治療師資料新增/編輯</li>
                     </ul>
                 </div>
             </section>
@@ -376,11 +373,11 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                             
                                             // 查詢治療師資料（grade_id = 2 為治療師）
                                             $query = "
-                                        SELECT d.doctor_id, d.doctor
-                                        FROM doctor d
-                                        INNER JOIN user u ON d.user_id = u.user_id
-                                        INNER JOIN grade g ON u.grade_id = g.grade_id
-                                        WHERE g.grade_id = 2
+                                    SELECT d.doctor_id, d.doctor
+                                    FROM doctor d
+                                    INNER JOIN user u ON d.user_id = u.user_id
+                                    INNER JOIN grade g ON u.grade_id = g.grade_id
+                                    WHERE g.grade_id = 2
                                     ";
                                             $result = mysqli_query($link, $query);
 
@@ -393,6 +390,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                             }
                                             ?>
                                         </select>
+                                        <p>當前選擇的治療師 ID：<span id="selectedDoctorId">未選擇</span></p>
                                     </div>
                                 </div>
 
@@ -460,12 +458,29 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                     </div>
                                 </div>
 
+                                <!-- 治療理念 -->
+                                <div class="col-md-6">
+                                    <div class="form-wrap form-wrap-validation">
+                                        <label class="form-label-outside">治療理念</label>
+                                        <div id="treatment_concept-container">
+                                            <div class="input-group">
+                                                <input class="form-input" type="text" name="treatment_concept[]"
+                                                    placeholder="請輸入治療理念" required />
+                                                <button type="button" class="btn btn-success"
+                                                    onclick="addInput('treatment_concept-container', 'treatment_concept[]')">+</button>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="treatment_concept-final"
+                                            name="treatment_concept_final">
+                                    </div>
+                                </div>
+
                                 <!-- 圖片上傳 -->
                                 <div class="col-md-12">
                                     <div class="form-wrap form-wrap-validation">
                                         <label class="form-label-outside" for="image">上傳照片</label>
                                         <input class="form-input" id="image" type="file" name="image" accept="image/*"
-                                            onchange="previewImage(event)" required />
+                                            onchange="previewImage(event)" />
                                         <br>
                                         <img id="image-preview" src="" alt="圖片預覽"
                                             style="max-width: 200px; display: none; margin-top: 10px;">
@@ -485,18 +500,130 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script>
+            $("#doctor_id").change(function () {
+                let doctorId = $(this).val();
+                if (doctorId) {
+                    $.ajax({
+                        url: "獲取治療師資料.php",
+                        type: "GET",
+                        data: { doctor_id: doctorId },
+                        dataType: "json",
+                        success: function (response) {
+                            // 清空輸入框內容
+                            $("#education-container, #current_position-container, #specialty-container, #certifications-container, #treatment_concept-container").empty();
+
+                            if (response.status === "success") {
+                                let data = response.data;
+
+                                // ✅ 學歷
+                                let educationArray = data.education ? data.education.split("\r\n") : [""];
+                                educationArray.forEach((edu, index) => {
+                                    $("#education-container").append(createInputGroup("education[]", edu, index === 0));
+                                });
+
+                                // ✅ 現任職務
+                                let positionArray = data.current_position ? data.current_position.split("\r\n") : [""];
+                                positionArray.forEach((pos, index) => {
+                                    $("#current_position-container").append(createInputGroup("current_position[]", pos, index === 0));
+                                });
+
+                                // ✅ 專長描述
+                                let specialtyArray = data.specialty ? data.specialty.split("\r\n") : [""];
+                                specialtyArray.forEach((spec, index) => {
+                                    $("#specialty-container").append(createInputGroup("specialty[]", spec, index === 0));
+                                });
+
+                                // ✅ 專業認證
+                                let certArray = data.certifications ? data.certifications.split("\r\n") : [""];
+                                certArray.forEach((cert, index) => {
+                                    $("#certifications-container").append(createInputGroup("certifications[]", cert, index === 0));
+                                });
+
+                                // ✅ 治療理念
+                                let treatmentArray = data.treatment_concept ? data.treatment_concept.split("\r\n") : [""];
+                                treatmentArray.forEach((concept, index) => {
+                                    $("#treatment_concept-container").append(createInputGroup("treatment_concept[]", concept, index === 0));
+                                });
+
+                                // ✅ 圖片顯示
+                                if (data.image) {
+                                    $("#image-preview").attr("src", "data:image/jpeg;base64," + data.image).show();
+                                } else {
+                                    $("#image-preview").hide();
+                                }
+
+                            } else {
+                                alert(response.message);
+                                // **如果查無資料，預設顯示空的輸入框**
+                                $("#education-container").append(createInputGroup("education[]", "", true));
+                                $("#current_position-container").append(createInputGroup("current_position[]", "", true));
+                                $("#specialty-container").append(createInputGroup("specialty[]", "", true));
+                                $("#certifications-container").append(createInputGroup("certifications[]", "", true));
+                                $("#treatment_concept-container").append(createInputGroup("treatment_concept[]", "", true));
+                                $("#image-preview").hide();
+                            }
+                        },
+                        error: function (xhr) {
+                            console.error("AJAX 錯誤:", xhr.responseText);
+                            alert("發生錯誤，請檢查伺服器日誌");
+                        }
+                    });
+                }
+            });
+
+            // **動態新增輸入框函數**
+            window.addInput = function (containerId, inputName) {
+                var container = $("#" + containerId);
+                var newInput = createInputGroup(inputName, "", false); // 新增的輸入框應該有 `-` 按鈕
+                container.append(newInput);
+            };
+
+            // **建立輸入框的函數**
+            function createInputGroup(inputName, value, isFirst) {
+                let inputGroup = $('<div class="input-group mb-2"></div>');
+                let input = $('<input class="form-input" type="text" name="' + inputName + '" value="' + value + '" required>');
+
+                // ✅ 第一個輸入框顯示 `+` 按鈕，其他的顯示 `-`
+                let button;
+                if (isFirst) {
+                    button = $('<button type="button" class="btn btn-success">+</button>');
+                    button.click(function () {
+                        addInput(inputGroup.parent().attr('id'), inputName);
+                    });
+                } else {
+                    button = $('<button type="button" class="btn btn-danger">−</button>');
+                    button.click(function () {
+                        inputGroup.remove();
+                    });
+                }
+
+                inputGroup.append(input).append(button);
+                return inputGroup;
+            }
+
+
+
+            document.getElementById("doctor_id").addEventListener("change", function () {
+                let selectedValue = this.value;
+                if (selectedValue) {
+                    document.getElementById("selectedDoctorId").textContent = selectedValue;
+                } else {
+                    document.getElementById("selectedDoctorId").textContent = "未選擇";
+                }
+            });
+
+
             $(document).ready(function () {
-                // ✅ 表單提交 AJAX
                 $("form").on("submit", function (event) {
-                    event.preventDefault(); // 防止傳統表單提交
+                    event.preventDefault();
 
                     // **合併多個輸入框數據**
                     combineInputs("education-container", "education-final");
                     combineInputs("current_position-container", "current_position-final");
                     combineInputs("specialty-container", "specialty-final");
                     combineInputs("certifications-container", "certifications-final");
+                    combineInputs("treatment_concept-container", "treatment_concept-final");
 
-                    // **使用 FormData 收集表單數據**
                     var formData = new FormData(this);
 
                     $.ajax({
@@ -507,13 +634,10 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                         contentType: false,
                         dataType: "json",
                         success: function (response) {
+                            alert(response.message);
                             if (response.status === "success") {
-                                alert(response.message);
                                 $("form")[0].reset();
                                 $("#image-preview").hide();
-                            } else {
-                                console.error("伺服器錯誤:", response.message);
-                                alert(response.message);
                             }
                         },
                         error: function (xhr, status, error) {
@@ -521,17 +645,25 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                             alert("提交失敗，請檢查伺服器日誌：" + xhr.responseText);
                         }
                     });
-
                 });
+
+                function combineInputs(containerId, finalInputId) {
+                    var values = $("#" + containerId).find("input").map(function () {
+                        return $(this).val().trim();
+                    }).get();
+                    $("#" + finalInputId).val(values.join("\r\n"));
+                }
 
                 // ✅ 圖片預覽功能
                 function previewImage(event) {
                     var reader = new FileReader();
                     reader.onload = function () {
-                        $("#image-preview").attr("src", reader.result).show();
+                        document.getElementById("image-preview").src = reader.result;
+                        document.getElementById("image-preview").style.display = "block";
                     };
                     reader.readAsDataURL(event.target.files[0]);
                 }
+
                 $("#image").change(previewImage);
 
 
@@ -562,17 +694,11 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
             });
         </script>
 
-
-
-
-
-    </div>
-
-    <!-- Global Mailform Output-->
-    <div class="snackbars" id="form-output-global"></div>
-    <!-- Javascript-->
-    <script src="js/core.min.js"></script>
-    <script src="js/script.js"></script>
+        <!-- Global Mailform Output-->
+        <div class="snackbars" id="form-output-global"></div>
+        <!-- Javascript-->
+        <script src="js/core.min.js"></script>
+        <script src="js/script.js"></script>
 </body>
 
 </html>

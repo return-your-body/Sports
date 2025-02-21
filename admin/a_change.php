@@ -213,7 +213,7 @@ mysqli_close($link);
 												href="a_therapist.php">總人數時段表</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_addds.php">治療師班表</a>
+												href="a_addds.php">班表</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link" href="a_treatment.php">新增治療項目</a>
 										</li>
@@ -258,9 +258,6 @@ mysqli_close($link);
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_doctorlistadd.php">新增治療師資料</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_doctorlistmod.php">修改治療師資料</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="a_igadd.php">新增哀居貼文</a>
