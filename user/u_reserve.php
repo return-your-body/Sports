@@ -18,8 +18,9 @@ if (isset($_SESSION["帳號"])) {
 	// 取得使用者帳號
 	$帳號 = $_SESSION['帳號'];
 
-	// 查詢該帳號的詳細資料（包含違規次數）
-	$sql = "SELECT user.account, people.name, people.black 
+	// 查詢該帳號的詳細資料
+	$sql = "SELECT user.account, people.name, people.gender_id, people.birthday, 
+                   people.idcard, people.phone, people.address, people.email, people.black 
             FROM user 
             JOIN people ON user.user_id = people.user_id 
             WHERE user.account = ?";
@@ -33,6 +34,18 @@ if (isset($_SESSION["帳號"])) {
 		$姓名 = $row['name'];
 		$帳號名稱 = $row['account'];
 		$違規次數 = intval($row['black']); // 轉為整數，確保安全
+
+		// 檢查是否有必要的欄位為 NULL
+		if (
+			empty($row['name']) || empty($row['gender_id']) || empty($row['birthday']) ||
+			empty($row['idcard']) || empty($row['phone']) || empty($row['address']) || empty($row['email'])
+		) {
+			echo "<script>
+                    alert('請先完善個人資料！');
+                    window.location.href = 'u_profile.php';
+                  </script>";
+			exit();
+		}
 
 		// 從 settings 讀取錯誤訊息
 		$setting_sql = "SELECT setting_value FROM settings WHERE setting_key = 'error_message'";
@@ -69,8 +82,6 @@ if (isset($_SESSION["帳號"])) {
 	exit();
 }
 ?>
-
-
 
 
 <!DOCTYPE html>
