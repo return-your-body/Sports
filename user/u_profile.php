@@ -508,9 +508,20 @@ if ($result && mysqli_num_rows($result) > 0) {
 
                     <div class="form-row">
                         <label for="gender">性別 :</label>
-                        <input id="gender" type="text" name="gender"
-                            value="<?php echo $userData['gender_id'] == 1 ? '男' : '女'; ?>" disabled>
+                        <input id="gender" type="text" name="gender" value="<?php
+                        if ($userData['gender_id'] == 1) {
+                            echo '男';
+                        } elseif ($userData['gender_id'] == 2) {
+                            echo '女';
+                        } elseif ($userData['gender_id'] == 3) {
+                            echo '其他';
+                        } else {
+                            echo ''; // 沒有性別時顯示空白
+                        }
+                        ?>" placeholder="男 / 女 / 其他" disabled>
+                        <small id="gender-error" style="color: red; display: none;">性別只能輸入「男」、「女」或「其他」</small>
                     </div>
+
 
                     <div class="form-row">
                         <label for="userdate">出生年月日 :</label>
@@ -553,19 +564,37 @@ if ($result && mysqli_num_rows($result) > 0) {
         </div>
 
         <script>
+            function validateGender() {
+                const genderInput = document.getElementById("gender");
+                const genderError = document.getElementById("gender-error");
+                const validGenders = ["男", "女", "其他"];
+
+                if (genderInput.value.trim() !== "" && !validGenders.includes(genderInput.value.trim())) {
+                    genderError.style.display = "block"; // 顯示錯誤訊息
+                } else {
+                    genderError.style.display = "none"; // 隱藏錯誤訊息
+                }
+            }
+
+
+
             // 開啟欄位編輯功能
             document.getElementById('editButton').addEventListener('click', function () {
                 document.querySelectorAll('input').forEach(function (input) {
                     input.disabled = false;
                 });
 
-                // 確保電子郵件欄位仍然鎖住
+                // 確保電子郵件仍然鎖住
                 document.getElementById('useremail').disabled = true;
-                document.getElementById('useremail').readOnly = true; // 確保即使透過開發者工具修改，也無法輸入
+                document.getElementById('useremail').readOnly = true;
+
+                // 讓性別欄位也變成可輸入
+                document.getElementById('gender').disabled = false;
 
                 document.getElementById('editButton').style.display = 'none'; // 隱藏“修改資料”按鈕
                 document.getElementById('confirmButton').style.display = 'inline'; // 顯示“確認資料”按鈕
             });
+
 
 
             // 上傳並預覽圖片
@@ -607,6 +636,17 @@ if ($result && mysqli_num_rows($result) > 0) {
                 const userphone = document.getElementById('userphone').value;
                 const useremail = document.getElementById('useremail').value;
                 const address = document.getElementById('address').value;
+                const genderInput = document.getElementById("gender").value.trim();
+                const genderError = document.getElementById("gender-error");
+                const validGenders = ["男", "女", "其他"];
+
+                if (genderInput !== "" && !validGenders.includes(genderInput)) {
+                    genderError.style.display = "block"; // 顯示錯誤訊息
+                    alert("請輸入有效的性別（男 / 女 / 其他）");
+                    return;
+                } else {
+                    genderError.style.display = "none"; // 隱藏錯誤訊息
+                }
 
                 // 驗證欄位格式
 

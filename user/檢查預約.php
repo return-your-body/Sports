@@ -3,7 +3,6 @@
 session_start();
 
 // **🔹 檢查用戶是否已登入**
-// 如果沒有 session 資訊，則無法預約，返回錯誤訊息
 if (!isset($_SESSION["帳號"])) {
     echo json_encode(['available' => false, 'message' => '未登入，請先登入後操作。']);
     exit;
@@ -13,7 +12,6 @@ if (!isset($_SESSION["帳號"])) {
 require '../db.php';
 
 // **🔹 取得 `people_id`**
-// 1️⃣ 先從 `user` 表透過 `account` 查找 `user_id`
 $account = $_SESSION["帳號"]; // 從 session 取得使用者帳號
 $query_user = "SELECT user_id FROM user WHERE account = ?";
 $stmt_user = mysqli_prepare($link, $query_user);
@@ -52,13 +50,11 @@ if (!isset($_POST['doctor'], $_POST['date'], $_POST['time'])) {
     exit;
 }
 
-// **🔹 接收來自前端的預約請求**
-$doctor = $_POST['doctor']; // 治療師名稱
+$doctor = $_POST['doctor']; // 醫生名稱
 $date = $_POST['date'];     // 預約日期 (YYYY-MM-DD)
 $time = $_POST['time'];     // 預約時間 (HH:mm)
 
 // **🔹 1️⃣ 檢查該 `people_id` 是否已在該日期預約**
-// 透過 `appointment` 表與 `doctorshift` 連結，確保該人當天僅能預約一次
 $check_people_query = "
     SELECT COUNT(*) as count
     FROM appointment a
@@ -81,10 +77,9 @@ if ($row_people_check['count'] > 0) {
     exit;
 }
 
-// **🔹 2️⃣ 檢查該治療師的該時段是否已有預約**
-// 避免同一時段內有多人同時預約
+// **🔹 2️⃣ 檢查該醫生該時段是否已有預約**
 $check_doctor_query = "
-    SELECT a.appointment_id 
+    SELECT a.appointment_id, a.status_id 
     FROM appointment a
     JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
     JOIN shifttime st ON a.shifttime_id = st.shifttime_id
@@ -96,8 +91,17 @@ mysqli_stmt_bind_param($stmt_doctor, "sss", $doctor, $date, $time);
 mysqli_stmt_execute($stmt_doctor);
 $check_doctor_result = mysqli_stmt_get_result($stmt_doctor);
 
-// **🔹 若該時段已被預約，則回傳錯誤**
-if (mysqli_num_rows($check_doctor_result) > 0) {
+$allowBooking = true; // 預設允許預約
+
+while ($row_doctor = mysqli_fetch_assoc($check_doctor_result)) {
+    if ($row_doctor['status_id'] != 4) { // 狀態不是 "請假"（status_id = 4）
+        $allowBooking = false;
+        break;
+    }
+}
+
+// **🔹 若該時段已被預約且狀態不是 "請假"，則回傳錯誤**
+if (!$allowBooking) {
     echo json_encode([
         'available' => false,
         'message' => '此時段已有預約。'
@@ -105,7 +109,7 @@ if (mysqli_num_rows($check_doctor_result) > 0) {
     exit;
 }
 
-// **🔹 若該時段未被預約，則回傳可用**
+// **🔹 若該時段為 "請假"，則允許其他人預約**
 echo json_encode([
     'available' => true,
     'message' => '此時段可用。'

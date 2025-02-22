@@ -19,7 +19,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $email = trim($_POST['useremail']);      // 電子郵件
 
     // 將性別轉換為數字（1: 男, 2: 女）
-    $gender_id = ($gender === "男") ? 1 : (($gender === "女") ? 2 : null);
+    $gender_id = ($gender === "男") ? 1 : (($gender === "女") ? 2 : 3);
 
     // 驗證性別是否正確
     if ($gender_id === null) {

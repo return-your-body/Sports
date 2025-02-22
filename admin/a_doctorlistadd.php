@@ -390,7 +390,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                             }
                                             ?>
                                         </select>
-                                        <p>當前選擇的治療師 ID：<span id="selectedDoctorId">未選擇</span></p>
+                                        <!-- <p>當前選擇的治療師 ID：<span id="selectedDoctorId">未選擇</span></p> -->
                                     </div>
                                 </div>
 
