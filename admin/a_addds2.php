@@ -392,7 +392,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 												href="a_therapist.php">總人數時段表</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_addds.php">治療師班表</a>
+												href="a_addds.php">班表</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="a_treatment.php">新增治療項目</a>
@@ -434,7 +434,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 												href="a_doctorlistadd.php">新增治療師資料</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="a_doctorlistmod.php">修改治療師資料</a>
+												href="a_igadd.php">新增哀居貼文</a>
 										</li>
 									</ul>
 								</li>
@@ -501,11 +501,11 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			<!-- Breadcrumbs-->
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
-					<p class="heading-1 breadcrumbs-custom-title">治療師班表</p>
+					<p class="heading-1 breadcrumbs-custom-title">班表新增</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="a_index.php">首頁</a></li>
 						<li><a href="">關於治療師</a></li>
-						<li class="active">治療師班表</li>
+						<li class="active">班表新增</li>
 					</ul>
 				</div>
 			</section>
@@ -513,19 +513,20 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		<!-- 表單 -->
 		<form id="scheduleForm" method="POST" action="新增班表.php">
 			<!-- 選擇治療師 -->
-			<label for="the">選擇治療師：</label>
+			<label for="the">選擇治療師/助手：</label>
 			<select id="the" name="doctor_id">
 				<?php
 				include '../db.php'; // 引入資料庫連線檔案
 				
 				// 查詢等級為「治療師」的資料
 				$query = "
-        SELECT d.doctor_id, d.doctor
-        FROM doctor d
-        INNER JOIN user u ON d.user_id = u.user_id
-        INNER JOIN grade g ON u.grade_id = g.grade_id
-        WHERE g.grade_id = 2
-    ";
+    SELECT d.doctor_id, d.doctor
+    FROM doctor d
+    INNER JOIN user u ON d.user_id = u.user_id
+    INNER JOIN grade g ON u.grade_id = g.grade_id
+    WHERE g.grade_id IN (2, 3)
+";
+
 				$result = mysqli_query($link, $query);
 
 				// 檢查查詢結果

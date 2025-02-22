@@ -343,7 +343,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                                 href="a_therapist.php">總人數時段表</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_addds.php">治療師班表</a>
+                                                href="a_addds.php">班表</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="a_treatment.php">新增治療項目</a>
@@ -383,9 +383,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="a_doctorlistadd.php">新增治療師資料</a>
-                                        </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_doctorlistmod.php">修改治療師資料</a>
                                         </li>
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="a_igadd.php">新增哀居貼文</a>
@@ -457,11 +454,11 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
             <!-- Breadcrumbs-->
             <section class="breadcrumbs-custom breadcrumbs-custom-svg">
                 <div class="container">
-                    <p class="heading-1 breadcrumbs-custom-title">治療師班表</p>
+                    <p class="heading-1 breadcrumbs-custom-title">班表編輯</p>
                     <ul class="breadcrumbs-custom-path">
                         <li><a href="a_index.php">首頁</a></li>
                         <li><a href="">關於治療師</a></li>
-                        <li class="active">治療師班表</li>
+                        <li class="active">班表編輯</li>
                     </ul>
                 </div>
             </section>
