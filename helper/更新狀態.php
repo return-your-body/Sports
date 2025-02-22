@@ -15,6 +15,8 @@ if (!isset($data['appointment_id']) || !isset($data['status_id'])) {
 
 $appointment_id = intval($data['appointment_id']);
 $status_id = intval($data['status_id']);
+$new_time = isset($data['new_time']) ? $data['new_time'] : null;
+
 $black_points = 0;
 $black_id = null;  // 違規類別 ID
 
@@ -47,9 +49,15 @@ if (!$people_id) {
     exit;
 }
 
-// 更新 appointment 狀態
-$stmt = $link->prepare("UPDATE appointment SET status_id = ? WHERE appointment_id = ?");
-$stmt->bind_param("ii", $status_id, $appointment_id);
+// 如果是 "修改" (status_id = 2)，則更新預約時間
+if ($status_id == 2 && $new_time) {
+    $stmt = $link->prepare("UPDATE appointment SET appointment_time = ?, status_id = ? WHERE appointment_id = ?");
+    $stmt->bind_param("sii", $new_time, $status_id, $appointment_id);
+} else {
+    // 其他狀態更新
+    $stmt = $link->prepare("UPDATE appointment SET status_id = ? WHERE appointment_id = ?");
+    $stmt->bind_param("ii", $status_id, $appointment_id);
+}
 
 if ($stmt->execute()) {
     // 違規處理
@@ -67,6 +75,7 @@ if ($stmt->execute()) {
 
     // 設定回應訊息
     $messages = [
+        2 => "狀態已更新為修改，修改成功！",
         3 => "狀態已更新為報到！",
         4 => "狀態已更新為請假，已記錄違規！",
         5 => "狀態已更新為爽約，已記錄違規！",
