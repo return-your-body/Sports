@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html class="wide wow-animation" lang="en">
 <?php
 session_start();
 
@@ -13,49 +11,8 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
-// 檢查 "帳號" 是否存在於 $_SESSION 中
-if (isset($_SESSION["帳號"])) {
-  // 獲取用戶帳號
-  $帳號 = $_SESSION['帳號'];
-
-  // 資料庫連接
-  require '../db.php';
-
-  // 查詢該帳號的詳細資料
-  $sql = "SELECT user.account, doctor.doctor AS name 
-            FROM user 
-            JOIN doctor ON user.user_id = doctor.user_id 
-            WHERE user.account = ?";
-  $stmt = mysqli_prepare($link, $sql);
-  mysqli_stmt_bind_param($stmt, "s", $帳號);
-  mysqli_stmt_execute($stmt);
-  $result = mysqli_stmt_get_result($stmt);
-
-  if (mysqli_num_rows($result) > 0) {
-    // 抓取對應姓名
-    $row = mysqli_fetch_assoc($result);
-    $姓名 = $row['name'];
-    $帳號名稱 = $row['account'];
-
-    // 顯示帳號和姓名
-    // echo "歡迎您！<br>";
-    // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-    // echo "姓名：" . htmlspecialchars($姓名);
-    // echo "<script>
-    //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-    // </script>";
-  } else {
-    // 如果資料不存在，提示用戶重新登入
-    echo "<script>
-                alert('找不到對應的帳號資料，請重新登入。');
-                window.location.href = '../index.html';
-              </script>";
-    exit();
-  }
-
-  // 關閉資料庫連接
-  mysqli_close($link);
-} else {
+// **檢查登入狀態**
+if (!isset($_SESSION["帳號"])) {
   echo "<script>
             alert('會話過期或資料遺失，請重新登入。');
             window.location.href = '../index.html';
@@ -63,14 +20,77 @@ if (isset($_SESSION["帳號"])) {
   exit();
 }
 
+$帳號 = $_SESSION['帳號'];
+
+// **連接資料庫**
+require '../db.php';
+
+// **獲取 doctor_id，確保只查詢 grade_id = 3 的使用者**
+$sql = "SELECT d.doctor_id, d.doctor 
+        FROM user u
+        JOIN doctor d ON u.user_id = d.user_id
+        WHERE u.account = ? AND u.grade_id = 3";
+$stmt = mysqli_prepare($link, $sql);
+mysqli_stmt_bind_param($stmt, "s", $帳號);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+
+if ($row = mysqli_fetch_assoc($result)) {
+  $doctor_id = $row['doctor_id'];
+  $doctor_name = $row['doctor'];
+} else {
+  echo "<script>
+            alert('找不到符合條件的醫生資料，或您無權限訪問此頁面。');
+            window.location.href = '../index.html';
+          </script>";
+  exit();
+}
+
+// **Debug: 確認 doctor_id**
+echo "<!-- DEBUG: doctor_id = " . $doctor_id . " -->";
+
+// **分頁變數**
+$limit = 10; // 每頁顯示的資料筆數
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int) $_GET['page'] : 1;
+$offset = ($page - 1) * $limit;
+
+// **查詢該醫生的請假資料**
+$total_query = "SELECT COUNT(*) AS total FROM leaves WHERE doctor_id = ?";
+$stmt = mysqli_prepare($link, $total_query);
+mysqli_stmt_bind_param($stmt, "i", $doctor_id);
+mysqli_stmt_execute($stmt);
+$total_result = mysqli_stmt_get_result($stmt);
+$total_row = mysqli_fetch_assoc($total_result);
+$total_records = $total_row['total'];
+$total_pages = ($total_records > 0) ? ceil($total_records / $limit) : 1; // 避免除以 0
+
+// **Debug: 檢查有多少請假紀錄**
+echo "<!-- DEBUG: total_records = " . $total_records . " -->";
+
+// **查詢請假記錄**
+$query = "SELECT leaves_id, leave_type, leave_type_other, start_date, end_date, 
+                 reason, is_approved, rejection_reason 
+          FROM leaves 
+          WHERE doctor_id = ? 
+          LIMIT ? OFFSET ?";
+$stmt = mysqli_prepare($link, $query);
+mysqli_stmt_bind_param($stmt, "iii", $doctor_id, $limit, $offset);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+
+// **Debug: 檢查查詢結果**
+echo "<!-- DEBUG: result rows = " . mysqli_num_rows($result) . " -->";
 
 ?>
 
 
 
+<!DOCTYPE html>
+<html class="wide wow-animation" lang="en">
+
 <head>
   <!-- Site Title-->
-  <title>助手-列印收據</title>
+  <title>助手-請假查詢</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -157,88 +177,8 @@ if (isset($_SESSION["帳號"])) {
       box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
     }
 
-    /* 列印收據 */
 
-    /* 通用樣式 */
-    #print-area {
-      width: 350px;
-      margin: 0 auto;
-      border: 2px solid black;
-      padding: 20px;
-      text-align: left;
-      box-sizing: border-box;
-      page-break-inside: avoid;
-    }
-
-    #print-area h1 {
-      text-align: center;
-      margin: 0 0 20px;
-      font-size: 24px;
-    }
-
-    #print-area p {
-      margin: 10px 0;
-      line-height: 1.6;
-      font-size: 16px;
-    }
-
-    #print-area table {
-      border-collapse: collapse;
-      width: 100%;
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    #print-area table th,
-    #print-area table td {
-      border: 1px solid black;
-      padding: 10px;
-    }
-
-    .button-container {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      background-color: #f5f5f5;
-      transition: background-color 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #e0e0e0;
-    }
-
-    @media print {
-
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden;
-      }
-
-      body * {
-        visibility: hidden;
-      }
-
-      #print-area,
-      #print-area * {
-        visibility: visible;
-      }
-
-      button {
-        display: none;
-      }
-    }
+    /* 請假查詢表格樣式 */
   </style>
 
 </head>
@@ -263,7 +203,6 @@ if (isset($_SESSION["帳號"])) {
       </svg>
     </div>
   </div>
-
 
   <!--標題列-->
   <div class="page">
@@ -300,30 +239,32 @@ if (isset($_SESSION["帳號"])) {
                     </li>
                   </ul>
                 </li>
-                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a></li> -->
-                <li class="rd-nav-item"><a class="rd-nav-link" href="#">班表</a>
+                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a>
+                </li> -->
+                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">班表</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_doctorshift.php">治療師班表</a>
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_numberpeople.php">當天人數及時段</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_assistantshift.php">每月班表</a>
+                    <li class="rd-dropdown-item "><a class="rd-dropdown-link" href="h_assistantshift.php">每月班表</a>
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_leave.php">請假申請</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_leave-query.php">請假資料查詢</a>
+                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="h_leave-query.php">請假資料查詢</a>
                     </li>
                   </ul>
                 </li>
-                <!-- <li class="rd-nav-item active"><a class="rd-nav-link" href="#">列印</a>
+
+                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="#">列印</a>
                   <ul class="rd-menu rd-navbar-dropdown">
-                    <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="h_print-receipt.php">列印收據</a>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_print-receipt.php">列印收據</a>
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_print-appointment.php">列印預約單</a>
                     </li>
                   </ul>
                 </li> -->
-                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">紀錄</a>
+                <li class="rd-nav-item"><a class="rd-nav-link" href="#">紀錄</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_medical-record.php">看診紀錄</a>
                     </li>
@@ -333,6 +274,7 @@ if (isset($_SESSION["帳號"])) {
                 </li>
                 <li class="rd-nav-item"><a class="rd-nav-link" href="h_change.php">變更密碼</a>
                 </li>
+
                 <!-- 登出按鈕 -->
                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                     onclick="showLogoutBox()">登出</a>
@@ -387,12 +329,13 @@ if (isset($_SESSION["帳號"])) {
             <?php
             echo "歡迎 ~ ";
             // 顯示姓名
-            echo $姓名;
+            echo $row['doctor'];
             ?>
           </div>
         </nav>
       </div>
     </header>
+    <!--標題列-->
 
 
     <!--標題-->
@@ -400,171 +343,206 @@ if (isset($_SESSION["帳號"])) {
       <!-- Breadcrumbs-->
       <section class="breadcrumbs-custom breadcrumbs-custom-svg">
         <div class="container">
-          <!-- <p class="breadcrumbs-custom-subtitle">Get in Touch with Us</p> -->
-          <p class="heading-1 breadcrumbs-custom-title">列印收據</p>
+          <!-- <p class="breadcrumbs-custom-subtitle">What We Offer</p> -->
+          <p class="heading-1 breadcrumbs-custom-title">請假資料查詢</p>
           <ul class="breadcrumbs-custom-path">
-            <li><a href="h_index.php">首頁</a></li>
-            <li><a href="#">列印</a></li>
-            <li class="active">列印收據</li>
+            <li><a href="d_index.php">首頁</a></li>
+            <li><a href="#">班表</a></li>
+            <li class="active">請假資料查詢</li>
           </ul>
         </div>
       </section>
     </div>
-    <!--標題-->
 
 
-    <!--列印收據-->
-
-    <?php
-    require '../db.php'; // 引入資料庫連接檔案
-    
-    // 確認 GET 請求是否攜帶有效的 ID
-    if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-      $appointment_id = intval($_GET['id']);
-
-      // 查詢基本資訊 (包含 使用者備註)
-      $query = "
-    SELECT 
-        p.name AS people_name,
-        CASE 
-            WHEN p.gender_id = 1 THEN '男'
-            WHEN p.gender_id = 2 THEN '女'
-            ELSE '無資料'
-        END AS gender,
-        CASE 
-            WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)')
-            ELSE '無資料'
-        END AS birthday_with_age,
-        d.doctor AS doctor_name,
-        ds.date AS appointment_date,
-        CASE DAYOFWEEK(ds.date)
-            WHEN 1 THEN '星期日'
-            WHEN 2 THEN '星期一'
-            WHEN 3 THEN '星期二'
-            WHEN 4 THEN '星期三'
-            WHEN 5 THEN '星期四'
-            WHEN 6 THEN '星期五'
-            WHEN 7 THEN '星期六'
-        END AS consultation_weekday,
-        st.shifttime AS appointment_time,
-        COALESCE(a.note, '無') AS user_note  -- 預約表的使用者備註
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-    WHERE a.appointment_id = $appointment_id
-    GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime, a.note";
-
-      $result = mysqli_query($link, $query);
-
-      if (!$result) {
-        echo "SQL 錯誤：" . mysqli_error($link);
-        exit;
+    <!-- 請假查詢資料 -->
+    <style>
+      /* 表格樣式 */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0;
       }
 
-      if (mysqli_num_rows($result) > 0) {
-        $record = mysqli_fetch_assoc($result);
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 6px;
+        text-align: center;
+      }
 
-        // 提取基本資料
-        $people_name = $record['people_name'];
-        $gender = $record['gender'];
-        $birthday_with_age = $record['birthday_with_age'];
-        $appointment_date = $record['appointment_date'];
-        $consultation_weekday = $record['consultation_weekday'];
-        $appointment_time = $record['appointment_time'];
-        $doctor_name = $record['doctor_name'];
-        $user_note = $record['user_note']; // 使用者備註
-    
-        // 查詢該次 appointment 的所有項目與價錢
-        $item_query = "
-        SELECT i.item AS treatment_item, i.price AS treatment_price
-        FROM medicalrecord m
-        LEFT JOIN item i ON m.item_id = i.item_id
-        WHERE m.appointment_id = $appointment_id";
+      th {
+        background-color: #f4f4f4;
+        font-weight: bold;
+      }
 
-        $item_result = mysqli_query($link, $item_query);
+      /* 審核狀態樣式 */
+      .approved {
+        color: green;
+      }
 
-        if (!$item_result) {
-          echo "SQL 錯誤：" . mysqli_error($link);
-          exit;
+      .rejected {
+        color: red;
+      }
+
+      /* 分頁樣式 */
+      /* 分頁樣式 */
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px 0;
+        list-style: none;
+        padding: 0;
+      }
+
+      .pagination a,
+      .pagination span {
+        display: inline-block;
+        padding: 8px 12px;
+        margin: 0 4px;
+        border: 1px solid #ddd;
+        text-decoration: none;
+        color: #007bff;
+        border-radius: 5px;
+        transition: background-color 0.3s, color 0.3s;
+      }
+
+      .pagination a:hover {
+        background-color: #007bff;
+        color: white;
+      }
+
+      .pagination .active {
+        background-color: #007bff;
+        color: white;
+        font-weight: bold;
+        border-color: #007bff;
+      }
+
+      .pagination .disabled {
+        color: #ccc;
+        border-color: #ddd;
+        cursor: not-allowed;
+      }
+
+      /* 總資訊樣式 */
+      .total-info {
+        text-align: right;
+        margin: 5px 0;
+        font-size: 14px;
+        color: #555;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+      }
+
+
+      /* 響應式樣式 */
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      @media (max-width: 768px) {
+        table {
+          font-size: 12px;
         }
 
-        // 查詢 醫生備註
-        $doctor_note_query = "
-        SELECT GROUP_CONCAT(m.note_d ORDER BY m.created_at SEPARATOR '; ') AS doctor_note
-        FROM medicalrecord m
-        WHERE m.appointment_id = $appointment_id";
-
-        $doctor_note_result = mysqli_query($link, $doctor_note_query);
-        $doctor_note_data = mysqli_fetch_assoc($doctor_note_result);
-        $doctor_note = $doctor_note_data['doctor_note'] ?? '無'; // 沒有醫生備註則顯示「無」
-      } else {
-        echo "未找到對應的病歷資料";
-        exit;
+        th,
+        td {
+          padding: 4px;
+        }
       }
-    } else {
-      echo "無效的 ID";
-      exit;
-    }
-    ?>
+    </style>
 
-    <section class="section section-lg bg-default text-center">
+    <!-- 表格顯示 -->
+    <section class="section section-lg novi-bg novi-bg-img bg-default">
       <div class="container">
-        <div class="row row-50 justify-content-lg-center">
-          <div class="col-lg-10 col-xl-8">
-            <div class="accordion-custom-group accordion-custom-group-custom accordion-custom-group-corporate"
-              id="accordion1" role="tablist" aria-multiselectable="false">
-              <dl class="list-terms">
-                <!-- 收據顯示區域 -->
-                <div id="print-area">
-                  <h1>看診收據</h1>
-                  <p>姓名：<?php echo htmlspecialchars($people_name); ?></p>
-                  <p>性別：<?php echo $gender; ?></p>
-                  <p>生日 (年齡)：<?php echo $birthday_with_age; ?></p>
-                  <p>看診日期：<?php echo $appointment_date . " (" . $consultation_weekday . ")"; ?></p>
-                  <p>看診時間：<?php echo $appointment_time; ?></p>
-                  <p>治療師：<?php echo $doctor_name; ?></p>
-                  <p><strong>使用者備註：</strong> <?php echo htmlspecialchars($user_note); ?></p>
-                  <p><strong>醫生備註：</strong> <?php echo htmlspecialchars($doctor_note); ?></p>
-
-                  <table>
+        <div class="row row-40 row-lg-50">
+          <div class="form-container">
+            <table border="1">
+              <thead>
+                <tr>
+                  <th>請假編號</th>
+                  <th>治療師姓名</th>
+                  <th>請假類型</th>
+                  <th>其他請假類型</th>
+                  <th>開始時間</th>
+                  <th>結束時間</th>
+                  <th>請假原因</th>
+                  <th>審核狀態</th>
+                  <th>駁回原因</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php
+                if ($total_records > 0) {
+                  while ($row = mysqli_fetch_assoc($result)): ?>
                     <tr>
-                      <th>治療項目</th>
-                      <th>費用</th>
+                      <td><?php echo htmlspecialchars($row['leaves_id']); ?></td>
+                      <td><?php echo htmlspecialchars($doctor_name); ?></td>
+                      <td><?php echo htmlspecialchars($row['leave_type']); ?></td>
+                      <td><?php echo htmlspecialchars($row['leave_type_other'] ?? ''); ?></td>
+                      <td><?php echo htmlspecialchars($row['start_date']); ?></td>
+                      <td><?php echo htmlspecialchars($row['end_date']); ?></td>
+                      <td><?php echo htmlspecialchars($row['reason']); ?></td>
+                      <td>
+                        <?php
+                        if ($row['is_approved'] == '1') {
+                          echo "<span class='approved'>已通過</span>";
+                        } elseif ($row['is_approved'] == '0') {
+                          echo "<span class='rejected'>未通過</span>";
+                        } else {
+                          echo "<span style='color: gray;'>待審核</span>";
+                        }
+                        ?>
+                      </td>
+                      <td>
+                        <?php echo ($row['is_approved'] == '0') ? htmlspecialchars($row['rejection_reason']) : '-'; ?>
+                      </td>
                     </tr>
-                    <?php
-                    $total_price = 0;
-                    while ($item_row = mysqli_fetch_assoc($item_result)) {
-                      echo "<tr>";
-                      echo "<td>" . htmlspecialchars($item_row['treatment_item']) . "</td>";
-                      echo "<td>" . htmlspecialchars($item_row['treatment_price']) . "</td>";
-                      echo "</tr>";
-                      $total_price += $item_row['treatment_price'];
-                    }
-                    ?>
-                    <tr>
-                      <td><strong>總費用</strong></td>
-                      <td><strong><?php echo $total_price; ?></strong></td>
-                    </tr>
-                  </table>
+                  <?php endwhile;
+                } else {
+                  echo "<tr><td colspan='9' style='text-align:center;'>沒有請假紀錄</td></tr>";
+                }
+                ?>
+              </tbody>
+            </table>
 
-                  <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
-                </div>
-                <div class="button-container">
-                  <button onclick="window.print()">列印收據</button>
-                  <button onclick="location.href='h_medical-record.php'">返回</button>
-                </div>
-              </dl>
+            <!-- 分頁資訊 -->
+            <div class="total-info">
+              第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁 (總共 <?php echo $total_records; ?> 筆資料)
             </div>
+
+            <!-- 分頁 -->
+            <div class="pagination">
+              <?php if ($page > 1): ?>
+                <a href="?page=<?php echo $page - 1; ?>">« 上一頁</a>
+              <?php else: ?>
+                <span class="disabled">« 上一頁</span>
+              <?php endif; ?>
+
+              <?php for ($p = 1; $p <= $total_pages; $p++): ?>
+                <?php if ($p == $page): ?>
+                  <span class="active"><?php echo $p; ?></span>
+                <?php else: ?>
+                  <a href="?page=<?php echo $p; ?>"><?php echo $p; ?></a>
+                <?php endif; ?>
+              <?php endfor; ?>
+
+              <?php if ($page < $total_pages): ?>
+                <a href="?page=<?php echo $page + 1; ?>">下一頁 »</a>
+              <?php else: ?>
+                <span class="disabled">下一頁 »</span>
+              <?php endif; ?>
+            </div>
+
+            <?php mysqli_close($link); ?>
           </div>
         </div>
       </div>
     </section>
-
-
-    <!--列印收據-->
-
     <!--頁尾-->
     <footer class="section novi-bg novi-bg-img footer-simple">
       <div class="container">
