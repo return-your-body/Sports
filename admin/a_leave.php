@@ -415,7 +415,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		<br>
 
 		<?php
-		// 引入資料庫連線檔案
+		// 引入資料庫連線
 		require '../db.php';
 
 		// 設定分頁參數
@@ -424,48 +424,63 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		$offset = ($page - 1) * $perPage;
 		$search = isset($_GET['search']) ? $_GET['search'] : '';
 
-		// 查詢請假資料並聯結治療師表格以取得治療師名稱，未通過的排在前面
-		$result = $link->query(
-			"SELECT leaves.*, doctor.doctor AS doctor_name 
-     FROM leaves 
-     LEFT JOIN doctor ON leaves.doctor_id = doctor.doctor_id 
-     WHERE doctor.doctor LIKE '%$search%' 
-     ORDER BY is_approved ASC, start_date ASC 
-     LIMIT $offset, $perPage"
-		);
+		// 查詢請假資料並聯結治療師表格
+		$result = $link->query("
+    SELECT leaves.*, doctor.doctor AS doctor_name 
+    FROM leaves 
+    LEFT JOIN doctor ON leaves.doctor_id = doctor.doctor_id 
+    WHERE doctor.doctor LIKE '%$search%' 
+    ORDER BY is_approved ASC, start_date ASC 
+    LIMIT $offset, $perPage
+");
 
 		// 查詢總數以進行分頁
-		$totalResult = $link->query(
-			"SELECT COUNT(*) as total 
-     FROM leaves 
-     LEFT JOIN doctor ON leaves.doctor_id = doctor.doctor_id 
-     WHERE doctor.doctor LIKE '%$search%'"
-		);
+		$totalResult = $link->query("
+    SELECT COUNT(*) as total 
+    FROM leaves 
+    LEFT JOIN doctor ON leaves.doctor_id = doctor.doctor_id 
+    WHERE doctor.doctor LIKE '%$search%'
+");
 		$totalRows = $totalResult->fetch_assoc()['total'];
 		$totalPages = ceil($totalRows / $perPage);
 
-		// 處理 POST 請求（通過或拒絕請假）
+		header('Content-Type: application/json'); // 確保回應是 JSON
+		
+		// 處理 POST 請求（審核請假）
 		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$leaves_id = $_POST['leaves_id'];
 			$is_approved = $_POST['is_approved'];
 			$rejection_reason = isset($_POST['rejection_reason']) ? $_POST['rejection_reason'] : null;
 
 			if ($is_approved == 0 && !$rejection_reason) {
-				echo "拒絕原因為必填";
+				echo json_encode(["status" => "error", "message" => "拒絕原因為必填"]);
 				exit;
 			}
 
-			// 更新資料庫中的請假狀態
+			// 更新請假狀態
 			$stmt = $link->prepare("UPDATE leaves SET is_approved = ?, rejection_reason = ? WHERE leaves_id = ?");
 			$stmt->bind_param("isi", $is_approved, $rejection_reason, $leaves_id);
 
 			if ($stmt->execute()) {
-				echo $is_approved ? "請假已通過" : "請假已拒絕";
+				$response = ["status" => "success", "message" => "請假狀態已更新"];
+
+				// 如果請假通過，則查詢受影響的預約
+				if ($is_approved == 1) {
+					require '寄信.php';
+					$affectedAppointments = getAffectedAppointments($link, $leaves_id);
+
+					if (!empty($affectedAppointments)) {
+						$response["appointments"] = $affectedAppointments;
+					} else {
+						$response["appointments"] = "無受影響的預約";
+					}
+				}
 			} else {
-				echo "更新失敗: " . $link->error;
+				$response = ["status" => "error", "message" => "更新失敗: " . $link->error];
 			}
 
 			$stmt->close();
+			echo json_encode($response);
 			exit;
 		}
 		?>
@@ -543,32 +558,36 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			function approveLeave(leaves_id, isApproved) {
 				let reason = null;
 				if (!isApproved) {
-					// 如果是拒絕，提示使用者輸入拒絕原因
 					reason = prompt("請輸入拒絕原因:");
 					if (!reason) {
-						alert("拒絕原因為必填"); // 若未填寫原因，提示錯誤
+						alert("拒絕原因為必填");
 						return;
 					}
 				}
 
-				// 建立表單資料以送出到後端
 				const formData = new FormData();
 				formData.append('leaves_id', leaves_id);
 				formData.append('is_approved', isApproved ? 1 : 0);
 				if (reason) formData.append('rejection_reason', reason);
 
-				// 使用 Fetch API 傳送請求到伺服器
-				fetch('', {
+				fetch('a_leave.php', {
 					method: 'POST',
 					body: formData
 				})
-					.then(response => response.text()) // 處理伺服器回應
+					.then(response => response.json()) // 確保解析 JSON
 					.then(data => {
-						// alert(data); // 顯示更新結果
-						location.reload(); // 重新加載頁面以顯示更新後的資料
+						alert(data.message); // 顯示返回的訊息
+						if (data.status === "success" && data.appointments.length > 0) {
+							alert("受影響的預約: \n" + data.appointments.join("\n"));
+						}
+						location.reload();
 					})
-					.catch(error => console.error('錯誤:', error)); // 處理錯誤
+					.catch(error => {
+						console.error("錯誤:", error);
+						alert("發生錯誤，請稍後再試");
+					});
 			}
+
 		</script>
 
 		<table class="table-custom table-hover">
