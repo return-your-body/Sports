@@ -334,8 +334,8 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 												href="a_doctorlistadd.php">新增治療師資料</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_igadd.php">新增哀居貼文</a>
-                                        </li>
+												href="a_igadd.php">新增哀居貼文</a>
+										</li>
 									</ul>
 								</li>
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_change.php">變更密碼</a>

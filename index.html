@@ -91,7 +91,8 @@
 												<div class="row">
 													<div class="col-lg-12">
 														<div class="text-center">
-															<a href="forget.html" tabindex="5" class="forgot-password">忘記密碼？</a>
+															<a href="forget.html" tabindex="5"
+																class="forgot-password">忘記密碼？</a>
 														</div>
 													</div>
 												</div>
@@ -149,6 +150,19 @@
 										</form>
 										<!-- 註冊 結束 -->
 
+										<!-- 驗證碼輸入彈跳視窗 -->
+										<div id="verification-modal"
+											style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5); text-align: center;">
+											<h2>請輸入您的驗證碼</h2>
+											<input type="text" id="verification-code" placeholder="輸入 6 位數驗證碼" required>
+											<button onclick="submitVerification()">提交</button>
+											<p id="verification-error" style="color: red; display: none;">驗證碼錯誤，請重新輸入。
+											</p>
+											<button onclick="closeModal()">取消</button>
+										</div>
+
+
 										<style>
 											.error {
 												color: red;
@@ -191,6 +205,55 @@
 												// 返回最終驗證結果
 												return isValid;
 											}
+
+											document.getElementById("register-form").addEventListener("submit", function (event) {
+												event.preventDefault(); // 防止表單直接提交
+
+												let formData = new FormData(this);
+
+												fetch("register.php", {
+													method: "POST",
+													body: formData
+												})
+													.then(response => response.json())
+													.then(data => {
+														if (data.status === "success") {
+															alert("驗證碼已發送至您的信箱！");
+															document.getElementById("verification-modal").style.display = "block"; // 顯示驗證碼輸入視窗
+															document.getElementById("verification-modal").dataset.userId = data.user_id;
+															document.getElementById("verification-modal").dataset.email = data.email;
+														} else {
+															alert(data.message);
+														}
+													});
+											});
+
+											function submitVerification() {
+												let userId = document.getElementById("verification-modal").dataset.userId;
+												let email = document.getElementById("verification-modal").dataset.email;
+												let token = document.getElementById("verification-code").value;
+
+												fetch("verify.php", {
+													method: "POST",
+													headers: { "Content-Type": "application/x-www-form-urlencoded" },
+													body: `user_id=${userId}&token=${token}&email=${email}`
+												})
+													.then(response => response.json())
+													.then(data => {
+														if (data.status === "success") {
+															alert("驗證成功！請重新登入。");
+															window.location.href = "index.html";
+														} else {
+															alert(data.message);
+															window.location.href = "index.html"; // 驗證失敗則回到首頁
+														}
+													});
+											}
+
+											function closeModal() {
+												document.getElementById("verification-modal").style.display = "none";
+											}
+
 
 										</script>
 									</div>
