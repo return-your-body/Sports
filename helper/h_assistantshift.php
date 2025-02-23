@@ -418,12 +418,35 @@ if (isset($_SESSION["帳號"])) {
     </div>
 
 
-
-
     <!-- 助手班表 -->
     <section class="section section-lg bg-default">
       <div style="text-align: center; font-size: 18px; font-weight: bold; color: #333;">
         助手姓名：<?php echo htmlspecialchars($doctor_name); ?>
+      </div>
+
+      <!-- 年份與月份選擇 -->
+      <div style="text-align: center; margin: 10px;">
+        <form id="dateForm" method="GET">
+          <label for="year">選擇年份：</label>
+          <select name="year" id="year">
+            <?php
+            $currentYear = date("Y");
+            for ($y = $currentYear - 5; $y <= $currentYear + 5; $y++) {
+              echo "<option value='$y' " . ($y == $year ? "selected" : "") . ">$y</option>";
+            }
+            ?>
+          </select>
+
+          <label for="month">選擇月份：</label>
+          <select name="month" id="month">
+            <?php
+            for ($m = 1; $m <= 12; $m++) {
+              $formattedMonth = str_pad($m, 2, "0", STR_PAD_LEFT);
+              echo "<option value='$m' " . ($m == $month ? "selected" : "") . ">$formattedMonth</option>";
+            }
+            ?>
+          </select>
+        </form>
       </div>
 
       <table class="table-custom">
@@ -442,6 +465,15 @@ if (isset($_SESSION["帳號"])) {
       </table>
 
       <script>
+        // 監聽年份與月份變更，當變更時重新載入
+        document.getElementById("year").addEventListener("change", function () {
+          document.getElementById("dateForm").submit();
+        });
+
+        document.getElementById("month").addEventListener("change", function () {
+          document.getElementById("dateForm").submit();
+        });
+
         const calendarBody = document.getElementById("calendar");
         const shifts = <?php echo json_encode($shifts); ?>;
         const leaves = <?php echo json_encode($leaves); ?>;
@@ -488,6 +520,7 @@ if (isset($_SESSION["帳號"])) {
         generateCalendar();
       </script>
     </section>
+
 
 
 
