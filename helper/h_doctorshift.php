@@ -262,11 +262,17 @@ if (isset($_SESSION["帳號"])) {
                 </li>
                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a>
                 </li> -->
-                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">治療師班表</a>
+                <li class="rd-nav-item active"><a class="rd-nav-link" href="#">班表</a>
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item active"><a class="rd-dropdown-link" href="h_doctorshift.php">治療師班表</a>
                     </li>
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_numberpeople.php">當天人數及時段</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_assistantshift.php">每月班表</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_leave.php">請假申請</a>
+                    </li>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_leave-query.php">請假資料查詢</a>
                     </li>
                   </ul>
                 </li>
@@ -374,7 +380,7 @@ if (isset($_SESSION["帳號"])) {
       <?php
       require '../db.php';
 
-      // 取得所有治療師資料
+      // 取得所有治療師資料（僅限 grade_id = 2）
       $doctor_list_query = "
         SELECT d.doctor_id, d.doctor
         FROM doctor d
@@ -392,17 +398,20 @@ if (isset($_SESSION["帳號"])) {
       $year = isset($_GET['year']) ? (int) $_GET['year'] : date('Y');
       $month = isset($_GET['month']) ? (int) $_GET['month'] : date('m');
 
-      // 查詢所有治療師的排班與請假資料
+      // 查詢所有治療師的排班資料（只篩選 `grade_id = 2`）
       $work_schedule = [];
       $query = "
         SELECT ds.doctor_id, ds.date, d.doctor, 
                st1.shifttime AS start_time, st2.shifttime AS end_time
         FROM doctorshift ds
         INNER JOIN doctor d ON ds.doctor_id = d.doctor_id
+        INNER JOIN user u ON d.user_id = u.user_id
         INNER JOIN shifttime st1 ON ds.go = st1.shifttime_id
         INNER JOIN shifttime st2 ON ds.off = st2.shifttime_id
         WHERE YEAR(ds.date) = ? AND MONTH(ds.date) = ?
+        AND u.grade_id = 2
     ";
+
       if ($doctor_id > 0) {
         $query .= " AND ds.doctor_id = ?";
       }
@@ -426,14 +435,17 @@ if (isset($_SESSION["帳號"])) {
       }
       mysqli_stmt_close($stmt);
 
-      // 查詢已審核通過的請假資料
+      // 查詢治療師請假資料（僅顯示 `grade_id = 2`，並標註 "🔺"）
       $leave_query = "
         SELECT l.doctor_id, l.start_date, l.end_date, l.leave_type, d.doctor
         FROM leaves l
         INNER JOIN doctor d ON l.doctor_id = d.doctor_id
+        INNER JOIN user u ON d.user_id = u.user_id
         WHERE (YEAR(l.start_date) = ? OR YEAR(l.end_date) = ?)
         AND l.is_approved = 1
+        AND u.grade_id = 2
     ";
+
       if ($doctor_id > 0) {
         $leave_query .= " AND l.doctor_id = ?";
       }
@@ -457,7 +469,8 @@ if (isset($_SESSION["帳號"])) {
         if (!isset($work_schedule[$leave_date][$doctor_name])) {
           $work_schedule[$leave_date][$doctor_name] = [];
         }
-        $work_schedule[$leave_date][$doctor_name]['leave'] = "{$leave_type}: {$leave_start} ~ {$leave_end}";
+        // 加上向上箭頭（🔺）來標註請假資訊
+        $work_schedule[$leave_date][$doctor_name]['leave'] = "🔺 {$leave_type}: {$leave_start} ~ {$leave_end}";
       }
       mysqli_stmt_close($stmt_leave);
       mysqli_close($link);
@@ -572,7 +585,10 @@ if (isset($_SESSION["帳號"])) {
               <li><a href="h_people.php">用戶資料</a></li>
               <!-- <li><a href="h_appointment.php">預約</a></li> -->
               <li><a href="h_numberpeople.php">當天人數及時段</a></li>
-              <li><a href="h_doctorshift.php">班表時段</a></li>
+              <li><a href="h_doctorshift.php">治療師班表時段</a></li>
+              <li><a href="h_assistantshift.php">每月班表</a></li>
+              <li><a href="h_leave.php">請假申請</a></li>
+              <li><a href="h_leave-query.php">請假資料查詢</a></li>
               <li><a href="h_medical-record.php">看診紀錄</a></li>
               <li><a href="h_appointment-records.php">預約紀錄</a></li>
               <li><a href="h_change.php">變更密碼</a></li>

@@ -249,13 +249,22 @@ if (isset($_SESSION["帳號"])) {
 									</ul>
 								</li>
 								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="h_appointment.php">預約</a></li> -->
-								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">治療師班表</a>
+								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">班表</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="h_doctorshift.php">治療師班表</a>
 										</li>
 										<li class="rd-dropdown-item active"><a class="rd-dropdown-link"
 												href="h_numberpeople.php">當天人數及時段</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="h_assistantshift.php">每月班表</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="h_leave.php">請假申請</a>
+										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="h_leave-query.php">請假資料查詢</a>
 										</li>
 									</ul>
 								</li>
@@ -585,7 +594,10 @@ WHERE ds.date = ?";
 							<li><a href="h_people.php">用戶資料</a></li>
 							<!-- <li><a href="h_appointment.php">預約</a></li> -->
 							<li><a href="h_numberpeople.php">當天人數及時段</a></li>
-							<li><a href="h_doctorshift.php">班表時段</a></li>
+							<li><a href="h_doctorshift.php">治療師班表時段</a></li>
+							<li><a href="h_assistantshift.php">班表時段</a></li>
+							<li><a href="h_leave.php">請假申請</a></li>
+							<li><a href="h_leave-query.php">請假資料查詢</a></li>
 							<li><a href="h_medical-record.php">看診紀錄</a></li>
 							<li><a href="h_appointment-records.php">預約紀錄</a></li>
 							<li><a href="h_change.php">變更密碼</a></li>
