@@ -1138,19 +1138,12 @@ ORDER BY ds.date, d.doctor_id";
 			};
 
 			/**
-			 * 檢查某個時間段是否已被預約
-			 * @param {string} doctor - 治療師名稱
-			 * @param {string} date - 預約日期
-			 * @param {string} timeSlot - 時間段 (格式: HH:mm)
-			 * @param {HTMLElement} button - 預約按鈕
-			 */
-			/**
- * 檢查某個時間段是否已被預約
- * @param {string} doctor - 治療師名稱
- * @param {string} date - 預約日期
- * @param {string} timeSlot - 時間段 (格式: HH:mm)
- * @param {HTMLElement} button - 預約按鈕
- */
+			* 檢查某個時間段是否已被預約
+			* @param {string} doctor - 治療師名稱
+			* @param {string} date - 預約日期
+			* @param {string} timeSlot - 時間段 (格式: HH:mm)
+			* @param {HTMLElement} button - 預約按鈕
+			*/
 			function checkAvailability(doctor, date, timeSlot, button) {
 				const xhr = new XMLHttpRequest();
 				xhr.open("POST", "檢查預約.php", true);

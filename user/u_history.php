@@ -71,6 +71,41 @@ if (isset($_SESSION["帳號"])) {
 	<link rel="stylesheet" href="css/fonts.css">
 	<link rel="stylesheet" href="css/style.css">
 	<style>
+		/* 取消預約按鈕 - 紅色 */
+		.cancel-btn {
+			background-color: #dc3545;
+			/* 紅色 */
+			color: white;
+			border: none;
+			padding: 8px 12px;
+			border-radius: 5px;
+			cursor: pointer;
+			transition: background 0.3s;
+		}
+
+		.cancel-btn:hover {
+			background-color: #c82333;
+			/* 深紅色 */
+		}
+
+		/* 查看按鈕 - 藍色 */
+		.view-btn {
+			background-color: #007bff;
+			/* 藍色 */
+			color: white;
+			border: none;
+			padding: 8px 12px;
+			border-radius: 5px;
+			cursor: pointer;
+			transition: background 0.3s;
+		}
+
+		.view-btn:hover {
+			background-color: #0056b3;
+			/* 深藍色 */
+		}
+
+
 		/* 彈窗樣式 */
 		.popup {
 			display: none;
@@ -535,22 +570,25 @@ if (isset($_SESSION["帳號"])) {
 
 						// 查詢歷史記錄
 						$query_history = "
-                    SELECT 
-                        a.appointment_id,
-                        COALESCE(p.name, '未知') AS patient_name,
-                        COALESCE(g.gender, '未知') AS gender,
-                        COALESCE(p.birthday, '未知') AS birthday,
-                        COALESCE(ds.date, '未知') AS appointment_date,
-                        COALESCE(st.shifttime, '未知') AS shifttime,
-                        COALESCE(a.note, '無備註') AS note
-                    FROM appointment a
-                    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-                    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-                    LEFT JOIN people p ON a.people_id = p.people_id
-                    LEFT JOIN gender g ON p.gender_id = g.gender_id
-                    LEFT JOIN user u ON p.user_id = u.user_id
-                    WHERE u.account = ?
-                    ORDER BY ds.date ASC, st.shifttime ASC";
+    SELECT 
+        a.appointment_id,
+        COALESCE(p.name, '未知') AS patient_name,
+        COALESCE(g.gender, '未知') AS gender,
+        COALESCE(p.birthday, '未知') AS birthday,
+        COALESCE(ds.date, '未知') AS appointment_date,
+        COALESCE(st.shifttime, '未知') AS shifttime,
+        COALESCE(a.note, '無備註') AS note,
+        COALESCE(s.status_name, '未知') AS status_name  -- 加入狀態名稱
+    FROM appointment a
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+    LEFT JOIN people p ON a.people_id = p.people_id
+    LEFT JOIN gender g ON p.gender_id = g.gender_id
+    LEFT JOIN user u ON p.user_id = u.user_id
+    LEFT JOIN status s ON a.status_id = s.status_id  -- 連接 status 表
+    WHERE u.account = ?
+    ORDER BY ds.date DESC, st.shifttime DESC";
+
 
 						$stmt = mysqli_prepare($link, $query_history);
 						if (!$stmt) {
@@ -572,6 +610,7 @@ if (isset($_SESSION["帳號"])) {
 									<th>預約日期</th>
 									<th>預約時段</th>
 									<th>備註</th>
+									<th>狀態</th>
 									<th>詳細資料</th>
 								</tr>
 							</thead>
@@ -581,10 +620,25 @@ if (isset($_SESSION["帳號"])) {
 										<td><?php echo htmlspecialchars($appointment['appointment_date']); ?></td>
 										<td><?php echo htmlspecialchars($appointment['shifttime']); ?></td>
 										<td><?php echo htmlspecialchars($appointment['note']); ?></td>
+										<td><?php echo htmlspecialchars($appointment['status_name']); ?></td>
 										<td>
-											<button
-												onclick="openPopup(<?php echo htmlspecialchars($appointment['appointment_id']); ?>)">查看</button>
+											<?php if ($appointment['status_name'] === '請假'): ?>
+												<!-- 狀態為請假，不顯示按鈕 -->
+											<?php elseif ($appointment['status_name'] === '預約'): ?>
+												<!-- 狀態為預約，顯示取消預約按鈕（紅色） -->
+												<button class="cancel-btn"
+													onclick="cancelAppointment(<?php echo htmlspecialchars($appointment['appointment_id']); ?>)">
+													取消預約
+												</button>
+											<?php else: ?>
+												<!-- 其他狀態顯示「查看」按鈕（藍色） -->
+												<button class="view-btn"
+													onclick="openPopup(<?php echo htmlspecialchars($appointment['appointment_id']); ?>)">
+													查看
+												</button>
+											<?php endif; ?>
 										</td>
+
 									</tr>
 								<?php endwhile; ?>
 							</tbody>
@@ -620,6 +674,31 @@ if (isset($_SESSION["帳號"])) {
 			</div>
 		</section>
 		<script>
+
+			function cancelAppointment(appointment_id) {
+				if (!confirm("確定要取消這個預約嗎？此操作將記錄違規行為！")) {
+					return;
+				}
+
+				fetch("請假.php", {
+					method: "POST",
+					headers: { "Content-Type": "application/x-www-form-urlencoded" },
+					body: `appointment_id=${appointment_id}`
+				})
+					.then(response => response.json())
+					.then(data => {
+						if (data.status === "success") {
+							alert("預約已成功取消。");
+							location.reload(); // 重新載入頁面顯示更新後的狀態
+						} else {
+							alert("取消失敗：" + data.message);
+						}
+					})
+					.catch(error => {
+						console.error("取消預約時發生錯誤:", error);
+						alert("取消失敗，請稍後再試。");
+					});
+			}
 			function openPopup(appointment_id) {
 				fetch(`處理詳細資料.php?id=${appointment_id}`)
 					.then(response => response.json())
