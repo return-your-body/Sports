@@ -64,7 +64,72 @@ $pendingCountResult = $link->query(
      WHERE is_approved IS NULL"
 );
 $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
+
+// 設定分頁參數
+$page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+$perPage = isset($_GET['rowsPerPage']) ? (int) $_GET['rowsPerPage'] : 10;
+$offset = ($page - 1) * $perPage;
+$search = isset($_GET['search']) ? $_GET['search'] : '';
+
+// 查詢請假資料並聯結治療師表格
+$result = $link->query("
+    SELECT leaves.*, doctor.doctor AS doctor_name 
+    FROM leaves 
+    LEFT JOIN doctor ON leaves.doctor_id = doctor.doctor_id 
+    WHERE doctor.doctor LIKE '%$search%' 
+    ORDER BY is_approved ASC, start_date ASC 
+    LIMIT $offset, $perPage
+");
+
+// 查詢總數以進行分頁
+$totalResult = $link->query("
+    SELECT COUNT(*) as total 
+    FROM leaves 
+    LEFT JOIN doctor ON leaves.doctor_id = doctor.doctor_id 
+    WHERE doctor.doctor LIKE '%$search%'
+");
+$totalRows = $totalResult->fetch_assoc()['total'];
+$totalPages = ceil($totalRows / $perPage);
+
+// 處理 POST 請求（審核請假）
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+	$leaves_id = $_POST['leaves_id'];
+	$is_approved = $_POST['is_approved'];
+	$rejection_reason = isset($_POST['rejection_reason']) ? $_POST['rejection_reason'] : null;
+
+	if ($is_approved == 0 && !$rejection_reason) {
+		echo json_encode(["status" => "error", "message" => "拒絕原因為必填"]);
+		exit;
+	}
+
+	// 更新請假狀態
+	$stmt = $link->prepare("UPDATE leaves SET is_approved = ?, rejection_reason = ? WHERE leaves_id = ?");
+	$stmt->bind_param("isi", $is_approved, $rejection_reason, $leaves_id);
+
+	if ($stmt->execute()) {
+		$response = ["status" => "success", "message" => "請假狀態已更新"];
+
+		if ($is_approved == 1) {
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, "http://demo2.im.ukn.edu.tw/~Health24/admin/寄信.php");
+			curl_setopt($ch, CURLOPT_POST, 1);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(["leaves_id" => $leaves_id]));
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			$email_response = curl_exec($ch);
+			curl_close($ch);
+
+			$response["email_status"] = json_decode($email_response, true);
+		}
+	} else {
+		$response = ["status" => "error", "message" => "更新失敗: " . $link->error];
+	}
+
+	$stmt->close();
+	echo json_encode($response);
+	exit;
+}
 ?>
+
 
 <!DOCTYPE html>
 <html class="wide wow-animation" lang="en">
@@ -414,77 +479,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		</div>
 		<br>
 
-		<?php
-		// 引入資料庫連線
-		require '../db.php';
-
-		// 設定分頁參數
-		$page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-		$perPage = isset($_GET['rowsPerPage']) ? (int) $_GET['rowsPerPage'] : 10;
-		$offset = ($page - 1) * $perPage;
-		$search = isset($_GET['search']) ? $_GET['search'] : '';
-
-		// 查詢請假資料並聯結治療師表格
-		$result = $link->query("
-    SELECT leaves.*, doctor.doctor AS doctor_name 
-    FROM leaves 
-    LEFT JOIN doctor ON leaves.doctor_id = doctor.doctor_id 
-    WHERE doctor.doctor LIKE '%$search%' 
-    ORDER BY is_approved ASC, start_date ASC 
-    LIMIT $offset, $perPage
-");
-
-		// 查詢總數以進行分頁
-		$totalResult = $link->query("
-    SELECT COUNT(*) as total 
-    FROM leaves 
-    LEFT JOIN doctor ON leaves.doctor_id = doctor.doctor_id 
-    WHERE doctor.doctor LIKE '%$search%'
-");
-		$totalRows = $totalResult->fetch_assoc()['total'];
-		$totalPages = ceil($totalRows / $perPage);
-
-		header('Content-Type: application/json'); // 確保回應是 JSON
-		
-		// 處理 POST 請求（審核請假）
-		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-			$leaves_id = $_POST['leaves_id'];
-			$is_approved = $_POST['is_approved'];
-			$rejection_reason = isset($_POST['rejection_reason']) ? $_POST['rejection_reason'] : null;
-
-			if ($is_approved == 0 && !$rejection_reason) {
-				echo json_encode(["status" => "error", "message" => "拒絕原因為必填"]);
-				exit;
-			}
-
-			// 更新請假狀態
-			$stmt = $link->prepare("UPDATE leaves SET is_approved = ?, rejection_reason = ? WHERE leaves_id = ?");
-			$stmt->bind_param("isi", $is_approved, $rejection_reason, $leaves_id);
-
-			if ($stmt->execute()) {
-				$response = ["status" => "success", "message" => "請假狀態已更新"];
-
-				// 如果請假通過，則查詢受影響的預約
-				if ($is_approved == 1) {
-					require '寄信.php';
-					$affectedAppointments = getAffectedAppointments($link, $leaves_id);
-
-					if (!empty($affectedAppointments)) {
-						$response["appointments"] = $affectedAppointments;
-					} else {
-						$response["appointments"] = "無受影響的預約";
-					}
-				}
-			} else {
-				$response = ["status" => "error", "message" => "更新失敗: " . $link->error];
-			}
-
-			$stmt->close();
-			echo json_encode($response);
-			exit;
-		}
-		?>
-
 		<!-- 搜尋框與按鈕區塊 -->
 		<form class="search-form" method="GET" action="a_leave.php"
 			style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 20px; width: 100%;">
@@ -574,19 +568,26 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 					method: 'POST',
 					body: formData
 				})
-					.then(response => response.json()) // 確保解析 JSON
-					.then(data => {
-						alert(data.message); // 顯示返回的訊息
-						if (data.status === "success" && data.appointments.length > 0) {
-							alert("受影響的預約: \n" + data.appointments.join("\n"));
+					.then(response => response.text()) // 先讀取 text
+					.then(text => {
+						try {
+							let data = JSON.parse(text);
+							console.log("解析後的 JSON:", data);
+
+							// 顯示成功訊息，並在使用者按下「確定」後重新整理頁面
+							if (data.status === "success") {
+								alert("已通過請假申請並寄信給相關病患");
+								location.reload();
+							} else {
+								alert("錯誤：" + data.message);
+							}
+						} catch (e) {
+							console.warn("伺服器回應非 JSON，可能有錯誤", text);
+							alert("發生錯誤，請稍後再試");
 						}
-						location.reload();
-					})
-					.catch(error => {
-						console.error("錯誤:", error);
-						alert("發生錯誤，請稍後再試");
 					});
 			}
+
 
 		</script>
 
