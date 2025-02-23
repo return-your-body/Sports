@@ -1,90 +1,60 @@
 <?php
 require '../db.php';
-header('Content-Type: application/json');
 
-// 啟用錯誤報告
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+$record_id = $_POST['record_id'];
+$status_id = $_POST['status_id'];
 
-// 解析 JSON 請求
-$data = json_decode(file_get_contents("php://input"), true);
-if (!isset($data['appointment_id']) || !isset($data['status_id'])) {
-    echo json_encode(["success" => false, "error" => "缺少必要參數"]);
-    exit;
+switch ($status_id) {
+    case 2: // 修改
+        $new_date = $_POST['new_date'];
+        $new_time = $_POST['new_time'];
+        $doctor_id = $_POST['doctor_id']; // 確保 doctor_id 有值
+
+        $stmt = $link->prepare("UPDATE appointment_records SET date=?, time=?, doctor_id=? WHERE record_id=?");
+        $stmt->bind_param("ssii", $new_date, $new_time, $doctor_id, $record_id);
+        $stmt->execute();
+        echo "修改成功！";
+        break;
+
+    case 3: // 報到
+        $stmt = $link->prepare("UPDATE appointment_records SET status_id=3 WHERE record_id=?");
+        $stmt->bind_param("i", $record_id);
+        $stmt->execute();
+        echo "狀態已更新為報到！";
+        break;
+
+    case 4: // 請假
+        $stmt = $link->prepare("UPDATE appointment_records SET status_id=4 WHERE record_id=?");
+        $stmt->bind_param("i", $record_id);
+        $stmt->execute();
+
+        $link->query("UPDATE people SET black=black+0.5 WHERE person_id=(SELECT person_id FROM appointment_records WHERE record_id='$record_id')");
+        echo "狀態已更新為請假，已記錄違規！";
+        break;
+
+    case 5: // 爽約
+        $stmt = $link->prepare("UPDATE appointment_records SET status_id=5 WHERE record_id=?");
+        $stmt->bind_param("i", $record_id);
+        $stmt->execute();
+
+        $link->query("UPDATE people SET black=black+1 WHERE person_id=(SELECT person_id FROM appointment_records WHERE record_id='$record_id')");
+        echo "狀態已更新為爽約，已記錄違規！";
+        break;
+
+    case 8: // 看診中
+        $stmt = $link->prepare("UPDATE appointment_records SET status_id=8 WHERE record_id=?");
+        $stmt->bind_param("i", $record_id);
+        $stmt->execute();
+        echo "狀態已更新為看診中！";
+        break;
+
+    case 6: // 已看診
+        echo "此預約已完成看診，無法變更狀態！";
+        break;
+
+    default:
+        echo "無效操作！";
 }
 
-$appointment_id = intval($data['appointment_id']);
-$status_id = intval($data['status_id']);
-$new_time = isset($data['new_time']) ? $data['new_time'] : null;
-
-$black_points = 0;
-$black_id = null;  // 違規類別 ID
-
-// 設定違規分數與違規類別 ID
-if ($status_id == 4) { // 請假 +0.5
-    $black_points = 0.5;
-    $black_id = 1; // 假設 1 代表請假違規
-} elseif ($status_id == 5) { // 爽約 +1
-    $black_points = 1;
-    $black_id = 2; // 假設 2 代表爽約違規
-}
-
-// 確保資料庫連線
-if (!$link) {
-    echo json_encode(["success" => false, "error" => "資料庫連線失敗"]);
-    exit;
-}
-
-// 取得 people_id
-$query = "SELECT people_id FROM appointment WHERE appointment_id = ?";
-$stmt = $link->prepare($query);
-$stmt->bind_param("i", $appointment_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$people_id = ($row = $result->fetch_assoc()) ? $row['people_id'] : null;
-$stmt->close();
-
-if (!$people_id) {
-    echo json_encode(["success" => false, "error" => "無效的預約 ID"]);
-    exit;
-}
-
-// 如果是 "修改" (status_id = 2)，則更新預約時間
-if ($status_id == 2 && $new_time) {
-    $stmt = $link->prepare("UPDATE appointment SET appointment_time = ?, status_id = ? WHERE appointment_id = ?");
-    $stmt->bind_param("sii", $new_time, $status_id, $appointment_id);
-} else {
-    // 其他狀態更新
-    $stmt = $link->prepare("UPDATE appointment SET status_id = ? WHERE appointment_id = ?");
-    $stmt->bind_param("ii", $status_id, $appointment_id);
-}
-
-if ($stmt->execute()) {
-    // 違規處理
-    if ($black_points > 0) {
-        // 更新 people.black
-        $update_black = $link->prepare("UPDATE people SET black = black + ? WHERE people_id = ?");
-        $update_black->bind_param("di", $black_points, $people_id);
-        $update_black->execute();
-
-        // 新增違規紀錄到 blacklist
-        $insert_blacklist = $link->prepare("INSERT INTO blacklist (people_id, black_id, violation_date) VALUES (?, ?, NOW())");
-        $insert_blacklist->bind_param("ii", $people_id, $black_id);
-        $insert_blacklist->execute();
-    }
-
-    // 設定回應訊息
-    $messages = [
-        2 => "狀態已更新為修改，修改成功！",
-        3 => "狀態已更新為報到！",
-        4 => "狀態已更新為請假，已記錄違規！",
-        5 => "狀態已更新為爽約，已記錄違規！",
-        8 => "狀態已更新為看診中！",
-        6 => "已看診，無法變更狀態"
-    ];
-
-    echo json_encode(["success" => true, "message" => $messages[$status_id] ?? "狀態已成功更新！"]);
-} else {
-    echo json_encode(["success" => false, "error" => "更新失敗"]);
-}
+$link->close();
 ?>
