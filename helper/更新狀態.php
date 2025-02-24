@@ -1,7 +1,15 @@
 <?php
-require '../db.php';
 
-$appointment_id = $_POST['record_id'];  // 前端傳來的值為 appointment_id
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require '../db.php';
+require '../PHPMailer/src/PHPMailer.php';
+require '../PHPMailer/src/Exception.php';
+require '../PHPMailer/src/SMTP.php';// PHPMailer
+
+
+$appointment_id = $_POST['record_id'];
 $status_id = $_POST['status_id'];
 
 switch ($status_id) {
@@ -17,8 +25,48 @@ switch ($status_id) {
         $stmt->bind_param("i", $appointment_id);
         $stmt->execute();
 
+        // 更新違規記點
         $link->query("UPDATE people SET black=black+0.5 WHERE people_id=(SELECT people_id FROM appointment WHERE appointment_id='$appointment_id')");
-        echo "狀態已更新為請假，已記錄違規！";
+
+        // 查詢用戶email, 預約日期和時間
+        $query = "SELECT p.email, ds.date, st.shifttime, d.doctor
+                  FROM appointment a
+                  JOIN people p ON a.people_id = p.people_id
+                  JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+                  JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+                  JOIN doctor d ON ds.doctor_id = d.doctor_id
+                  WHERE a.appointment_id = ?";
+        $stmt_mail = $link->prepare($query);
+        $stmt_mail->bind_param("i", $appointment_id);
+        $stmt_mail->execute();
+        $result_mail = $stmt_mail->get_result();
+
+        if ($row = $result_mail->fetch_assoc()) {
+            $mail = new PHPMailer(true);
+            try {
+                $mail->isSMTP();
+                $mail->Host = 'smtp.gmail.com';
+                $mail->SMTPAuth = true;
+                $mail->Username = 'llccyu24@gmail.com';
+                $mail->Password = 'dqxvjcysypoflftr';
+                $mail->SMTPSecure = 'tls';
+                $mail->Port = 587;
+                // 設定 UTF-8 編碼，防止亂碼
+                $mail->CharSet = 'UTF-8';
+
+                $mail->setFrom('llccyu24@gmail.com', '運動筋膜放鬆 預約取消通知');
+                $mail->addAddress($row['email']);
+
+                $mail->isHTML(true);
+                $mail->Subject = '預約取消通知';
+                $mail->Body = "您的預約已取消（請假）：<br>治療師：{$row['doctor']}<br>日期：{$row['date']}<br>時間：{$row['shifttime']}";
+
+                $mail->send();
+                echo "狀態已更新為請假，已記錄違規並寄送通知郵件！";
+            } catch (Exception $e) {
+                echo "狀態已更新為請假，但郵件發送失敗：", $mail->ErrorInfo;
+            }
+        }
         break;
 
     case 5: // 爽約
@@ -46,5 +94,4 @@ switch ($status_id) {
 }
 
 $link->close();
-
 ?>

@@ -278,8 +278,7 @@ mysqli_close($link);
                   <ul class="rd-menu rd-navbar-dropdown">
                     <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_medical-record.php">看診紀錄</a>
                     </li>
-                    <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                        href="h_appointment-records.php">預約紀錄</a>
+                    <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="h_appointment-records.php">預約紀錄</a>
                     </li>
                   </ul>
                 </li>
@@ -372,7 +371,6 @@ mysqli_close($link);
     <!-- Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-
     <div class="form-container">
       <h3 style="text-align: center;">請假單</h3>
       <form id="leave-form">
@@ -413,18 +411,51 @@ mysqli_close($link);
         const leaveForm = document.getElementById('leave-form');
         const leaveType = document.getElementById('leave-type');
         const leaveTypeOther = document.getElementById('leave-type-other');
+        const doctorId = document.getElementById('doctor_id').value;
 
-        // Flatpickr 初始化
-        flatpickr("#date", { dateFormat: "Y-m-d", minDate: "today" });
-        flatpickr("#start-time", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
-        flatpickr("#end-time", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
+        const datePicker = flatpickr("#date", { dateFormat: "Y-m-d", minDate: "today" });
+        const startFlatpickr = flatpickr("#start-time", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
+        const endFlatpickr = flatpickr("#end-time", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
 
-        // 監聽請假類別變更
         leaveType.addEventListener("change", function () {
           leaveTypeOther.style.display = (this.value === "其他") ? "block" : "none";
         });
 
-        // 表單提交
+        checkTodayAvailability();
+
+        function checkTodayAvailability() {
+          const today = new Date().toISOString().slice(0, 10);
+          fetch(`檢查可請假時間.php?date=${today}&doctor=${doctorId}`)
+            .then(response => response.json())
+            .then(data => {
+              if (!data.success) {
+                datePicker.set('minDate', new Date().fp_incr(1));
+              }
+            })
+            .catch(error => console.error("檢查當日是否可請假錯誤:", error));
+        }
+
+        datePicker.config.onChange.push(fetchAvailableLeaveTimes);
+
+        function fetchAvailableLeaveTimes() {
+          const date = document.getElementById('date').value;
+
+          fetch(`檢查可請假時間.php?date=${date}&doctor=${doctorId}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.success && data.times.length > 0) {
+                const availableTimes = data.times.map(t => t.shifttime);
+                startFlatpickr.set("enable", availableTimes);
+                endFlatpickr.set("enable", availableTimes);
+              } else {
+                startFlatpickr.clear();
+                endFlatpickr.clear();
+                alert(data.message || "當天無可請假時段");
+              }
+            })
+            .catch(error => console.error("請假時間加載錯誤:", error));
+        }
+
         leaveForm.addEventListener('submit', function (event) {
           event.preventDefault();
           const formData = new FormData(this);
@@ -437,13 +468,15 @@ mysqli_close($link);
             .then(data => {
               alert(data.message);
               if (data.success) {
-                location.reload(); // 重新整理頁面
+                location.reload();
               }
             })
             .catch(error => console.error("請假提交錯誤:", error));
         });
       });
+
     </script>
+
 
 
     <!--頁尾-->

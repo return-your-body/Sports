@@ -328,125 +328,89 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		</header>
 
 		<!-- 收入 -->
+
 		<div>
 			篩選日期：
 			<select id="year"></select>年
 			<select id="month"></select>月
 			<select id="day"></select>日
-			治療師或助理：<select id="staff"></select>
-			<button onclick="fetchData()">查詢</button>
+			治療師或助理：
+			<select id="staff"></select>
+			<button id="searchBtn">查詢</button>
 		</div>
 
-		<!-- 日曆統計表格 -->
 		<div id="calendarTable"></div>
 
-		<!-- 第一張圖：總覽 -->
 		<canvas id="therapistBarChart"></canvas>
-		<div style="display: flex;">
-			<canvas id="itemPieChart"></canvas>
-			<canvas id="therapistItemPieChart"></canvas>
-			<canvas id="incomePieChart"></canvas>
-		</div>
+		<canvas id="itemPieChart"></canvas>
+		<canvas id="therapistItemPieChart"></canvas>
+		<canvas id="incomePieChart"></canvas>
 
 		<script>
 			$(document).ready(function () {
 
-				function populateSelectors() {
-					const yearNow = new Date().getFullYear();
-
-					$('#year').append(`<option value="">全部</option>`);
-					for (let i = yearNow - 5; i <= yearNow + 5; i++) {
-						$('#year').append(`<option value="${i}">${i}</option>`);
-					}
-
-					$('#month').append(`<option value="">全部</option>`);
-					for (let i = 1; i <= 12; i++) {
-						$('#month').append(`<option value="${i}">${i}</option>`);
-					}
-
-					$('#day').append(`<option value="">全部</option>`);
-					for (let i = 1; i <= 31; i++) {
-						$('#day').append(`<option value="${i}">${i}</option>`);
-					}
-
+				function initSelectors() {
 					$.getJSON('staff.php', function (data) {
-						$('#staff').append('<option value="">全部</option>');
-						data.forEach(s => {
-							$('#staff').append(`<option value="${s.id}">${s.name}</option>`);
-						});
+						$('#year').html('<option value="">全部</option>');
+						$.each(data.years, (i, v) => $('#year').append(`<option>${v}</option>`));
+
+						$('#month').html('<option value="">全部</option>');
+						$.each(data.months, (i, v) => $('#month').append(`<option>${v}</option>`));
+
+						$('#day').html('<option value="">全部</option>');
+						$.each(data.days, (i, v) => $('#day').append(`<option>${v}</option>`));
+
+						$('#staff').html('<option value="">全部</option>');
+						$.each(data.staff, (i, v) => $('#staff').append(`<option value="${v.id}">${v.name}</option>`));
 					});
 				}
 
-				populateSelectors();
-
 				function fetchData() {
-					const params = {
-						year: $('#year').val(),
-						month: $('#month').val(),
-						day: $('#day').val(),
-						staff: $('#staff').val()
-					};
-
 					$.ajax({
 						url: '數據查詢.php',
 						method: 'POST',
 						dataType: 'json',
-						data: params,
-						success: function (response) {
-							renderCalendar(response.calendar);
-							renderBarChart(response.bar);
-							renderPieChart('itemPieChart', response.itemPie);
-							renderPieChart('therapistItemPieChart', response.therapistItemPie);
-							renderPieChart('incomePieChart', response.incomePie);
+						data: {
+							year: $('#year').val(),
+							month: $('#month').val(),
+							day: $('#day').val(),
+							staff: $('#staff').val()
 						},
-						error: function () {
-							alert('資料載入失敗，請確認後端是否正常回應');
+						success: function (res) {
+							renderCalendar(res.calendar);
+							renderChart('therapistBarChart', 'bar', res.bar.labels, [{ label: '工作時數', data: res.bar.workingHours }, { label: '加班時數', data: res.bar.overtime }]);
+							renderChart('itemPieChart', 'pie', res.itemPie.labels, [{ data: res.itemPie.counts }]);
+							renderChart('therapistItemPieChart', 'pie', res.therapistItemPie.labels, [{ data: res.therapistItemPie.counts }]);
+							renderChart('incomePieChart', 'pie', res.incomePie.labels, [{ data: res.incomePie.counts }]);
 						}
 					});
 				}
 
 				function renderCalendar(data) {
+					let html = '<table border="1"><tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr><tr>';
 					let total = 0;
-					let table = `<table border="1"><tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr><tr>`;
-					data.forEach((day, idx) => {
-						total += day.count;
-						table += `<td>${day.date}<br>預約:${day.count}</td>`;
-						if ((idx + 1) % 7 === 0) table += '</tr><tr>';
+					data.forEach((d, i) => {
+						html += `<td>${d.date}<br>預約人數:${d.count}</td>`;
+						total += parseInt(d.count || 0);
+						if ((i + 1) % 7 == 0) html += '</tr><tr>';
 					});
-					table += `</tr><tr><td colspan="7">總預約人數：${total}</td></tr></table>`;
-					$('#calendarTable').html(table);
+					html += `</tr><tr><td colspan="7">總預約人數:${total}</td></tr></table>`;
+					$('#calendarTable').html(html);
 				}
 
 				let charts = {};
-
-				function renderBarChart(data) {
-					const ctx = $('#therapistBarChart')[0].getContext('2d');
-					if (charts['bar']) charts['bar'].destroy();
-					charts['bar'] = new Chart(ctx, {
-						type: 'bar',
-						data: {
-							labels: data.labels,
-							datasets: [
-								{ label: '正常時數', data: data.workingHours },
-								{ label: '加班時數', data: data.overtime }
-							]
-						}
-					});
+				function renderChart(id, type, labels, datasets) {
+					if (charts[id]) charts[id].destroy();
+					charts[id] = new Chart($(`#${id}`), { type, data: { labels, datasets } });
 				}
 
-				function renderPieChart(elementId, data) {
-					const ctx = $(`#${elementId}`)[0].getContext('2d');
-					if (charts[elementId]) charts[elementId].destroy();
-					charts[elementId] = new Chart(ctx, {
-						type: 'pie',
-						data: { labels: data.labels, datasets: [{ data: data.counts }] }
-					});
-				}
+				$('#searchBtn').click(fetchData);
 
+				initSelectors();
 				fetchData();
+
 			});
 		</script>
-
 
 	</div>
 	<!-- Global Mailform Output-->
