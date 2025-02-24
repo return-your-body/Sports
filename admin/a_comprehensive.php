@@ -328,169 +328,125 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		</header>
 
 		<!-- 收入 -->
-		<?php
-		session_start();
-		require '../db.php'; // 連接資料庫
-		
-		// 確保 $link 可用
-		if (!isset($link)) {
-			die("資料庫連線變數未定義，請檢查 db.php");
-		}
-
-		// 取得各治療師的預約總人數
-		$query_therapist_appointments = "
-    SELECT 
-        d.doctor AS doctor_name,
-        COUNT(a.appointment_id) AS total_appointments
-    FROM appointment a
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    GROUP BY d.doctor
-    ORDER BY total_appointments DESC;
-";
-
-		// 取得各治療師的預約時段
-		$query_therapist_timeslots = "
-    SELECT 
-        ds.shift_time AS timeslot,
-        COUNT(a.appointment_id) AS total_appointments
-    FROM appointment a
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    GROUP BY ds.shift_time
-    ORDER BY total_appointments DESC;
-";
-
-		// 取得各治療師的每個項目看診人數與總金額
-		$query_therapist_items = "
-    SELECT 
-        d.doctor AS doctor_name,
-        i.item AS item_name,
-        COUNT(m.medicalrecord_id) AS patient_count,
-        SUM(i.price) AS total_revenue
-    FROM medicalrecord m
-    LEFT JOIN item i ON m.item_id = i.item_id
-    LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    GROUP BY d.doctor, i.item
-    ORDER BY d.doctor, patient_count DESC;
-";
-
-		// 執行查詢
-		$result_therapist_appointments = $link->query($query_therapist_appointments);
-		$result_therapist_timeslots = $link->query($query_therapist_timeslots);
-		$result_therapist_items = $link->query($query_therapist_items);
-
-		// 取得數據
-		$therapist_appointments_data = $result_therapist_appointments->fetch_all(MYSQLI_ASSOC);
-		$therapist_timeslots_data = $result_therapist_timeslots->fetch_all(MYSQLI_ASSOC);
-		$therapist_items_data = $result_therapist_items->fetch_all(MYSQLI_ASSOC);
-
-		// 關閉資料庫連線
-		$link->close();
-		?>
-
-
-		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-		<style>
-			body {
-				font-family: Arial, sans-serif;
-				margin: 20px;
-				padding: 20px;
-				text-align: center;
-			}
-
-			.chart-container {
-				width: 80%;
-				margin: auto;
-			}
-		</style>
-
-
-		<h2>各治療師的預約總人數</h2>
-		<div class="chart-container">
-			<canvas id="therapistAppointmentsBarChart"></canvas>
-		</div>
-		<div class="chart-container">
-			<canvas id="therapistAppointmentsPieChart"></canvas>
+		<div>
+			篩選日期：
+			<select id="year"></select>年
+			<select id="month"></select>月
+			<select id="day"></select>日
+			治療師或助理：<select id="staff"></select>
+			<button onclick="fetchData()">查詢</button>
 		</div>
 
-		<h2>各治療師的預約時段分佈</h2>
-		<div class="chart-container">
-			<canvas id="therapistTimeslotPieChart"></canvas>
-		</div>
+		<!-- 日曆統計表格 -->
+		<div id="calendarTable"></div>
 
-		<h2>各治療師的每個項目看診人數</h2>
-		<div class="chart-container">
-			<canvas id="therapistItemChart"></canvas>
-		</div>
-
-		<h2>各治療師的每個項目總收入</h2>
-		<div class="chart-container">
-			<canvas id="therapistRevenueChart"></canvas>
+		<!-- 第一張圖：總覽 -->
+		<canvas id="therapistBarChart"></canvas>
+		<div style="display: flex;">
+			<canvas id="itemPieChart"></canvas>
+			<canvas id="therapistItemPieChart"></canvas>
+			<canvas id="incomePieChart"></canvas>
 		</div>
 
 		<script>
-			var therapistNames = <?php echo json_encode(array_column($therapist_appointments_data, 'doctor_name')); ?>;
-			var therapistAppointments = <?php echo json_encode(array_column($therapist_appointments_data, 'total_appointments')); ?>;
+			$(document).ready(function () {
 
-			var timeslotLabels = <?php echo json_encode(array_column($therapist_timeslots_data, 'timeslot')); ?>;
-			var timeslotCounts = <?php echo json_encode(array_column($therapist_timeslots_data, 'total_appointments')); ?>;
+				function populateSelectors() {
+					const yearNow = new Date().getFullYear();
 
-			var ctx1 = document.getElementById('therapistAppointmentsBarChart').getContext('2d');
-			new Chart(ctx1, {
-				type: 'bar',
-				data: {
-					labels: therapistNames,
-					datasets: [{
-						label: '預約總人數',
-						data: therapistAppointments,
-						backgroundColor: 'rgba(54, 162, 235, 0.5)',
-						borderColor: 'rgba(54, 162, 235, 1)',
-						borderWidth: 1
-					}]
-				},
-				options: {
-					responsive: true,
-					scales: {
-						y: {
-							beginAtZero: true
-						}
+					$('#year').append(`<option value="">全部</option>`);
+					for (let i = yearNow - 5; i <= yearNow + 5; i++) {
+						$('#year').append(`<option value="${i}">${i}</option>`);
 					}
-				}
-			});
 
-			var ctx2 = document.getElementById('therapistAppointmentsPieChart').getContext('2d');
-			new Chart(ctx2, {
-				type: 'pie',
-				data: {
-					labels: therapistNames,
-					datasets: [{
-						data: therapistAppointments,
-						backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
-					}]
-				},
-				options: {
-					responsive: true
-				}
-			});
+					$('#month').append(`<option value="">全部</option>`);
+					for (let i = 1; i <= 12; i++) {
+						$('#month').append(`<option value="${i}">${i}</option>`);
+					}
 
-			var ctx3 = document.getElementById('therapistTimeslotPieChart').getContext('2d');
-			new Chart(ctx3, {
-				type: 'pie',
-				data: {
-					labels: timeslotLabels,
-					datasets: [{
-						data: timeslotCounts,
-						backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
-					}]
-				},
-				options: {
-					responsive: true
-				}
-			});
+					$('#day').append(`<option value="">全部</option>`);
+					for (let i = 1; i <= 31; i++) {
+						$('#day').append(`<option value="${i}">${i}</option>`);
+					}
 
+					$.getJSON('staff.php', function (data) {
+						$('#staff').append('<option value="">全部</option>');
+						data.forEach(s => {
+							$('#staff').append(`<option value="${s.id}">${s.name}</option>`);
+						});
+					});
+				}
+
+				populateSelectors();
+
+				function fetchData() {
+					const params = {
+						year: $('#year').val(),
+						month: $('#month').val(),
+						day: $('#day').val(),
+						staff: $('#staff').val()
+					};
+
+					$.ajax({
+						url: '數據查詢.php',
+						method: 'POST',
+						dataType: 'json',
+						data: params,
+						success: function (response) {
+							renderCalendar(response.calendar);
+							renderBarChart(response.bar);
+							renderPieChart('itemPieChart', response.itemPie);
+							renderPieChart('therapistItemPieChart', response.therapistItemPie);
+							renderPieChart('incomePieChart', response.incomePie);
+						},
+						error: function () {
+							alert('資料載入失敗，請確認後端是否正常回應');
+						}
+					});
+				}
+
+				function renderCalendar(data) {
+					let total = 0;
+					let table = `<table border="1"><tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr><tr>`;
+					data.forEach((day, idx) => {
+						total += day.count;
+						table += `<td>${day.date}<br>預約:${day.count}</td>`;
+						if ((idx + 1) % 7 === 0) table += '</tr><tr>';
+					});
+					table += `</tr><tr><td colspan="7">總預約人數：${total}</td></tr></table>`;
+					$('#calendarTable').html(table);
+				}
+
+				let charts = {};
+
+				function renderBarChart(data) {
+					const ctx = $('#therapistBarChart')[0].getContext('2d');
+					if (charts['bar']) charts['bar'].destroy();
+					charts['bar'] = new Chart(ctx, {
+						type: 'bar',
+						data: {
+							labels: data.labels,
+							datasets: [
+								{ label: '正常時數', data: data.workingHours },
+								{ label: '加班時數', data: data.overtime }
+							]
+						}
+					});
+				}
+
+				function renderPieChart(elementId, data) {
+					const ctx = $(`#${elementId}`)[0].getContext('2d');
+					if (charts[elementId]) charts[elementId].destroy();
+					charts[elementId] = new Chart(ctx, {
+						type: 'pie',
+						data: { labels: data.labels, datasets: [{ data: data.counts }] }
+					});
+				}
+
+				fetchData();
+			});
 		</script>
+
 
 	</div>
 	<!-- Global Mailform Output-->

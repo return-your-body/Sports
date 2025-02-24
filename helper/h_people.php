@@ -473,29 +473,67 @@ $link->close();
             </section>
         </div>
         <!--標題-->
+
         <!-- 用戶資料 -->
         <section class="section section-lg bg-default">
             <div class="container">
+                <?php
+                session_start();
+                require '../db.php';
+
+                // 取得搜尋條件和分頁設定
+                $records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 10;
+                $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+                $search_idcard = isset($_GET['search_idcard']) ? $_GET['search_idcard'] : '';
+
+                // 計算總筆數
+                $total_query = "SELECT COUNT(*) AS total FROM people WHERE idcard LIKE ?";
+                $stmt_total = $link->prepare($total_query);
+                $like_search = "%$search_idcard%";
+                $stmt_total->bind_param('s', $like_search);
+                $stmt_total->execute();
+                $total_result = $stmt_total->get_result()->fetch_assoc();
+                $total_records = $total_result['total'];
+                $total_pages = ceil($total_records / $records_per_page);
+                $offset = ($current_page - 1) * $records_per_page;
+
+                // 查詢使用者資料及黑名單狀態
+                $sql = "SELECT people_id, name, gender_id, birthday, idcard, black,
+                CASE WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday)/365.25), ' 歲)')
+                     ELSE '無資料' END AS birthday_with_age,
+                CASE gender_id WHEN 1 THEN '男' WHEN 2 THEN '女' ELSE '無資料' END AS gender
+                FROM people
+                WHERE idcard LIKE ?
+                LIMIT ?, ?";
+                $stmt = $link->prepare($sql);
+                $stmt->bind_param('sii', $like_search, $offset, $records_per_page);
+                $stmt->execute();
+                $result = $stmt->get_result();
+
+                $people = $result->fetch_all(MYSQLI_ASSOC);
+                ?>
+
                 <!-- 搜尋表單 + 每頁筆數 -->
                 <div class="search-container"
                     style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 20px;">
-                    <form method="GET" action="" style="display: flex; align-items: center; gap: 10px;">
-                        <input type="text" name="search_idcard" id="search_idcard" placeholder="請輸入身分證號"
+                    <form method="GET" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="text" name="search_idcard" placeholder="請輸入身分證號"
                             value="<?php echo htmlspecialchars($search_idcard); ?>">
                         <button type="submit" class="popup-btn">搜尋</button>
                     </form>
 
-                    <select id="per_page" class="pagination-select" onchange="changePerPage(this.value)">
-                        <?php
-                        $options = [3, 5, 10, 20, 50, 100];
-                        foreach ($options as $option) {
-                            echo "<option value='$option' " . ($records_per_page == $option ? 'selected' : '') . ">$option 筆/頁</option>";
-                        }
-                        ?>
+                    <select
+                        onchange="location.href='?search_idcard=<?php echo urlencode($search_idcard); ?>&per_page='+this.value">
+                        <?php foreach ([3, 5, 10, 20, 50, 100] as $num): ?>
+                            <option value="<?php echo $num; ?>" <?php if ($records_per_page == $num)
+                                   echo 'selected'; ?>>
+                                <?php echo $num; ?> 筆/頁
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
 
-                <!--表格 -->
+                <!-- 資料表格 -->
                 <div class="table-responsive">
                     <table>
                         <thead>
@@ -518,9 +556,16 @@ $link->close();
                                         <td><?php echo htmlspecialchars($person['birthday_with_age']); ?></td>
                                         <td><?php echo htmlspecialchars($person['idcard']); ?></td>
                                         <td>
-                                            <a href="h_appointment.php?id=<?php echo $person['people_id']; ?>">
-                                                <button class="popup-btn">預約</button>
-                                            </a>
+                                            <?php if ($person['black'] >= 3): ?>
+                                                <button class="popup-btn" disabled
+                                                    style="background-color:gray; cursor:not-allowed;">
+                                                    禁止預約
+                                                </button>
+                                            <?php else: ?>
+                                                <a href="h_appointment.php?id=<?php echo urlencode($person['people_id']); ?>">
+                                                    <button class="popup-btn">預約</button>
+                                                </a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -533,7 +578,7 @@ $link->close();
                     </table>
                 </div>
 
-                <!--分頁顯示 -->
+                <!-- 分頁資訊 -->
                 <div style="text-align: right; margin-top: 20px;">
                     <strong>
                         第 <?php echo $current_page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共
@@ -543,14 +588,21 @@ $link->close();
 
                 <div style="text-align: center; margin-top: 20px;">
                     <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <a
-                            href="?search_idcard=<?php echo urlencode($search_idcard); ?>&page=<?php echo $i; ?>&per_page=<?php echo $records_per_page; ?>">
-
+                        <a href="?search_idcard=<?php echo urlencode($search_idcard); ?>&page=<?php echo $i; ?>&per_page=<?php echo $records_per_page; ?>"
+                            style="margin:0 5px;<?php echo $i == $current_page ? 'font-weight:bold;' : ''; ?>">
+                            <?php echo $i; ?>
                         </a>
                     <?php endfor; ?>
                 </div>
+
+                <?php
+                $stmt_total->close();
+                $stmt->close();
+                $link->close();
+                ?>
             </div>
         </section>
+
 
         <!-- 📝 JavaScript 讓 per_page 變更後即時更新頁面 -->
         <script>
