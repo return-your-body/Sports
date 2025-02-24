@@ -1,74 +1,125 @@
 <?php
-// 啟動會話，檢查用戶是否已登入
+// 啟動使用者 session
 session_start();
-// 載入資料庫連接設定
+
+// 載入資料庫連線設定
 require '../db.php';
 
-// 檢查前端是否傳遞了必要的參數，包括治療師名稱 (doctor)、日期 (date)、時間 (time) 和備註 (note)
+// 載入 PHPMailer
+require '../PHPMailer/src/PHPMailer.php';
+require '../PHPMailer/src/Exception.php';
+require '../PHPMailer/src/SMTP.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+// 確認前端傳送的必要資料是否存在
 if (isset($_POST['doctor'], $_POST['date'], $_POST['time'], $_POST['note'])) {
-    // 從 POST 請求中接收參數並存入對應變數
+    // 接收並儲存POST參數
     $doctor = $_POST['doctor']; // 治療師名稱
     $date = $_POST['date'];     // 預約日期
     $time = $_POST['time'];     // 預約時間
     $note = $_POST['note'];     // 備註內容
 
-    // 從當前使用者的 session 中獲取帳號資訊
+    // 從session獲取登入帳號
     $account = $_SESSION['帳號'];
 
-    // 查詢當前使用者的 `people_id`
-    $query = "SELECT people_id FROM user JOIN people ON user.user_id = people.user_id WHERE user.account = ?";
-    $stmt = mysqli_prepare($link, $query); // 使用預處理語句以防止 SQL 注入
-    mysqli_stmt_bind_param($stmt, "s", $account); // 綁定查詢參數
-    mysqli_stmt_execute($stmt); // 執行查詢
-    $result = mysqli_stmt_get_result($stmt); // 獲取查詢結果
+    // 查詢使用者的 people_id 與 email
+    $query = "SELECT people.people_id, people.email FROM user 
+              JOIN people ON user.user_id = people.user_id 
+              WHERE user.account = ?";
+    $stmt = mysqli_prepare($link, $query); // 預防SQL injection
+    mysqli_stmt_bind_param($stmt, "s", $account);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
 
-    // 如果能找到對應的 `people_id`
+    // 確認使用者是否存在
     if ($row = mysqli_fetch_assoc($result)) {
-        $people_id = $row['people_id']; // 獲取使用者的 `people_id`
+        $people_id = $row['people_id'];  // 使用者的people_id
+        $user_email = $row['email'];     // 使用者的email地址
 
-        // 查詢治療師的班表 (`doctorshift_id`) 和對應的時間段 (`shifttime_id`)
+        // 查詢治療師對應班表ID(doctorshift_id)及時間段ID(shifttime_id)
         $query_shift = "
             SELECT ds.doctorshift_id, st.shifttime_id
             FROM doctorshift ds
             JOIN doctor d ON ds.doctor_id = d.doctor_id
             JOIN shifttime st ON st.shifttime = ?
             WHERE d.doctor = ? AND ds.date = ?";
-        $stmt_shift = mysqli_prepare($link, $query_shift); // 預處理語句
-        mysqli_stmt_bind_param($stmt_shift, "sss", $time, $doctor, $date); // 綁定時間、治療師名稱和日期參數
-        mysqli_stmt_execute($stmt_shift); // 執行查詢
-        $result_shift = mysqli_stmt_get_result($stmt_shift); // 獲取查詢結果
+        $stmt_shift = mysqli_prepare($link, $query_shift);
+        mysqli_stmt_bind_param($stmt_shift, "sss", $time, $doctor, $date);
+        mysqli_stmt_execute($stmt_shift);
+        $result_shift = mysqli_stmt_get_result($stmt_shift);
 
-        // 如果找到對應的班表和時間段
+        // 如果查詢到排班資料
         if ($shift_row = mysqli_fetch_assoc($result_shift)) {
-            $doctorshift_id = $shift_row['doctorshift_id']; // 治療師班表 ID
-            $shifttime_id = $shift_row['shifttime_id'];     // 時間段 ID
+            $doctorshift_id = $shift_row['doctorshift_id']; // 治療師排班編號
+            $shifttime_id = $shift_row['shifttime_id'];     // 預約時間段編號
 
-            // 插入預約資料到 `appointment` 資料表
+            // 將預約資料寫入appointment資料表
             $insert_query = "
                 INSERT INTO appointment (people_id, doctorshift_id, shifttime_id, note, status_id, created_at) 
-                VALUES (?, ?, ?, ?, 1, NOW())"; // `status_id` 預設為 1（表示預約），`created_at` 為當前時間
-            $stmt_insert = mysqli_prepare($link, $insert_query); // 預處理語句
-            mysqli_stmt_bind_param($stmt_insert, "iiis", $people_id, $doctorshift_id, $shifttime_id, $note); // 綁定參數
+                VALUES (?, ?, ?, ?, 1, NOW())"; // status_id: 1表示已預約
+            $stmt_insert = mysqli_prepare($link, $insert_query);
+            mysqli_stmt_bind_param($stmt_insert, "iiis", $people_id, $doctorshift_id, $shifttime_id, $note);
 
-            // 執行插入操作
+            // 執行預約資料插入
             if (mysqli_stmt_execute($stmt_insert)) {
-                // 插入成功，回傳 JSON 格式的成功訊息給前端
-                echo json_encode(['success' => true, 'message' => '預約成功！']);
+                // 預約資料插入成功，開始發送郵件通知使用者
+
+                // 建立PHPMailer實例
+                $mail = new PHPMailer(true);
+
+                try {
+                    // SMTP郵件伺服器設定 (這裡以Gmail為例)
+                    $mail->isSMTP();
+                    $mail->Host = 'smtp.gmail.com'; // SMTP伺服器位置
+                    $mail->SMTPAuth = true;             // 開啟SMTP認證
+                    $mail->Username = 'llccyu24@gmail.com';  // 寄件人email帳號
+                    $mail->Password = 'dqxvjcysypoflftr';         // 寄件人email密碼 (推薦用應用程式密碼)
+                    $mail->SMTPSecure = 'tls';            // 加密方式
+                    $mail->Port = 587;              // SMTP埠號                   
+                    $mail->CharSet = 'UTF-8';   // 設定 UTF-8 編碼，防止亂碼
+
+                    // 信件寄送人與收件人設定
+                    $mail->setFrom('llccyu24@gmail.com', '運動筋膜放鬆 預約通知');
+                    $mail->addAddress($user_email);       // 使用者的email地址
+
+                    // 信件主題與內容設定
+                    $mail->isHTML(true);                  // 啟用HTML內容格式
+                    $mail->Subject = '預約成功通知';
+                    $mail->Body = "
+                        親愛的使用者您好，<br>
+                        您已成功預約以下時段：<br><br>
+                        <b>治療師：</b> {$doctor}<br>
+                        <b>日期：</b> {$date}<br>
+                        <b>時間：</b> {$time}<br><br>
+                        感謝您的預約，期待您的光臨！";
+
+                    // 發送郵件
+                    $mail->send();
+
+                    // 回傳成功訊息給前端
+                    echo json_encode(['success' => true, 'message' => '預約成功，通知信已寄出！']);
+
+                } catch (Exception $e) {
+                    // 郵件發送失敗，但預約已成功
+                    echo json_encode(['success' => true, 'message' => '預約成功，但通知信發送失敗：' . $mail->ErrorInfo]);
+                }
+
             } else {
-                // 插入失敗，回傳錯誤訊息
+                // 資料庫預約資料插入失敗
                 echo json_encode(['success' => false, 'message' => '無法新增預約資料。']);
             }
         } else {
-            // 找不到對應的班表或時間段，回傳錯誤訊息
+            // 沒有找到對應的排班或時段資料
             echo json_encode(['success' => false, 'message' => '無對應的排班或時段資料。']);
         }
     } else {
-        // 無法找到對應的使用者資訊，回傳錯誤訊息
+        // 查無此使用者資料
         echo json_encode(['success' => false, 'message' => '用戶資訊錯誤，請重新登入。']);
     }
 } else {
-    // 缺少必要的參數，回傳錯誤訊息
+    // 前端缺少必要參數
     echo json_encode(['success' => false, 'message' => '缺少必要的參數。']);
 }
-
 ?>
