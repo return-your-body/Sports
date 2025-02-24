@@ -239,19 +239,19 @@ if (isset($_SESSION["帳號"])) {
                                     </ul>
                                 </li>
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="u_reserve.php">預約</a></li>
-								<!-- <li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
-									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="u_reserve.php">立即預約</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="u_reserve-record.php">查看預約資料</a>
-										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-												href="u_reserve-time.php">查看預約時段</a>
-										</li>
-									</ul>
-								</li> -->
+                                <!-- <li class="rd-nav-item"><a class="rd-nav-link active" href="#">預約</a>
+                                    <ul class="rd-menu rd-navbar-dropdown">
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_reserve.php">立即預約</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_reserve-record.php">查看預約資料</a>
+                                        </li>
+                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
+                                                href="u_reserve-time.php">查看預約時段</a>
+                                        </li>
+                                    </ul>
+                                </li> -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
                                 </li>
                                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
@@ -265,7 +265,7 @@ if (isset($_SESSION["帳號"])) {
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="u_profile.php">個人資料</a>
                                 </li>
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="u_change.php">變更密碼</a>
-								</li>
+                                </li>
                                 <!-- 登出按鈕 -->
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="javascript:void(0);"
                                         onclick="showLogoutBox()">登出</a>
@@ -347,38 +347,51 @@ if (isset($_SESSION["帳號"])) {
         </div>
         <!--標題-->
 
-        <!-- Team-->
+        <!-- Team -->
         <section class="section section-lg novi-bg novi-bg-img bg-default">
             <?php
-            require '../db.php';  // 載入資料庫連線設定
-            
-            // 查詢所有非助手治療師
-            $sql = "SELECT doctor FROM doctor WHERE doctor NOT LIKE '%助手%'";
-            $result = mysqli_query($link, $sql);
+            require '../db.php';
 
+            // 查詢所有非助手治療師及圖片
+            $sql = "
+        SELECT d.doctor_id, d.doctor, dp.image
+        FROM doctor d
+        INNER JOIN user u ON d.user_id = u.user_id
+        LEFT JOIN doctorprofile dp ON d.doctor_id = dp.doctor_id
+        WHERE u.grade_id = 2
+    ";
+
+            $result = mysqli_query($link, $sql);
             if (!$result) {
                 die("SQL 查詢錯誤: " . mysqli_error($link));
             }
 
             $doctors = [];
             while ($row = mysqli_fetch_assoc($result)) {
-                $doctors[] = $row['doctor'];
+                $doctors[] = $row;
             }
 
             mysqli_close($link);
             ?>
             <div class="container">
                 <div class="row row-40 row-lg-50">
-                    <?php foreach ($doctors as $doctorName): ?>
+                    <?php foreach ($doctors as $doctor): ?>
                         <div class="col-sm-6 col-lg-3">
                             <div class="team-default box-width-3">
                                 <div class="team-default-media">
-                                    <img class="team-default-img" src="images/doctor.png" alt="" width="260" height="345"
-                                        loading="lazy" />
+                                    <?php if (!empty($doctor['image'])): ?>
+                                        <img class="team-default-img"
+                                            src="data:image/jpeg;base64,<?php echo base64_encode($doctor['image']); ?>"
+                                            alt="<?php echo htmlspecialchars($doctor['doctor']); ?>" width="260" height="345"
+                                            loading="lazy" />
+                                    <?php else: ?>
+                                        <img class="team-default-img" src="images/doctor.png" alt="預設圖片" width="260"
+                                            height="345" loading="lazy" />
+                                    <?php endif; ?>
                                 </div>
                                 <h6 class="team-default-title">
-                                    <a href="u_link1.php?doctor=<?php echo urlencode($doctorName); ?>">
-                                        <?php echo htmlspecialchars($doctorName); ?>
+                                    <a href="u_link1.php?doctor=<?php echo urlencode($doctor['doctor']); ?>">
+                                        <?php echo htmlspecialchars($doctor['doctor']); ?>
                                     </a>
                                 </h6>
                                 <div class="team-default-meta small">治療師</div>
@@ -389,20 +402,21 @@ if (isset($_SESSION["帳號"])) {
             </div>
         </section>
 
+
         <footer class="section novi-bg novi-bg-img footer-simple">
             <div class="container">
                 <div class="row row-40">
                     <div class="col-md-4">
                         <h4>關於我們</h4>
                         <ul class="list-inline" style="font-size: 40px; display: inline-block;color: #333333; ">
-							<li><a class="icon novi-icon icon-default icon-custom-facebook"
-									href="https://www.facebook.com/ReTurnYourBody/" target="_blank"></a></li>
-							<li><a class="icon novi-icon icon-default icon-custom-linkedin"
-									href="https://lin.ee/sUaUVMq" target="_blank"></a></li>
-							<li><a class="icon novi-icon icon-default icon-custom-instagram"
-									href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"
-									target="_blank"></a></li>
-						</ul>
+                            <li><a class="icon novi-icon icon-default icon-custom-facebook"
+                                    href="https://www.facebook.com/ReTurnYourBody/" target="_blank"></a></li>
+                            <li><a class="icon novi-icon icon-default icon-custom-linkedin"
+                                    href="https://lin.ee/sUaUVMq" target="_blank"></a></li>
+                            <li><a class="icon novi-icon icon-default icon-custom-instagram"
+                                    href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"
+                                    target="_blank"></a></li>
+                        </ul>
 
 
                     </div>

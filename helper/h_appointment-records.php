@@ -1,25 +1,25 @@
 <?php
 session_start();
 
+// 如果未登入，跳回登入頁面
 if (!isset($_SESSION["登入狀態"])) {
 	header("Location: ../index.html");
 	exit;
 }
 
-// 防止頁面被瀏覽器緩存
+// 防止頁面緩存
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
-// 檢查 "帳號" 是否存在於 $_SESSION 中
+// 檢查SESSION中是否存在帳號
 if (isset($_SESSION["帳號"])) {
-	// 獲取用戶帳號
 	$帳號 = $_SESSION['帳號'];
 
-	// 資料庫連接
+	// 連接資料庫
 	require '../db.php';
 
-	// 查詢該帳號的詳細資料
+	// 查詢登入使用者資訊
 	$sql = "SELECT user.account, doctor.doctor AS name 
             FROM user 
             JOIN doctor ON user.user_id = doctor.user_id 
@@ -30,41 +30,56 @@ if (isset($_SESSION["帳號"])) {
 	$result = mysqli_stmt_get_result($stmt);
 
 	if (mysqli_num_rows($result) > 0) {
-		// 抓取對應姓名
 		$row = mysqli_fetch_assoc($result);
 		$姓名 = $row['name'];
 		$帳號名稱 = $row['account'];
-
-		// 顯示帳號和姓名
-		// echo "歡迎您！<br>";
-		// echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-		// echo "姓名：" . htmlspecialchars($姓名);
-		// echo "<script>
-		//   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-		// </script>";
 	} else {
-		// 如果資料不存在，提示用戶重新登入
-		echo "<script>
-                alert('找不到對應的帳號資料，請重新登入。');
-                window.location.href = '../index.html';
-              </script>";
+		echo "<script>alert('找不到對應的帳號資料，請重新登入。'); window.location.href = '../index.html';</script>";
 		exit();
 	}
 
-	// 關閉資料庫連接
+	// 時區設定
+	date_default_timezone_set('Asia/Taipei');
+	$current_time = date('Y-m-d H:i:s');
+
+	// 狀態為預約(1)或修改(2)且超過15分鐘未報到
+	$query = "SELECT a.appointment_id, a.people_id, ds.date, st.shifttime
+          FROM appointment a
+          JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+          JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+          WHERE a.status_id IN (1, 2)
+          AND TIMESTAMP(CONCAT(ds.date, ' ', st.shifttime)) < DATE_SUB(?, INTERVAL 15 MINUTE)";
+
+	$stmt_auto = mysqli_prepare($link, $query);
+	mysqli_stmt_bind_param($stmt_auto, "s", $current_time);
+	mysqli_stmt_execute($stmt_auto);
+	$result_auto = mysqli_stmt_get_result($stmt_auto);
+
+	// 逐筆處理並更新為爽約狀態，違規記點加1
+	while ($row_auto = mysqli_fetch_assoc($result_auto)) {
+		$appointment_id = $row_auto['appointment_id'];
+		$people_id = $row_auto['people_id'];
+
+		// 更新狀態為爽約 (5)
+		$update_status_sql = "UPDATE appointment SET status_id = 5 WHERE appointment_id = ?";
+		$stmt_update = mysqli_prepare($link, $update_status_sql);
+		mysqli_stmt_bind_param($stmt_update, "i", $appointment_id);
+		mysqli_stmt_execute($stmt_update);
+
+		// 違規記點+1
+		$update_black_sql = "UPDATE people SET black = black + 1 WHERE people_id = ?";
+		$stmt_black = mysqli_prepare($link, $update_black_sql);
+		mysqli_stmt_bind_param($stmt_black, "i", $people_id);
+		mysqli_stmt_execute($stmt_black);
+	}
+
+
 	mysqli_close($link);
 } else {
-	echo "<script>
-            alert('會話過期或資料遺失，請重新登入。');
-            window.location.href = '../index.html';
-          </script>";
+	echo "<script>alert('會話過期或資料遺失，請重新登入。'); window.location.href = '../index.html';</script>";
 	exit();
 }
-
-//預約紀錄
-
 ?>
-
 
 
 <!DOCTYPE html>
@@ -75,6 +90,7 @@ if (isset($_SESSION["帳號"])) {
 	<title>助手-預約紀錄</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
+	<meta http-equiv="refresh" content="3600"> <!-- 一小時自動刷新一次 -->
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<link rel="icon" href="images/favicon.ico" type="image/x-icon">
 	<link rel="stylesheet" type="text/css"
@@ -775,8 +791,6 @@ if (isset($_SESSION["帳號"])) {
 			</div>
 		</section>
 
-
-
 		<!-- 修改預約 Modal -->
 		<div id="modal-overlay" class="modal-overlay" style="display: none;">
 			<div id="modal-container" class="modal-container">
@@ -805,37 +819,29 @@ if (isset($_SESSION["帳號"])) {
 
 		<script>
 			document.addEventListener("DOMContentLoaded", function () {
-				document.querySelectorAll(".status-dropdown").forEach((select) => {
+				document.querySelectorAll(".status-dropdown").forEach(select => {
 					select.addEventListener("change", function () {
-						let appointmentId = this.getAttribute("data-id");
-						let doctorId = this.getAttribute("data-doctor-id");
-						let selectedStatus = parseInt(this.value, 10);
+						const appointmentId = this.dataset.id;
+						const doctorId = this.dataset.doctorId;
+						const selectedStatus = parseInt(this.value, 10);
 
-						if (selectedStatus === 2) { // 進入修改模式
+						if (selectedStatus === 2) {
 							openEditModal(appointmentId, doctorId);
-						} else { // 更新狀態
+						} else if ([3, 4, 5, 6, 8].includes(selectedStatus)) {
 							updateStatus(appointmentId, selectedStatus, select);
+						} else {
+							alert('此狀態無法透過本頁直接修改！');
+							location.reload();
 						}
 					});
 				});
 
-				document.getElementById("confirm-modify").addEventListener("click", function () {
-					submitEditForm();
-				});
-
-				document.getElementById("modal-close").addEventListener("click", function () {
-					closeModal();
-				});
-
-				document.getElementById("cancel-modify").addEventListener("click", function () {
-					closeModal();
-				});
+				document.getElementById("confirm-modify").addEventListener("click", submitEditForm);
+				document.getElementById("modal-close").addEventListener("click", closeModal);
+				document.getElementById("cancel-modify").addEventListener("click", closeModal);
 
 				document.getElementById("doctor-select").addEventListener("change", function () {
-					let selectedDoctorId = this.value;
-					if (selectedDoctorId) {
-						fetchAvailableDates(selectedDoctorId);
-					}
+					fetchAvailableDates(this.value);
 				});
 
 				document.getElementById("appointment-date").addEventListener("change", function () {
@@ -843,12 +849,9 @@ if (isset($_SESSION["帳號"])) {
 				});
 			});
 
+			// 以下方法維持原樣即可
 			function openEditModal(appointmentId, doctorId) {
-				console.log("開啟修改視窗，ID:", appointmentId);
-
 				document.getElementById("modal-overlay").style.display = "flex";
-
-				// 確保 appointment_id 正確設定
 				document.getElementById("confirm-modify").setAttribute("data-appointment-id", appointmentId);
 
 				fetch(`修改預約資料.php?action=fetch_appointment&appointment_id=${appointmentId}`)
@@ -858,32 +861,22 @@ if (isset($_SESSION["帳號"])) {
 							alert(data.message);
 							return;
 						}
-
 						fetchDoctors(data.data.doctor_id);
-					})
-					.catch(error => console.error("獲取預約資料錯誤:", error));
+					});
 			}
-
 
 			function fetchDoctors(selectedDoctorId) {
 				fetch("修改預約資料.php?action=fetch_doctors")
 					.then(response => response.json())
 					.then(data => {
-						if (!data.success) {
-							alert("無法獲取治療師列表！");
-							return;
-						}
 						let doctorSelect = document.getElementById("doctor-select");
 						doctorSelect.innerHTML = `<option value="">請選擇治療師</option>`;
 						data.data.forEach(doctor => {
 							doctorSelect.innerHTML += `<option value="${doctor.doctor_id}" ${doctor.doctor_id == selectedDoctorId ? 'selected' : ''}>${doctor.name}</option>`;
 						});
-
 						fetchAvailableDates(selectedDoctorId);
-					})
-					.catch(error => console.error("獲取治療師錯誤:", error));
+					});
 			}
-
 
 			function fetchAvailableDates(doctorId) {
 				fetch(`修改預約資料.php?action=fetch_dates&doctor_id=${doctorId}`)
@@ -894,28 +887,20 @@ if (isset($_SESSION["帳號"])) {
 						data.forEach(date => {
 							dateSelect.innerHTML += `<option value="${date}">${date}</option>`;
 						});
-					})
-					.catch(error => console.error("獲取日期錯誤:", error));
+					});
 			}
 
 			function fetchAvailableTimes(doctorId, date) {
 				fetch(`修改預約資料.php?action=fetch_times&doctor_id=${doctorId}&date=${date}`)
 					.then(response => response.json())
 					.then(data => {
-						if (!data || data.length === 0) {
-							alert("❌ 該日期無可預約時段！");
-							return;
-						}
-
 						let timeSelect = document.getElementById("appointment-time");
 						timeSelect.innerHTML = `<option value="">請選擇時間</option>`;
 						data.forEach(time => {
 							timeSelect.innerHTML += `<option value="${time}">${time}</option>`;
 						});
-					})
-					.catch(error => console.error("獲取時段錯誤:", error));
+					});
 			}
-
 
 			function submitEditForm() {
 				let appointmentId = document.getElementById("confirm-modify").getAttribute("data-appointment-id");
@@ -923,17 +908,8 @@ if (isset($_SESSION["帳號"])) {
 				let newDate = document.getElementById("appointment-date").value;
 				let newTime = document.getElementById("appointment-time").value;
 
-				newDate = newDate.replace(/\//g, "-"); // 確保日期格式一致
-
-				console.log("發送的數據：", {
-					appointment_id: appointmentId,
-					doctor_id: doctorId,
-					date: newDate,
-					time: newTime
-				});
-
 				if (!appointmentId || !doctorId || !newDate || !newTime) {
-					alert("❌ 送出資料有誤，請檢查是否選擇完整！");
+					alert("❌ 請選擇完整資料！");
 					return;
 				}
 
@@ -949,39 +925,33 @@ if (isset($_SESSION["帳號"])) {
 				})
 					.then(response => response.json())
 					.then(data => {
-						console.log("後端回應：", data);
 						alert(data.success ? "✅ 預約修改成功！" : "❌ " + data.message);
-						if (data.success) {
-							location.reload();
-						}
-					})
-					.catch(error => console.error("更新預約錯誤:", error));
-
+						if (data.success) location.reload();
+					});
 			}
-
 
 			function closeModal() {
 				document.getElementById("modal-overlay").style.display = "none";
 			}
 
+			// 整合後的updateStatus函式
 			function updateStatus(appointmentId, selectedStatus, select) {
 				fetch("更新狀態.php", {
 					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ appointment_id: appointmentId, status_id: selectedStatus })
+					headers: { "Content-Type": "application/x-www-form-urlencoded" },
+					body: `record_id=${appointmentId}&status_id=${selectedStatus}`
 				})
-					.then(response => response.json())
-					.then(data => {
-						alert(data.success ? data.message : "❌ " + data.error);
-						if ([4, 5, 6].includes(selectedStatus)) {
-							select.disabled = true;
-						}
+					.then(response => response.text())
+					.then(result => {
+						alert(result);
+						location.reload();
+					})
+					.catch(error => {
+						alert('發生錯誤，請稍後再試！');
 						location.reload();
 					});
 			}
 		</script>
-
-
 
 
 		<br />
