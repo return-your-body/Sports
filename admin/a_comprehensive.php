@@ -262,8 +262,8 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 												href="a_doctorlistadd.php">新增治療師資料</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_igadd.php">新增哀居貼文</a>
-                                        </li>
+												href="a_igadd.php">新增哀居貼文</a>
+										</li>
 									</ul>
 								</li>
 								<li class="rd-nav-item"><a class="rd-nav-link" href="a_change.php">變更密碼</a>
@@ -329,14 +329,38 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 		<!-- 收入 -->
 		<?php
-		require '../db.php'; // 引入資料庫連線
+		session_start();
+		require '../db.php'; // 連接資料庫
 		
 		// 確保 $link 可用
 		if (!isset($link)) {
 			die("資料庫連線變數未定義，請檢查 db.php");
 		}
 
-		// 查詢各治療師的每個項目看診人數與總金額
+		// 取得各治療師的預約總人數
+		$query_therapist_appointments = "
+    SELECT 
+        d.doctor AS doctor_name,
+        COUNT(a.appointment_id) AS total_appointments
+    FROM appointment a
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+    GROUP BY d.doctor
+    ORDER BY total_appointments DESC;
+";
+
+		// 取得各治療師的預約時段
+		$query_therapist_timeslots = "
+    SELECT 
+        ds.shift_time AS timeslot,
+        COUNT(a.appointment_id) AS total_appointments
+    FROM appointment a
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    GROUP BY ds.shift_time
+    ORDER BY total_appointments DESC;
+";
+
+		// 取得各治療師的每個項目看診人數與總金額
 		$query_therapist_items = "
     SELECT 
         d.doctor AS doctor_name,
@@ -353,34 +377,27 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 ";
 
 		// 執行查詢
+		$result_therapist_appointments = $link->query($query_therapist_appointments);
+		$result_therapist_timeslots = $link->query($query_therapist_timeslots);
 		$result_therapist_items = $link->query($query_therapist_items);
 
-		// 取得各治療師的每個項目看診人數與總金額
-		$therapist_items_data = [];
-		while ($row = $result_therapist_items->fetch_assoc()) {
-			$therapist_items_data[] = $row;
-		}
+		// 取得數據
+		$therapist_appointments_data = $result_therapist_appointments->fetch_all(MYSQLI_ASSOC);
+		$therapist_timeslots_data = $result_therapist_timeslots->fetch_all(MYSQLI_ASSOC);
+		$therapist_items_data = $result_therapist_items->fetch_all(MYSQLI_ASSOC);
 
 		// 關閉資料庫連線
 		$link->close();
 		?>
+
+
 		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 		<style>
-			table {
-				width: 90%;
-				border-collapse: collapse;
-				margin: 20px auto;
-			}
-
-			th,
-			td {
-				border: 1px solid #ddd;
-				padding: 10px;
+			body {
+				font-family: Arial, sans-serif;
+				margin: 20px;
+				padding: 20px;
 				text-align: center;
-			}
-
-			th {
-				background-color: #f2f2f2;
 			}
 
 			.chart-container {
@@ -389,106 +406,91 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			}
 		</style>
 
-		<section class="section section-lg bg-default text-center">
-			<div class="container">
-				<div class="row justify-content-sm-center">
-					<div class="col-md-10 col-xl-8">
 
+		<h2>各治療師的預約總人數</h2>
+		<div class="chart-container">
+			<canvas id="therapistAppointmentsBarChart"></canvas>
+		</div>
+		<div class="chart-container">
+			<canvas id="therapistAppointmentsPieChart"></canvas>
+		</div>
 
-						<h2>各治療師的每個項目看診人數統計圖</h2>
-						<div class="chart-container">
-							<canvas id="therapistItemChart"></canvas>
-						</div>
+		<h2>各治療師的預約時段分佈</h2>
+		<div class="chart-container">
+			<canvas id="therapistTimeslotPieChart"></canvas>
+		</div>
 
-						<h2>各治療師的每個項目總收入統計圖</h2>
-						<div class="chart-container">
-							<canvas id="therapistRevenueChart"></canvas>
-						</div>
+		<h2>各治療師的每個項目看診人數</h2>
+		<div class="chart-container">
+			<canvas id="therapistItemChart"></canvas>
+		</div>
 
-						<script>
-							var therapistItemLabels = [];
-							var therapistItemData = {};
-							var therapistRevenueData = {};
+		<h2>各治療師的每個項目總收入</h2>
+		<div class="chart-container">
+			<canvas id="therapistRevenueChart"></canvas>
+		</div>
 
-							<?php foreach ($therapist_items_data as $item): ?>
-								var therapist = "<?php echo $item['doctor_name']; ?>";
-								var itemName = "<?php echo $item['item_name']; ?>";
-								var patientCount = <?php echo $item['patient_count']; ?>;
-								var totalRevenue = <?php echo $item['total_revenue']; ?>;
+		<script>
+			var therapistNames = <?php echo json_encode(array_column($therapist_appointments_data, 'doctor_name')); ?>;
+			var therapistAppointments = <?php echo json_encode(array_column($therapist_appointments_data, 'total_appointments')); ?>;
 
-								if (!therapistItemData[therapist]) {
-									therapistItemData[therapist] = {};
-									therapistRevenueData[therapist] = {};
-								}
+			var timeslotLabels = <?php echo json_encode(array_column($therapist_timeslots_data, 'timeslot')); ?>;
+			var timeslotCounts = <?php echo json_encode(array_column($therapist_timeslots_data, 'total_appointments')); ?>;
 
-								therapistItemData[therapist][itemName] = patientCount;
-								therapistRevenueData[therapist][itemName] = totalRevenue;
-							<?php endforeach; ?>
+			var ctx1 = document.getElementById('therapistAppointmentsBarChart').getContext('2d');
+			new Chart(ctx1, {
+				type: 'bar',
+				data: {
+					labels: therapistNames,
+					datasets: [{
+						label: '預約總人數',
+						data: therapistAppointments,
+						backgroundColor: 'rgba(54, 162, 235, 0.5)',
+						borderColor: 'rgba(54, 162, 235, 1)',
+						borderWidth: 1
+					}]
+				},
+				options: {
+					responsive: true,
+					scales: {
+						y: {
+							beginAtZero: true
+						}
+					}
+				}
+			});
 
-							var therapistNames = Object.keys(therapistItemData);
-							var itemNames = [...new Set([].concat(...therapistNames.map(therapist => Object.keys(therapistItemData[therapist]))))];
+			var ctx2 = document.getElementById('therapistAppointmentsPieChart').getContext('2d');
+			new Chart(ctx2, {
+				type: 'pie',
+				data: {
+					labels: therapistNames,
+					datasets: [{
+						data: therapistAppointments,
+						backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+					}]
+				},
+				options: {
+					responsive: true
+				}
+			});
 
-							var itemDatasets = therapistNames.map(therapist => {
-								return {
-									label: therapist,
-									data: itemNames.map(item => therapistItemData[therapist][item] || 0),
-									backgroundColor: 'rgba(75, 192, 192, 0.5)',
-									borderColor: 'rgba(75, 192, 192, 1)',
-									borderWidth: 1
-								};
-							});
+			var ctx3 = document.getElementById('therapistTimeslotPieChart').getContext('2d');
+			new Chart(ctx3, {
+				type: 'pie',
+				data: {
+					labels: timeslotLabels,
+					datasets: [{
+						data: timeslotCounts,
+						backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+					}]
+				},
+				options: {
+					responsive: true
+				}
+			});
 
-							var revenueDatasets = therapistNames.map(therapist => {
-								return {
-									label: therapist,
-									data: itemNames.map(item => therapistRevenueData[therapist][item] || 0),
-									backgroundColor: 'rgba(255, 99, 132, 0.5)',
-									borderColor: 'rgba(255, 99, 132, 1)',
-									borderWidth: 1
-								};
-							});
-
-							var ctx1 = document.getElementById('therapistItemChart').getContext('2d');
-							new Chart(ctx1, {
-								type: 'bar',
-								data: {
-									labels: itemNames,
-									datasets: itemDatasets
-								},
-								options: {
-									responsive: true,
-									scales: {
-										y: {
-											beginAtZero: true
-										}
-									}
-								}
-							});
-
-							var ctx2 = document.getElementById('therapistRevenueChart').getContext('2d');
-							new Chart(ctx2, {
-								type: 'bar',
-								data: {
-									labels: itemNames,
-									datasets: revenueDatasets
-								},
-								options: {
-									responsive: true,
-									scales: {
-										y: {
-											beginAtZero: true
-										}
-									}
-								}
-							});
-						</script>
-					</div>
-				</div>
-			</div>
-		</section>
-
-
-
+		</script>
 
 	</div>
 	<!-- Global Mailform Output-->
