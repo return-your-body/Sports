@@ -387,7 +387,6 @@ if (isset($_SESSION["帳號"])) {
     <!--標題-->
 
     <!-- 使用者資料-->
-
     <section class="section section-lg bg-default novi-bg novi-bg-img">
       <div class="container">
         <div class="row row-40 row-lg-50">
@@ -396,15 +395,15 @@ if (isset($_SESSION["帳號"])) {
             session_start();
             require '../db.php'; // 引入資料庫連線
             
-            // 預設分頁與顯示筆數
+            // 預設每頁筆數 & 當前頁數
             $records_per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 10;
             $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-            $search_name = isset($_GET['search_name']) ? $_GET['search_name'] : '';
+            $search_idcard = isset($_GET['search_idcard']) ? $_GET['search_idcard'] : '';
 
             // 計算總筆數
-            $sql_total = "SELECT COUNT(*) AS total FROM people WHERE name LIKE ?";
+            $sql_total = "SELECT COUNT(*) AS total FROM people WHERE idcard LIKE ?";
             $stmt_total = $link->prepare($sql_total);
-            $like_search = "%$search_name%";
+            $like_search = "%$search_idcard%";
             $stmt_total->bind_param("s", $like_search);
             $stmt_total->execute();
             $result_total = $stmt_total->get_result();
@@ -415,38 +414,38 @@ if (isset($_SESSION["帳號"])) {
             $total_pages = ceil($total_records / $records_per_page);
             $offset = ($current_page - 1) * $records_per_page;
 
-            // 查詢分頁資料，計算年齡
+            // 查詢分頁資料，計算年齡 & 黑名單狀態
             $sql = "
-                SELECT 
-                    people_id, 
-                    name, 
-                    gender_id, 
-                    birthday, 
-                    idcard,
-                    CASE 
-                        WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday) / 365.25), ' 歲)')
-                        ELSE '無資料'
-                    END AS birthday_with_age
-                FROM people
-                WHERE name LIKE ?
-                LIMIT ?, ?";
+                    SELECT 
+                        people_id, 
+                        name, 
+                        gender_id, 
+                        birthday, 
+                        idcard,
+                        black, 
+                        CASE 
+                            WHEN birthday IS NOT NULL THEN CONCAT(DATE_FORMAT(birthday, '%Y-%m-%d'), ' (', FLOOR(DATEDIFF(CURDATE(), birthday) / 365.25), ' 歲)')
+                            ELSE '無資料'
+                        END AS birthday_with_age
+                    FROM people
+                    WHERE idcard LIKE ?
+                    LIMIT ?, ?";
             $stmt = $link->prepare($sql);
             $stmt->bind_param("sii", $like_search, $offset, $records_per_page);
             $stmt->execute();
             $result = $stmt->get_result();
             ?>
 
-            <!-- 🔍 搜尋表單 + 每頁筆數 -->
+            <!-- 🔍 搜尋表單 (身分證搜尋) + 每頁筆數 -->
             <div class="search-container"
               style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 20px;">
               <form method="GET" action="" style="display: flex; align-items: center;">
-                <!-- <label for="search_name">搜尋姓名：</label> -->
-                <input type="text" name="search_name" id="search_name" placeholder="請輸入姓名"
-                  value="<?php echo htmlspecialchars($search_name); ?>" style="padding: 5px; margin-right: 10px;" />
+                <input type="text" name="search_idcard" id="search_idcard" placeholder="請輸入身分證"
+                  value="<?php echo htmlspecialchars($search_idcard); ?>" style="padding: 5px; margin-right: 10px;" />
                 <button type="submit" class="popup-btn" style="padding: 5px 10px;">搜尋</button>
               </form>
 
-              <!-- <label for="per_page">每頁顯示筆數：</label> -->
+              <!-- 🔢 選擇每頁顯示筆數 -->
               <select id="per_page" class="pagination-select" onchange="changePerPage(this.value)">
                 <?php
                 $options = [3, 5, 10, 20, 50, 100];
@@ -457,7 +456,7 @@ if (isset($_SESSION["帳號"])) {
               </select>
             </div>
 
-            <!-- 📊 表格 -->
+            <!-- 📊 資料表 -->
             <div class="table-responsive">
               <table>
                 <thead>
@@ -482,13 +481,20 @@ if (isset($_SESSION["帳號"])) {
                         <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
                         <td><?php echo !empty($row['idcard']) ? htmlspecialchars($row['idcard']) : '無資料'; ?></td>
                         <td>
+                          <!-- 📄 歷史紀錄按鈕 -->
                           <a href="d_history.php?id=<?php echo urlencode($row['people_id']); ?>" target="_blank">
                             <button type="button" class="popup-btn">歷史紀錄</button>
                           </a>
 
-                          <a href="d_appointment.php?id=<?php echo urlencode($row['people_id']); ?>" target="_blank">
-                            <button type="button" class="popup-btn">預約</button>
-                          </a>
+                          <!-- 🩺 預約按鈕 (black >= 3 禁止預約) -->
+                          <?php if ($row['black'] >= 3): ?>
+                            <button type="button" class="popup-btn" disabled
+                              style="background-color: gray; cursor: not-allowed;">禁止預約</button>
+                          <?php else: ?>
+                            <a href="d_appointment.php?id=<?php echo urlencode($row['people_id']); ?>" target="_blank">
+                              <button type="button" class="popup-btn">預約</button>
+                            </a>
+                          <?php endif; ?>
                         </td>
                       </tr>
                     <?php endwhile; ?>
@@ -504,7 +510,7 @@ if (isset($_SESSION["帳號"])) {
             <!-- 📌 分頁導航 -->
             <div style="text-align: center; margin-top: 20px;">
               <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                <a href="?search_name=<?php echo urlencode($search_name); ?>&per_page=<?php echo $records_per_page; ?>&page=<?php echo $i; ?>"
+                <a href="?search_idcard=<?php echo urlencode($search_idcard); ?>&per_page=<?php echo $records_per_page; ?>&page=<?php echo $i; ?>"
                   style="margin: 0 5px; text-decoration: none; <?php echo $i == $current_page ? 'font-weight: bold;' : ''; ?>">
                   <?php echo $i; ?>
                 </a>
@@ -521,6 +527,8 @@ if (isset($_SESSION["帳號"])) {
         </div>
       </div>
     </section>
+
+
 
     <!-- 📝 JavaScript 讓 per_page 變更後即時更新頁面 -->
     <script>
