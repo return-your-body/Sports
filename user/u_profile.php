@@ -634,7 +634,6 @@ if ($result && mysqli_num_rows($result) > 0) {
                 const userdate = document.getElementById('userdate').value;
                 const useridcard = document.getElementById('useridcard').value;
                 const userphone = document.getElementById('userphone').value;
-                const useremail = document.getElementById('useremail').value;
                 const address = document.getElementById('address').value;
                 const genderInput = document.getElementById("gender").value.trim();
                 const genderError = document.getElementById("gender-error");
@@ -759,15 +758,6 @@ if ($result && mysqli_num_rows($result) > 0) {
                     return;
                 }
 
-                // 電子郵件驗證: 空白檢查與格式檢查
-                if (!useremail) {
-                    alert('電子郵件欄位不能為空');
-                    return;
-                } else if (!/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(useremail)) {
-                    alert('電子郵件格式錯誤，請輸入有效的電子郵件');
-                    return;
-                }
-
                 // 組合要顯示在 alert 的訊息
                 const confirmMessage =
                     `請確認您的資料:\n` +
@@ -775,7 +765,6 @@ if ($result && mysqli_num_rows($result) > 0) {
                     `出生年月日: ${userdate}\n` +
                     `身分證字號: ${useridcard}\n` +
                     `聯絡電話: ${userphone}\n` +
-                    `電子郵件: ${useremail}\n` +
                     `地址: ${address}\n` +
                     `確定要提交資料嗎？`;
 

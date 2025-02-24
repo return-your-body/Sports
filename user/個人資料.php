@@ -16,13 +16,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $idcard = trim($_POST['useridcard']);    // 身分證字號（可選）
     $phone = trim($_POST['userphone']);      // 聯絡電話
     $address = trim($_POST['address']);      // 地址（可選）
-    $email = trim($_POST['useremail']);      // 電子郵件
 
-    // 將性別轉換為數字（1: 男, 2: 女）
+    // 將性別轉換為數字（1: 男, 2: 女, 3:其他）
     $gender_id = ($gender === "男") ? 1 : (($gender === "女") ? 2 : 3);
 
     // 驗證性別是否正確
-    if ($gender_id === null) {
+    if (!in_array($gender_id, [1, 2, 3])) {
         echo "<script>
                 alert('性別選擇無效，請重新選擇！');
                 window.history.back();
@@ -31,7 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     // 驗證必填欄位是否已填寫
-    if (empty($name) || empty($gender_id) || empty($birthday) || empty($phone) || empty($email)) {
+    if (empty($name) || empty($birthday) || empty($phone)) {
         echo "<script>
                 alert('請填寫所有必填欄位！');
                 window.history.back();
@@ -51,27 +50,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $user = mysqli_fetch_assoc($result);
         $user_id = $user['user_id'];
 
-        // 更新資料到 people 表
+        // 更新資料到 people 表 (已移除電子郵件欄位)
         $updateSql = "UPDATE people SET 
                         name = ?, 
                         gender_id = ?, 
                         birthday = ?, 
                         idcard = ?, 
                         phone = ?, 
-                        address = ?, 
-                        email = ? 
+                        address = ?
                       WHERE user_id = ?";
+        
+        // 準備 SQL 語句
         $updateStmt = mysqli_prepare($link, $updateSql);
+        
+        // 綁定參數
         mysqli_stmt_bind_param(
             $updateStmt,
-            "sisssssi", // i 表示整數，s 表示字串
+            "sissssi", // s:字串, i:整數
             $name,      // 用戶姓名
             $gender_id, // 性別 ID
             $birthday,  // 出生日期
             $idcard,    // 身分證字號
             $phone,     // 聯絡電話
             $address,   // 地址
-            $email,     // 電子郵件
             $user_id    // 關聯的 user_id
         );
 
@@ -80,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             // 如果更新成功，顯示成功訊息並跳轉回 u_profile.php
             echo "<script>
                     alert('個人資料更新成功！');
-                    window.location.href = 'u_profile.php'; // 跳轉到 u_profile.php 頁面
+                    window.location.href = 'u_profile.php';
                   </script>";
         } else {
             // 如果更新失敗，顯示錯誤訊息並返回上一頁
