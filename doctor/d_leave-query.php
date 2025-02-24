@@ -14,56 +14,44 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 header("Pragma: no-cache");
 
-// 檢查 "帳號" 是否存在於 $_SESSION 中
-if (isset($_SESSION["帳號"])) {
-  // 獲取用戶帳號
-  $帳號 = $_SESSION['帳號'];
-
-  // 資料庫連接
-  require '../db.php';
-
-  // 查詢該帳號的詳細資料
-  $sql = "SELECT user.account, doctor.doctor AS name 
-            FROM user 
-            JOIN doctor ON user.user_id = doctor.user_id 
-            WHERE user.account = ?";
-  $stmt = mysqli_prepare($link, $sql);
-  mysqli_stmt_bind_param($stmt, "s", $帳號);
-  mysqli_stmt_execute($stmt);
-  $result = mysqli_stmt_get_result($stmt);
-
-  if (mysqli_num_rows($result) > 0) {
-    // 抓取對應姓名
-    $row = mysqli_fetch_assoc($result);
-    $姓名 = $row['name'];
-    $帳號名稱 = $row['account'];
-
-    // 顯示帳號和姓名
-    // echo "歡迎您！<br>";
-    // echo "帳號名稱：" . htmlspecialchars($帳號名稱) . "<br>";
-    // echo "姓名：" . htmlspecialchars($姓名);
-    // echo "<script>
-    //   alert('歡迎您！\\n帳號名稱：{$帳號名稱}\\n姓名：{$姓名}');
-    // </script>";
-  } else {
-    // 如果資料不存在，提示用戶重新登入
-    echo "<script>
-                alert('找不到對應的帳號資料，請重新登入。');
-                window.location.href = '../index.html';
-              </script>";
-    exit();
-  }
-
-} else {
+// 確保用戶帳號存在於 Session
+if (!isset($_SESSION["帳號"])) {
   echo "<script>
-            alert('會話過期或資料遺失，請重新登入。');
-            window.location.href = '../index.html';
-          </script>";
+        alert('會話過期或資料遺失，請重新登入。');
+        window.location.href = '../index.html';
+    </script>";
   exit();
 }
 
+// 取得當前登入帳號
+$帳號 = $_SESSION['帳號'];
 
-//請假查詢
+// 資料庫連線
+require '../db.php';
+
+// 查詢當前登入者是否為治療師 (grade_id = 2)
+$sql = "SELECT user.account, doctor.doctor AS name, user.grade_id 
+        FROM user 
+        JOIN doctor ON user.user_id = doctor.user_id 
+        WHERE user.account = ? AND user.grade_id = 2";
+
+$stmt = mysqli_prepare($link, $sql);
+mysqli_stmt_bind_param($stmt, "s", $帳號);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+
+if (mysqli_num_rows($result) > 0) {
+  $row = mysqli_fetch_assoc($result);
+  $姓名 = $row['name'];
+  $帳號名稱 = $row['account'];
+} else {
+  // 如果非治療師或帳號無效，則強制登出
+  echo "<script>
+        alert('無權限訪問，請使用治療師帳號登入。');
+        window.location.href = '../index.html';
+    </script>";
+  exit();
+}
 
 ?>
 
@@ -430,125 +418,122 @@ if (isset($_SESSION["帳號"])) {
 
     <section class="section section-lg novi-bg novi-bg-img bg-default">
       <div class="container">
-        <div class="row row-40 row-lg-50">
-          <div class="form-container">
-            <?php
-            // 引入資料庫連線
-            require '../db.php';
+        <!-- <h2>治療師請假查詢</h2>
+        <p>登入者：<?php echo htmlspecialchars($姓名); ?> (<?php echo htmlspecialchars($帳號名稱); ?>)</p> -->
 
-            // 分頁邏輯
-            $limit = 10; // 每頁顯示的資料筆數
-            $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int) $_GET['page'] : 1;
-            $offset = ($page - 1) * $limit;
+        <div class="table-responsive">
+          <table border="1">
+            <thead>
+              <tr>
+                <th>請假編號</th>
+                <th>治療師姓名</th>
+                <th>請假類型</th>
+                <th>其他請假類型</th>
+                <th>開始時間</th>
+                <th>結束時間</th>
+                <th>請假原因</th>
+                <th>審核狀態</th>
+                <th>駁回原因</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php
+              // 分頁設定
+              $limit = 10;
+              $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int) $_GET['page'] : 1;
+              $offset = ($page - 1) * $limit;
 
-            // 計算總資料筆數
-            $total_query = "SELECT COUNT(*) AS total FROM leaves";
-            $total_result = mysqli_query($link, $total_query);
-            $total_row = mysqli_fetch_assoc($total_result);
-            $total_records = $total_row['total'];
-            $total_pages = ceil($total_records / $limit);
+              // 查詢當前登入的治療師的請假記錄
+              $query = "
+                        SELECT 
+                            l.leaves_id, 
+                            d.doctor AS doctor_name, 
+                            l.leave_type, 
+                            l.leave_type_other, 
+                            l.start_date, 
+                            l.end_date, 
+                            l.reason, 
+                            l.is_approved, 
+                            l.rejection_reason
+                        FROM leaves l
+                        LEFT JOIN doctor d ON l.doctor_id = d.doctor_id
+                        WHERE d.doctor = ?
+                        LIMIT $limit OFFSET $offset";
 
-            // 查詢分頁資料
-            $query = "
-          SELECT 
-            l.leaves_id, 
-            d.doctor AS doctor_name, 
-            l.leave_type, 
-            l.leave_type_other, 
-            l.start_date, 
-            l.end_date, 
-            l.reason, 
-            l.is_approved, 
-            l.rejection_reason
-          FROM leaves l
-          LEFT JOIN doctor d ON l.doctor_id = d.doctor_id
-          LIMIT $limit OFFSET $offset";
+              $stmt = mysqli_prepare($link, $query);
+              mysqli_stmt_bind_param($stmt, "s", $姓名);
+              mysqli_stmt_execute($stmt);
+              $result = mysqli_stmt_get_result($stmt);
 
-            $result = mysqli_query($link, $query);
-            if (!$result) {
-              die("資料查詢失敗：" . mysqli_error($link));
-            }
-            ?>
+              if (mysqli_num_rows($result) > 0) {
+                while ($row = mysqli_fetch_assoc($result)) {
+                  echo "<tr>
+                                    <td>" . htmlspecialchars($row['leaves_id']) . "</td>
+                                    <td>" . htmlspecialchars($row['doctor_name']) . "</td>
+                                    <td>" . htmlspecialchars($row['leave_type']) . "</td>
+                                    <td>" . htmlspecialchars($row['leave_type_other'] ?? '') . "</td>
+                                    <td>" . htmlspecialchars($row['start_date']) . "</td>
+                                    <td>" . htmlspecialchars($row['end_date']) . "</td>
+                                    <td>" . htmlspecialchars($row['reason']) . "</td>
+                                    <td>";
 
-            <!-- 表格外容器 -->
-            <div class="table-responsive">
-              <!-- 顯示表格 -->
-              <table>
-                <thead>
-                  <tr>
-                    <th>請假編號</th>
-                    <th>治療師姓名</th>
-                    <th>請假類型</th>
-                    <th>其他請假類型</th>
-                    <th>開始時間</th>
-                    <th>結束時間</th>
-                    <th>請假原因</th>
-                    <th>審核狀態</th>
-                    <th>駁回原因</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                    <tr>
-                      <td><?php echo htmlspecialchars($row['leaves_id']); ?></td>
-                      <td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
-                      <td><?php echo htmlspecialchars($row['leave_type']); ?></td>
-                      <td><?php echo htmlspecialchars($row['leave_type_other'] ?? ''); ?></td>
-                      <td><?php echo htmlspecialchars($row['start_date']); ?></td>
-                      <td><?php echo htmlspecialchars($row['end_date']); ?></td>
-                      <td><?php echo htmlspecialchars($row['reason']); ?></td>
-                      <td>
-                        <?php
-                        if ($row['is_approved'] === '1') {
-                          echo "<span class='approved'>已通過</span>";
-                        } elseif ($row['is_approved'] === '0') {
-                          echo "<span class='rejected'>未通過</span>";
-                        } else {
-                          echo "<span style='color: gray;'>待審核</span>";
-                        }
-                        ?>
-                      </td>
-                      <td><?php echo htmlspecialchars($row['rejection_reason'] ?? ''); ?></td>
-                    </tr>
-                  <?php endwhile; ?>
-                </tbody>
-              </table>
-            </div>
+                  if ($row['is_approved'] === '1') {
+                    echo "<span class='approved'>已通過</span>";
+                  } elseif ($row['is_approved'] === '0') {
+                    echo "<span class='rejected'>未通過</span>";
+                  } else {
+                    echo "<span style='color: gray;'>待審核</span>";
+                  }
 
-            <!-- 頁碼資訊 -->
-            <div class="total-info">
-              第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁 (總共 <?php echo $total_records; ?> 筆資料)
-            </div>
+                  echo "</td>
+                                    <td>" . htmlspecialchars($row['rejection_reason'] ?? '') . "</td>
+                                </tr>";
+                }
+              } else {
+                echo "<tr><td colspan='9' style='text-align: center;'>無請假記錄</td></tr>";
+              }
 
-            <!-- 分頁 -->
-            <div class="pagination">
-              <?php if ($page > 1): ?>
-                <a href="?page=<?php echo $page - 1; ?>">« 上一頁</a>
-              <?php else: ?>
-                <span class="disabled">« 上一頁</span>
-              <?php endif; ?>
+              // 計算總頁數
+              $total_query = "SELECT COUNT(*) AS total FROM leaves l
+                                        LEFT JOIN doctor d ON l.doctor_id = d.doctor_id
+                                        WHERE d.doctor = ?";
+              $stmt = mysqli_prepare($link, $total_query);
+              mysqli_stmt_bind_param($stmt, "s", $姓名);
+              mysqli_stmt_execute($stmt);
+              $total_result = mysqli_stmt_get_result($stmt);
+              $total_row = mysqli_fetch_assoc($total_result);
+              $total_records = $total_row['total'];
+              $total_pages = ceil($total_records / $limit);
+              ?>
+            </tbody>
+          </table>
+        </div>
 
-              <?php for ($p = 1; $p <= $total_pages; $p++): ?>
-                <?php if ($p == $page): ?>
-                  <span class="active"><?php echo $p; ?></span>
-                <?php else: ?>
-                  <a href="?page=<?php echo $p; ?>"><?php echo $p; ?></a>
-                <?php endif; ?>
-              <?php endfor; ?>
+        <div class="pagination">
+          <?php if ($page > 1): ?>
+            <a href="?page=<?php echo $page - 1; ?>">« 上一頁</a>
+          <?php else: ?>
+            <span class="disabled">« 上一頁</span>
+          <?php endif; ?>
 
-              <?php if ($page < $total_pages): ?>
-                <a href="?page=<?php echo $page + 1; ?>">下一頁 »</a>
-              <?php else: ?>
-                <span class="disabled">下一頁 »</span>
-              <?php endif; ?>
-            </div>
+          <?php for ($p = 1; $p <= $total_pages; $p++): ?>
+            <?php if ($p == $page): ?>
+              <span class="active"><?php echo $p; ?></span>
+            <?php else: ?>
+              <a href="?page=<?php echo $p; ?>"><?php echo $p; ?></a>
+            <?php endif; ?>
+          <?php endfor; ?>
 
-            <?php mysqli_close($link); ?>
-          </div>
+          <?php if ($page < $total_pages): ?>
+            <a href="?page=<?php echo $page + 1; ?>">下一頁 »</a>
+          <?php else: ?>
+            <span class="disabled">下一頁 »</span>
+          <?php endif; ?>
         </div>
       </div>
     </section>
 
+    <?php mysqli_close($link); ?>
 
 
     <!--頁尾-->

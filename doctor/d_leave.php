@@ -380,25 +380,53 @@ if (isset($_SESSION["帳號"])) {
         <button type="submit">提交</button>
     </form>
 </div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const dateInput = document.getElementById('date');
     const startTimeInput = document.getElementById('start-time');
     const endTimeInput = document.getElementById('end-time');
 
-    // 初始化 Flatpickr
-    const startFlatpickr = flatpickr(startTimeInput, { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
-    const endFlatpickr = flatpickr(endTimeInput, { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
+    // 初始化 Flatpickr 時間選擇器
+    const startFlatpickr = flatpickr(startTimeInput, {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        time_24hr: true
+    });
 
-    flatpickr(dateInput, {
+    const endFlatpickr = flatpickr(endTimeInput, {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        time_24hr: true
+    });
+
+    // 初始化日期選擇器，預設今天以後
+    const datePicker = flatpickr(dateInput, {
         dateFormat: "Y-m-d",
         minDate: "today",
+        onReady: function() {
+            checkTodayAvailability();
+        },
         onChange: function () {
             fetchAvailableLeaveTimes(startFlatpickr, endFlatpickr);
         }
     });
 
+    // 檢查當天是否可請假
+    function checkTodayAvailability() {
+        const doctorId = "<?php echo $doctor_id; ?>";
+        fetch(`檢查可請假時間.php?doctor=${doctorId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.allow_today_leave) {
+                    datePicker.set('disable', [new Date()]); // 禁用今天
+                }
+            })
+            .catch(error => console.error("當天請假檢查錯誤:", error));
+    }
+
+    // 取得可請假的時間段
     function fetchAvailableLeaveTimes(startFlatpickr, endFlatpickr) {
         const date = dateInput.value;
         const doctorId = "<?php echo $doctor_id; ?>";
@@ -415,11 +443,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     endFlatpickr.set("enable", availableTimes);
                 } else {
                     alert(data.message || "無可請假時段");
+                    startFlatpickr.clear();
+                    endFlatpickr.clear();
                 }
             })
             .catch(error => console.error("請假時間加載錯誤:", error));
     }
 
+    // 表單提交
     document.getElementById('leave-form').addEventListener('submit', function (event) {
         event.preventDefault();
 
@@ -433,7 +464,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(data => {
             alert(data.message);
             if (data.success) {
-                location.reload();  // 重新整理頁面
+                location.reload(); // 成功後刷新頁面
             }
         })
         .catch(error => console.error("請假提交錯誤:", error));
