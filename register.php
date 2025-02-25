@@ -7,15 +7,21 @@ $帳號 = $_POST["account"];
 $密碼 = $_POST["passwd"]; // 直接存入明文密碼
 $電子郵件 = $_POST["email"];
 
-// 檢查帳號是否已存在
-$SQL檢查帳號 = "SELECT COUNT(*) as cnt FROM `user` WHERE `account` = '$帳號'";
+// 檢查帳號是否已在 people 表註冊過
+$SQL檢查帳號 = "
+    SELECT COUNT(*) as cnt 
+    FROM user u
+    INNER JOIN people p ON u.user_id = p.user_id
+    WHERE u.account = '$帳號'
+";
 $result = mysqli_query($link, $SQL檢查帳號);
 $row = mysqli_fetch_assoc($result);
 
 if ($row['cnt'] > 0) {
-    echo json_encode(["status" => "error", "message" => "帳號已存在，請直接登入。"]);
+    echo json_encode(["status" => "error", "message" => "此帳號已完成註冊，請直接登入。"]);
     exit();
 }
+
 
 // 取得「使用者」的 grade_id
 $SQL查詢使用者等級 = "SELECT grade_id FROM `grade` WHERE grade = '使用者'";
