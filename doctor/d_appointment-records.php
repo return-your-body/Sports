@@ -489,8 +489,8 @@ if (isset($_SESSION["帳號"])) {
 
     $帳號 = $_SESSION['帳號']; // 取得當前登入治療師的帳號
     
-    // 接收搜尋與篩選條件
-    $search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
+    // 接收搜尋與篩選條件 (改為搜尋身分證)
+    $search_idcard = isset($_GET['search_idcard']) ? trim($_GET['search_idcard']) : '';
     $filter_status = isset($_GET['status']) ? (int) $_GET['status'] : 0;
     $filter_date = isset($_GET['date']) ? $_GET['date'] : 'all';
 
@@ -500,8 +500,8 @@ if (isset($_SESSION["帳號"])) {
     $offset = ($page - 1) * $records_per_page;
 
     // 生成 SQL 條件
-    $conditions = "u.account = ? AND p.name LIKE CONCAT('%', ?, '%')";
-    $params = ['ss', $帳號, $search_name];
+    $conditions = "u.account = ? AND p.idcard LIKE CONCAT('%', ?, '%')";
+    $params = ['ss', $帳號, $search_idcard];
 
     if ($filter_status > 0) {
       $conditions .= " AND a.status_id = ?";
@@ -538,6 +538,7 @@ if (isset($_SESSION["帳號"])) {
     $stmt = $link->prepare("
     SELECT 
         a.appointment_id AS id,
+        p.idcard AS idcard, -- 新增身分證欄位
         COALESCE(p.name, '未預約') AS name,
         CASE 
             WHEN p.gender_id = 1 THEN '男' 
@@ -571,7 +572,6 @@ if (isset($_SESSION["帳號"])) {
     $result = $stmt->get_result();
     ?>
 
-
     <script>
       function updateLimit() {
         let limit = document.getElementById("limit").value;
@@ -587,8 +587,8 @@ if (isset($_SESSION["帳號"])) {
         <!-- 搜尋與篩選 -->
         <div class="search-limit-container">
           <form method="GET" action="" class="search-form">
-            <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
-              value="<?php echo htmlspecialchars($search_name); ?>">
+            <input type="text" name="search_idcard" id="search_idcard" placeholder="請輸入身分證字號"
+              value="<?php echo htmlspecialchars($search_idcard); ?>">
 
             <!-- 狀態篩選 -->
             <select name="status" onchange="this.form.submit()">
@@ -622,14 +622,13 @@ if (isset($_SESSION["帳號"])) {
           </div>
         </div>
 
-
-
         <!-- 表格 -->
         <div class="table-responsive">
           <table class="responsive-table">
             <thead>
               <tr>
                 <th>#</th>
+                <th>身分證</th> <!-- 新增身分證欄位 -->
                 <th>姓名</th>
                 <th>性別</th>
                 <th>生日 (年齡)</th>
@@ -646,6 +645,7 @@ if (isset($_SESSION["帳號"])) {
                 <tr>
                   <td><?php echo htmlspecialchars($row['id']); ?></td>
                   <td><?php echo htmlspecialchars($row['name']); ?></td>
+                  <td><?php echo htmlspecialchars($row['idcard']); ?></td>
                   <td><?php echo htmlspecialchars($row['gender']); ?></td>
                   <td><?php echo htmlspecialchars($row['birthday']); ?></td>
                   <td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
@@ -666,6 +666,8 @@ if (isset($_SESSION["帳號"])) {
               <?php endwhile; ?>
             </tbody>
           </table>
+
+
 
           <!-- 分頁資訊 -->
           <div class="pagination-wrapper">
