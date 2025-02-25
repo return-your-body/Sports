@@ -329,86 +329,56 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 		<!-- 收入 -->
 
-		<div>
-			篩選日期：
-			<select id="year"></select>年
-			<select id="month"></select>月
-			<select id="day"></select>日
-			治療師或助理：
-			<select id="staff"></select>
-			<button id="searchBtn">查詢</button>
-		</div>
 
-		<div id="calendarTable"></div>
+		<h2>醫生處理病人數統計</h2>
+		<canvas id="doctorChart" width="600" height="300"></canvas>
 
-		<canvas id="therapistBarChart"></canvas>
-		<canvas id="itemPieChart"></canvas>
-		<canvas id="therapistItemPieChart"></canvas>
-		<canvas id="incomePieChart"></canvas>
+		<h2>治療項目使用數統計</h2>
+		<canvas id="itemChart" width="600" height="300"></canvas>
 
 		<script>
 			$(document).ready(function () {
+				$.ajax({
+					url: '數據查詢.php',
+					method: 'GET',
+					dataType: 'json',
+					success: function (res) {
+						// 醫生統計
+						new Chart(document.getElementById('doctorChart'), {
+							type: 'bar',
+							data: {
+								labels: res.doctorStats.labels,
+								datasets: [{
+									label: '病人數',
+									data: res.doctorStats.data,
+									backgroundColor: 'rgba(54, 162, 235, 0.5)',
+									borderColor: 'rgba(54, 162, 235, 1)',
+									borderWidth: 1
+								}]
+							},
+							options: { scales: { y: { beginAtZero: true } } }
+						});
 
-				function initSelectors() {
-					$.getJSON('staff.php', function (data) {
-						$('#year').html('<option value="">全部</option>');
-						$.each(data.years, (i, v) => $('#year').append(`<option>${v}</option>`));
-
-						$('#month').html('<option value="">全部</option>');
-						$.each(data.months, (i, v) => $('#month').append(`<option>${v}</option>`));
-
-						$('#day').html('<option value="">全部</option>');
-						$.each(data.days, (i, v) => $('#day').append(`<option>${v}</option>`));
-
-						$('#staff').html('<option value="">全部</option>');
-						$.each(data.staff, (i, v) => $('#staff').append(`<option value="${v.id}">${v.name}</option>`));
-					});
-				}
-
-				function fetchData() {
-					$.ajax({
-						url: '數據查詢.php',
-						method: 'POST',
-						dataType: 'json',
-						data: {
-							year: $('#year').val(),
-							month: $('#month').val(),
-							day: $('#day').val(),
-							staff: $('#staff').val()
-						},
-						success: function (res) {
-							renderCalendar(res.calendar);
-							renderChart('therapistBarChart', 'bar', res.bar.labels, [{ label: '工作時數', data: res.bar.workingHours }, { label: '加班時數', data: res.bar.overtime }]);
-							renderChart('itemPieChart', 'pie', res.itemPie.labels, [{ data: res.itemPie.counts }]);
-							renderChart('therapistItemPieChart', 'pie', res.therapistItemPie.labels, [{ data: res.therapistItemPie.counts }]);
-							renderChart('incomePieChart', 'pie', res.incomePie.labels, [{ data: res.incomePie.counts }]);
-						}
-					});
-				}
-
-				function renderCalendar(data) {
-					let html = '<table border="1"><tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr><tr>';
-					let total = 0;
-					data.forEach((d, i) => {
-						html += `<td>${d.date}<br>預約人數:${d.count}</td>`;
-						total += parseInt(d.count || 0);
-						if ((i + 1) % 7 == 0) html += '</tr><tr>';
-					});
-					html += `</tr><tr><td colspan="7">總預約人數:${total}</td></tr></table>`;
-					$('#calendarTable').html(html);
-				}
-
-				let charts = {};
-				function renderChart(id, type, labels, datasets) {
-					if (charts[id]) charts[id].destroy();
-					charts[id] = new Chart($(`#${id}`), { type, data: { labels, datasets } });
-				}
-
-				$('#searchBtn').click(fetchData);
-
-				initSelectors();
-				fetchData();
-
+						// 治療項目統計
+						new Chart(document.getElementById('itemChart'), {
+							type: 'bar',
+							data: {
+								labels: res.itemStats.labels,
+								datasets: [{
+									label: '使用人數',
+									data: res.itemStats.data,
+									backgroundColor: 'rgba(255, 99, 132, 0.5)',
+									borderColor: 'rgba(255, 99, 132, 1)',
+									borderWidth: 1
+								}]
+							},
+							options: { scales: { y: { beginAtZero: true } } }
+						});
+					},
+					error: function () {
+						alert('資料載入失敗，請檢查後端API');
+					}
+				});
 			});
 		</script>
 

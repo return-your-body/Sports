@@ -549,8 +549,10 @@ if (isset($_SESSION["帳號"])) {
 		require '../db.php';
 
 		// 接收篩選條件
-		$search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
+		$search_idcard = isset($_GET['search_idcard']) ? trim($_GET['search_idcard']) : '';
 		$selected_doctor = isset($_GET['doctor']) ? trim($_GET['doctor']) : '全部';
+		$selected_status = isset($_GET['status']) ? trim($_GET['status']) : '全部';
+		$selected_date = isset($_GET['date']) ? trim($_GET['date']) : '全部';
 
 		// 取得筆數選擇 (預設 10)
 		$records_per_page = isset($_GET['limit']) ? max(1, (int) $_GET['limit']) : 10;
@@ -560,22 +562,34 @@ if (isset($_SESSION["帳號"])) {
 		$offset = ($page - 1) * $records_per_page;
 
 		// SQL 查詢條件
-		$where_clauses = ["s.status_name != '已看診'", "u.grade_id != 3"]; // 過濾已看診 & 助手
+		$where_clauses = ["u.grade_id != 3"]; // 過濾助理
 		$params = [];
 		$types = "";
 
-		// 若選擇特定醫生，篩選條件
+		// 篩選身分證
+		if (!empty($search_idcard)) {
+			$where_clauses[] = "p.idcard LIKE ?";
+			$params[] = "%{$search_idcard}%";
+			$types .= "s";
+		}
+
+		// 篩選特定醫生
 		if ($selected_doctor !== '全部') {
 			$where_clauses[] = "d.doctor = ?";
 			$params[] = $selected_doctor;
 			$types .= "s";
 		}
 
-		// 若有輸入姓名搜尋條件
-		if (!empty($search_name)) {
-			$where_clauses[] = "p.name LIKE ?";
-			$params[] = "%{$search_name}%";
+		// 篩選狀態
+		if ($selected_status !== '全部') {
+			$where_clauses[] = "s.status_name = ?";
+			$params[] = $selected_status;
 			$types .= "s";
+		}
+
+		// 篩選日期 (當天)
+		if ($selected_date === '當天') {
+			$where_clauses[] = "DATE(ds.date) = CURDATE()";
 		}
 
 		// 組合 SQL 查詢條件
@@ -588,7 +602,7 @@ if (isset($_SESSION["帳號"])) {
     LEFT JOIN people p ON a.people_id = p.people_id
     LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
     LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id  -- 連結 user 表取得 grade_id
+    LEFT JOIN user u ON d.user_id = u.user_id
     LEFT JOIN status s ON a.status_id = s.status_id
     $where_sql
 ";
@@ -605,6 +619,7 @@ if (isset($_SESSION["帳號"])) {
 		$data_sql = "
     SELECT 
         a.appointment_id AS id,
+        COALESCE(p.idcard, '無資料') AS idcard,
         COALESCE(p.name, '未預約') AS name,
         CASE 
             WHEN p.gender_id = 1 THEN '男' 
@@ -616,20 +631,19 @@ if (isset($_SESSION["帳號"])) {
         st.shifttime AS shifttime,
         d.doctor AS doctor_name,
         COALESCE(a.note, '無') AS note,
-        COALESCE(s.status_id, 1) AS status_id,  -- 確保 `status_id` 預設為 1 (預約)
+        COALESCE(s.status_id, 1) AS status_id,
         COALESCE(s.status_name, '未設定') AS status_name  
     FROM appointment a
     LEFT JOIN people p ON a.people_id = p.people_id
     LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
     LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
     LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id  -- 連結 user 表取得 grade_id
+    LEFT JOIN user u ON d.user_id = u.user_id
     LEFT JOIN status s ON a.status_id = s.status_id  
     $where_sql
     ORDER BY ds.date, st.shifttime
     LIMIT ?, ?
 ";
-
 		$data_stmt = $link->prepare($data_sql);
 		$params[] = $offset;
 		$params[] = $records_per_page;
@@ -640,156 +654,130 @@ if (isset($_SESSION["帳號"])) {
 		$result = $data_stmt->get_result();
 		?>
 
-
 		<section class="section">
 			<div class="container">
-				<div class="row justify-content-center">
-					<div class="col-lg-12">
-
-						<!-- 搜尋 & 篩選 & 筆數選擇 -->
-						<div class="search-container">
-							<form method="GET" action="">
-								<input type="text" name="search_name" placeholder="請輸入搜尋姓名"
-									value="<?php echo htmlspecialchars($search_name); ?>">
-
-								<select name="doctor" onchange="this.form.submit()">
-									<option value="全部" <?php echo ($selected_doctor === '全部') ? 'selected' : ''; ?>>全部
-									</option>
-									<?php
-									$doctor_query = $link->query("
-        SELECT d.doctor 
-        FROM doctor d
-        JOIN user u ON d.user_id = u.user_id
-        WHERE u.grade_id = 2
-    ");
-									while ($row = $doctor_query->fetch_assoc()) {
-										$doctor_name = $row['doctor'];
-										$selected = ($selected_doctor === $doctor_name) ? 'selected' : '';
-										echo "<option value='$doctor_name' $selected>$doctor_name</option>";
-									}
-									?>
-								</select>
-
-
-								<button type="submit">搜尋</button>
-							</form>
-
-							<!-- <div class="limit-selector"> -->
-							<!-- <label for="limit">每頁顯示筆數:</label> -->
-							<select id="limit" name="limit" onchange="updateLimit()">
-								<?php
-								$limits = [3, 5, 10, 20, 50, 100];
-								foreach ($limits as $limit) {
-									$selected = ($limit == $records_per_page) ? "selected" : "";
-									echo "<option value='$limit' $selected>$limit 筆/頁</option>";
-								}
-								?>
-							</select>
-							<!-- </div> -->
-						</div>
-
-						<script>
-							function updateLimit() {
-								var limit = document.getElementById("limit").value;
-								window.location.href = "?search_name=<?php echo urlencode($search_name); ?>&doctor=<?php echo urlencode($selected_doctor); ?>&limit=" + limit;
+				<div class="search-container">
+					<form method="GET" action="">
+						<input type="text" name="search_idcard" placeholder="請輸入身分證字號"
+							value="<?php echo htmlspecialchars($search_idcard); ?>">
+						<select name="doctor">
+							<option value="全部">全部</option>
+							<?php
+							$doctor_query = $link->query("SELECT doctor FROM doctor");
+							while ($row = $doctor_query->fetch_assoc()) {
+								$selected = ($selected_doctor === $row['doctor']) ? 'selected' : '';
+								echo "<option value='{$row['doctor']}' $selected>{$row['doctor']}</option>";
 							}
-						</script>
+							?>
+						</select>
+						<select name="status">
+							<option value="全部">所有狀態</option>
+							<option value="預約">預約</option>
+							<option value="修改">修改</option>
+							<option value="報到">報到</option>
+							<option value="請假">請假</option>
+							<option value="爽約">爽約</option>
+							<option value="看診中">看診中</option>
+							<option value="已看診">已看診</option>
+						</select>
+						<select name="date">
+							<option value="全部">所有日期</option>
+							<option value="當天">當天</option>
+						</select>
+						<button type="submit">搜尋</button>
+					</form>
+				</div>
 
-						<!-- 表格 -->
-						<div class="table-responsive">
-							<table>
-								<thead>
-									<tr>
-										<th>#</th>
-										<th>姓名</th>
-										<th>性別</th>
-										<th>生日 (年齡)</th>
-										<th>看診日期 (星期)</th>
-										<th>看診時間</th>
-										<th>治療師</th>
-										<th>備註</th>
-										<th>狀態</th>
-										<th>選項</th>
-									</tr>
-								</thead>
-								<tbody>
-									<?php if ($result->num_rows > 0): ?>
-										<?php while ($row = $result->fetch_assoc()): ?>
-											<tr>
-												<td><?php echo htmlspecialchars($row['id']); ?></td>
-												<td><?php echo htmlspecialchars($row['name']); ?></td>
-												<td><?php echo htmlspecialchars($row['gender']); ?></td>
-												<td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
-												<td><?php echo htmlspecialchars($row['appointment_date']); ?></td>
-												<td><?php echo htmlspecialchars($row['shifttime']); ?></td>
-												<td><?php echo htmlspecialchars($row['doctor_name']); ?></td>
-												<td><?php echo htmlspecialchars($row['note']); ?></td>
-												<td>
-													<select class="status-dropdown" data-id="<?php echo $row['id']; ?>"
-														data-doctor-id="<?php echo $row['doctor_id']; ?>" <?php echo (in_array($row['status_id'], [4, 5, 6])) ? 'disabled' : ''; ?>>
-														<option value="1" <?php echo ($row['status_id'] == 1) ? 'selected' : ''; ?>>預約</option>
-														<option value="2" <?php echo ($row['status_id'] == 2) ? 'selected' : ''; ?>>修改</option>
-														<option value="3" <?php echo ($row['status_id'] == 3) ? 'selected' : ''; ?>>報到</option>
-														<option value="4" <?php echo ($row['status_id'] == 4) ? 'selected' : ''; ?>>請假</option>
-														<option value="5" <?php echo ($row['status_id'] == 5) ? 'selected' : ''; ?>>爽約</option>
-														<option value="8" <?php echo ($row['status_id'] == 8) ? 'selected' : ''; ?>>看診中</option>
-														<option value="6" <?php echo ($row['status_id'] == 6) ? 'selected' : ''; ?>>已看診</option>
-													</select>
-												</td>
+				<table>
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>姓名</th>
+							<th>性別</th>
+							<th>生日</th>
+							<th>身分證</th>
+							<th>看診日期</th>
+							<th>看診時間</th>
+							<th>治療師</th>
+							<th>狀態</th>
+							<th>選項</th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php while ($row = $result->fetch_assoc()): ?>
+							<tr>
+								<td><?php echo $row['id']; ?></td>
+								<td><?php echo $row['name']; ?></td>
+								<td><?php echo $row['gender']; ?></td>
+								<td><?php echo $row['birthday_with_age']; ?></td>
+								<td><?php echo $row['idcard']; ?></td>
+								<td><?php echo $row['appointment_date']; ?></td>
+								<td><?php echo $row['shifttime']; ?></td>
+								<td><?php echo $row['doctor_name']; ?></td>
+								<td>
+									<select class="status-dropdown" data-id="<?php echo $row['id']; ?>"
+										data-doctor-id="<?php echo $row['doctor_id']; ?>" <?php echo (in_array($row['status_id'], [4, 5, 6])) ? 'disabled' : ''; ?>>
+										<option value="1" <?php echo ($row['status_id'] == 1) ? 'selected' : ''; ?>>預約
+										</option>
+										<option value="2" <?php echo ($row['status_id'] == 2) ? 'selected' : ''; ?>>修改
+										</option>
+										<option value="3" <?php echo ($row['status_id'] == 3) ? 'selected' : ''; ?>>報到
+										</option>
+										<option value="4" <?php echo ($row['status_id'] == 4) ? 'selected' : ''; ?>>請假
+										</option>
+										<option value="5" <?php echo ($row['status_id'] == 5) ? 'selected' : ''; ?>>爽約
+										</option>
+										<option value="8" <?php echo ($row['status_id'] == 8) ? 'selected' : ''; ?>>看診中
+										</option>
+										<option value="6" <?php echo ($row['status_id'] == 6) ? 'selected' : ''; ?>>已看診
+										</option>
+									</select>
+								</td>
 
 
-												<td>
-													<a href="h_print-appointment.php?id=<?php echo $row['id']; ?>"
-														target="_blank">
-														<button type="button">列印預約單</button>
-													</a>
-												</td>
-											</tr>
-										<?php endwhile; ?>
-									<?php else: ?>
-										<tr>
-											<td colspan="10">無符合條件的資料</td>
-										</tr>
-									<?php endif; ?>
-								</tbody>
-							</table>
-							<!-- 分頁資訊 + 頁碼 -->
-							<div class="pagination-wrapper">
-								<!-- 分頁資訊 (靠右) -->
-								<div class="pagination-info">
-									第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共
-									<strong><?php echo $total_records; ?></strong> 筆資料）
-								</div>
+								<td>
+									<a href="h_print-appointment.php?id=<?php echo $row['id']; ?>" target="_blank">
+										<button type="button">列印預約單</button>
+									</a>
+								</td>
+							</tr>
+						<?php endwhile; ?>
+					</tbody>
+				</table>
 
-								<!-- 頁碼按鈕 (置中) -->
-								<div class="pagination-container">
-									<?php if ($page > 1): ?>
-										<a
-											href="?page=<?php echo $page - 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
-									<?php endif; ?>
-
-									<?php for ($i = 1; $i <= $total_pages; $i++): ?>
-										<?php if ($i == $page): ?>
-											<strong><?php echo $i; ?></strong>
-										<?php else: ?>
-											<a
-												href="?page=<?php echo $i; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
-										<?php endif; ?>
-									<?php endfor; ?>
-
-									<?php if ($page < $total_pages): ?>
-										<a
-											href="?page=<?php echo $page + 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
-									<?php endif; ?>
-								</div>
-							</div>
-						</div>
-
+				<!-- 分頁資訊 + 頁碼 -->
+				<div class="pagination-wrapper">
+					<!-- 分頁資訊 (靠右) -->
+					<div class="pagination-info">
+						第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共
+						<strong><?php echo $total_records; ?></strong> 筆資料）
 					</div>
 
+					<!-- 頁碼按鈕 (置中) -->
+					<div class="pagination-container">
+						<?php if ($page > 1): ?>
+							<a
+								href="?page=<?php echo $page - 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
+						<?php endif; ?>
+
+						<?php for ($i = 1; $i <= $total_pages; $i++): ?>
+							<?php if ($i == $page): ?>
+								<strong><?php echo $i; ?></strong>
+							<?php else: ?>
+								<a
+									href="?page=<?php echo $i; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
+							<?php endif; ?>
+						<?php endfor; ?>
+
+						<?php if ($page < $total_pages): ?>
+							<a
+								href="?page=<?php echo $page + 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
+						<?php endif; ?>
+					</div>
 				</div>
 			</div>
 		</section>
+
 
 		<!-- 修改預約 Modal -->
 		<div id="modal-overlay" class="modal-overlay" style="display: none;">
