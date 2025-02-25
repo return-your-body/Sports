@@ -447,11 +447,12 @@ mysqli_close($link);
                 const availableTimes = data.times.map(t => t.shifttime);
                 startFlatpickr.set("enable", availableTimes);
                 endFlatpickr.set("enable", availableTimes);
-              } else {
-                startFlatpickr.clear();
-                endFlatpickr.clear();
-                alert(data.message || "當天無可請假時段");
-              }
+              } 
+              // else {
+              //   startFlatpickr.clear();
+              //   endFlatpickr.clear();
+              //   alert(data.message || "當天無可請假時段");
+              // }
             })
             .catch(error => console.error("請假時間加載錯誤:", error));
         }
