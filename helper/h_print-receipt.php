@@ -414,7 +414,6 @@ if (isset($_SESSION["帳號"])) {
 
 
     <!--列印收據-->
-
     <?php
     require '../db.php'; // 引入資料庫連接檔案
     
@@ -422,9 +421,10 @@ if (isset($_SESSION["帳號"])) {
     if (isset($_GET['id']) && is_numeric($_GET['id'])) {
       $appointment_id = intval($_GET['id']);
 
-      // 查詢基本資訊 (包含 使用者備註)
+      // ✅ **查詢基本資訊 (包含 `身分證號碼` & `使用者備註`)**
       $query = "
     SELECT 
+        p.idcard AS people_idcard,  -- 新增顯示身分證
         p.name AS people_name,
         CASE 
             WHEN p.gender_id = 1 THEN '男'
@@ -453,20 +453,19 @@ if (isset($_SESSION["帳號"])) {
     LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
     LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
     LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-    WHERE a.appointment_id = $appointment_id
-    GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime, a.note";
+    WHERE a.appointment_id = $appointment_id";
 
       $result = mysqli_query($link, $query);
 
       if (!$result) {
-        echo "SQL 錯誤：" . mysqli_error($link);
-        exit;
+        die("❌ SQL 錯誤：" . mysqli_error($link));
       }
 
       if (mysqli_num_rows($result) > 0) {
         $record = mysqli_fetch_assoc($result);
 
         // 提取基本資料
+        $people_idcard = $record['people_idcard']; // 身分證號碼
         $people_name = $record['people_name'];
         $gender = $record['gender'];
         $birthday_with_age = $record['birthday_with_age'];
@@ -476,7 +475,7 @@ if (isset($_SESSION["帳號"])) {
         $doctor_name = $record['doctor_name'];
         $user_note = $record['user_note']; // 使用者備註
     
-        // 查詢該次 appointment 的所有項目與價錢
+        // ✅ **查詢該次 `appointment` 的所有項目與價錢**
         $item_query = "
         SELECT i.item AS treatment_item, i.price AS treatment_price
         FROM medicalrecord m
@@ -486,11 +485,10 @@ if (isset($_SESSION["帳號"])) {
         $item_result = mysqli_query($link, $item_query);
 
         if (!$item_result) {
-          echo "SQL 錯誤：" . mysqli_error($link);
-          exit;
+          die("❌ SQL 錯誤：" . mysqli_error($link));
         }
 
-        // 查詢 醫生備註
+        // ✅ **查詢 醫生備註**
         $doctor_note_query = "
         SELECT GROUP_CONCAT(m.note_d ORDER BY m.created_at SEPARATOR '; ') AS doctor_note
         FROM medicalrecord m
@@ -500,12 +498,10 @@ if (isset($_SESSION["帳號"])) {
         $doctor_note_data = mysqli_fetch_assoc($doctor_note_result);
         $doctor_note = $doctor_note_data['doctor_note'] ?? '無'; // 沒有醫生備註則顯示「無」
       } else {
-        echo "未找到對應的病歷資料";
-        exit;
+        die("❌ 未找到對應的病歷資料");
       }
     } else {
-      echo "無效的 ID";
-      exit;
+      die("❌ 無效的 ID");
     }
     ?>
 
@@ -516,18 +512,22 @@ if (isset($_SESSION["帳號"])) {
             <div class="accordion-custom-group accordion-custom-group-custom accordion-custom-group-corporate"
               id="accordion1" role="tablist" aria-multiselectable="false">
               <dl class="list-terms">
-                <!-- 收據顯示區域 -->
+                <!-- ✅ **看診收據顯示區域** -->
                 <div id="print-area">
-                  <h1>看診收據</h1>
-                  <p>姓名：<?php echo htmlspecialchars($people_name); ?></p>
-                  <p>性別：<?php echo $gender; ?></p>
-                  <p>生日 (年齡)：<?php echo $birthday_with_age; ?></p>
-                  <p>看診日期：<?php echo $appointment_date . " (" . $consultation_weekday . ")"; ?></p>
-                  <p>看診時間：<?php echo $appointment_time; ?></p>
-                  <p>治療師：<?php echo $doctor_name; ?></p>
+                  <h1> 看診收據</h1>
+                  <p><strong>姓名：</strong><?php echo htmlspecialchars($people_name); ?></p>
+                  <p><strong>性別：</strong><?php echo htmlspecialchars($gender); ?></p>
+                  <p><strong>生日 (年齡)：</strong><?php echo htmlspecialchars($birthday_with_age); ?></p>
+                  <p><strong>身分證號：</strong><?php echo htmlspecialchars($people_idcard); ?></p> <!-- ✅ 顯示身分證 -->
+                  <p>
+                    <strong>看診日期：</strong><?php echo htmlspecialchars($appointment_date) . " (" . htmlspecialchars($consultation_weekday) . ")"; ?>
+                  </p>
+                  <p><strong>看診時間：</strong><?php echo htmlspecialchars($appointment_time); ?></p>
+                  <p><strong>治療師：</strong><?php echo htmlspecialchars($doctor_name); ?></p>
                   <p><strong>使用者備註：</strong> <?php echo htmlspecialchars($user_note); ?></p>
                   <p><strong>醫生備註：</strong> <?php echo htmlspecialchars($doctor_note); ?></p>
 
+                  <!-- ✅ **顯示治療項目與費用** -->
                   <table>
                     <tr>
                       <th>治療項目</th>
@@ -545,15 +545,15 @@ if (isset($_SESSION["帳號"])) {
                     ?>
                     <tr>
                       <td><strong>總費用</strong></td>
-                      <td><strong><?php echo $total_price; ?></strong></td>
+                      <td><strong><?php echo number_format($total_price); ?></strong></td>
                     </tr>
                   </table>
 
                   <p>列印時間：<?php echo date('Y-m-d H:i:s'); ?></p>
                 </div>
                 <div class="button-container">
-                  <button onclick="window.print()">列印收據</button>
-                  <button onclick="location.href='h_medical-record.php'">返回</button>
+                  <button onclick="window.print()">🖨 列印收據</button>
+                  <button onclick="location.href='h_medical-record.php'">⬅️ 返回</button>
                 </div>
               </dl>
             </div>

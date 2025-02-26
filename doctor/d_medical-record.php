@@ -63,99 +63,7 @@ if (isset($_SESSION["帳號"])) {
   exit();
 }
 
-// 看診紀錄
 
-require '../db.php';
-session_start(); // 確保 Session 啟動
-
-// 取得登入者帳號
-$帳號 = $_SESSION['帳號'];
-
-// 取得搜尋條件
-$search_name = isset($_GET['search_name']) ? trim($_GET['search_name']) : '';
-
-// 取得筆數選擇 (預設 10)
-$records_per_page = isset($_GET['limit']) ? max(3, (int) $_GET['limit']) : 10;
-
-// 取得當前頁數
-$page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-$offset = ($page - 1) * $records_per_page;
-
-// 確認治療師的 user_id
-$doctor_sql = "SELECT doctor_id FROM doctor WHERE user_id = (SELECT user_id FROM user WHERE account = ?)";
-$doctor_stmt = $link->prepare($doctor_sql);
-$doctor_stmt->bind_param('s', $帳號);
-$doctor_stmt->execute();
-$doctor_result = $doctor_stmt->get_result();
-$doctor_row = $doctor_result->fetch_assoc();
-$doctor_id = $doctor_row['doctor_id'] ?? null;
-
-if (!$doctor_id) {
-  die("未找到該治療師的資料");
-}
-
-// 計算總筆數
-$count_sql = "SELECT COUNT(DISTINCT a.appointment_id) AS total FROM medicalrecord m 
-LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-WHERE ds.doctor_id = ? AND p.name LIKE CONCAT('%', ?, '%')";
-
-$count_stmt = $link->prepare($count_sql);
-$count_stmt->bind_param('is', $doctor_id, $search_name);
-$count_stmt->execute();
-$count_result = $count_stmt->get_result();
-$total_records = $count_result->fetch_assoc()['total'] ?? 0;
-$total_pages = max(ceil($total_records / $records_per_page), 1);
-
-// 查詢分頁資料
-$data_sql = "SELECT 
-    (@row_number := @row_number + 1) AS row_num,
-    MIN(m.medicalrecord_id) AS medicalrecord_id,
-    a.appointment_id,
-    p.name AS patient_name,
-    CASE 
-        WHEN p.gender_id = 1 THEN '男'
-        WHEN p.gender_id = 2 THEN '女'
-        ELSE '無資料'
-    END AS gender,
-    CASE 
-        WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)')
-        ELSE '無資料'
-    END AS birthday_with_age,
-    d.doctor AS doctor_name,
-    GROUP_CONCAT(i.item ORDER BY i.item SEPARATOR ', ') AS treatment_items,
-    SUM(i.price) AS total_treatment_price,
-    DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
-    CASE DAYOFWEEK(ds.date)
-        WHEN 1 THEN '星期日'
-        WHEN 2 THEN '星期一'
-        WHEN 3 THEN '星期二'
-        WHEN 4 THEN '星期三'
-        WHEN 5 THEN '星期四'
-        WHEN 6 THEN '星期五'
-        WHEN 7 THEN '星期六'
-    END AS consultation_weekday,
-    st.shifttime AS consultation_time,
-    COALESCE(m.note_d, '無備註') AS doctor_note, 
-    MIN(m.created_at) AS created_at
-FROM medicalrecord m
-LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-LEFT JOIN people p ON a.people_id = p.people_id
-LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-LEFT JOIN item i ON m.item_id = i.item_id
-LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-WHERE ds.doctor_id = ? AND p.name LIKE CONCAT('%', ?, '%')
-GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime
-ORDER BY created_at ASC
-LIMIT ?, ?";
-
-
-$data_stmt = $link->prepare($data_sql);
-$data_stmt->bind_param('isii', $doctor_id, $search_name, $offset, $records_per_page);
-$data_stmt->execute();
-$result = $data_stmt->get_result();
 
 ?>
 
@@ -565,19 +473,114 @@ $result = $data_stmt->get_result();
     <!--標題-->
 
     <!--看診紀錄-->
+    <?php
+    require '../db.php';
+    session_start(); // 確保 Session 啟動
+    
+    // 取得登入者帳號
+    $帳號 = $_SESSION['帳號'];
+
+    // 取得搜尋條件 (改為搜尋身分證)
+    $search_idcard = isset($_GET['search_idcard']) ? trim($_GET['search_idcard']) : '';
+
+    // 取得筆數選擇 (預設 10)
+    $records_per_page = isset($_GET['limit']) ? max(3, (int) $_GET['limit']) : 10;
+
+    // 取得當前頁數
+    $page = isset($_GET['page']) && is_numeric($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+    $offset = ($page - 1) * $records_per_page;
+
+    // 確認治療師的 user_id
+    $doctor_sql = "SELECT doctor_id FROM doctor WHERE user_id = (SELECT user_id FROM user WHERE account = ?)";
+    $doctor_stmt = $link->prepare($doctor_sql);
+    $doctor_stmt->bind_param('s', $帳號);
+    $doctor_stmt->execute();
+    $doctor_result = $doctor_stmt->get_result();
+    $doctor_row = $doctor_result->fetch_assoc();
+    $doctor_id = $doctor_row['doctor_id'] ?? null;
+
+    if (!$doctor_id) {
+      die("未找到該治療師的資料");
+    }
+
+    // 計算總筆數
+    $count_sql = "SELECT COUNT(DISTINCT a.appointment_id) AS total 
+FROM medicalrecord m 
+LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+WHERE ds.doctor_id = ? AND p.idcard LIKE CONCAT('%', ?, '%')";
+
+    $count_stmt = $link->prepare($count_sql);
+    $count_stmt->bind_param('is', $doctor_id, $search_idcard);
+    $count_stmt->execute();
+    $count_result = $count_stmt->get_result();
+    $total_records = $count_result->fetch_assoc()['total'] ?? 0;
+    $total_pages = max(ceil($total_records / $records_per_page), 1);
+
+    // 查詢分頁資料
+    $data_sql = "SELECT 
+    (@row_number := @row_number + 1) AS row_num,
+    MIN(m.medicalrecord_id) AS medicalrecord_id,
+    a.appointment_id,
+    p.idcard AS idcard,  -- 新增身分證欄位
+    p.name AS patient_name,
+    CASE 
+        WHEN p.gender_id = 1 THEN '男'
+        WHEN p.gender_id = 2 THEN '女'
+        ELSE '無資料'
+    END AS gender,
+    CASE 
+        WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)')
+        ELSE '無資料'
+    END AS birthday_with_age,
+    d.doctor AS doctor_name,
+    GROUP_CONCAT(i.item ORDER BY i.item SEPARATOR ', ') AS treatment_items,
+    SUM(i.price) AS total_treatment_price,
+    DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
+    CASE DAYOFWEEK(ds.date)
+        WHEN 1 THEN '星期日'
+        WHEN 2 THEN '星期一'
+        WHEN 3 THEN '星期二'
+        WHEN 4 THEN '星期三'
+        WHEN 5 THEN '星期四'
+        WHEN 6 THEN '星期五'
+        WHEN 7 THEN '星期六'
+    END AS consultation_weekday,
+    st.shifttime AS consultation_time,
+    COALESCE(m.note_d, '無備註') AS doctor_note, 
+    MIN(m.created_at) AS created_at
+FROM medicalrecord m
+LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+LEFT JOIN people p ON a.people_id = p.people_id
+LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+LEFT JOIN item i ON m.item_id = i.item_id
+LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+WHERE ds.doctor_id = ? AND p.idcard LIKE CONCAT('%', ?, '%')
+GROUP BY a.appointment_id, p.idcard, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime
+ORDER BY created_at ASC
+LIMIT ?, ?";
+
+    $data_stmt = $link->prepare($data_sql);
+    $data_stmt->bind_param('isii', $doctor_id, $search_idcard, $offset, $records_per_page);
+    $data_stmt->execute();
+    $result = $data_stmt->get_result();
+    ?>
+
+    <!-- 看診紀錄 -->
     <section class="section section-lg bg-default text-center">
       <div class="container">
         <!-- 搜尋與筆數選擇 -->
         <div class="search-limit-container">
           <form method="GET" action="" class="search-form">
             <input type="hidden" name="is_search" value="1">
-            <input type="text" name="search_name" id="search_name" placeholder="請輸入搜尋姓名"
-              value="<?php echo htmlspecialchars($search_name); ?>">
+            <input type="text" name="search_idcard" id="search_idcard" placeholder="請輸入身分證字號"
+              value="<?php echo htmlspecialchars($search_idcard); ?>">
             <button type="submit">搜尋</button>
           </form>
 
           <div class="limit-selector">
-            <!-- <label for="limit">每頁顯示筆數:</label> -->
             <select id="limit" name="limit" onchange="updateLimit()">
               <?php
               $limits = [3, 5, 10, 20, 50, 100];
@@ -588,7 +591,6 @@ $result = $data_stmt->get_result();
               ?>
             </select>
           </div>
-
         </div>
 
         <!-- 表格 -->
@@ -597,10 +599,10 @@ $result = $data_stmt->get_result();
             <table class="responsive-table">
               <thead>
                 <tr>
-                  <!-- <th>#</th> -->
                   <th>姓名</th>
                   <th>性別</th>
                   <th>生日 (年齡)</th>
+                  <th>身分證</th> <!-- 新增身分證欄位 -->
                   <th>看診日期</th>
                   <th>看診時間</th>
                   <th>治療項目</th>
@@ -613,71 +615,69 @@ $result = $data_stmt->get_result();
                 <?php if ($result->num_rows > 0): ?>
                   <?php while ($row = mysqli_fetch_assoc($result)): ?>
                     <tr>
-                      <!-- <td><?php echo htmlspecialchars($row['row_num']); ?></td> -->
                       <td><?php echo htmlspecialchars($row['patient_name']); ?></td>
                       <td><?php echo htmlspecialchars($row['gender']); ?></td>
                       <td><?php echo htmlspecialchars($row['birthday_with_age']); ?></td>
+                      <td><?php echo htmlspecialchars($row['idcard']); ?></td> <!-- 顯示身分證 -->
                       <td>
                         <?php echo htmlspecialchars($row['consultation_date'] . " (" . $row['consultation_weekday'] . ")"); ?>
                       </td>
                       <td><?php echo htmlspecialchars($row['consultation_time']); ?></td>
                       <td><?php echo htmlspecialchars($row['treatment_items']); ?></td>
                       <td><?php echo htmlspecialchars($row['total_treatment_price']); ?></td>
-                      <td><?php echo htmlspecialchars($row['doctor_note']); ?></td> 
+                      <td><?php echo htmlspecialchars($row['doctor_note']); ?></td>
                       <td><?php echo htmlspecialchars($row['created_at']); ?></td>
                     </tr>
                   <?php endwhile; ?>
                 <?php else: ?>
                   <tr>
-                    <td colspan="9">目前無資料，請輸入條件進行搜尋。</td>
+                    <td colspan="10">目前無資料，請輸入條件進行搜尋。</td>
                   </tr>
                 <?php endif; ?>
               </tbody>
-
             </table>
           </div>
-        </div>
 
 
-        <!-- 分頁資訊 (靠右) -->
-        <div class="pagination-info-container">
-          <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共
-            <strong><?php echo $total_records; ?></strong> 筆資料）</span>
-        </div>
+          <!-- 分頁資訊 (靠右) -->
+          <div class="pagination-info-container">
+            <span>第 <?php echo $page; ?> 頁 / 共 <?php echo $total_pages; ?> 頁（總共
+              <strong><?php echo $total_records; ?></strong> 筆資料）</span>
+          </div>
 
-        <!-- 分頁按鈕 (置中) -->
-        <div class="pagination-container">
-          <?php if ($page > 1): ?>
-            <a
-              href="?page=<?php echo $page - 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
-          <?php endif; ?>
-
-          <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-            <?php if ($i == $page): ?>
-              <strong><?php echo $i; ?></strong>
-            <?php else: ?>
+          <!-- 分頁按鈕 (置中) -->
+          <div class="pagination-container">
+            <?php if ($page > 1): ?>
               <a
-                href="?page=<?php echo $i; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
+                href="?page=<?php echo $page - 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">上一頁</a>
             <?php endif; ?>
-          <?php endfor; ?>
 
-          <?php if ($page < $total_pages): ?>
-            <a
-              href="?page=<?php echo $page + 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
-          <?php endif; ?>
+            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+              <?php if ($i == $page): ?>
+                <strong><?php echo $i; ?></strong>
+              <?php else: ?>
+                <a
+                  href="?page=<?php echo $i; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>"><?php echo $i; ?></a>
+              <?php endif; ?>
+            <?php endfor; ?>
+
+            <?php if ($page < $total_pages): ?>
+              <a
+                href="?page=<?php echo $page + 1; ?>&limit=<?php echo $records_per_page; ?>&search_name=<?php echo urlencode($search_name); ?>">下一頁</a>
+            <?php endif; ?>
+
+
+            <!-- 分頁設定 -->
+            <script>
+              function updateLimit() {
+                var limit = document.getElementById("limit").value;
+                var searchName = document.getElementById("search_name").value;
+                window.location.href = "?limit=" + limit + "&search_name=" + encodeURIComponent(searchName);
+              }
+            </script>
+          </div>
         </div>
-      </div>
     </section>
-
-    <!-- 分頁設定 -->
-    <script>
-      function updateLimit() {
-        var limit = document.getElementById("limit").value;
-        var searchName = document.getElementById("search_name").value;
-        window.location.href = "?limit=" + limit + "&search_name=" + encodeURIComponent(searchName);
-      }
-    </script>
-
 
     <!--看診紀錄-->
 

@@ -441,11 +441,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     const availableTimes = data.times.map(t => t.shifttime);
                     startFlatpickr.set("enable", availableTimes);
                     endFlatpickr.set("enable", availableTimes);
-                } else {
-                    alert(data.message || "無可請假時段");
-                    startFlatpickr.clear();
-                    endFlatpickr.clear();
-                }
+                } 
+                // else {
+                //     alert(data.message || "無可請假時段");ㄥ
+                //     startFlatpickr.clear();
+                //     endFlatpickr.clear();
+                // }
             })
             .catch(error => console.error("請假時間加載錯誤:", error));
     }
