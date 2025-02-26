@@ -1,18 +1,15 @@
 <?php
-require '../db.php';  // 連接資料庫
+header("Content-Type: application/json; charset=UTF-8");
+require '../db.php';
 
-header('Content-Type: application/json; charset=UTF-8');
-
-$sql = "SELECT doctor_id, doctor FROM doctor";
+// 取得所有治療師 & 助手
+$sql = "SELECT doctor_id AS id, doctor AS name FROM doctor";
 $result = $link->query($sql);
 
-$doctors = [];
+$data = [];
 while ($row = $result->fetch_assoc()) {
-    $doctors[] = [
-        'id' => $row['doctor_id'],
-        'name' => $row['doctor']
-    ];
+    $data[] = $row;
 }
 
-echo json_encode($doctors, JSON_UNESCAPED_UNICODE);
+echo json_encode($data);
 ?>

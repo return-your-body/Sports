@@ -1,34 +1,30 @@
 <?php
-require '../db.php';  // 連接資料庫
+require '../db.php';
 
-header('Content-Type: application/json; charset=UTF-8');
+header('Content-Type: application/json');
 
-$year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
-$month = isset($_GET['month']) ? str_pad(intval($_GET['month']), 2, '0', STR_PAD_LEFT) : date('m');
+$year = isset($_GET['year']) ? intval($_GET['year']) : date("Y");
+$month = isset($_GET['month']) ? str_pad(intval($_GET['month']), 2, "0", STR_PAD_LEFT) : date("m");
+$day = isset($_GET['day']) ? str_pad(intval($_GET['day']), 2, "0", STR_PAD_LEFT) : "";
+$doctor = isset($_GET['doctor']) ? $_GET['doctor'] : "";
 
-$sql = "SELECT d.doctor AS doctor_name, ds.date AS work_date, 
-               st1.shifttime AS start_time, st2.shifttime AS end_time 
-        FROM doctorshift ds
-        JOIN doctor d ON ds.doctor_id = d.doctor_id
-        JOIN shifttime st1 ON ds.go = st1.shifttime_id
-        JOIN shifttime st2 ON ds.off = st2.shifttime_id
-        WHERE YEAR(ds.date) = ? AND MONTH(ds.date) = ?
-        ORDER BY ds.date, d.doctor_id";
-
-$stmt = $link->prepare($sql);
-$stmt->bind_param("ii", $year, $month);
-$stmt->execute();
-$result = $stmt->get_result();
-
-$data = [];
-while ($row = $result->fetch_assoc()) {
-    $data[] = [
-        'doctor_name' => $row['doctor_name'],
-        'work_date' => $row['work_date'],
-        'start_time' => $row['start_time'],
-        'end_time' => $row['end_time']
-    ];
+// 建立 SQL 查詢條件
+$whereClause = " WHERE YEAR(work_date) = '$year' AND MONTH(work_date) = '$month' ";
+if (!empty($day)) {
+    $whereClause .= "AND DAY(work_date) = '$day' ";
+}
+if (!empty($doctor)) {
+    $whereClause .= "AND doctor_name = '$doctor' ";
 }
 
-echo json_encode($data, JSON_UNESCAPED_UNICODE);
+// 查詢資料
+$sql = "SELECT doctor_name, work_date, work_hours, overtime_hours FROM doctor_schedule " . $whereClause;
+$result = mysqli_query($link, $sql);
+
+$data = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $data[] = $row;
+}
+
+echo json_encode($data);
 ?>
