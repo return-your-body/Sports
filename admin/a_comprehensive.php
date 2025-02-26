@@ -329,58 +329,102 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 		<!-- 收入 -->
 
+		<!-- 篩選條件 -->
+		<label>年: </label>
+		<select id="year"></select>
+		<label>月: </label>
+		<select id="month"></select>
+		<label>日: </label>
+		<select id="day"></select>
+		<label>治療師/助手: </label>
+		<select id="doctor"></select>
+		<button onclick="loadData()">篩選</button>
 
-		<h2>醫生處理病人數統計</h2>
-		<canvas id="doctorChart" width="600" height="300"></canvas>
+		<h2>治療師統計</h2>
+		<canvas id="doctorChart"></canvas>
 
-		<h2>治療項目使用數統計</h2>
-		<canvas id="itemChart" width="600" height="300"></canvas>
+		<h2>治療項目統計</h2>
+		<canvas id="itemChart"></canvas>
 
 		<script>
 			$(document).ready(function () {
+				initFilters();
+				loadData();
+			});
+
+			function initFilters() {
+				let currentYear = new Date().getFullYear();
+				let yearSelect = $("#year"), monthSelect = $("#month"), daySelect = $("#day"), doctorSelect = $("#doctor");
+
+				for (let y = currentYear - 5; y <= currentYear; y++) {
+					yearSelect.append(`<option value="${y}">${y}</option>`);
+				}
+				for (let m = 1; m <= 12; m++) {
+					monthSelect.append(`<option value="${m}">${m}</option>`);
+				}
+				for (let d = 1; d <= 31; d++) {
+					daySelect.append(`<option value="${d}">${d}</option>`);
+				}
+
+				// 獲取治療師名單
+				$.getJSON('獲取治療師助手.php', function (data) {
+					doctorSelect.append('<option value="">全部</option>');
+					data.forEach(doctor => {
+						doctorSelect.append(`<option value="${doctor.id}">${doctor.name}</option>`);
+					});
+				}).fail(function () {
+					alert("❌ 無法獲取治療師資料，請檢查 API");
+				});
+			}
+
+			function loadData() {
+				let year = $("#year").val();
+				let month = $("#month").val();
+				let day = $("#day").val();
+				let doctor = $("#doctor").val();
+
 				$.ajax({
 					url: '數據查詢.php',
 					method: 'GET',
+					data: { year, month, day, doctor },
 					dataType: 'json',
 					success: function (res) {
-						// 醫生統計
+						console.log("✅ AJAX 成功回應", res);
+
 						new Chart(document.getElementById('doctorChart'), {
 							type: 'bar',
 							data: {
 								labels: res.doctorStats.labels,
 								datasets: [{
-									label: '病人數',
+									label: '總工時',
 									data: res.doctorStats.data,
-									backgroundColor: 'rgba(54, 162, 235, 0.5)',
-									borderColor: 'rgba(54, 162, 235, 1)',
-									borderWidth: 1
+									backgroundColor: 'blue'
 								}]
-							},
-							options: { scales: { y: { beginAtZero: true } } }
+							}
 						});
 
-						// 治療項目統計
 						new Chart(document.getElementById('itemChart'), {
-							type: 'bar',
+							type: 'pie',
 							data: {
 								labels: res.itemStats.labels,
 								datasets: [{
-									label: '使用人數',
+									label: '使用次數',
 									data: res.itemStats.data,
-									backgroundColor: 'rgba(255, 99, 132, 0.5)',
-									borderColor: 'rgba(255, 99, 132, 1)',
-									borderWidth: 1
+									backgroundColor: ['red', 'green', 'blue']
 								}]
-							},
-							options: { scales: { y: { beginAtZero: true } } }
+							}
 						});
 					},
-					error: function () {
-						alert('資料載入失敗，請檢查後端API');
+					error: function (xhr, status, error) {
+						console.log("❌ AJAX 錯誤", xhr.responseText, status, error);
+						alert('資料載入失敗，請檢查後端 API');
 					}
 				});
-			});
+			}
 		</script>
+
+
+
 
 	</div>
 	<!-- Global Mailform Output-->
