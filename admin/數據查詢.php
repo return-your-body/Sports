@@ -1,71 +1,34 @@
 <?php
-header("Content-Type: application/json; charset=UTF-8");
-require '../db.php';  // 使用 db.php 連接 MySQL
+require '../db.php';  // 連接資料庫
 
-// 接收篩選條件
-$year = isset($_GET['year']) ? $_GET['year'] : date('Y');
-$month = isset($_GET['month']) ? $_GET['month'] : date('m');
-$day = isset($_GET['day']) ? $_GET['day'] : null;
-$doctor = isset($_GET['doctor']) ? $_GET['doctor'] : null;
+header('Content-Type: application/json; charset=UTF-8');
 
-// 日期篩選
-$dateFilter = "$year-$month" . ($day ? "-$day" : "");
+$year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
+$month = isset($_GET['month']) ? str_pad(intval($_GET['month']), 2, '0', STR_PAD_LEFT) : date('m');
 
-// 取得治療師統計
-$doctorSql = "
-    SELECT d.doctor, SUM(ds.working_hours) AS total_hours
-    FROM doctorshift ds
-    JOIN doctor d ON ds.doctor_id = d.doctor_id
-    WHERE DATE_FORMAT(ds.shift_date, '%Y-%m-%d') = ?";
-if ($doctor) {
-    $doctorSql .= " AND d.doctor_id = ?";
-}
-$doctorSql .= " GROUP BY d.doctor";
+$sql = "SELECT d.doctor AS doctor_name, ds.date AS work_date, 
+               st1.shifttime AS start_time, st2.shifttime AS end_time 
+        FROM doctorshift ds
+        JOIN doctor d ON ds.doctor_id = d.doctor_id
+        JOIN shifttime st1 ON ds.go = st1.shifttime_id
+        JOIN shifttime st2 ON ds.off = st2.shifttime_id
+        WHERE YEAR(ds.date) = ? AND MONTH(ds.date) = ?
+        ORDER BY ds.date, d.doctor_id";
 
-$doctorStmt = $link->prepare($doctorSql);
-if ($doctor) {
-    $doctorStmt->bind_param("si", $dateFilter, $doctor);
-} else {
-    $doctorStmt->bind_param("s", $dateFilter);
-}
-$doctorStmt->execute();
-$doctorResult = $doctorStmt->get_result();
+$stmt = $link->prepare($sql);
+$stmt->bind_param("ii", $year, $month);
+$stmt->execute();
+$result = $stmt->get_result();
 
-$doctorStats = ['labels' => [], 'data' => []];
-while ($row = $doctorResult->fetch_assoc()) {
-    $doctorStats['labels'][] = $row['doctor'];
-    $doctorStats['data'][] = (int)$row['total_hours'];
+$data = [];
+while ($row = $result->fetch_assoc()) {
+    $data[] = [
+        'doctor_name' => $row['doctor_name'],
+        'work_date' => $row['work_date'],
+        'start_time' => $row['start_time'],
+        'end_time' => $row['end_time']
+    ];
 }
 
-// 取得治療項目統計
-$itemSql = "
-    SELECT i.item, COUNT(m.medicalrecord_id) AS total_usage
-    FROM medicalrecord m
-    JOIN item i ON m.item_id = i.item_id
-    WHERE DATE_FORMAT(m.record_date, '%Y-%m-%d') = ?";
-if ($doctor) {
-    $itemSql .= " AND m.doctor_id = ?";
-}
-$itemSql .= " GROUP BY i.item";
-
-$itemStmt = $link->prepare($itemSql);
-if ($doctor) {
-    $itemStmt->bind_param("si", $dateFilter, $doctor);
-} else {
-    $itemStmt->bind_param("s", $dateFilter);
-}
-$itemStmt->execute();
-$itemResult = $itemStmt->get_result();
-
-$itemStats = ['labels' => [], 'data' => []];
-while ($row = $itemResult->fetch_assoc()) {
-    $itemStats['labels'][] = $row['item'];
-    $itemStats['data'][] = (int)$row['total_usage'];
-}
-
-// 回傳 JSON
-echo json_encode([
-    "doctorStats" => $doctorStats,
-    "itemStats" => $itemStats
-], JSON_PRETTY_PRINT);
+echo json_encode($data, JSON_UNESCAPED_UNICODE);
 ?>

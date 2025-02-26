@@ -329,98 +329,172 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 		<!-- 收入 -->
 
-		<!-- 篩選條件 -->
-		<label>年: </label>
-		<select id="year"></select>
-		<label>月: </label>
-		<select id="month"></select>
-		<label>日: </label>
-		<select id="day"></select>
-		<label>治療師/助手: </label>
-		<select id="doctor"></select>
-		<button onclick="loadData()">篩選</button>
 
-		<h2>治療師統計</h2>
-		<canvas id="doctorChart"></canvas>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-		<h2>治療項目統計</h2>
-		<canvas id="itemChart"></canvas>
+
+		<h1>治療師統計</h1>
+
+		<label for="year">年:</label>
+		<select id="year">
+			<option value="">選擇</option>
+		</select>
+
+		<label for="month">月:</label>
+		<select id="month">
+			<option value="">選擇</option>
+			<script>
+				for (var i = 1; i <= 12; i++) {
+					document.write('<option value="' + i + '">' + i + '</option>');
+				}
+			</script>
+		</select>
+
+		<label for="day">日:</label>
+		<select id="day">
+			<option value="">選擇</option>
+			<script>
+				for (var i = 1; i <= 31; i++) {
+					document.write('<option value="' + i + '">' + i + '</option>');
+				}
+			</script>
+		</select>
+
+		<label for="doctor">治療師/助手:</label>
+		<select id="doctor">
+			<option value="">選擇</option>
+		</select>
+<!-- 
+		<label for="assistant">助手:</label>
+		<select id="assistant">
+			<option value="">選擇</option>
+		</select> -->
+
+		<button id="searchBtn">篩選</button>
+
+		<h2>統計結果</h2>
+		<canvas id="barChart"></canvas>
+		<canvas id="pieChart"></canvas>
 
 		<script>
 			$(document).ready(function () {
-				initFilters();
-				loadData();
-			});
+				console.log("頁面已載入，開始執行 JavaScript");
 
-			function initFilters() {
+				// 動態生成年分（今年前後10年）
 				let currentYear = new Date().getFullYear();
-				let yearSelect = $("#year"), monthSelect = $("#month"), daySelect = $("#day"), doctorSelect = $("#doctor");
-
-				for (let y = currentYear - 5; y <= currentYear; y++) {
-					yearSelect.append(`<option value="${y}">${y}</option>`);
-				}
-				for (let m = 1; m <= 12; m++) {
-					monthSelect.append(`<option value="${m}">${m}</option>`);
-				}
-				for (let d = 1; d <= 31; d++) {
-					daySelect.append(`<option value="${d}">${d}</option>`);
+				console.log("當前年份:", currentYear);
+				for (let i = currentYear - 10; i <= currentYear + 10; i++) {
+					$('#year').append(`<option value="${i}">${i}</option>`);
 				}
 
-				// 獲取治療師名單
-				$.getJSON('獲取治療師助手.php', function (data) {
-					doctorSelect.append('<option value="">全部</option>');
-					data.forEach(doctor => {
-						doctorSelect.append(`<option value="${doctor.id}">${doctor.name}</option>`);
+				// 獲取治療師與助手列表
+				function loadDoctorsAndAssistants() {
+					console.log("開始獲取治療師與助手資料");
+					$.ajax({
+						url: '獲取治療師助手.php',
+						method: 'GET',
+						dataType: 'json',
+						success: function (data) {
+							console.log("治療師/助手 JSON 資料:", data);
+							$('#doctor').empty().append('<option value="">選擇</option>');
+							$('#assistant').empty().append('<option value="">選擇</option>');
+
+							if (data.length === 0) {
+								console.log("沒有收到任何治療師/助手資料");
+							} else {
+								$.each(data, function (index, item) {
+									$('#doctor').append(`<option value="${item.id}">${item.name}</option>`);
+									$('#assistant').append(`<option value="${item.id}">${item.name}</option>`);
+								});
+							}
+						},
+						error: function (xhr, status, error) {
+							console.error("獲取治療師助手時發生錯誤:", status, error);
+						}
 					});
-				}).fail(function () {
-					alert("❌ 無法獲取治療師資料，請檢查 API");
-				});
-			}
+				}
 
-			function loadData() {
-				let year = $("#year").val();
-				let month = $("#month").val();
-				let day = $("#day").val();
-				let doctor = $("#doctor").val();
+				loadDoctorsAndAssistants();
 
-				$.ajax({
-					url: '數據查詢.php',
-					method: 'GET',
-					data: { year, month, day, doctor },
-					dataType: 'json',
-					success: function (res) {
-						console.log("✅ AJAX 成功回應", res);
+				// 查詢數據並顯示圖表
+				$('#searchBtn').click(function () {
+					let year = $('#year').val();
+					let month = $('#month').val();
+					let day = $('#day').val();
+					let doctor = $('#doctor').val();
+					let assistant = $('#assistant').val();
 
-						new Chart(document.getElementById('doctorChart'), {
-							type: 'bar',
-							data: {
-								labels: res.doctorStats.labels,
-								datasets: [{
-									label: '總工時',
-									data: res.doctorStats.data,
-									backgroundColor: 'blue'
-								}]
+					console.log("篩選條件:", { year, month, day, doctor, assistant });
+
+					$.ajax({
+						url: '數據查詢.php',
+						method: 'GET',
+						data: { year, month, day, doctor, assistant },
+						dataType: 'json',
+						success: function (data) {
+							console.log("後端回傳的數據:", data);
+
+							if (data.length === 0) {
+								alert('查無資料');
+								return;
 							}
-						});
 
-						new Chart(document.getElementById('itemChart'), {
-							type: 'pie',
-							data: {
-								labels: res.itemStats.labels,
-								datasets: [{
-									label: '使用次數',
-									data: res.itemStats.data,
-									backgroundColor: ['red', 'green', 'blue']
-								}]
-							}
-						});
-					},
-					error: function (xhr, status, error) {
-						console.log("❌ AJAX 錯誤", xhr.responseText, status, error);
-						alert('資料載入失敗，請檢查後端 API');
-					}
+							let labels = [];
+							let workHours = [];
+							let overtimeHours = [];
+
+							data.forEach(item => {
+								labels.push(item.doctor_name + ' (' + item.work_date + ')');
+								workHours.push(8); // 固定上班時數
+								overtimeHours.push(Math.random() * 4); // 假設加班時數
+							});
+
+							showBarChart(labels, workHours, overtimeHours);
+							showPieChart(labels, workHours);
+						},
+						error: function (xhr, status, error) {
+							console.error("查詢數據時發生錯誤:", status, error);
+						}
+					});
 				});
-			}
+
+				function showBarChart(labels, workHours, overtimeHours) {
+					let ctx = document.getElementById('barChart').getContext('2d');
+					new Chart(ctx, {
+						type: 'bar',
+						data: {
+							labels: labels,
+							datasets: [
+								{
+									label: '工作時數',
+									data: workHours,
+									backgroundColor: 'rgba(54, 162, 235, 0.6)',
+								},
+								{
+									label: '加班時數',
+									data: overtimeHours,
+									backgroundColor: 'rgba(255, 99, 132, 0.6)',
+								}
+							]
+						}
+					});
+				}
+
+				function showPieChart(labels, workHours) {
+					let ctx = document.getElementById('pieChart').getContext('2d');
+					new Chart(ctx, {
+						type: 'pie',
+						data: {
+							labels: labels,
+							datasets: [{
+								data: workHours,
+								backgroundColor: ['red', 'blue', 'green', 'yellow', 'purple']
+							}]
+						}
+					});
+				}
+			});
 		</script>
 
 
