@@ -1,15 +1,20 @@
 <?php
-header("Content-Type: application/json; charset=UTF-8");
 require '../db.php';
 
-// 取得所有治療師 & 助手
-$sql = "SELECT doctor_id AS id, doctor AS name FROM doctor";
-$result = $link->query($sql);
+header('Content-Type: application/json');
 
-$data = [];
-while ($row = $result->fetch_assoc()) {
-    $data[] = $row;
+$query = "SELECT doctor_id, doctor FROM doctor";
+$result = mysqli_query($link, $query);
+
+if (!$result) {
+    echo json_encode(["error" => mysqli_error($link)]);
+    exit;
 }
 
-echo json_encode($data);
+$doctors = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $doctors[] = $row;
+}
+
+echo json_encode($doctors);
 ?>
