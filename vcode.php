@@ -34,6 +34,17 @@
       <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
 
+	<style>
+		img {
+			max-width: 100%;
+			height: auto;
+			display: block;
+			margin: 0 auto;
+			padding: 0;
+			/* 確保沒有額外內邊距 */
+		}
+	</style>
+
 </head>
 <body>
 	<div id="particles-js" class="main-form-box">
