@@ -466,6 +466,106 @@ if ($record_exists > 0) {
                         // 顯示姓名
                         echo $姓名;
                         ?>
+                        <a href="#" id="clock-btn">🕒 打卡</a>
+
+                        <!-- 打卡彈跳視窗 -->
+                        <div id="clock-modal" class="modal">
+                            <div class="modal-content">
+                                <span class="close">&times;</span>
+                                <h4>上下班打卡</h4>
+                                <p id="clock-status">目前狀態: 查詢中...</p>
+                                <button id="clock-in-btn">上班打卡</button>
+                                <button id="clock-out-btn" disabled>下班打卡</button>
+                            </div>
+                        </div>
+
+                        <style>
+                            .modal {
+                                display: none;
+                                position: fixed;
+                                z-index: 1000;
+                                left: 0;
+                                top: 0;
+                                width: 100%;
+                                height: 100%;
+                                background-color: rgba(0, 0, 0, 0.4);
+                            }
+
+                            .modal-content {
+                                background-color: white;
+                                margin: 15% auto;
+                                padding: 20px;
+                                width: 300px;
+                                border-radius: 10px;
+                                text-align: center;
+                            }
+
+                            .close {
+                                float: right;
+                                font-size: 24px;
+                                cursor: pointer;
+                            }
+                        </style>
+
+                        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+                        <script>
+                            $(document).ready(function () {
+                                let doctorId = 1; // 假設目前使用者的 doctor_id
+
+                                // 打開彈跳視窗
+                                $("#clock-btn").click(function () {
+                                    $("#clock-modal").fadeIn();
+                                    checkClockStatus();
+                                });
+
+                                $(".close").click(function () {
+                                    $("#clock-modal").fadeOut();
+                                });
+
+                                function checkClockStatus() {
+                                    $.post("檢查打卡狀態.php", { doctor_id: doctorId }, function (data) {
+                                        let statusText = "尚未打卡";
+
+                                        if (data.clock_in) {
+                                            statusText = "已上班: " + data.clock_in;
+                                            if (data.late) statusText += " <br>(遲到 " + data.late + ")";
+                                            $("#clock-in-btn").prop("disabled", true);
+                                            $("#clock-out-btn").prop("disabled", data.clock_out !== null);
+                                        }
+
+                                        if (data.clock_out) {
+                                            statusText += "<br>已下班: " + data.clock_out;
+                                            if (data.work_duration) statusText += "<br>總工時: " + data.work_duration;
+                                        }
+
+                                        $("#clock-status").html(statusText);
+                                    }, "json").fail(function (xhr) {
+                                        alert("發生錯誤：" + xhr.responseText);
+                                    });
+                                }
+
+
+                                $("#clock-in-btn").click(function () {
+                                    $.post("上班打卡.php", { doctor_id: doctorId }, function (data) {
+                                        alert(data.message);
+                                        checkClockStatus();
+                                    }, "json").fail(function (xhr) {
+                                        alert("發生錯誤：" + xhr.responseText);
+                                    });
+                                });
+
+                                $("#clock-out-btn").click(function () {
+                                    $.post("下班打卡.php", { doctor_id: doctorId }, function (data) {
+                                        alert(data.message);
+                                        checkClockStatus();
+                                    }, "json").fail(function (xhr) {
+                                        alert("發生錯誤：" + xhr.responseText);
+                                    });
+                                });
+                            });
+
+                        </script>
+
                     </div>
                 </nav>
             </div>
