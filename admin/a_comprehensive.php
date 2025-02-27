@@ -328,228 +328,152 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		</header>
 
 		<!-- 收入 -->
+		<?php
+// 取得今天的日期
+$todayYear = date('Y');
+$todayMonth = date('m');
+$todayDay = date('d');
+?>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    body {
+        text-align: center;
+        font-family: Arial, sans-serif;
+    }
 
+    .chart-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+    }
 
-		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-		<style>
-			body {
-				font-family: Arial, sans-serif;
-				text-align: center;
-			}
+    .chart-box {
+        width: 40%;
+        min-width: 300px;
+    }
+</style>
 
-			select,
-			button {
-				margin: 10px;
-				padding: 5px;
-			}
+<h1>治療師統計數據</h1>
+<div>
+    年：<select id="year">
+        <?php for ($i = $todayYear - 10; $i <= $todayYear + 10; $i++): ?>
+            <option value="<?= $i ?>" <?= $i == $todayYear ? 'selected' : '' ?>><?= $i ?></option>
+        <?php endfor; ?>
+    </select>
 
-			.container {
-				width: 80%;
-				margin: auto;
-			}
+    月：<select id="month">
+        <?php for ($i = 1; $i <= 12; $i++): ?>
+            <option value="<?= str_pad($i, 2, '0', STR_PAD_LEFT) ?>" <?= $i == $todayMonth ? 'selected' : '' ?>>
+                <?= $i ?></option>
+        <?php endfor; ?>
+    </select>
 
-			canvas {
-				max-width: 100%;
-			}
+    日：<select id="day">
+        <?php for ($i = 1; $i <= 31; $i++): ?>
+            <option value="<?= str_pad($i, 2, '0', STR_PAD_LEFT) ?>" <?= $i == $todayDay ? 'selected' : '' ?>><?= $i ?>
+            </option>
+        <?php endfor; ?>
+    </select>
 
-			#details {
-				display: none;
-				margin-top: 20px;
-			}
+    治療師: <select id="doctor"></select>
+    <button onclick="fetchData()">查詢</button>
+</div>
 
-			/* 新增表格置中 */
-			table {
-				margin: 0 auto;
-				border-collapse: collapse;
-				width: 90%;
-			}
+<div class="chart-container">
+    <div class="chart-box">
+        <h3>總工作時數（含加班）</h3>
+        <canvas id="workHoursChart"></canvas>
+    </div>
+    <div class="chart-box">
+        <h3>各項目總數比例</h3>
+        <canvas id="projectChart"></canvas>
+    </div>
+    <div class="chart-box">
+        <h3>治療師完成項目比例</h3>
+        <canvas id="doctorChart"></canvas>
+    </div>
+    <div class="chart-box">
+        <h3>收入占比</h3>
+        <canvas id="revenueChart"></canvas>
+    </div>
+</div>
 
-			th,
-			td {
-				padding: 10px;
-				border: 1px solid black;
-				text-align: center;
-			}
+<script>
+    $(document).ready(function () {
+        fetchDoctors();
+        fetchData();
+    });
 
-			/* 標題樣式 */
-			.chart-title {
-				font-size: 20px;
-				font-weight: bold;
-				margin-top: 20px;
-			}
-		</style>
+    function fetchDoctors() {
+        $.getJSON("獲取治療師助手.php", function (data) {
+            let doctorSelect = $("#doctor");
+            doctorSelect.append('<option value="0">全部</option>');
+            data.forEach(function (doctor) {
+                doctorSelect.append(`<option value="${doctor.doctor_id}">${doctor.doctor}</option>`);
+            });
+        }).fail(function () {
+            console.error("獲取治療師助手失敗！");
+        });
+    }
 
+    function fetchData() {
+        let year = $("#year").val();
+        let month = $("#month").val();
+        let day = $("#day").val();
+        let doctor = $("#doctor").val();
 
-		<h1>治療師統計</h1>
+        $.getJSON(`數據查詢.php?year=${year}&month=${month}&day=${day}&doctor_id=${doctor}`, function (data) {
+            let labels = [], workHours = [], projects = {}, doctorCounts = {}, revenueData = {};
 
-		<div>
-			年:
-			<select id="yearSelect"></select>
-			月:
-			<select id="monthSelect"></select>
-			日:
-			<select id="daySelect"></select>
-			治療師/助手:
-			<select id="doctorSelect"></select>
-			<button onclick="fetchData()">查詢</button>
-		</div>
+            data.forEach(d => {
+                labels.push(d.doctor_name || "未分類");
+                workHours.push((d.work_hours || 0) + (d.overtime_hours || 0));
 
-		<div class="container">
-			<div class="chart-title">總工作時數統計</div>
-			<canvas id="workHoursChart"></canvas>
-			<div class="chart-title">總收入統計</div>
-			<canvas id="revenueChart"></canvas>
-		</div>
+                let projectName = d.project_name || "未分類";
+                projects[projectName] = (projects[projectName] || 0) + 1;
+                doctorCounts[d.doctor_name] = (doctorCounts[d.doctor_name] || 0) + 1;
+                revenueData[projectName] = (revenueData[projectName] || 0) + (d.revenue || 0);
+            });
 
-		<div id="details">
-			<h2>詳細資料</h2>
-			<table id="detailsTable">
-				<thead>
-					<tr>
-						<th>治療師</th>
-						<th>日期</th>
-						<th>上班時間</th>
-						<th>下班時間</th>
-						<th>加班時數</th>
-						<th>專案名稱</th>
-						<th>收入</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-			</table>
-		</div>
+            renderChart("workHoursChart", "bar", labels, workHours, "總工作時數");
+            renderChart("projectChart", "pie", Object.keys(projects), Object.values(projects), "項目總數比例");
+            renderChart("doctorChart", "pie", Object.keys(doctorCounts), Object.values(doctorCounts), "治療師項目完成比例");
+            renderChart("revenueChart", "pie", Object.keys(revenueData), Object.values(revenueData), "收入占比");
+        }).fail(function () {
+            console.error("數據查詢失敗！");
+        });
+    }
 
-		<script>
-			document.addEventListener("DOMContentLoaded", function () {
-				let yearSelect = document.getElementById("yearSelect");
-				let monthSelect = document.getElementById("monthSelect");
-				let daySelect = document.getElementById("daySelect");
-
-				let today = new Date();
-				let currentYear = today.getFullYear();
-				let currentMonth = today.getMonth() + 1;
-				let currentDay = today.getDate();
-
-				for (let i = currentYear; i >= currentYear - 5; i--) {
-					let option = document.createElement("option");
-					option.value = i;
-					option.textContent = i;
-					yearSelect.appendChild(option);
-				}
-				yearSelect.value = currentYear;
-
-				for (let i = 1; i <= 12; i++) {
-					let option = document.createElement("option");
-					option.value = i;
-					option.textContent = i + "月";
-					monthSelect.appendChild(option);
-				}
-				monthSelect.value = currentMonth;
-
-				updateDays();
-
-				function updateDays() {
-					daySelect.innerHTML = "";
-					let daysInMonth = new Date(yearSelect.value, monthSelect.value, 0).getDate();
-					for (let i = 1; i <= daysInMonth; i++) {
-						let option = document.createElement("option");
-						option.value = i;
-						option.textContent = i + "日";
-						daySelect.appendChild(option);
-					}
-					daySelect.value = currentDay;
-				}
-
-				yearSelect.addEventListener("change", updateDays);
-				monthSelect.addEventListener("change", updateDays);
-
-				fetch('獲取治療師助手.php')
-					.then(response => response.json())
-					.then(data => {
-						let select = document.getElementById("doctorSelect");
-						select.innerHTML = '<option value="0">全部</option>';
-						data.forEach(item => {
-							let option = document.createElement("option");
-							option.value = item.doctor_id;
-							option.textContent = item.doctor;
-							select.appendChild(option);
-						});
-					})
-					.catch(error => console.error('無法獲取治療師數據:', error));
-			});
-
-			function fetchData() {
-				let year = document.getElementById("yearSelect").value;
-				let month = document.getElementById("monthSelect").value;
-				let day = document.getElementById("daySelect").value;
-				let doctorId = document.getElementById("doctorSelect").value;
-
-				fetch(`數據查詢.php?year=${year}&month=${month}&day=${day}&doctor_id=${doctorId}`)
-					.then(response => response.json())
-					.then(data => {
-						console.log("查詢數據: ", data);
-						updateCharts(data);
-						updateDetailsTable(data);
-					})
-					.catch(error => console.error('無法獲取統計數據:', error));
-			}
-
-			let workHoursChart, revenueChart;
-
-			function updateCharts(data) {
-				let doctorNames = [...new Set(data.map(item => item.doctor_name))];
-				let workHours = doctorNames.map(name => {
-					let totalHours = data
-						.filter(item => item.doctor_name === name)
-						.reduce((sum, item) => sum + (item.work_hours || 0), 0);
-					return totalHours;
-				});
-
-				let revenues = doctorNames.map(name => {
-					return data
-						.filter(item => item.doctor_name === name)
-						.reduce((sum, item) => sum + (item.revenue || 0), 0);
-				});
-
-				if (workHoursChart) workHoursChart.destroy();
-				let ctx1 = document.getElementById("workHoursChart").getContext("2d");
-				workHoursChart = new Chart(ctx1, {
-					type: "bar",
-					data: {
-						labels: doctorNames,
-						datasets: [{
-							label: "總工作時數",
-							data: workHours,
-							backgroundColor: "blue",
-							borderColor: "black",
-							borderWidth: 1
-						}]
-					},
-					options: {
-						responsive: true,
-						scales: { y: { beginAtZero: true } }
-					}
-				});
-
-				if (revenueChart) revenueChart.destroy();
-				let ctx2 = document.getElementById("revenueChart").getContext("2d");
-				revenueChart = new Chart(ctx2, {
-					type: "pie",
-					data: {
-						labels: doctorNames,
-						datasets: [{
-							label: "總收入",
-							data: revenues,
-							backgroundColor: ["red", "green", "blue", "purple", "orange"],
-							borderWidth: 1
-						}]
-					},
-					options: { responsive: true }
-				});
-			}
-		</script>
+    function renderChart(id, type, labels, data, title) {
+        let ctx = document.getElementById(id).getContext("2d");
+        if (window[id]) window[id].destroy();
+        window[id] = new Chart(ctx, {
+            type: type,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: title,
+                    data: data,
+                    backgroundColor: [
+                        "rgba(255, 99, 132, 0.5)",
+                        "rgba(54, 162, 235, 0.5)",
+                        "rgba(255, 206, 86, 0.5)",
+                        "rgba(75, 192, 192, 0.5)",
+                        "rgba(153, 102, 255, 0.5)"
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+</script>
 
 
 
