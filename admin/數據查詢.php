@@ -1,47 +1,57 @@
 <?php
-// statistics.php
+// 顯示所有錯誤以利偵錯
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-header("Content-Type: application/json; charset=UTF-8");
+require '../db.php'; // 確保 db.php 檔案存在且正確連接資料庫
 
-$link = new mysqli("localhost", "帳號", "密碼", "Health24");
+$year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
+$month = isset($_GET['month']) ? intval($_GET['month']) : date('m');
+$day = isset($_GET['day']) ? intval($_GET['day']) : 0;
+$doctor_id = isset($_GET['doctor_id']) ? intval($_GET['doctor_id']) : 0;
 
-if ($link->connect_error) {
-    die(json_encode(["error" => $link->connect_error]));
+// 調整 SQL 查詢以確保 `item` 表的欄位名稱正確
+$query = "
+    SELECT 
+        d.doctor AS doctor_name, 
+        ds.date AS work_date, 
+        st1.shifttime AS start_time, 
+        st2.shifttime AS end_time, 
+        SUM(a.status_id = 6) AS overtime_hours,
+        i.item AS project_name, 
+        SUM(i.price) AS revenue
+    FROM doctor d
+    JOIN doctorshift ds ON d.doctor_id = ds.doctor_id
+    JOIN shifttime st1 ON ds.go = st1.shifttime_id
+    JOIN shifttime st2 ON ds.off = st2.shifttime_id
+    LEFT JOIN appointment a ON ds.doctorshift_id = a.doctorshift_id
+    LEFT JOIN item i ON a.shifttime_id = i.item_id
+    WHERE YEAR(ds.date) = ? AND MONTH(ds.date) = ?
+";
+
+$params = [$year, $month];
+
+if ($day > 0) {
+    $query .= " AND DAY(ds.date) = ?";
+    $params[] = $day;
 }
 
-// 查詢醫生處理病人數
-$doctorSql = "SELECT d.doctor AS doctor_name, COUNT(m.medicalrecord_id) AS total_patients
-              FROM medicalrecord m
-              LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-              LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-              LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-              GROUP BY d.doctor
-              ORDER BY total_patients DESC";
-$doctorResult = $link->query($doctorSql);
-
-$doctors = ['labels' => [], 'data' => []];
-while($row = $doctorResult->fetch_assoc()){
-    $doctors['labels'][] = $row['doctor_name'];
-    $doctors['data'][] = (int)$row['total_patients'];
+if ($doctor_id > 0) {
+    $query .= " AND d.doctor_id = ?";
+    $params[] = $doctor_id;
 }
 
-// 查詢治療項目使用數
-$itemSql = "SELECT i.item AS treatment_name, COUNT(m.medicalrecord_id) AS total_usage
-            FROM medicalrecord m
-            LEFT JOIN item i ON m.item_id = i.item_id
-            GROUP BY i.item
-            ORDER BY total_usage DESC";
-$itemResult = $link->query($itemSql);
+$query .= " GROUP BY d.doctor, ds.date, i.item";
 
-$items = ['labels' => [], 'data' => []];
-while($row = $itemResult->fetch_assoc()){
-    $items['labels'][] = $row['treatment_name'];
-    $items['data'][] = (int)$row['total_usage'];
+$stmt = $link->prepare($query);
+$stmt->bind_param(str_repeat("i", count($params)), ...$params);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$data = [];
+while ($row = $result->fetch_assoc()) {
+    $data[] = $row;
 }
 
-$link->close();
-
-echo json_encode([
-    'doctorStats' => $doctors,
-    'itemStats' => $items
-]);
+echo json_encode($data, JSON_UNESCAPED_UNICODE);
+?>
