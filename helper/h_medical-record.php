@@ -489,6 +489,106 @@ if (isset($_SESSION["帳號"])) {
                         // 顯示姓名
                         echo $姓名;
                         ?>
+                        <a href="#" id="clock-btn">🕒 打卡</a>
+
+                        <!-- 打卡彈跳視窗 -->
+                        <div id="clock-modal" class="modal">
+                            <div class="modal-content">
+                                <span class="close">&times;</span>
+                                <h4>上下班打卡</h4>
+                                <p id="clock-status">目前狀態: 查詢中...</p>
+                                <button id="clock-in-btn">上班打卡</button>
+                                <button id="clock-out-btn" disabled>下班打卡</button>
+                            </div>
+                        </div>
+
+                        <style>
+                            .modal {
+                                display: none;
+                                position: fixed;
+                                z-index: 1000;
+                                left: 0;
+                                top: 0;
+                                width: 100%;
+                                height: 100%;
+                                background-color: rgba(0, 0, 0, 0.4);
+                            }
+
+                            .modal-content {
+                                background-color: white;
+                                margin: 15% auto;
+                                padding: 20px;
+                                width: 300px;
+                                border-radius: 10px;
+                                text-align: center;
+                            }
+
+                            .close {
+                                float: right;
+                                font-size: 24px;
+                                cursor: pointer;
+                            }
+                        </style>
+
+                        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+                        <script>
+                            $(document).ready(function () {
+                                let doctorId = 1; // 假設目前使用者的 doctor_id
+
+                                // 打開彈跳視窗
+                                $("#clock-btn").click(function () {
+                                    $("#clock-modal").fadeIn();
+                                    checkClockStatus();
+                                });
+
+                                $(".close").click(function () {
+                                    $("#clock-modal").fadeOut();
+                                });
+
+                                function checkClockStatus() {
+                                    $.post("檢查打卡狀態.php", { doctor_id: doctorId }, function (data) {
+                                        let statusText = "尚未打卡";
+
+                                        if (data.clock_in) {
+                                            statusText = "已上班: " + data.clock_in;
+                                            if (data.late) statusText += " <br>(遲到 " + data.late + ")";
+                                            $("#clock-in-btn").prop("disabled", true);
+                                            $("#clock-out-btn").prop("disabled", data.clock_out !== null);
+                                        }
+
+                                        if (data.clock_out) {
+                                            statusText += "<br>已下班: " + data.clock_out;
+                                            if (data.work_duration) statusText += "<br>總工時: " + data.work_duration;
+                                        }
+
+                                        $("#clock-status").html(statusText);
+                                    }, "json").fail(function (xhr) {
+                                        alert("發生錯誤：" + xhr.responseText);
+                                    });
+                                }
+
+
+                                $("#clock-in-btn").click(function () {
+                                    $.post("上班打卡.php", { doctor_id: doctorId }, function (data) {
+                                        alert(data.message);
+                                        checkClockStatus();
+                                    }, "json").fail(function (xhr) {
+                                        alert("發生錯誤：" + xhr.responseText);
+                                    });
+                                });
+
+                                $("#clock-out-btn").click(function () {
+                                    $.post("下班打卡.php", { doctor_id: doctorId }, function (data) {
+                                        alert(data.message);
+                                        checkClockStatus();
+                                    }, "json").fail(function (xhr) {
+                                        alert("發生錯誤：" + xhr.responseText);
+                                    });
+                                });
+                            });
+
+                        </script>
+
                     </div>
                 </nav>
             </div>
@@ -510,23 +610,30 @@ if (isset($_SESSION["帳號"])) {
         </div>
         <!--標題-->
 
-        <!--看診紀錄-->
         <?php
         require '../db.php';
         session_start();
         $帳號 = $_SESSION['帳號'];
 
+        // 取得分頁設定
         $records_per_page = isset($_GET['limit']) ? max((int) $_GET['limit'], 1) : 10;
         $page = isset($_GET['page']) ? max((int) $_GET['page'], 1) : 1;
         $offset = ($page - 1) * $records_per_page;
+
+        // 取得搜尋與篩選條件
         $search_name = isset($_GET['search_name']) ? mysqli_real_escape_string($link, $_GET['search_name']) : '';
         $selected_doctor = isset($_GET['doctor']) ? mysqli_real_escape_string($link, $_GET['doctor']) : '全部';
+        // 取得篩選條件
+        $selected_date = isset($_GET['date']) ? mysqli_real_escape_string($link, $_GET['date']) : date('Y-m-d'); // 預設今天
+        
+        // 處理 date 篩選條件
+        if (empty($selected_date) || $selected_date === '全部') {
+            $selected_date = ''; // 設為空，代表不要篩選日期
+        }
 
-        // 篩選條件
+        // 建立 WHERE 條件
         $where_clauses = ["u.grade_id = 2"]; // 只顯示醫生
-        $params = [];
-        $types = "";
-
+        
         if ($selected_doctor !== '全部') {
             $where_clauses[] = "d.doctor = ?";
             $params[] = $selected_doctor;
@@ -539,9 +646,16 @@ if (isset($_SESSION["帳號"])) {
             $types .= "s";
         }
 
+        // ✅ **只有當 selected_date 有值時才篩選日期**
+        if (!empty($selected_date)) {
+            $where_clauses[] = "ds.date = ?";
+            $params[] = $selected_date;
+            $types .= "s";
+        }
+
         $where_sql = count($where_clauses) > 0 ? "WHERE " . implode(" AND ", $where_clauses) : "";
 
-        // 計算總數
+        // 計算總數（分頁用）
         $count_stmt = $link->prepare("
     SELECT COUNT(DISTINCT a.appointment_id) AS total
     FROM medicalrecord m
@@ -552,7 +666,6 @@ if (isset($_SESSION["帳號"])) {
     LEFT JOIN user u ON d.user_id = u.user_id
     $where_sql
 ");
-
         if (!empty($params)) {
             $count_stmt->bind_param($types, ...$params);
         }
@@ -563,40 +676,38 @@ if (isset($_SESSION["帳號"])) {
 
         // 查詢資料
         $query = "
-        SELECT 
-            a.appointment_id,
-            p.name AS patient_name,
-            CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '無資料' END AS gender,
-            CASE WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') ELSE '無資料' END AS birthday_with_age,
-            d.doctor AS doctor_name,
-            DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
-            CASE DAYOFWEEK(ds.date) 
-                WHEN 1 THEN '星期日' WHEN 2 THEN '星期一' WHEN 3 THEN '星期二' 
-                WHEN 4 THEN '星期三' WHEN 5 THEN '星期四' WHEN 6 THEN '星期五' 
-                WHEN 7 THEN '星期六' END AS consultation_weekday,
-            st.shifttime AS consultation_time,
-            a.note AS user_note,  -- 使用者備註 (appointment.note)
-            GROUP_CONCAT(m.note_d ORDER BY m.created_at SEPARATOR '; ') AS doctor_notes  -- 醫生備註 (medicalrecord.note_d)
-        FROM medicalrecord m
-        LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-        LEFT JOIN people p ON a.people_id = p.people_id
-        LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-        LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-        LEFT JOIN user u ON d.user_id = u.user_id
-        LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-        $where_sql
-        GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime, a.note
-        ORDER BY ds.date ASC
-        LIMIT ?, ?
-    ";
+    SELECT 
+        a.appointment_id,
+        p.name AS patient_name,
+        CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '無資料' END AS gender,
+        CASE WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') ELSE '無資料' END AS birthday_with_age,
+        d.doctor AS doctor_name,
+        DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
+        CASE DAYOFWEEK(ds.date) 
+            WHEN 1 THEN '星期日' WHEN 2 THEN '星期一' WHEN 3 THEN '星期二' 
+            WHEN 4 THEN '星期三' WHEN 5 THEN '星期四' WHEN 6 THEN '星期五' 
+            WHEN 7 THEN '星期六' END AS consultation_weekday,
+        st.shifttime AS consultation_time,
+        a.note AS user_note,
+        GROUP_CONCAT(m.note_d ORDER BY m.created_at SEPARATOR '; ') AS doctor_notes
+    FROM medicalrecord m
+    LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
+    LEFT JOIN people p ON a.people_id = p.people_id
+    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+    LEFT JOIN user u ON d.user_id = u.user_id
+    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+    $where_sql
+    GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime, a.note
+    ORDER BY ds.date ASC
+    LIMIT ?, ?
+";
 
-        $data_stmt = $link->prepare($query);
-
-        // 修正 bind_param 的順序
         $params[] = $offset;
         $params[] = $records_per_page;
         $types .= "ii";
 
+        $data_stmt = $link->prepare($query);
         $data_stmt->bind_param($types, ...$params);
         $data_stmt->execute();
         $result = $data_stmt->get_result();
@@ -606,19 +717,17 @@ if (isset($_SESSION["帳號"])) {
         <section class="section section-lg bg-default text-center">
             <div class="container">
                 <div class="search-limit-container">
-                    <form method="GET" action="" class="search-form">
-                        <input type="text" name="search_name" placeholder="請輸入搜尋姓名"
-                            value="<?php echo htmlspecialchars($search_name); ?>">
+                    <form method="GET" action="">
 
+                        <!-- 日期選擇 -->
+                        <input type="date" name="date" id="dateInput"
+                            value="<?php echo (!empty($selected_date) && $selected_date !== '全部') ? htmlspecialchars($selected_date) : ''; ?>"
+                            onchange="this.form.submit()">
+                        <!-- 選擇醫生 -->
                         <select name="doctor" onchange="this.form.submit()">
                             <option value="全部" <?php echo ($selected_doctor === '全部') ? 'selected' : ''; ?>>全部</option>
                             <?php
-                            $doctor_query = $link->query("
-                    SELECT d.doctor 
-                    FROM doctor d
-                    JOIN user u ON d.user_id = u.user_id
-                    WHERE u.grade_id = 2
-                ");
+                            $doctor_query = $link->query("SELECT d.doctor FROM doctor d JOIN user u ON d.user_id = u.user_id WHERE u.grade_id = 2");
                             while ($row = $doctor_query->fetch_assoc()) {
                                 $doctor_name = $row['doctor'];
                                 $selected = ($selected_doctor === $doctor_name) ? 'selected' : '';
@@ -626,8 +735,22 @@ if (isset($_SESSION["帳號"])) {
                             }
                             ?>
                         </select>
+
+                        <!-- 搜尋姓名 -->
+                        <input type="text" name="search_name" placeholder="請輸入搜尋姓名"
+                            value="<?php echo htmlspecialchars($search_name); ?>">
+
+                        <!-- 搜尋按鈕 -->
                         <button type="submit">搜尋</button>
                     </form>
+
+                    <script>
+                        function clearDate() {
+                            document.getElementById('dateInput').value = '';
+                            document.forms[0].submit();  // 自動提交表單
+                        }
+                    </script>
+
 
                     <div class="limit-selector">
                         <select id="limit" name="limit" onchange="updateLimit()">

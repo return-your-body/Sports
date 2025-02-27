@@ -17,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $phone = trim($_POST['userphone']);      // 聯絡電話
     $address = trim($_POST['address']);      // 地址（可選）
 
-    // 將性別轉換為數字（1: 男, 2: 女, 3:其他）
+    // 將性別轉換為數字（1: 男, 2: 女, 3: 其他）
     $gender_id = ($gender === "男") ? 1 : (($gender === "女") ? 2 : 3);
 
     // 驗證性別是否正確
@@ -50,7 +50,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $user = mysqli_fetch_assoc($result);
         $user_id = $user['user_id'];
 
-        // 更新資料到 people 表 (已移除電子郵件欄位)
+        // 檢查身分證號碼是否已存在於其他用戶
+        if (!empty($idcard)) {
+            $checkSql = "SELECT user_id FROM people WHERE idcard = ? AND user_id != ?";
+            $checkStmt = mysqli_prepare($link, $checkSql);
+            mysqli_stmt_bind_param($checkStmt, "si", $idcard, $user_id);
+            mysqli_stmt_execute($checkStmt);
+            $checkResult = mysqli_stmt_get_result($checkStmt);
+
+            if (mysqli_num_rows($checkResult) > 0) {
+                // 如果找到相同的身分證號碼，則不允許更新
+                echo "<script>
+                        alert('此身分證號碼已被使用，請確認後再輸入！');
+                        window.history.back();
+                      </script>";
+                exit;
+            }
+        }
+
+        // 更新資料到 people 表
         $updateSql = "UPDATE people SET 
                         name = ?, 
                         gender_id = ?, 
@@ -59,10 +77,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         phone = ?, 
                         address = ?
                       WHERE user_id = ?";
-        
+
         // 準備 SQL 語句
         $updateStmt = mysqli_prepare($link, $updateSql);
-        
+
         // 綁定參數
         mysqli_stmt_bind_param(
             $updateStmt,
@@ -78,20 +96,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         // 執行更新語句並檢查是否成功
         if (mysqli_stmt_execute($updateStmt)) {
-            // 如果更新成功，顯示成功訊息並跳轉回 u_profile.php
             echo "<script>
                     alert('個人資料更新成功！');
                     window.location.href = 'u_profile.php';
                   </script>";
         } else {
-            // 如果更新失敗，顯示錯誤訊息並返回上一頁
             echo "<script>
                     alert('資料更新失敗，請稍後再試！');
                     window.history.back();
                   </script>";
         }
     } else {
-        // 如果帳號找不到對應的 user_id，提示重新登入
         echo "<script>
                 alert('找不到對應的帳號資料，請重新登入。');
                 window.location.href = '../index.html';
