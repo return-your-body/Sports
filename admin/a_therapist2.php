@@ -55,7 +55,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 <head>
 	<!-- Site Title-->
-	<title>Single course</title>
+	<title>運動筋膜放鬆-預約資料</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -508,7 +508,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 										<th style="padding: 10px; text-align: left;">患者姓名</th>
 										<th style="padding: 10px; text-align: left;">治療師姓名</th>
 										<th style="padding: 10px; text-align: left;">預約時間</th>
-										<th style="padding: 10px; text-align: center;">選項</th>
+										<!-- <th style="padding: 10px; text-align: center;">選項</th> -->
 									</tr>
 								</thead>
 								<tbody>
@@ -530,12 +530,12 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 												<td style="padding: 10px;">
 													<?php echo htmlspecialchars($appointment['appointment_time']); ?>
 												</td>
-												<td style="padding: 10px; text-align: center;">
+												<!-- <td style="padding: 10px; text-align: center;">
 													<button
 														style="padding: 6px 12px; font-size: 12px; border: none; background-color: #00A896; color: white; cursor: pointer; border-radius: 4px;">
 														操作
 													</button>
-												</td>
+												</td> -->
 											</tr>
 										<?php endforeach; ?>
 									<?php else: ?>

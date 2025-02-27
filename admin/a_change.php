@@ -55,7 +55,7 @@ mysqli_close($link);
 
 <head>
 	<!-- Site Title-->
-	<title>健康醫療網站</title>
+	<title>變更密碼</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
