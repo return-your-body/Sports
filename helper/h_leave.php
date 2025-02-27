@@ -483,7 +483,7 @@ mysqli_close($link);
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 		<!-- Flatpickr JS -->
 		<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
+		<br />
 		<div class="form-container">
 			<h3 style="text-align: center;">請假單</h3>
 			<form id="leave-form">
@@ -518,7 +518,7 @@ mysqli_close($link);
 				<button type="submit">提交</button>
 			</form>
 		</div>
-
+		<br />
 		<script>
 			document.addEventListener('DOMContentLoaded', function () {
 				const leaveForm = document.getElementById('leave-form');
