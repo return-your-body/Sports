@@ -625,9 +625,9 @@ ORDER BY ds.date, d.doctor_id";
 			$schedule[$date][] = [
 				'doctor' => $row['doctor'],
 				'go_time' => $row['go_time'],
-				'off_time' => $row['off_time'],
+				'off_time' => $row['off_time'],  // 這行依賴資料庫的 off_time
 				'doctor_id' => $row['doctor_id'],
-			];
+			];			
 		}
 
 		// 查詢請假數據
@@ -1168,7 +1168,7 @@ ORDER BY ds.date, d.doctor_id";
 				let current = new Date(`${date}T${startTime}`);
 				const end = new Date(`${date}T${endTime}`);
 
-				while (current < end) {
+				while (current <= end) {
 					const timeSlot = current.toTimeString().slice(0, 5);
 					const slotElement = document.createElement("div");
 
