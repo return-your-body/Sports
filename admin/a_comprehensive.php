@@ -328,11 +328,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		</header>
 
 		<!-- 收入 -->
-		<?php
-		require '../db.php';
-		?>
-
-
+		<?php require '../db.php'; ?>
 		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 		<style>
@@ -360,20 +356,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				padding: 10px;
 			}
 
-			/* 長條圖占據整行 */
-			.bar-chart {
-				width: 60%;
-				/* 確保不會太窄 */
-				min-width: 500px;
-			}
-
-			/* 圓餅圖一行三個 */
-			.pie-chart {
-				width: 30%;
-				min-width: 250px;
-			}
-
-			/* 彈跳視窗 (modal) 設定 */
 			.modal {
 				display: none;
 				position: fixed;
@@ -381,14 +363,13 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				left: 50%;
 				top: 50%;
 				transform: translate(-50%, -50%);
-				width: 50%;
-				/* 縮小 */
-				height: 70%;
+				width: 60%;
 				background: white;
 				padding: 20px;
 				border-radius: 10px;
 				box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
 				overflow: auto;
+				max-height: 80%;
 			}
 
 			.modal-close {
@@ -400,61 +381,63 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				text-align: center;
 				margin-top: 10px;
 			}
+
+			table {
+				width: 100%;
+				border-collapse: collapse;
+			}
+
+			th,
+			td {
+				border: 1px solid black;
+				padding: 8px;
+				text-align: center;
+			}
 		</style>
 
 
 		<h2>治療師統計數據</h2>
-		<br />
 		<div>
-			年：
-			<select id="year"></select>
-			月：
-			<select id="month"></select>
-			日：
-			<select id="day"></select>
-			治療師:
-			<select id="doctor"></select>
-			<button onclick="fetchData()">查詢</button>
+			年：<select id="year"></select>
+			月：<select id="month"></select>
+			日：<select id="day"></select>
+			治療師: <select id="doctor"></select>
+			<button id="searchBtn">查詢</button>
 		</div>
-		<br />
+
 		<div class="chart-container">
-			<!-- 長條圖單獨一行 -->
 			<div class="row">
-				<div class="chart-box bar-chart">
+				<div class="chart-box">
 					<h4>總工作時數（含加班）</h4>
 					<canvas id="workHoursChart"></canvas>
 				</div>
 			</div>
-
-			<!-- 三個圓餅圖並排 -->
 			<div class="row">
-				<div class="chart-box pie-chart">
-					<h4>各項目總數比例</h4>
-					<canvas id="projectChart"></canvas>
-				</div>
-				<div class="chart-box pie-chart">
-					<h4>治療師完成項目比例</h4>
-					<canvas id="doctorChart"></canvas>
-				</div>
-				<div class="chart-box pie-chart">
+				<div class="chart-box">
 					<h4>收入占比</h4>
-					<canvas id="revenueChart"></canvas>
+					<canvas id="incomeChart"></canvas>
 				</div>
 			</div>
 		</div>
 
-
+		<!-- 彈跳視窗 -->
 		<div id="modal" class="modal">
 			<h2 id="modal-title"></h2>
-			<canvas id="modal-chart"></canvas>
+			<table id="modal-table"></table>
 			<button class="modal-close" onclick="closeModal()">關閉</button>
 		</div>
 
 		<script>
+			let chartDetails = [];
+
 			$(document).ready(function () {
 				populateDateSelectors();
 				fetchDoctors();
 				fetchData();
+
+				$("#searchBtn").click(function () {
+					fetchData();
+				});
 			});
 
 			function populateDateSelectors() {
@@ -486,64 +469,62 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			}
 
 			function fetchData() {
-				let year = $("#year").val();
-				let month = $("#month").val();
-				let day = $("#day").val();
-				let doctor = $("#doctor").val();
+				let year = $("#year").val(), month = $("#month").val(), day = $("#day").val(), doctor = $("#doctor").val();
 
 				$.getJSON(`數據查詢.php?year=${year}&month=${month}&day=${day}&doctor_id=${doctor}`, function (data) {
-					let labels = [], workHours = [], projects = {}, doctorCounts = {}, revenueData = {};
-					let colors = generateUniqueColors(data.length);
-
-					data.forEach(d => {
-						if (d.project_name) {
-							projects[d.project_name] = (projects[d.project_name] || 0) + 1;
-							revenueData[d.project_name] = (revenueData[d.project_name] || 0) + d.revenue;
-						}
-						if (d.doctor_name) {
-							if (!labels.includes(d.doctor_name)) {
-								labels.push(d.doctor_name);
-								workHours.push(d.work_hours + d.overtime_hours);
-							}
-							doctorCounts[d.doctor_name] = (doctorCounts[d.doctor_name] || 0) + 1;
-						}
-					});
-
-					renderChart("workHoursChart", "bar", labels, workHours, "總工作時數", colors);
-					renderChart("projectChart", "pie", Object.keys(projects), Object.values(projects), "各項目總數", colors);
-					renderChart("doctorChart", "pie", Object.keys(doctorCounts), Object.values(doctorCounts), "治療師完成項目", colors);
-					renderChart("revenueChart", "pie", Object.keys(revenueData), Object.values(revenueData), "收入占比", colors);
+					console.log("📌 API 返回的數據:", data);
+					chartDetails = data;
+					renderCharts();
+				}).fail(function () {
+					alert("❌ 無法獲取數據！");
 				});
 			}
 
-			function generateUniqueColors(count) {
-				let colors = [];
-				for (let i = 0; i < count; i++) {
-					let color = `hsl(${(i * 137.508) % 360}, 70%, 60%)`; // 確保每個顏色不同
-					colors.push(color);
-				}
-				return colors;
-			}
-
-			function renderChart(id, type, labels, data, label, colors) {
-				new Chart(document.getElementById(id), {
-					type: type,
+			function renderCharts() {
+				let ctx = document.getElementById("workHoursChart").getContext("2d");
+				let workHoursChart = new Chart(ctx, {
+					type: "bar",
 					data: {
-						labels: labels,
+						labels: chartDetails.map(d => d.doctor_name),
 						datasets: [{
-							label: label,
-							data: data,
-							backgroundColor: colors
+							label: "總工作時數",
+							data: chartDetails.map(d => d.work_hours),
+							backgroundColor: "rgba(75, 192, 192, 0.6)"
 						}]
 					},
-					options: { responsive: true }
+					options: {
+						responsive: true,
+						onClick: function (evt, activeElements) {
+							if (activeElements.length > 0) {
+								let index = activeElements[0].index;
+								let selectedLabel = chartDetails[index].doctor_name;
+								showDetails(selectedLabel);
+							}
+						}
+					}
 				});
+			}
+
+			function showDetails(label) {
+				let details = chartDetails.filter(d => d.doctor_name === label);
+				if (!details.length) {
+					alert("❌ 沒有詳細數據！");
+					return;
+				}
+				$("#modal-title").text(label);
+				let tableHtml = "<tr><th>時間</th><th>加班</th><th>收入</th></tr>";
+				details.forEach(detail => {
+					tableHtml += `<tr><td>${detail.work_date}</td><td>${detail.overtime_hours}</td><td>${detail.revenue}</td></tr>`;
+				});
+				$("#modal-table").html(tableHtml);
+				$("#modal").fadeIn();
 			}
 
 			function closeModal() {
-				$("#modal").hide();
+				$("#modal").fadeOut();
 			}
 		</script>
+
 
 
 
