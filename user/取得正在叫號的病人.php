@@ -8,7 +8,7 @@ $sql = "SELECT a.appointment_id, p.name AS patient_name, d.doctor AS therapist, 
         JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
         JOIN doctor d ON ds.doctor_id = d.doctor_id
         JOIN shifttime s ON a.shifttime_id = s.shifttime_id
-        WHERE a.status_id = 7
+        WHERE a.status_id = 8
         AND ds.date = CURDATE()";
 
 $result = $link->query($sql);
