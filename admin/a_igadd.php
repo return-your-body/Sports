@@ -263,9 +263,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link"
                                                 href="a_igadd.php">新增哀居貼文</a>
                                         </li>
-                                        <li class="rd-dropdown-item"><a class="rd-dropdown-link"
-                                                href="a_igadd.php">新增哀居貼文</a>
-                                        </li>
                                     </ul>
                                 </li>
                                 <li class="rd-nav-item"><a class="rd-nav-link" href="a_change.php">變更密碼</a>
@@ -346,7 +343,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
         <?php
         require '../db.php'; // 連接資料庫
-        
         // 抓取分類
         $query = "SELECT igpost_class_id, igpost_class FROM igpost_class";
         $result = mysqli_query($link, $query);
@@ -356,6 +352,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
         <section class="section section-lg bg-default text-center">
             <div class="container">
                 <h3>儲存 Instagram 貼文</h3>
+                <h5>IG文章 > 左上角三個點 > 內崁 > 複製內崁程式碼</h5>
                 <div class="row justify-content-sm-center">
                     <div class="col-md-8 col-lg-6 col-xl-4">
                         <!-- RD Mailform -->
@@ -366,19 +363,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                 📎 貼文網址<input class="form-input" id="post_url" type="text" name="post_url"
                                     placeholder="https://www.instagram.com/p/xxx/" required>
                             </div>
-
-                            <!-- 圖片網址 -->
-                            <div class="form-wrap form-wrap-validation">
-                                🖼️ 圖片網址<input class="form-input" id="image_url" type="text" name="image_url"
-                                    placeholder="https://instagram.com/images/xxx.jpg" required>
-                            </div>
-
-                            <!-- 貼文內容 -->
-                            <div class="form-wrap form-wrap-validation">
-                                ✏️ 貼文內容 <textarea class="form-input" id="caption" name="caption" placeholder="輸入貼文說明..."
-                                    rows="4" required></textarea>
-                            </div>
-
                             <!-- 貼文分類 -->
                             <div class="form-wrap form-wrap-validation">
                                 📂 貼文分類
