@@ -427,6 +427,148 @@ if (isset($_SESSION["帳號"])) {
 						// 顯示姓名
 						echo $姓名;
 						?>
+
+						<a href="#" id="clock-btn">目前叫號</a>
+
+						<style>
+							table {
+								width: 60%;
+								border-collapse: collapse;
+								margin: 20px auto;
+							}
+
+							th,
+							td {
+								border: 1px solid black;
+								padding: 10px;
+								text-align: center;
+							}
+
+							th {
+								background-color: #f4f4f4;
+							}
+
+							/* 讓按鈕置中 */
+							.center-button {
+								text-align: center;
+								margin-top: 20px;
+							}
+
+							button {
+								padding: 10px 20px;
+								font-size: 16px;
+								cursor: pointer;
+							}
+
+							/* 彈跳視窗樣式 */
+							.modal {
+								display: none;
+								position: fixed;
+								z-index: 1;
+								left: 0;
+								top: 0;
+								width: 100%;
+								height: 100%;
+								background-color: rgba(0, 0, 0, 0.5);
+							}
+
+							.modal-content {
+								background-color: white;
+								margin: 10% auto;
+								padding: 20px;
+								border: 1px solid #888;
+								width: 50%;
+								text-align: center;
+							}
+
+							.close-btn {
+								color: black;
+								float: right;
+								font-size: 24px;
+								font-weight: bold;
+								cursor: pointer;
+							}
+						</style>
+
+						<!-- 叫號狀態彈跳視窗 -->
+						<div id="callModal" class="modal">
+							<div class="modal-content">
+								<span class="close-btn">&times;</span>
+								<h2>目前叫號狀態</h2>
+								<table>
+									<tr>
+										<th>病人姓名</th>
+										<th>治療師</th>
+										<th>時段</th>
+									</tr>
+									<tr id="callRow">
+										<td id="patient_name">載入中...</td>
+										<td id="therapist">載入中...</td>
+										<td id="shifttime">載入中...</td>
+									</tr>
+								</table>
+
+								<!-- 讓返回按鈕置中 -->
+								<!-- <div class="center-button">
+									<a href="h_numberpeople.php">
+										<button>返回</button>
+									</a>
+								</div> -->
+							</div>
+						</div>
+
+						<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+						<script>
+							$(document).ready(function () {
+								function fetchCallStatus() {
+									$.ajax({
+										url: "取得正在叫號的病人.php",
+										type: "GET",
+										dataType: "json",
+										success: function (data) {
+											if (data.length > 0) {
+												$("#patient_name").text(data[0].patient_name || "無資料");
+												$("#therapist").text(data[0].therapist || "無資料");
+												$("#shifttime").text(data[0].shifttime || "無資料");
+											} else {
+												$("#patient_name").text("目前無叫號中");
+												$("#therapist").text("-");
+												$("#shifttime").text("-");
+											}
+										},
+										error: function () {
+											$("#patient_name").text("載入失敗");
+											$("#therapist").text("-");
+											$("#shifttime").text("-");
+										}
+									});
+								}
+
+								// 每 5 秒自動更新叫號狀態
+								fetchCallStatus();
+								setInterval(fetchCallStatus, 5000);
+
+								// 打開彈跳視窗
+								$("#clock-btn").click(function () {
+									$("#callModal").fadeIn();
+								});
+
+								// 關閉彈跳視窗
+								$(".close-btn").click(function () {
+									$("#callModal").fadeOut();
+								});
+
+								// 點擊視窗外部也能關閉
+								$(window).click(function (event) {
+									if (event.target.id === "callModal") {
+										$("#callModal").fadeOut();
+									}
+								});
+							});
+						</script>
+
+
+
 					</div>
 				</nav>
 			</div>
@@ -481,7 +623,7 @@ if (isset($_SESSION["帳號"])) {
 				$windSpeed = $weatherData['wind']['speed'];
 				?>
 
-				 <h3 style="text-align: center;">今日天氣</h3><!--<?php echo $cityName; ?> -->
+				<h3 style="text-align: center;">今日天氣</h3><!--<?php echo $cityName; ?> -->
 				<p>溫度：<strong><?php echo $temperature; ?>°C</strong></p>
 				<p>天氣狀況：<strong><?php echo $weatherDescription; ?></strong></p>
 				<p>濕度：<strong><?php echo $humidity; ?>%</strong></p>
@@ -530,221 +672,18 @@ if (isset($_SESSION["帳號"])) {
 							echo "- 大風天氣可能增加肩頸緊繃感，建議重點按摩肩膀和上背部。<br>";
 							echo "- 可使用滾筒進行輕壓，配合熱敷效果更佳。<br>";
 						}
-					} else {
-						// 如果獲取數據失敗，顯示錯誤信息
-						echo "無法獲取天氣資訊，請檢查 API 設定或城市名稱。";
-					}
-						?>
+			} else {
+				// 如果獲取數據失敗，顯示錯誤信息
+				echo "無法獲取天氣資訊，請檢查 API 設定或城市名稱。";
+			}
+			?>
 				</ul>
 			</div>
 		</div>
 
 
 
-		<!--班表-->
-		<section class="section section-lg bg-default">
-			<h3 style="text-align: center;">治療師班表</h3>
-			<?php
-			require '../db.php';
-
-			// 查詢所有治療師的資料供下拉選單使用
-			$doctor_list_query = "
-        SELECT d.doctor_id, d.doctor
-        FROM doctor d
-        INNER JOIN user u ON d.user_id = u.user_id
-        WHERE u.grade_id = 2
-    ";
-			$doctor_list_result = mysqli_query($link, $doctor_list_query);
-			$doctor_list = [];
-			while ($row = mysqli_fetch_assoc($doctor_list_result)) {
-				$doctor_list[] = $row;
-			}
-
-			// 取得 GET 參數
-			$doctor_id = isset($_GET['doctor_id']) ? (int) $_GET['doctor_id'] : 0;
-			$year = isset($_GET['year']) ? (int) $_GET['year'] : date('Y');
-			$month = isset($_GET['month']) ? (int) $_GET['month'] : date('m');
-
-			// 初始化排班與請假資料
-			$work_schedule = [];
-			if ($doctor_id > 0) {
-				// 查詢排班資料
-				$query = "
-            SELECT ds.date, st1.shifttime AS start_time, st2.shifttime AS end_time
-            FROM doctorshift ds
-            INNER JOIN shifttime st1 ON ds.go = st1.shifttime_id
-            INNER JOIN shifttime st2 ON ds.off = st2.shifttime_id
-            WHERE ds.doctor_id = ? AND YEAR(ds.date) = ? AND MONTH(ds.date) = ?
-        ";
-				$stmt = mysqli_prepare($link, $query);
-				mysqli_stmt_bind_param($stmt, "iii", $doctor_id, $year, $month);
-				mysqli_stmt_execute($stmt);
-				$result = mysqli_stmt_get_result($stmt);
-
-				while ($row = mysqli_fetch_assoc($result)) {
-					$work_schedule[$row['date']] = ['start_time' => $row['start_time'], 'end_time' => $row['end_time']];
-				}
-				mysqli_stmt_close($stmt);
-
-				// 查詢請假資料
-				$leave_query = "
-            SELECT start_date, end_date
-            FROM leaves
-            WHERE doctor_id = ? AND (YEAR(start_date) = ? OR YEAR(end_date) = ?)
-        ";
-				$stmt_leave = mysqli_prepare($link, $leave_query);
-				mysqli_stmt_bind_param($stmt_leave, "iii", $doctor_id, $year, $year);
-				mysqli_stmt_execute($stmt_leave);
-				$leave_result = mysqli_stmt_get_result($stmt_leave);
-
-				while ($row = mysqli_fetch_assoc($leave_result)) {
-					$leave_date = substr($row['start_date'], 0, 10);
-					if (isset($work_schedule[$leave_date])) {
-						// 修改排班時間，排除請假的時段
-						if ($row['start_date'] > $leave_date . ' ' . $work_schedule[$leave_date]['start_time']) {
-							$work_schedule[$leave_date]['end_time'] = substr($row['start_date'], 11, 5);
-						} else {
-							unset($work_schedule[$leave_date]); // 完全被請假覆蓋的排班
-						}
-					}
-				}
-				mysqli_stmt_close($stmt_leave);
-			}
-
-			mysqli_close($link);
-			?>
-
-			<div style="font-size: 18px; font-weight: bold; color: #333; margin-top: 10px; text-align: center;">
-				<!-- 治療師選單 -->
-				<label for="doctor">選擇治療師：</label>
-				<select id="doctor">
-					<option value="0" selected>-- 請選擇 --</option>
-					<?php foreach ($doctor_list as $doctor): ?>
-						<option value="<?php echo $doctor['doctor_id']; ?>" <?php if ($doctor_id == $doctor['doctor_id'])
-							   echo 'selected'; ?>>
-							<?php echo htmlspecialchars($doctor['doctor']); ?>
-						</option>
-					<?php endforeach; ?>
-				</select>
-
-				<!-- 年份與月份選單 -->
-				<label for="year">選擇年份：</label>
-				<select id="year"></select>
-				<label for="month">選擇月份：</label>
-				<select id="month"></select>
-
-				<!-- 搜尋按鈕 -->
-				<button id="searchButton" onclick="validateAndFetch()">搜尋</button>
-
-				<!-- 日曆表格 -->
-				<div class="table-container">
-					<table class="table-custom">
-						<thead>
-							<tr>
-								<th>日</th>
-								<th>一</th>
-								<th>二</th>
-								<th>三</th>
-								<th>四</th>
-								<th>五</th>
-								<th>六</th>
-							</tr>
-						</thead>
-						<tbody id="calendar"></tbody>
-					</table>
-				</div>
-				<script>
-					const yearSelect = document.getElementById('year');
-					const monthSelect = document.getElementById('month');
-					const doctorSelect = document.getElementById('doctor');
-					const calendarBody = document.getElementById('calendar');
-
-					const workSchedule = <?php echo json_encode($work_schedule); ?>;
-
-					// 初始化年份和月份選單
-					function initSelectOptions() {
-						const currentYear = new Date().getFullYear();
-						yearSelect.innerHTML = '';
-						monthSelect.innerHTML = '';
-
-						for (let year = currentYear - 5; year <= currentYear + 5; year++) {
-							yearSelect.innerHTML += `<option value="${year}" ${year == <?php echo $year; ?> ? 'selected' : ''}>${year}</option>`;
-						}
-
-						for (let month = 1; month <= 12; month++) {
-							monthSelect.innerHTML += `<option value="${month}" ${month == <?php echo $month; ?> ? 'selected' : ''}>${month}</option>`;
-						}
-					}
-
-					// 驗證選單並執行搜尋
-					function validateAndFetch() {
-						const doctor = doctorSelect.value;
-						const year = yearSelect.value;
-						const month = monthSelect.value;
-
-						if (doctor === "0") {
-							alert("請選擇治療師！");
-							return;
-						}
-						if (!year || !month) {
-							alert("請選擇年份和月份！");
-							return;
-						}
-
-						window.location.href = `?doctor_id=${doctor}&year=${year}&month=${month}`;
-					}
-
-					// 生成日曆
-					function generateCalendar() {
-						const year = yearSelect.value;
-						const month = monthSelect.value - 1;
-						calendarBody.innerHTML = '';
-
-						const firstDay = new Date(year, month, 1).getDay();
-						const lastDate = new Date(year, month + 1, 0).getDate();
-
-						let row = document.createElement('tr');
-						for (let i = 0; i < firstDay; i++) {
-							const emptyCell = document.createElement('td');
-							row.appendChild(emptyCell);
-						}
-
-						for (let date = 1; date <= lastDate; date++) {
-							const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-							const cell = document.createElement('td');
-							cell.textContent = date;
-
-							if (workSchedule[fullDate]) {
-								const workInfo = document.createElement('div');
-								workInfo.textContent = `${workSchedule[fullDate].start_time} - ${workSchedule[fullDate].end_time}`;
-								workInfo.style.color = 'gray'; // 時間設為灰色字
-								workInfo.style.fontSize = '18px'; // 字體大小稍微調整以區分
-								cell.appendChild(workInfo);
-							}
-
-							row.appendChild(cell);
-							if (row.children.length === 7) {
-								calendarBody.appendChild(row);
-								row = document.createElement('tr');
-							}
-						}
-
-						while (row.children.length < 7) {
-							const emptyCell = document.createElement('td');
-							row.appendChild(emptyCell);
-						}
-						calendarBody.appendChild(row);
-					}
-
-					// 初始化選單和日曆
-					initSelectOptions();
-					generateCalendar();
-				</script>
-
-		</section>
-
-
-		<!--班表-->
+		<br />
 
 		<footer class="section novi-bg novi-bg-img footer-simple">
 			<div class="container">
