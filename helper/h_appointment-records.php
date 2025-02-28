@@ -786,8 +786,7 @@ if (isset($_SESSION["帳號"])) {
 						</select>
 						<button type="submit">搜尋</button>
 					</form>
-					<a href="h_assistant.php" target="_blank" class="btn btn-link">叫號
-					</a>
+				
 				</div>
 
 				<table>
