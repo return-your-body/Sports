@@ -732,21 +732,24 @@ if (isset($_SESSION["帳號"])) {
 						</select>
 					</div>
 					<style>
-						/* ✅ 讓 Modal 背景透明，確保不影響 X 按鈕 */
+						/* 強制隱藏變暗背景 */
+						.modal-backdrop {
+							display: none !important;
+						}
+
+						/* ✅ 背景不變暗 */
 						.custom-modal-backdrop {
-							background-color: rgba(0, 0, 0, 0.2) !important;
+							background: none !important;
 							z-index: 1040 !important;
 						}
 
-						/* ✅ 讓 Modal 適中寬度，不影響頁面高度 */
+						/* ✅ 設定適當的寬度 */
 						.custom-modal-dialog {
-							max-width: 60% !important;
-							/* 調整寬度 */
-							margin: 10vh auto !important;
-							/* 確保不會貼頂 */
+							max-width: 70% !important;
+							margin: 12vh auto !important;
 						}
 
-						/* ✅ 讓 Modal 內容完整展開 */
+						/* ✅ 內容展開但不會變長 */
 						.custom-modal-content {
 							height: auto !important;
 							overflow: visible !important;
@@ -756,31 +759,30 @@ if (isset($_SESSION["帳號"])) {
 						/* ✅ 確保 X 按鈕可以點擊 */
 						.custom-modal-header {
 							position: relative !important;
+							background-color: #fff !important;
 						}
 
-						/* ✅ 確保 X 在最上層，不會被擋住 */
 						.custom-modal-header .custom-btn-close {
 							position: absolute !important;
 							right: 15px !important;
 							top: 15px !important;
 							z-index: 1051 !important;
-							/* 確保 X 在最上層 */
 						}
 					</style>
 					<!-- 叫號按鈕 -->
 					<button type="button" class="btn btn-primary" data-bs-toggle="modal"
-						data-bs-target="#callPatientModal">
+						data-bs-target="#customCallPatientModal">
 						叫號
 					</button>
 
 					<!-- 叫號彈跳視窗 -->
-					<div class="modal fade" id="callPatientModal" tabindex="-1" aria-labelledby="callPatientLabel"
-						aria-hidden="true">
-						<div class="modal-dialog modal-xl"> <!-- ✅ 設定適中寬度 -->
-							<div class="modal-content">
-								<div class="modal-header">
-									<h5 class="modal-title" id="callPatientLabel">叫號系統</h5>
-									<button type="button" class="btn-close" data-bs-dismiss="modal"
+					<div class="modal fade custom-modal-backdrop" id="customCallPatientModal" tabindex="-1"
+						aria-labelledby="customCallPatientLabelria-hidden=true">
+						<div class="modal-dialog custom-modal-dialog">
+							<div class="modal-content custom-modal-content">
+								<div class="modal-header custom-modal-header">
+									<h5 class="modal-title" id="customCallPatientLabel">叫號系統</h5>
+									<button type="button" class="btn-close custom-btn-close" data-bs-dismiss="modal"
 										aria-label="Close"></button>
 								</div>
 								<div class="modal-body">
@@ -792,7 +794,7 @@ if (isset($_SESSION["帳號"])) {
 												<th>操作</th>
 											</tr>
 										</thead>
-										<tbody id="callPatientTable">
+										<tbody id="customCallPatientTable">
 											<!-- AJAX 會填充這裡 -->
 										</tbody>
 									</table>
@@ -802,16 +804,16 @@ if (isset($_SESSION["帳號"])) {
 					</div>
 
 					<script>
-						// 載入病人列表
+						// ✅ 載入病人列表
 						function loadPatients() {
 							fetch("取得報到病人.php")
 								.then(response => response.json())
 								.then(data => {
 									console.log("API 回傳數據：", data);
-									let tableBody = document.getElementById("callPatientTable");
+									let tableBody = document.getElementById("customCallPatientTable");
 									tableBody.innerHTML = ""; // 清空表格
 
-									if (data.length === 0) {
+									if (!Array.isArray(data) || data.length === 0) {
 										tableBody.innerHTML = `<tr><td colspan="3" class="text-center">目前沒有報到的病人</td></tr>`;
 										return;
 									}
@@ -819,51 +821,49 @@ if (isset($_SESSION["帳號"])) {
 									data.forEach(row => {
 										let tr = document.createElement("tr");
 										tr.innerHTML = `
-					<td>${row.patient_name}</td>
-					<td>${row.shifttime || "未提供"}</td> 
-					<td>
-						<button class="btn btn-success btn-sm" onclick="callPatient(${row.appointment_id})">叫號</button>
-						<button class="btn btn-danger btn-sm" onclick="cancelCall(${row.appointment_id})">取消叫號</button>
-					</td>
-				`;
+		<td>${row.patient_name || "未提供"}</td>
+		<td>${row.shifttime || "未提供"}</td> 
+		<td>
+			<button class="btn btn-success btn-sm" onclick="callPatient(${row.appointment_id}, '${row.shifttime}')">叫號</button>
+			<button class="btn btn-danger btn-sm cancel-btn" onclick="cancelCall(${row.appointment_id}, this)" style="display: none;">取消叫號</button>
+		</td>
+	`;
 										tableBody.appendChild(tr);
 									});
+									;
 								})
 								.catch(error => console.error("載入失敗:", error));
 						}
 
-						// 叫號（狀態變更為 8 - 看診中）
-						function callPatient(appointmentId) {
+
+						// ✅ 叫號（狀態變更為 8 - 看診中）
+						function callPatient(appointmentId, shiftTime) {
+							console.log("傳送的 appointment_id:", appointmentId);  // 檢查 appointmentId 是否正確
+							console.log("傳送的 shiftTime:", shiftTime); // 檢查 shiftTime 是否正確
+
+							if (!appointmentId) {
+								alert("錯誤：找不到 appointment_id");
+								return;
+							}
+
 							fetch("變更叫號.php", {
 								method: "POST",
 								headers: { "Content-Type": "application/x-www-form-urlencoded" },
-								body: `appointment_id=${appointmentId}&status_id=8`
+								body: `appointment_id=${appointmentId}`
 							})
 								.then(response => response.json())
 								.then(data => {
-									console.log("叫號成功:", data);
-									loadPatients(); // 重新載入病人列表
+									console.log("叫號結果:", data);
+									if (data.success) {
+										alert("叫號成功！");
+									} else {
+										alert("叫號失敗：" + data.message);
+									}
 								})
-								.catch(error => console.error("叫號失敗:", error));
+								.catch(error => console.error("錯誤:", error));
 						}
-
-						// 取消叫號（狀態變更回 3 - 報到）
-						function cancelCall(appointmentId) {
-							fetch("取消叫號.php", {
-								method: "POST",
-								headers: { "Content-Type": "application/x-www-form-urlencoded" },
-								body: `appointment_id=${appointmentId}&status_id=3`
-							})
-								.then(response => response.json())
-								.then(data => {
-									console.log("取消叫號成功:", data);
-									loadPatients(); // 重新載入病人列表
-								})
-								.catch(error => console.error("取消叫號失敗:", error));
-						}
-
-						// 當 Modal 開啟時，自動載入病人列表
-						document.getElementById("callPatientModal").addEventListener("show.bs.modal", loadPatients);
+						// ✅ 確保 Modal 開啟時自動載入病人列表
+						document.getElementById("customCallPatientModal").addEventListener("show.bs.modal", loadPatients);
 					</script>
 				</div>
 

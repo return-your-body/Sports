@@ -38,7 +38,7 @@ if (!$doctor) {
 $doctor_id = $doctor['doctor_id'];
 
 // 取得該治療師今日報到的患者資料
-$sql = "SELECT 
+$sql = "SELECT a.appointment_id,
             p.name AS patient_name, 
             s.shifttime 
         FROM appointment a
@@ -59,17 +59,7 @@ while ($row = $result->fetch_assoc()) {
     // 取得患者姓名
     $patient_name = $row['patient_name'];
     $name_length = mb_strlen($patient_name);
-
-    if ($name_length == 2) {
-        // 兩個字：顯示「林O」
-        $masked_name = mb_substr($patient_name, 0, 1) . 'O';
-    } elseif ($name_length > 2) {
-        // 超過兩個字：中間全部用 O
-        $masked_name = mb_substr($patient_name, 0, 1) . str_repeat('O', $name_length - 2) . mb_substr($patient_name, -1, 1);
-    } else {
-        // 少於兩個字（理論上不會出現），保留原名
-        $masked_name = $patient_name;
-    }
+    $masked_name = $patient_name;
 
     $row['patient_name'] = $masked_name;
     $row['call_button'] = '<button onclick="callPatient(\'' . $masked_name . '\', \'' . $row['shifttime'] . '\')">叫號</button>';
