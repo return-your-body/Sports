@@ -597,8 +597,7 @@ if (isset($_SESSION["帳號"])) {
 			$therapists[] = $row['doctor'];
 		}
 		// 查詢排班數據
-		$query = "
-SELECT 
+		$query = "SELECT 
     d.doctor_id, 
     d.doctor, 
     ds.date, 
@@ -609,10 +608,15 @@ FROM
 JOIN 
     doctor d ON ds.doctor_id = d.doctor_id
 JOIN 
+    user u ON d.user_id = u.user_id
+JOIN 
     shifttime st1 ON ds.go = st1.shifttime_id
 JOIN 
     shifttime st2 ON ds.off = st2.shifttime_id
-ORDER BY ds.date, d.doctor_id";
+WHERE 
+    u.grade_id = 2  -- 只篩選治療師
+ORDER BY 
+    ds.date, d.doctor_id";
 
 		$result = mysqli_query($link, $query);
 
