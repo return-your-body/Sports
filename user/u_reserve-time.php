@@ -238,6 +238,9 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_body-knowledge.php">日常小知識</a>
 										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_good+1.php">好評再+1</a>
+										</li>
 									</ul>
 								</li>
 								<li class="rd-nav-item"><a class="rd-nav-link active" href="u_reserve.php">預約</a></li>
@@ -512,6 +515,7 @@ if (isset($_SESSION["帳號"])) {
 							<li><a href="u_link.php.php">治療師介紹</a></li>
 							<li><a href="u_caseshare.php">個案分享</a></li>
 							<li><a href="u_body-knowledge.php">日常小知識</a></li>
+							<li> <a href="u_good+1.php">好評再+1</a></li>
 							<li><a href="u_reserve.php">預約</a></li>
 							<!-- <li><a href="u_reserve-record.php">查看預約資料</a></li>
 							<li><a href="u_reserve-time.php">查看預約時段</a></li> -->

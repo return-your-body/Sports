@@ -237,6 +237,9 @@ if (isset($_SESSION["帳號"])) {
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_body-knowledge.php">日常小知識</a>
 										</li>
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+												href="u_good+1.php">好評再+1</a>
+										</li>
 									</ul>
 								</li>
 								<li class="rd-nav-item"><a class="rd-nav-link" href="u_reserve.php">預約</a></li>
@@ -488,43 +491,212 @@ if (isset($_SESSION["帳號"])) {
 
 
 
+
+		<!-- 個案分享 -->
+		<style>
+			/* 讓整個內容區塊在頁面中水平置中 */
+			.wrapper {
+				display: flex;
+				justify-content: center;
+				/* 水平置中 */
+				align-items: center;
+				flex-direction: column;
+				/* 讓內容垂直排列 */
+				width: 100%;
+			}
+
+			/* 貼文容器：使用 Grid 讓內容整齊排列 */
+			.post-container {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				/* 預設桌機版：一行三個 */
+				gap: 20px;
+				/* 貼文之間的間距 */
+				max-width: 1200px;
+				/* 限制最大寬度 */
+				width: 100%;
+				/* 讓它隨畫面縮放 */
+				padding: 20px;
+				justify-content: center;
+				/* 這樣 Grid 內的元素也會對齊 */
+			}
+
+			/* 貼文區塊樣式 */
+			.post-item {
+				text-align: center;
+				border: 1px solid #ddd;
+				padding: 15px;
+				border-radius: 8px;
+				background-color: #fff;
+				/* 確保貼文有背景顏色 */
+			}
+
+			/* 圖片樣式（加上連結） */
+			.post-item a img {
+				width: 100%;
+				height: 200px;
+				object-fit: cover;
+				border-radius: 8px;
+				transition: transform 0.2s ease-in-out;
+			}
+
+			.post-item a img:hover {
+				transform: scale(1.05);
+				/* 滑鼠移上去圖片放大 */
+			}
+
+			/* 貼文標題 */
+			.post-title {
+				font-size: 16px;
+				font-weight: bold;
+				margin-top: 10px;
+			}
+
+			/* 貼文標題連結 */
+			.post-title a {
+				text-decoration: none;
+				color: #007bff;
+			}
+
+			.post-title a:hover {
+				text-decoration: underline;
+			}
+
+			/* 內文過長時省略 */
+			.post-desc {
+				font-size: 14px;
+				color: #555;
+				margin-top: 5px;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+
+			/* 分頁按鈕 */
+			.pagination {
+				text-align: center;
+				margin-top: 20px;
+				width: 100%;
+				display: flex;
+				justify-content: center;
+				/* 讓分頁按鈕置中 */
+			}
+
+			/* 分頁按鈕樣式 */
+			.pagination a {
+				text-decoration: none;
+				padding: 8px 12px;
+				margin: 5px;
+				border: 1px solid #007bff;
+				color: #007bff;
+				border-radius: 5px;
+			}
+
+			.pagination a:hover {
+				background-color: #007bff;
+				color: #fff;
+			}
+
+			/* 當前頁面按鈕樣式 */
+			.pagination .current-page {
+				padding: 8px 12px;
+				margin: 5px;
+				border: 1px solid #007bff;
+				background-color: #007bff;
+				color: white;
+				border-radius: 5px;
+			}
+
+			/* 🔹 媒體查詢 (Media Queries) - 調整貼文數量 🔹 */
+
+			/* 平板模式 (最大 1024px)：一行顯示 2 個 */
+			@media (max-width: 1024px) {
+				.post-container {
+					grid-template-columns: repeat(2, 1fr);
+				}
+			}
+
+			/* 手機模式 (最大 768px)：一行顯示 1 個 */
+			@media (max-width: 768px) {
+				.post-container {
+					grid-template-columns: repeat(1, 1fr);
+				}
+			}
+		</style>
 		<?php
-		require '../db.php';
+		require '../db.php'; // 連接資料庫
+		
+		$posts_per_page = 18; // 每頁顯示 18 筆資料
+		$page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+		$offset = ($page - 1) * $posts_per_page;
 
-		$query = "
-    SELECT ip.post_url, ip.image_url, ip.caption, ip.created_at, ic.igpost_class
-    FROM instagram_posts ip
-    LEFT JOIN igpost_class ic ON ip.igpost_class_id = ic.igpost_class_id
-    ORDER BY ip.created_at DESC";
-		$result = mysqli_query($link, $query);
+		// 取得 igpost_class_id = 1 的貼文
+		$query = "SELECT image_data, title, description, embed_code FROM instagram_posts WHERE igpost_class_id = 1 ORDER BY created_at DESC LIMIT ?, ?";
+		$stmt = mysqli_prepare($link, $query);
+		mysqli_stmt_bind_param($stmt, "ii", $offset, $posts_per_page);
+		mysqli_stmt_execute($stmt);
+		$result = mysqli_stmt_get_result($stmt);
+
+		// 取得總貼文數量 (用於分頁)
+		$total_query = "SELECT COUNT(*) FROM instagram_posts WHERE igpost_class_id = 1";
+		$total_result = mysqli_query($link, $total_query);
+		$total_row = mysqli_fetch_array($total_result);
+		$total_posts = $total_row[0];
+		$total_pages = ceil($total_posts / $posts_per_page);
 		?>
-
-		<section class="section section-lg bg-gray-100 text-center">
+		<section class="section section-lg bg-default text-center">
 			<div class="container">
-				<h3>📷 Instagram 貼文</h3>
-				<div class="row row-40 row-lg-50">
-					<?php while ($row = mysqli_fetch_assoc($result)): ?>
-						<div class="col-sm-6 col-md-4 wow fadeInUp">
-							<div class="box-project box-width-3">
-								<div class="box-project-media">
-									<img class="box-project-img" src="<?php echo htmlspecialchars($row['image_url']); ?>"
-										alt="Instagram 貼文">
-								</div>
-								<div class="box-project-subtitle small">
-									<?php echo htmlspecialchars($row['igpost_class']); ?>
-								</div>
-								<h6 class="box-project-title"><?php echo htmlspecialchars($row['caption']); ?></h6>
-								<div class="box-project-meta">
-									<span>📅 <?php echo date("Y-m-d", strtotime($row['created_at'])); ?></span>
-									<a href="<?php echo htmlspecialchars($row['post_url']); ?>" target="_blank"
-										class="btn">查看貼文</a>
-								</div>
+				<div class="row justify-content-sm-center">
+					<div class="col-md-10 col-xl-8">
+
+
+						<div class="wrapper">
+							<div class="post-container">
+								<?php while ($row = mysqli_fetch_assoc($result)): ?>
+									<div class="post-item">
+										<a href="<?php echo htmlspecialchars($row['embed_code']); ?>" target="_blank">
+											<img src="data:image/jpeg;base64,<?php echo base64_encode($row['image_data']); ?>"
+												alt="Instagram Image">
+										</a>
+										<div class="post-title">
+											<a href="<?php echo htmlspecialchars($row['embed_code']); ?>" target="_blank">
+												<?php echo htmlspecialchars($row['title']); ?>
+											</a>
+										</div>
+										<div class="post-desc">
+											<?php echo mb_strimwidth(htmlspecialchars($row['description']), 0, 50, "..."); ?>
+										</div>
+									</div>
+								<?php endwhile; ?>
+							</div>
+
+							<!-- 分頁按鈕 -->
+							<div class="pagination">
+								<?php if ($page > 1): ?>
+									<a href="?page=<?php echo $page - 1; ?>">&laquo; 上一頁</a>
+								<?php endif; ?>
+
+								<?php for ($i = 1; $i <= $total_pages; $i++): ?>
+									<?php if ($i == $page): ?>
+										<span class="current-page"><?php echo $i; ?></span>
+									<?php else: ?>
+										<a href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+									<?php endif; ?>
+								<?php endfor; ?>
+
+								<?php if ($page < $total_pages): ?>
+									<a href="?page=<?php echo $page + 1; ?>">下一頁 &raquo;</a>
+								<?php endif; ?>
 							</div>
 						</div>
-					<?php endwhile; ?>
+
+
+
+					</div>
 				</div>
 			</div>
 		</section>
+
 
 
 
@@ -552,6 +724,7 @@ if (isset($_SESSION["帳號"])) {
 							<li><a href="u_link.php.php">治療師介紹</a></li>
 							<li><a href="u_caseshare.php">個案分享</a></li>
 							<li><a href="u_body-knowledge.php">日常小知識</a></li>
+							<li> <a href="u_good+1.php">好評再+1</a></li>
 							<li><a href="u_reserve.php">預約</a></li>
 							<!-- <li><a href="u_reserve-record.php">查看預約資料</a></li>
 							<li><a href="u_reserve-time.php">查看預約時段</a></li> -->
