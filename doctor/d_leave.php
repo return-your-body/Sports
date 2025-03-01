@@ -476,7 +476,7 @@ if (isset($_SESSION["帳號"])) {
 					<option value="公假">公假</option>
 					<option value="其他">其他</option>
 				</select>
-				<input type="text" id="leave-type-other" name="leave-type-other" placeholder="若選擇其他，請填寫原因"
+				<input type="text" id="leave-type-other" name="leave-type-other" placeholder="請輸入請假原因"
 					style="display: none;">
 
 				<label for="date">請假日期：</label>
@@ -495,11 +495,26 @@ if (isset($_SESSION["帳號"])) {
 			</form>
 		</div>
 		<br />
+
 		<script>
 			document.addEventListener('DOMContentLoaded', function () {
 				const dateInput = document.getElementById('date');
 				const startTimeInput = document.getElementById('start-time');
 				const endTimeInput = document.getElementById('end-time');
+				const leaveType = document.getElementById('leave-type');
+				const leaveTypeOther = document.getElementById('leave-type-other');
+
+				// 監聽請假類別的變化，當選擇「其他」時顯示額外輸入框
+				leaveType.addEventListener('change', function () {
+					if (this.value === '其他') {
+						leaveTypeOther.style.display = 'block';
+						leaveTypeOther.setAttribute('required', 'true'); // 設定為必填
+					} else {
+						leaveTypeOther.style.display = 'none';
+						leaveTypeOther.removeAttribute('required'); // 取消必填
+						leaveTypeOther.value = ''; // 清空輸入框
+					}
+				});
 
 				// 初始化 Flatpickr 時間選擇器
 				const startFlatpickr = flatpickr(startTimeInput, {
@@ -557,11 +572,6 @@ if (isset($_SESSION["帳號"])) {
 								startFlatpickr.set("enable", availableTimes);
 								endFlatpickr.set("enable", availableTimes);
 							}
-							// else {
-							//     alert(data.message || "無可請假時段");ㄥ
-							//     startFlatpickr.clear();
-							//     endFlatpickr.clear();
-							// }
 						})
 						.catch(error => console.error("請假時間加載錯誤:", error));
 				}
@@ -587,6 +597,7 @@ if (isset($_SESSION["帳號"])) {
 				});
 			});
 		</script>
+
 
 		<!--頁尾-->
 		<footer class="section novi-bg novi-bg-img footer-simple">
