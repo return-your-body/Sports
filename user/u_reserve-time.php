@@ -328,6 +328,145 @@ if (isset($_SESSION["帳號"])) {
 						// 顯示姓名
 						echo $姓名;
 						?>
+
+						<a href="#" id="clock-btn">目前叫號</a>
+
+						<style>
+							table {
+								width: 60%;
+								border-collapse: collapse;
+								margin: 20px auto;
+							}
+
+							th,
+							td {
+								border: 1px solid black;
+								padding: 10px;
+								text-align: center;
+							}
+
+							th {
+								background-color: #f4f4f4;
+							}
+
+							/* 讓按鈕置中 */
+							.center-button {
+								text-align: center;
+								margin-top: 20px;
+							}
+
+							button {
+								padding: 10px 20px;
+								font-size: 16px;
+								cursor: pointer;
+							}
+
+							/* 彈跳視窗樣式 */
+							.modal {
+								display: none;
+								position: fixed;
+								z-index: 1;
+								left: 0;
+								top: 0;
+								width: 100%;
+								height: 100%;
+								background-color: rgba(0, 0, 0, 0.5);
+							}
+
+							.modal-content {
+								background-color: white;
+								margin: 10% auto;
+								padding: 20px;
+								border: 1px solid #888;
+								width: 50%;
+								text-align: center;
+							}
+
+							.close-btn {
+								color: black;
+								float: right;
+								font-size: 24px;
+								font-weight: bold;
+								cursor: pointer;
+							}
+						</style>
+
+						<!-- 叫號狀態彈跳視窗 -->
+						<div id="callModal" class="modal">
+							<div class="modal-content">
+								<span class="close-btn">&times;</span>
+								<h2>目前叫號狀態</h2>
+								<table>
+									<tr>
+										<th>病人姓名</th>
+										<th>治療師</th>
+										<th>時段</th>
+									</tr>
+									<tr id="callRow">
+										<td id="patient_name">載入中...</td>
+										<td id="therapist">載入中...</td>
+										<td id="shifttime">載入中...</td>
+									</tr>
+								</table>
+
+								<!-- 讓返回按鈕置中 -->
+								<!-- <div class="center-button">
+			<a href="h_numberpeople.php">
+				<button>返回</button>
+			</a>
+		</div> -->
+							</div>
+						</div>
+
+						<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+						<script>
+							$(document).ready(function () {
+								function fetchCallStatus() {
+									$.ajax({
+										url: "取得正在叫號的病人.php",
+										type: "GET",
+										dataType: "json",
+										success: function (data) {
+											if (data.length > 0) {
+												$("#patient_name").text(data[0].patient_name || "無資料");
+												$("#therapist").text(data[0].therapist || "無資料");
+												$("#shifttime").text(data[0].shifttime || "無資料");
+											} else {
+												$("#patient_name").text("目前無叫號中");
+												$("#therapist").text("-");
+												$("#shifttime").text("-");
+											}
+										},
+										error: function () {
+											$("#patient_name").text("載入失敗");
+											$("#therapist").text("-");
+											$("#shifttime").text("-");
+										}
+									});
+								}
+
+								// 每 5 秒自動更新叫號狀態
+								fetchCallStatus();
+								setInterval(fetchCallStatus, 5000);
+
+								// 打開彈跳視窗
+								$("#clock-btn").click(function () {
+									$("#callModal").fadeIn();
+								});
+
+								// 關閉彈跳視窗
+								$(".close-btn").click(function () {
+									$("#callModal").fadeOut();
+								});
+
+								// 點擊視窗外部也能關閉
+								$(window).click(function (event) {
+									if (event.target.id === "callModal") {
+										$("#callModal").fadeOut();
+									}
+								});
+							});
+						</script>
 					</div>
 				</nav>
 			</div>
@@ -382,7 +521,7 @@ if (isset($_SESSION["帳號"])) {
 							</a></li>
 						</ul>
 					</div>
-					
+
 					<div class="col-md-4">
 						<h4>聯絡我們</h4>
 						<br />

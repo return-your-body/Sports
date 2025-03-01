@@ -626,6 +626,8 @@ WHERE ds.date = ?";
 				<!-- 總人數顯示 -->
 				<div style="text-align: center; margin-bottom: 10px;">
 					<strong>總人數：<?php echo $total_rows; ?></strong>
+					<a href="h_assistant.php" target="_blank" class="btn btn-link">叫號
+					</a>
 				</div>
 
 				<!-- 顯示預約資料 -->

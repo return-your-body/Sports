@@ -29,7 +29,7 @@ function maskName($name) {
 
 while ($row = $result->fetch_assoc()) {
     // 病人姓名遮蔽
-    // $row['patient_name'] = maskName($row['patient_name']);
+    $row['patient_name'] = maskName($row['patient_name']);
     $data[] = $row;
 }
 
