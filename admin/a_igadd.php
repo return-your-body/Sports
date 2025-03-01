@@ -341,53 +341,85 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
         </div>
 
 
+
+
+        <!-- Instagram 貼文儲存表單 -->
+        <style>
+            input,
+            select,
+            button {
+                width: 80%;
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 5px;
+                border: 1px solid #ccc;
+            }
+
+            button {
+                background-color: #28a745;
+                color: white;
+                border: none;
+                cursor: pointer;
+            }
+
+            button:hover {
+                background-color: #218838;
+            }
+
+            small {
+                color: red;
+                display: none;
+            }
+        </style>
+
+        <?php if (isset($_GET['message'])): ?>
+            <script>
+                showAlert("<?php echo htmlspecialchars($_GET['message']); ?>");
+            </script>
+        <?php endif; ?>
         <?php
         require '../db.php'; // 連接資料庫
-        // 抓取分類
+        
+        // 抓取貼文分類
         $query = "SELECT igpost_class_id, igpost_class FROM igpost_class";
         $result = mysqli_query($link, $query);
         ?>
 
-        <!-- Instagram 貼文儲存表單 -->
-        <section class="section section-lg bg-default text-center">
+        <section class="section">
             <div class="container">
-                <h3>儲存 Instagram 貼文</h3>
-                <h5>IG文章 > 左上角三個點 > 內崁 > 複製內崁程式碼</h5>
-                <div class="row justify-content-sm-center">
-                    <div class="col-md-8 col-lg-6 col-xl-4">
-                        <!-- RD Mailform -->
-                        <form class="rd-mailform" action="儲存哀居貼文.php" method="POST">
+                <h2>儲存 Instagram 貼文</h2>
+                <p>請貼上 Instagram 貼文網址 (格式: <strong>https://www.instagram.com/p/xxxxxx/</strong> 或
+                    <strong>https://www.instagram.com/{帳號}/p/xxxxxx/</strong>)</p>
 
-                            <!-- 貼文網址 -->
-                            <div class="form-wrap form-wrap-validation">
-                                📎 貼文網址<input class="form-input" id="post_url" type="text" name="post_url"
-                                    placeholder="https://www.instagram.com/p/xxx/" required>
-                            </div>
-                            <!-- 貼文分類 -->
-                            <div class="form-wrap form-wrap-validation">
-                                📂 貼文分類
-                                <select class="form-input" name="igpost_class_id" required>
-                                    <option value="">請選擇分類</option>
-                                    <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                                        <option value="<?php echo $row['igpost_class_id']; ?>">
-                                            <?php echo htmlspecialchars($row['igpost_class']); ?>
-                                        </option>
-                                    <?php endwhile; ?>
-                                </select>
-                            </div>
+                <form action="儲存哀居貼文.php" method="POST">
+                    <!-- 貼文網址 -->
+                    <label for="post_url">📎 貼文網址</label>
+                    <input type="text" id="post_url" name="post_url" required placeholder="請輸入 Instagram 貼文網址">
 
-                            <!-- 按鈕 -->
-                            <div class="form-button">
-                                <button class="button button-block button-primary button-nina"
-                                    type="submit">儲存貼文</button>
-                            </div>
+                    <!-- 貼文標題 -->
+                    <label for="post_title">📝 貼文標題</label>
+                    <input type="text" id="post_title" name="post_title" required placeholder="請輸入貼文標題">
 
-                        </form>
-                    </div>
-                </div>
+                    <!-- 貼文內容 -->
+                    <label for="post_desc">📜 貼文內文</label>
+                    <textarea id="post_desc" name="post_desc" required placeholder="請輸入貼文內文"></textarea>
+
+                    <!-- 貼文分類 -->
+                    <label for="igpost_class_id">📂 貼文分類</label>
+                    <select id="igpost_class_id" name="igpost_class_id" required>
+                        <option value="">請選擇分類</option>
+                        <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                            <option value="<?php echo $row['igpost_class_id']; ?>">
+                                <?php echo htmlspecialchars($row['igpost_class']); ?>
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
+
+                    <!-- 送出按鈕 -->
+                    <button type="submit">儲存貼文</button>
+                </form>
             </div>
         </section>
-
 
 
         <!-- Global Mailform Output-->
