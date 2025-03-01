@@ -93,14 +93,64 @@ $totalPages = ceil($totalRows / $perPage);
 
 // 處理 POST 請求（審核請假）
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-	$leaves_id = $_POST['leaves_id'];
-	$is_approved = $_POST['is_approved'];
-	$rejection_reason = isset($_POST['rejection_reason']) ? $_POST['rejection_reason'] : null;
+	$leaves_id = isset($_POST['leaves_id']) ? intval($_POST['leaves_id']) : 0;
+	$is_approved = isset($_POST['is_approved']) ? intval($_POST['is_approved']) : null;
+	$rejection_reason = isset($_POST['rejection_reason']) ? trim($_POST['rejection_reason']) : null;
 
-	if ($is_approved == 0 && !$rejection_reason) {
+	if (!$leaves_id || ($is_approved !== 0 && $is_approved !== 1)) {
+		echo json_encode(["status" => "error", "message" => "請提供有效的請假 ID 和審核狀態"]);
+		exit;
+	}
+
+	if ($is_approved === 0 && empty($rejection_reason)) {
 		echo json_encode(["status" => "error", "message" => "拒絕原因為必填"]);
 		exit;
 	}
+
+	// 取得請假者的 user_id
+	$stmt = $link->prepare("SELECT doctor_id FROM leaves WHERE leaves_id = ?");
+	$stmt->bind_param("i", $leaves_id);
+	$stmt->execute();
+	$result = $stmt->get_result();
+	$leave = $result->fetch_assoc();
+	$stmt->close();
+
+	if (!$leave) {
+		echo json_encode(["status" => "error", "message" => "請假紀錄未找到"]);
+		exit;
+	}
+
+	$doctor_id = $leave['doctor_id'];
+
+	// 取得該請假者的 user_id 和 grade_id
+	$stmt = $link->prepare("SELECT user_id FROM doctor WHERE doctor_id = ?");
+	$stmt->bind_param("i", $doctor_id);
+	$stmt->execute();
+	$result = $stmt->get_result();
+	$doctor = $result->fetch_assoc();
+	$stmt->close();
+
+	if (!$doctor) {
+		echo json_encode(["status" => "error", "message" => "治療師資料未找到"]);
+		exit;
+	}
+
+	$user_id = $doctor['user_id'];
+
+	// 取得該使用者的等級
+	$stmt = $link->prepare("SELECT grade_id FROM user WHERE user_id = ?");
+	$stmt->bind_param("i", $user_id);
+	$stmt->execute();
+	$result = $stmt->get_result();
+	$user = $result->fetch_assoc();
+	$stmt->close();
+
+	if (!$user) {
+		echo json_encode(["status" => "error", "message" => "使用者等級未找到"]);
+		exit;
+	}
+
+	$grade_id = $user['grade_id']; // 1=使用者, 2=治療師, 3=助手, 4=管理者
 
 	// 更新請假狀態
 	$stmt = $link->prepare("UPDATE leaves SET is_approved = ?, rejection_reason = ? WHERE leaves_id = ?");
@@ -109,7 +159,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if ($stmt->execute()) {
 		$response = ["status" => "success", "message" => "請假狀態已更新"];
 
-		if ($is_approved == 1) {
+		// 判斷請假者身份
+		if ($grade_id == 3) {
+			$response["user_role"] = "assistant"; // 助手
+		} else {
+			$response["user_role"] = "doctor"; // 治療師，並且要寄信
+		}
+
+		// 只有當通過請假 (`is_approved == 1`) 且 `grade_id != 3` (不是助手) 時才會寄信
+		if ($is_approved === 1 && $grade_id != 3) {
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, "http://demo2.im.ukn.edu.tw/~Health24/admin/寄信.php");
 			curl_setopt($ch, CURLOPT_POST, 1);
@@ -119,12 +177,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			curl_close($ch);
 
 			$response["email_status"] = json_decode($email_response, true);
+		} else {
+			$response["email_status"] = "未發送郵件（因為請假者是助手）";
 		}
 	} else {
-		$response = ["status" => "error", "message" => "更新失敗: " . $link->error];
+		$response = ["status" => "error", "message" => "更新失敗: " . $stmt->error];
 	}
 
+	// 關閉 SQL Statement
 	$stmt->close();
+
+	// 返回 JSON 回應
 	echo json_encode($response);
 	exit;
 }
@@ -574,9 +637,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							let data = JSON.parse(text);
 							console.log("解析後的 JSON:", data);
 
-							// 顯示成功訊息，並在使用者按下「確定」後重新整理頁面
+							// 判斷是助手還是治療師
 							if (data.status === "success") {
-								alert("已通過請假申請並寄信給相關病患");
+								if (data.user_role === "assistant") {
+									alert("已通過請假申請");
+								} else if (data.user_role === "doctor") {
+									alert("已通過請假申請並寄信給相關病患");
+								}
 								location.reload();
 							} else {
 								alert("錯誤：" + data.message);
@@ -587,8 +654,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						}
 					});
 			}
-
-
 		</script>
 
 		<table class="table-custom table-hover">
@@ -612,27 +677,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						<td><?php echo $row['start_date']; ?></td>
 						<td><?php echo $row['end_date']; ?></td>
 						<td><?php echo $row['reason']; ?></td>
-						<td><?php echo $row['is_approved'] ? '已通過' : '未通過'; ?></td>
+						<td>
+							<?php
+							if (is_null($row['is_approved'])) {
+								echo '未審核';
+							} elseif ($row['is_approved'] == 1) {
+								echo '已通過';
+							} else {
+								echo '<span style="color:red; font-weight:bold;">未通過</span>';
+							}
+							?>
+						</td>
+
 						<td><?php echo $row['rejection_reason'] ?? 'N/A'; ?></td>
 						<td>
-							<?php if (!$row['is_approved']): ?>
-								<!-- 只有未通過時顯示操作按鈕 -->
+							<?php if (is_null($row['is_approved'])): ?>
+								<!-- 只有未審核時顯示操作按鈕 -->
 								<button onclick="approveLeave(<?php echo $row['leaves_id']; ?>, true)" style="
-						padding: 5px 10px;
-						border: none;
-						border-radius: 4px;
-						background-color: #28a745;
-						color: white;
-						cursor: pointer;">通過</button>
+			padding: 5px 10px;
+			border: none;
+			border-radius: 4px;
+			background-color: #28a745;
+			color: white;
+			cursor: pointer;">通過</button>
 								<button onclick="approveLeave(<?php echo $row['leaves_id']; ?>, false)" style="
-						padding: 5px 10px;
-						border: none;
-						border-radius: 4px;
-						background-color: #dc3545;
-						color: white;
-						cursor: pointer;">拒絕</button>
+			padding: 5px 10px;
+			border: none;
+			border-radius: 4px;
+			background-color: #dc3545;
+			color: white;
+			cursor: pointer;">拒絕</button>
 							<?php endif; ?>
 						</td>
+
 					</tr>
 				<?php endwhile; ?>
 			</tbody>
