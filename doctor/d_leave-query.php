@@ -533,8 +533,16 @@ if (mysqli_num_rows($result) > 0) {
 				<div class="row row-40 row-lg-50">
 					<div class="form-container">
 						<?php
-						// 引入資料庫連線
+						session_start();
 						require '../db.php';
+
+						// 確保使用者已登入，並取得帳號
+						if (!isset($_SESSION['帳號'])) {
+							echo "<script>alert('請先登入！'); window.location.href='../index.html';</script>";
+							exit;
+						}
+
+						$帳號 = $_SESSION['帳號'];
 
 						// 分頁邏輯
 						$limit = 10; // 每頁顯示的資料筆數
@@ -543,10 +551,11 @@ if (mysqli_num_rows($result) > 0) {
 
 						// 計算總資料筆數
 						$total_query = "SELECT COUNT(*) AS total 
-                FROM leaves l
-                LEFT JOIN doctor d ON l.doctor_id = d.doctor_id
-                LEFT JOIN user u ON d.user_id = u.user_id
-                WHERE u.account = ?";
+                                FROM leaves l
+                                LEFT JOIN doctor d ON l.doctor_id = d.doctor_id
+                                LEFT JOIN user u ON d.user_id = u.user_id
+                                WHERE u.account = ?";
+
 						$stmt_total = mysqli_prepare($link, $total_query);
 						mysqli_stmt_bind_param($stmt_total, "s", $帳號);
 						mysqli_stmt_execute($stmt_total);
@@ -555,25 +564,28 @@ if (mysqli_num_rows($result) > 0) {
 						$total_records = $total_row['total'];
 						$total_pages = ceil($total_records / $limit);
 
-						// 查詢分頁資料
+						// 查詢請假資料
 						$query = "SELECT 
-            l.leaves_id, 
-            d.doctor AS doctor_name, 
-            l.leave_type, 
-            l.leave_type_other, 
-            l.start_date, 
-            l.end_date, 
-            l.reason, 
-            l.is_approved, 
-            l.rejection_reason
-          FROM leaves l
-          LEFT JOIN doctor d ON l.doctor_id = d.doctor_id
-          LEFT JOIN user u ON d.user_id = u.user_id
-          WHERE u.account = $帳號  -- 這裡確保只顯示當前登入者的請假資料
-          LIMIT $limit OFFSET $offset";
+                            l.leaves_id, 
+                            d.doctor AS doctor_name, 
+                            l.leave_type, 
+                            l.leave_type_other, 
+                            l.start_date, 
+                            l.end_date, 
+                            l.reason, 
+                            l.is_approved, 
+                            l.rejection_reason
+                          FROM leaves l
+                          LEFT JOIN doctor d ON l.doctor_id = d.doctor_id
+                          LEFT JOIN user u ON d.user_id = u.user_id
+                          WHERE u.account = ?
+                          LIMIT ? OFFSET ?";
 
+						$stmt = mysqli_prepare($link, $query);
+						mysqli_stmt_bind_param($stmt, "sii", $帳號, $limit, $offset);
+						mysqli_stmt_execute($stmt);
+						$result = mysqli_stmt_get_result($stmt);
 
-						$result = mysqli_query($link, $query);
 						if (!$result) {
 							die("資料查詢失敗：" . mysqli_error($link));
 						}
@@ -658,6 +670,7 @@ if (mysqli_num_rows($result) > 0) {
 				</div>
 			</div>
 		</section>
+
 
 
 		<!--頁尾-->
