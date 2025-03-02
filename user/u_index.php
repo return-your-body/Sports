@@ -687,6 +687,200 @@ if (isset($_SESSION["帳號"])) {
 
 
 		<br />
+		<style>
+			/* 讓整個內容區塊在頁面中水平置中 */
+			.wrapper {
+				display: flex;
+				justify-content: center;
+				/* 水平置中 */
+				align-items: center;
+				flex-direction: column;
+				/* 讓內容垂直排列 */
+				width: 100%;
+			}
+
+			/* 貼文容器：使用 Grid 讓內容整齊排列 */
+			.post-container {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				/* 預設桌機版：一行三個 */
+				gap: 20px;
+				/* 貼文之間的間距 */
+				max-width: 1200px;
+				/* 限制最大寬度 */
+				width: 100%;
+				/* 讓它隨畫面縮放 */
+				padding: 20px;
+				justify-content: center;
+				/* 這樣 Grid 內的元素也會對齊 */
+			}
+
+			/* 貼文區塊樣式 */
+			.post-item {
+				text-align: center;
+				border: 1px solid #ddd;
+				padding: 15px;
+				border-radius: 8px;
+				background-color: #fff;
+				/* 確保貼文有背景顏色 */
+			}
+
+			/* 圖片樣式（加上連結） */
+			.post-item a img {
+				width: 100%;
+				height: 200px;
+				object-fit: cover;
+				border-radius: 8px;
+				transition: transform 0.2s ease-in-out;
+			}
+
+			.post-item a img:hover {
+				transform: scale(1.05);
+				/* 滑鼠移上去圖片放大 */
+			}
+
+			/* 貼文標題 */
+			.post-title {
+				font-size: 16px;
+				font-weight: bold;
+				margin-top: 10px;
+			}
+
+			/* 貼文標題連結 */
+			.post-title a {
+				text-decoration: none;
+				color: #007bff;
+			}
+
+			.post-title a:hover {
+				text-decoration: underline;
+			}
+
+			/* 內文過長時省略 */
+			.post-desc {
+				font-size: 14px;
+				color: #555;
+				margin-top: 5px;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+
+			/* 分頁按鈕 */
+			.pagination {
+				text-align: center;
+				margin-top: 20px;
+				width: 100%;
+				display: flex;
+				justify-content: center;
+				/* 讓分頁按鈕置中 */
+			}
+
+			/* 分頁按鈕樣式 */
+			.pagination a {
+				text-decoration: none;
+				padding: 8px 12px;
+				margin: 5px;
+				border: 1px solid #007bff;
+				color: #007bff;
+				border-radius: 5px;
+			}
+
+			.pagination a:hover {
+				background-color: #007bff;
+				color: #fff;
+			}
+
+			/* 當前頁面按鈕樣式 */
+			.pagination .current-page {
+				padding: 8px 12px;
+				margin: 5px;
+				border: 1px solid #007bff;
+				background-color: #007bff;
+				color: white;
+				border-radius: 5px;
+			}
+
+			/* 🔹 媒體查詢 (Media Queries) - 調整貼文數量 🔹 */
+
+			/* 平板模式 (最大 1024px)：一行顯示 2 個 */
+			@media (max-width: 1024px) {
+				.post-container {
+					grid-template-columns: repeat(2, 1fr);
+				}
+			}
+
+			/* 手機模式 (最大 768px)：一行顯示 1 個 */
+			@media (max-width: 768px) {
+				.post-container {
+					grid-template-columns: repeat(1, 1fr);
+				}
+			}
+		</style>
+
+		<?php
+		require '../db.php'; // 連接資料庫
+		
+		// 定義要顯示的 igpost_class_id 及對應標題
+		$categories = [
+			1 => "個案分享",
+			2 => "日常小知識",
+			3 => "好評再+1"
+		];
+
+		$posts_per_class = 6; // 每個類別顯示 6 筆資料
+		
+		?>
+
+		<section class="section section-lg bg-default text-center">
+			<div class="container">
+				<div class="row justify-content-sm-center">
+					<div class="col-md-10 col-xl-8">
+						<div class="wrapper">
+
+							<?php foreach ($categories as $class_id => $title): ?>
+								<h2 class="category-title"><?php echo $title; ?></h2> <!-- 顯示大標題 -->
+
+								<div class="post-container">
+									<?php
+									// 取得該分類的最新 6 筆貼文
+									$query = "SELECT image_data, title, description, embed_code 
+                                      FROM instagram_posts 
+                                      WHERE igpost_class_id = ? 
+                                      ORDER BY created_at DESC 
+                                      LIMIT ?";
+									$stmt = mysqli_prepare($link, $query);
+									mysqli_stmt_bind_param($stmt, "ii", $class_id, $posts_per_class);
+									mysqli_stmt_execute($stmt);
+									$result = mysqli_stmt_get_result($stmt);
+
+									while ($row = mysqli_fetch_assoc($result)): ?>
+										<div class="post-item">
+											<a href="<?php echo htmlspecialchars($row['embed_code']); ?>" target="_blank">
+												<img src="data:image/jpeg;base64,<?php echo base64_encode($row['image_data']); ?>"
+													alt="Instagram Image">
+											</a>
+											<div class="post-title">
+												<a href="<?php echo htmlspecialchars($row['embed_code']); ?>" target="_blank">
+													<?php echo htmlspecialchars($row['title']); ?>
+												</a>
+											</div>
+											<div class="post-desc">
+												<?php echo mb_strimwidth(htmlspecialchars($row['description']), 0, 50, "..."); ?>
+											</div>
+										</div>
+									<?php endwhile; ?>
+
+									<?php mysqli_stmt_close($stmt); ?>
+								</div>
+							<?php endforeach; ?>
+
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
 
 		<footer class="section novi-bg novi-bg-img footer-simple">
 			<div class="container">

@@ -1212,7 +1212,7 @@ ORDER BY
 					let current = new Date(`${date}T${startTime}`);
 					const end = new Date(`${date}T${endTime}`);
 
-					while (current < end) {
+					while (current <= end) {
 						const timeSlot = current.toTimeString().slice(0, 5);
 						const slotElement = document.createElement("div");
 						slotElement.innerHTML = `
