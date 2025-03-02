@@ -339,87 +339,84 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                 </div>
             </section>
         </div>
-
-
-
-
-        <!-- Instagram 貼文儲存表單 -->
-        <style>
-            input,
-            select,
-            button {
-                width: 80%;
-                padding: 10px;
-                margin: 10px 0;
-                border-radius: 5px;
-                border: 1px solid #ccc;
-            }
-
-            button {
-                background-color: #28a745;
-                color: white;
-                border: none;
-                cursor: pointer;
-            }
-
-            button:hover {
-                background-color: #218838;
-            }
-
-            small {
-                color: red;
-                display: none;
-            }
-        </style>
-
-        <?php if (isset($_GET['message'])): ?>
-            <script>
-                showAlert("<?php echo htmlspecialchars($_GET['message']); ?>");
-            </script>
-        <?php endif; ?>
-        <?php
-        require '../db.php'; // 連接資料庫
-        
-        // 抓取貼文分類
-        $query = "SELECT igpost_class_id, igpost_class FROM igpost_class";
-        $result = mysqli_query($link, $query);
-        ?>
-
-        <section class="section">
+        <!-- Contact us: 新增 Instagram 內嵌貼文 -->
+        <section class="section section-lg bg-default text-center">
             <div class="container">
-                <h2>儲存 Instagram 貼文</h2>
-                <p>請貼上 Instagram 貼文網址 (格式: <strong>https://www.instagram.com/p/xxxxxx/</strong> 或
-                    <strong>https://www.instagram.com/{帳號}/p/xxxxxx/</strong>)</p>
-
-                <form action="儲存哀居貼文.php" method="POST">
-                    <!-- 貼文網址 -->
-                    <label for="post_url">📎 貼文網址</label>
-                    <input type="text" id="post_url" name="post_url" required placeholder="請輸入 Instagram 貼文網址">
-
-                    <!-- 貼文標題 -->
-                    <label for="post_title">📝 貼文標題</label>
-                    <input type="text" id="post_title" name="post_title" required placeholder="請輸入貼文標題">
-
-                    <!-- 貼文內容 -->
-                    <label for="post_desc">📜 貼文內文</label>
-                    <textarea id="post_desc" name="post_desc" required placeholder="請輸入貼文內文"></textarea>
-
-                    <!-- 貼文分類 -->
-                    <label for="igpost_class_id">📂 貼文分類</label>
-                    <select id="igpost_class_id" name="igpost_class_id" required>
-                        <option value="">請選擇分類</option>
-                        <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                            <option value="<?php echo $row['igpost_class_id']; ?>">
-                                <?php echo htmlspecialchars($row['igpost_class']); ?>
-                            </option>
-                        <?php endwhile; ?>
-                    </select>
-
-                    <!-- 送出按鈕 -->
-                    <button type="submit">儲存貼文</button>
-                </form>
+                <div class="row justify-content-sm-center">
+                    <div class="col-md-10 col-xl-8">
+                        <!-- RD Mailform -->
+                        <form id="addPostForm" class="rd-mailform" data-form-output="form-output-global"
+                            data-form-type="contact" enctype="multipart/form-data">
+                            <div class="row row-20 row-fix">
+                                <div class="col-md-12">
+                                    <div class="form-wrap form-wrap-validation">
+                                        <label class="form-label-outside" for="form-title">標題</label>
+                                        <input class="form-input" id="form-title" type="text" name="title"
+                                            data-constraints="@Required" required />
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="form-wrap form-wrap-validation">
+                                        <label class="form-label-outside" for="form-description">描述</label>
+                                        <textarea class="form-input" id="form-description" name="description"
+                                            data-constraints="@Required" required></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="form-wrap form-wrap-validation">
+                                        <label class="form-label-outside" for="form-embed">連結</label>
+                                        <input class="form-input" id="form-embed" type="url" name="embed_code"
+                                            placeholder="https://www.instagram.com/p/..." data-constraints="@Required"
+                                            required />
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="form-wrap form-wrap-validation">
+                                        <label class="form-label-outside" for="form-image">上傳圖片</label>
+                                        <input class="form-input" id="form-image" type="file" name="image_data"
+                                            accept="image/*" required />
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="form-wrap form-wrap-validation">
+                                        <label class="form-label-outside" for="form-type">貼文類型</label>
+                                        <select class="form-input" id="form-type" name="igpost_class_id" required>
+                                            <option value="1">個案分享</option>
+                                            <option value="2">日常知識</option>
+                                            <option value="3">好評再+1</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-sm-12 offset-custom-4">
+                                    <div class="form-button">
+                                        <button class="button button-primary button-nina" type="submit">新增貼文</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </section>
+
+        <script>
+            document.getElementById("addPostForm").addEventListener("submit", function (event) {
+                event.preventDefault();
+                let formData = new FormData(this);
+                fetch("儲存哀居貼文.php", {
+                    method: "POST",
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message);
+                        if (data.success) {
+                            location.reload();
+                        }
+                    })
+                    .catch(error => console.error("錯誤:", error));
+            });
+        </script>
 
 
         <!-- Global Mailform Output-->
@@ -427,6 +424,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
         <!-- Javascript-->
         <script src="js/core.min.js"></script>
         <script src="js/script.js"></script>
+    </div>
 </body>
 
 </html>
