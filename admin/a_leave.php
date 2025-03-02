@@ -445,8 +445,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 								</li>
 
 
-								<li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
-								</li>
+								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
+								</li> -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="">用戶管理</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
