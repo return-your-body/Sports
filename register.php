@@ -22,6 +22,16 @@ if ($row['cnt'] > 0) {
     exit();
 }
 
+// **檢查電子郵件是否已經註冊**
+$SQL檢查信箱 = "SELECT COUNT(*) as email_cnt FROM people WHERE email = '$電子郵件'";
+$result = mysqli_query($link, $SQL檢查信箱);
+$row = mysqli_fetch_assoc($result);
+
+if ($row['email_cnt'] > 0) {
+    echo json_encode(["status" => "error", "message" => "此電子郵件已被使用，請使用其他信箱。"]);
+    exit();
+}
+
 
 // 取得「使用者」的 grade_id
 $SQL查詢使用者等級 = "SELECT grade_id FROM `grade` WHERE grade = '使用者'";
