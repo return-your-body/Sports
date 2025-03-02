@@ -1,3 +1,6 @@
+<!DOCTYPE html>
+<html class="wide wow-animation" lang="en">
+
 <?php
 session_start();
 
@@ -62,10 +65,6 @@ if (isset($_SESSION["帳號"])) {
 }
 ?>
 
-
-
-<!DOCTYPE html>
-<html class="wide wow-animation" lang="en">
 
 <head>
 	<!-- Site Title-->
@@ -187,9 +186,11 @@ if (isset($_SESSION["帳號"])) {
 				<polyline class="line-cornered stroke-still" points="0,0 0,100 100,100" stroke-width="10" fill="none">
 				</polyline>
 				<polyline class="line-cornered stroke-animation" points="0,0 100,0 100,100" stroke-width="10"
-					fill="none"></polyline>
+					fill="none">
+				</polyline>
 				<polyline class="line-cornered stroke-animation" points="0,0 0,100 100,100" stroke-width="10"
-					fill="none"></polyline>
+					fill="none">
+				</polyline>
 			</svg>
 		</div>
 	</div>
@@ -214,7 +215,7 @@ if (isset($_SESSION["帳號"])) {
 								data-rd-navbar-toggle=".rd-navbar-nav-wrap"><span></span></button>
 							<!-- RD Navbar Brand-->
 							<div class="rd-navbar-brand">
-								<!--Brand--><a class="brand-name" href="u_index.html"><img class="logo-default"
+								<!--Brand--><a class="brand-name" href="u_index.php"><img class="logo-default"
 										src="images/logo-default-172x36.png" alt="" width="86" height="18"
 										loading="lazy" /><img class="logo-inverse" src="images/logo-inverse-172x36.png"
 										alt="" width="86" height="18" loading="lazy" /></a>
@@ -222,18 +223,18 @@ if (isset($_SESSION["帳號"])) {
 						</div>
 						<div class="rd-navbar-nav-wrap">
 							<ul class="rd-navbar-nav">
-								<li class="rd-nav-item"><a class="rd-nav-link" href="u_index.php">首頁</a>
+								<li class="rd-nav-item "><a class="rd-nav-link" href="u_index.php">首頁</a>
 								</li>
 
 								<li class="rd-nav-item active"><a class="rd-nav-link" href="#">關於我們</a>
 									<ul class="rd-menu rd-navbar-dropdown">
-										<li class="rd-dropdown-item active"><a class="rd-dropdown-link"
+										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_link.php">治療師介紹</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
 												href="u_caseshare.php">個案分享</a>
 										</li>
-										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
+										<li class="rd-dropdown-item active"><a class="rd-dropdown-link"
 												href="u_body-knowledge.php">日常小知識</a>
 										</li>
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
@@ -255,7 +256,7 @@ if (isset($_SESSION["帳號"])) {
 										</li>
 									</ul>
 								</li> -->
-								<li class="rd-nav-item"><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
+								<li class="rd-nav-item "><a class="rd-nav-link" href="u_history.php">歷史紀錄</a>
 								</li>
 								<!-- <li class="rd-nav-item"><a class="rd-nav-link" href="">歷史紀錄</a>
 									<ul class="rd-menu rd-navbar-dropdown">
@@ -315,13 +316,14 @@ if (isset($_SESSION["帳號"])) {
 									<li><a class="icon novi-icon icon-default icon-custom-facebook"
 											href="https://www.facebook.com/ReTurnYourBody/"></a></li>
 									<li><a class="icon novi-icon icon-default icon-custom-linkedin"
-											href="https://lin.ee/sUaUVMq"></a></li>
+											href="https://lin.ee/sUaUVMq"></a>
+									</li>
 									<li><a class="icon novi-icon icon-default icon-custom-instagram"
 											href="https://www.instagram.com/return_your_body/?igsh=cXo3ZnNudWMxaW9l"></a>
 									</li>
 								</ul>
 							</div>
-						</div> -->
+						</div>-->
 						<?php
 						echo "歡迎 ~ ";
 						// 顯示姓名
@@ -471,97 +473,229 @@ if (isset($_SESSION["帳號"])) {
 			</div>
 		</header>
 
-
 		<!--標題-->
 		<div class="section page-header breadcrumbs-custom-wrap bg-image bg-image-9">
 			<!-- Breadcrumbs-->
 			<section class="breadcrumbs-custom breadcrumbs-custom-svg">
 				<div class="container">
-					<!-- <p class="breadcrumbs-custom-subtitle">Our team</p> -->
-					<p class="heading-1 breadcrumbs-custom-title">治療師介紹</p>
+					<!-- <p class="breadcrumbs-custom-subtitle">What We Offer</p> -->
+					<p class="heading-1 breadcrumbs-custom-title">日常小知識</p>
 					<ul class="breadcrumbs-custom-path">
 						<li><a href="u_index.php">首頁</a></li>
 						<li><a href="#">關於我們</a></li>
-						<li class="active">治療師介紹</li>
+						<li class="active">好評再+1</li>
 					</ul>
 				</div>
 			</section>
 		</div>
-		<!--標題-->
 
-		<!--治療師簡介-->
-		<section class="section section-lg bg-default novi-bg novi-bg-img">
+
+
+		<!-- 好評+1 -->
+		<style>
+			/* 讓整個內容區塊在頁面中水平置中 */
+			.wrapper {
+				display: flex;
+				justify-content: center;
+				/* 水平置中 */
+				align-items: center;
+				flex-direction: column;
+				/* 讓內容垂直排列 */
+				width: 100%;
+			}
+
+			/* 貼文容器：使用 Grid 讓內容整齊排列 */
+			.post-container {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				/* 預設桌機版：一行三個 */
+				gap: 20px;
+				/* 貼文之間的間距 */
+				max-width: 1200px;
+				/* 限制最大寬度 */
+				width: 100%;
+				/* 讓它隨畫面縮放 */
+				padding: 20px;
+				justify-content: center;
+				/* 這樣 Grid 內的元素也會對齊 */
+			}
+
+			/* 貼文區塊樣式 */
+			.post-item {
+				text-align: center;
+				border: 1px solid #ddd;
+				padding: 15px;
+				border-radius: 8px;
+				background-color: #fff;
+				/* 確保貼文有背景顏色 */
+			}
+
+			/* 圖片樣式（加上連結） */
+			.post-item a img {
+				width: 100%;
+				height: 200px;
+				object-fit: cover;
+				border-radius: 8px;
+				transition: transform 0.2s ease-in-out;
+			}
+
+			.post-item a img:hover {
+				transform: scale(1.05);
+				/* 滑鼠移上去圖片放大 */
+			}
+
+			/* 貼文標題 */
+			.post-title {
+				font-size: 16px;
+				font-weight: bold;
+				margin-top: 10px;
+			}
+
+			/* 貼文標題連結 */
+			.post-title a {
+				text-decoration: none;
+				color: #007bff;
+			}
+
+			.post-title a:hover {
+				text-decoration: underline;
+			}
+
+			/* 內文過長時省略 */
+			.post-desc {
+				font-size: 14px;
+				color: #555;
+				margin-top: 5px;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+
+			/* 分頁按鈕 */
+			.pagination {
+				text-align: center;
+				margin-top: 20px;
+				width: 100%;
+				display: flex;
+				justify-content: center;
+				/* 讓分頁按鈕置中 */
+			}
+
+			/* 分頁按鈕樣式 */
+			.pagination a {
+				text-decoration: none;
+				padding: 8px 12px;
+				margin: 5px;
+				border: 1px solid #007bff;
+				color: #007bff;
+				border-radius: 5px;
+			}
+
+			.pagination a:hover {
+				background-color: #007bff;
+				color: #fff;
+			}
+
+			/* 當前頁面按鈕樣式 */
+			.pagination .current-page {
+				padding: 8px 12px;
+				margin: 5px;
+				border: 1px solid #007bff;
+				background-color: #007bff;
+				color: white;
+				border-radius: 5px;
+			}
+
+			/* 🔹 媒體查詢 (Media Queries) - 調整貼文數量 🔹 */
+
+			/* 平板模式 (最大 1024px)：一行顯示 2 個 */
+			@media (max-width: 1024px) {
+				.post-container {
+					grid-template-columns: repeat(2, 1fr);
+				}
+			}
+
+			/* 手機模式 (最大 768px)：一行顯示 1 個 */
+			@media (max-width: 768px) {
+				.post-container {
+					grid-template-columns: repeat(1, 1fr);
+				}
+			}
+		</style>
+		<?php
+		require '../db.php'; // 連接資料庫
+		
+		$posts_per_page = 18; // 每頁顯示 18 筆資料
+		$page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+		$offset = ($page - 1) * $posts_per_page;
+
+		// 取得 igpost_class_id = 3 的貼文
+		$query = "SELECT image_data, title, description, embed_code FROM instagram_posts WHERE igpost_class_id = 3 ORDER BY created_at DESC LIMIT ?, ?";
+		$stmt = mysqli_prepare($link, $query);
+		mysqli_stmt_bind_param($stmt, "ii", $offset, $posts_per_page);
+		mysqli_stmt_execute($stmt);
+		$result = mysqli_stmt_get_result($stmt);
+
+		// 取得總貼文數量 (用於分頁)
+		$total_query = "SELECT COUNT(*) FROM instagram_posts WHERE igpost_class_id = 3";
+		$total_result = mysqli_query($link, $total_query);
+		$total_row = mysqli_fetch_array($total_result);
+		$total_posts = $total_row[0];
+		$total_pages = ceil($total_posts / $posts_per_page);
+		?>
+		<section class="section section-lg bg-default text-center">
 			<div class="container">
-				<div class="row align-items-center">
-					<!-- 左側：治療師簡介 -->
-					<div class="col-md-6">
-						<h3 class="box-small-title">治療師簡介</h3>
-						<?php
-						require '../db.php'; // 載入資料庫連線設定
-						
-						$doctorName = isset($_GET['doctor']) ? $_GET['doctor'] : ''; // 獲取 GET 傳遞的治療師姓名
-						if (empty($doctorName)) {
-							die("未提供治療師姓名！");
-						}
+				<div class="row justify-content-sm-center">
+					<div class="col-md-10 col-xl-8">
 
-						$sql = "SELECT *
-                        FROM doctorprofile dp
-                        INNER JOIN doctor d ON dp.doctor_id = d.doctor_id
-                        WHERE d.doctor = ?";
-						$stmt = mysqli_prepare($link, $sql);
 
-						if (!$stmt) {
-							die("SQL 準備失敗: " . mysqli_error($link));
-						}
+						<div class="wrapper">
+							<div class="post-container">
+								<?php while ($row = mysqli_fetch_assoc($result)): ?>
+									<div class="post-item">
+										<a href="<?php echo htmlspecialchars($row['embed_code']); ?>" target="_blank">
+											<img src="data:image/jpeg;base64,<?php echo base64_encode($row['image_data']); ?>"
+												alt="Instagram Image">
+										</a>
+										<div class="post-title">
+											<a href="<?php echo htmlspecialchars($row['embed_code']); ?>" target="_blank">
+												<?php echo htmlspecialchars($row['title']); ?>
+											</a>
+										</div>
+										<div class="post-desc">
+											<?php echo mb_strimwidth(htmlspecialchars($row['description']), 0, 50, "..."); ?>
+										</div>
+									</div>
+								<?php endwhile; ?>
+							</div>
 
-						mysqli_stmt_bind_param($stmt, "s", $doctorName);
-						mysqli_stmt_execute($stmt);
-						$result = mysqli_stmt_get_result($stmt);
+							<!-- 分頁按鈕 -->
+							<div class="pagination">
+								<?php if ($page > 1): ?>
+									<a href="?page=<?php echo $page - 1; ?>">&laquo; 上一頁</a>
+								<?php endif; ?>
 
-						if (!$result || mysqli_num_rows($result) == 0) {
-							die("未找到對應治療師資料！");
-						}
+								<?php for ($i = 1; $i <= $total_pages; $i++): ?>
+									<?php if ($i == $page): ?>
+										<span class="current-page"><?php echo $i; ?></span>
+									<?php else: ?>
+										<a href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+									<?php endif; ?>
+								<?php endfor; ?>
 
-						$doctorProfile = mysqli_fetch_assoc($result);
-						mysqli_stmt_close($stmt);
-						mysqli_close($link);
-
-						// 顯示治療師資料
-						echo "<div class='doctor-profile'>";
-						echo "<p><strong>治療師姓名：</strong>" . htmlspecialchars($doctorName) . "</p>";
-						echo "<p><strong>學歷：</strong>" . nl2br(htmlspecialchars($doctorProfile['education'] ?? '無')) . "</p>";
-						echo "<p><strong>現任職務：</strong>" . nl2br(htmlspecialchars($doctorProfile['current_position'] ?? '無')) . "</p>";
-						echo "<p><strong>專長描述：</strong>" . nl2br(htmlspecialchars($doctorProfile['specialty'] ?? '無')) . "</p>";
-						echo "<p><strong>專業認證與進修課程：</strong>" . nl2br(htmlspecialchars($doctorProfile['certifications'] ?? '無')) . "</p>";
-						echo "<p><strong>治療理念：</strong>" . nl2br(htmlspecialchars($doctorProfile['treatment_concept'] ?? '無')) . "</p>";
-						echo "</div>";
-						echo '<button onclick="window.location.href=\'u_link.php\'" style="padding: 10px 20px; font-size: 16px; cursor: pointer; margin-top: 20px;">返回</button>';
-						?>
-					</div>
-
-					<!-- 右側：治療師圖片 -->
-					<!-- <div class="col-md-6 text-center">
-						<div class="doctor-image">
-							<?php
-							// 確認圖片路徑
-							if (!empty($doctorProfile['doctor_image'])) {
-								$imagePath = "../images/" . htmlspecialchars($doctorProfile['doctor_image']);
-								// 檢查圖片是否存在
-								if (file_exists($imagePath)) {
-									echo "<img src='$imagePath' alt='治療師照片' class='img-fluid' style='max-width: 100%; height: auto;'>";
-								} else {
-									echo "<p>圖片不存在，請確認檔案路徑。</p>";
-								}
-							} else {
-								echo "<p>此治療師未提供圖片。</p>";
-							}
-							?>
+								<?php if ($page < $total_pages): ?>
+									<a href="?page=<?php echo $page + 1; ?>">下一頁 &raquo;</a>
+								<?php endif; ?>
+							</div>
 						</div>
-					</div> -->
 
+
+
+					</div>
 				</div>
 			</div>
 		</section>
+
 
 
 		<footer class="section novi-bg novi-bg-img footer-simple">
@@ -626,12 +760,16 @@ if (isset($_SESSION["帳號"])) {
 				</div>
 			</div>
 		</footer>
+	</div>
 
-		<!-- Global Mailform Output-->
-		<div class="snackbars" id="form-output-global"></div>
-		<!-- Javascript-->
-		<script src="js/core.min.js"></script>
-		<script src="js/script.js"></script>
+	</div>
+	<!--頁尾-->
+
+	<!-- Global Mailform Output-->
+	<div class="snackbars" id="form-output-global"></div>
+	<!-- Javascript-->
+	<script src="js/core.min.js"></script>
+	<script src="js/script.js"></script>
 </body>
 
 </html>
