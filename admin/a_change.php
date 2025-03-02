@@ -205,8 +205,8 @@ mysqli_close($link);
 						</div>
 						<div class="rd-navbar-nav-wrap">
 							<ul class="rd-navbar-nav">
-								<li class="rd-nav-item "><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
-								</li>
+								<!-- <li class="rd-nav-item "><a class="rd-nav-link" href="a_index.php">網頁編輯</a>
+								</li> -->
 								<li class="rd-nav-item"><a class="rd-nav-link" href="">關於治療師</a>
 									<ul class="rd-menu rd-navbar-dropdown">
 										<li class="rd-dropdown-item"><a class="rd-dropdown-link"
