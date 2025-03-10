@@ -238,8 +238,8 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
                                         </li>
                                     </ul>
                                 </li>
-                                <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
-                                </li> -->
+                                <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
+                                </li>
                                 <!-- <li class="rd-nav-item"><a class="rd-nav-link" href="a_comprehensive.php">綜合</a>
                                     <ul class="rd-menu rd-navbar-dropdown">
                                         <li class="rd-dropdown-item"><a class="rd-dropdown-link" href="">Single teacher</a>
