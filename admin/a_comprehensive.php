@@ -383,7 +383,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			}
 
 			.chart-container {
-				width: 90%;
+				width: 75%;
 				margin: auto;
 			}
 
@@ -410,10 +410,14 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 		<?php
 		session_start();
-
 		require '../db.php';
 
-		// 查詢治療師列表
+
+		header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+		header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
+		header("Pragma: no-cache");
+
+		// 取得治療師列表
 		$doctorQuery = "SELECT doctor_id, doctor FROM doctor";
 		$doctorResult = $link->query($doctorQuery);
 		$doctors = [];
@@ -421,7 +425,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			$doctors[] = $row;
 		}
 		?>
-
 
 		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -440,21 +443,18 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			</select>
 			<button id="searchBtn">查詢</button>
 		</div>
-
 		<div class="chart-container">
 			<div>
 				<h4>總工作時數（含加班）</h4>
 				<canvas id="workHoursChart"></canvas>
 			</div>
-
-			<!-- 圓餅圖組合在一排 -->
 			<div class="chart-row">
 				<div class="chart-box">
 					<h4>項目數比例</h4>
 					<canvas id="itemChart"></canvas>
 				</div>
 				<div class="chart-box">
-					<h4>治療師完成的項目數比例</h4>
+					<h4>治療師完成的預約人數比例</h4>
 					<canvas id="doctorChart"></canvas>
 				</div>
 				<div class="chart-box">
@@ -463,94 +463,63 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				</div>
 			</div>
 		</div>
-
-
+		<table id="detailTable" border="1" style="display:none;">
+			<thead>
+				<tr>
+					<th>姓名</th>
+					<th>性別</th>
+					<th>身分證</th>
+					<th>日期</th>
+					<th>時間</th>
+					<th>治療師</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
 		<script>
 			$(document).ready(function () {
 				populateDateSelectors();
 				fetchData();
 
-				$("#searchBtn").click(function () {
-					fetchData();
-				});
+				$("#searchBtn").click(fetchData);
+
+				function populateDateSelectors() {
+					let yearSelect = $("#year"), monthSelect = $("#month"), daySelect = $("#day");
+					let currentYear = new Date().getFullYear();
+					for (let i = currentYear - 5; i <= currentYear + 1; i++) yearSelect.append(`<option value="${i}">${i}</option>`);
+					for (let i = 1; i <= 12; i++) monthSelect.append(`<option value="${i}">${i}</option>`);
+					for (let i = 1; i <= 31; i++) daySelect.append(`<option value="${i}">${i}</option>`);
+				}
+
+				function fetchData() {
+					let year = $("#year").val(), month = $("#month").val(), day = $("#day").val(), doctor = $("#doctor").val();
+					$.getJSON(`數據查詢.php?year=${year}&month=${month}&day=${day}&doctor_id=${doctor}`, function (data) {
+						if (!data.length) return alert("⚠ 無數據可顯示");
+						renderCharts(data);
+					}).fail(() => alert("❌ 無法獲取數據！"));
+				}
+
+				function renderCharts(data) {
+					let ctx1 = document.getElementById("workHoursChart").getContext("2d");
+					let ctx2 = document.getElementById("itemChart").getContext("2d");
+					let ctx3 = document.getElementById("doctorChart").getContext("2d");
+					let ctx4 = document.getElementById("incomeChart").getContext("2d");
+
+					let doctorNames = data.map(d => d.doctor_name);
+					let workHours = data.map(d => d.work_hours);
+					let totalItems = data.map(d => d.total_items);
+					let revenue = data.map(d => d.revenue);
+
+					new Chart(ctx1, { type: "bar", data: { labels: doctorNames, datasets: [{ label: "總工作時數", data: workHours, backgroundColor: "blue" }] } });
+					new Chart(ctx2, { type: "pie", data: { labels: doctorNames, datasets: [{ data: totalItems, backgroundColor: ["red", "green", "blue"] }] } });
+					new Chart(ctx3, { type: "pie", data: { labels: doctorNames, datasets: [{ data: totalItems, backgroundColor: ["yellow", "purple", "cyan"] }] } });
+					new Chart(ctx4, { type: "pie", data: { labels: doctorNames, datasets: [{ data: revenue, backgroundColor: ["orange", "pink", "gray"] }] } });
+				}
 			});
-
-			function populateDateSelectors() {
-				let yearSelect = $("#year");
-				let currentYear = new Date().getFullYear();
-				for (let i = currentYear - 5; i <= currentYear + 1; i++) {
-					yearSelect.append(`<option value="${i}" ${i === currentYear ? "selected" : ""}>${i}</option>`);
-				}
-
-				let monthSelect = $("#month");
-				for (let i = 1; i <= 12; i++) {
-					monthSelect.append(`<option value="${i}" ${i === new Date().getMonth() + 1 ? "selected" : ""}>${i}</option>`);
-				}
-
-				let daySelect = $("#day");
-				for (let i = 1; i <= 31; i++) {
-					daySelect.append(`<option value="${i}" ${i === new Date().getDate() ? "selected" : ""}>${i}</option>`);
-				}
-			}
-
-			function fetchData() {
-				let year = $("#year").val(), month = $("#month").val(), day = $("#day").val(), doctor = $("#doctor").val();
-
-				$.getJSON(`數據查詢.php?year=${year}&month=${month}&day=${day}&doctor_id=${doctor}`, function (data) {
-					if (data.length === 0) {
-						alert("⚠ 無數據可顯示");
-						return;
-					}
-					renderCharts(data);
-				}).fail(function () {
-					alert("❌ 無法獲取數據！");
-				});
-			}
-
-			function renderCharts(data) {
-				let workHoursCtx = document.getElementById("workHoursChart").getContext("2d");
-				let itemCtx = document.getElementById("itemChart").getContext("2d");
-				let doctorCtx = document.getElementById("doctorChart").getContext("2d");
-				let incomeCtx = document.getElementById("incomeChart").getContext("2d");
-
-				let doctorNames = data.map(d => d.doctor_name);
-				let workHours = data.map(d => d.work_hours || 0);
-				let totalItems = data.map(d => d.total_items || 0);
-				let revenue = data.map(d => d.revenue || 0);
-
-				new Chart(workHoursCtx, {
-					type: "bar",
-					data: {
-						labels: doctorNames,
-						datasets: [{ label: "總工作時數", data: workHours, backgroundColor: "blue" }]
-					}
-				});
-
-				new Chart(itemCtx, {
-					type: "pie",
-					data: {
-						labels: doctorNames,
-						datasets: [{ label: "項目數量", data: totalItems, backgroundColor: ["red", "green", "blue"] }]
-					}
-				});
-
-				new Chart(doctorCtx, {
-					type: "pie",
-					data: {
-						labels: doctorNames,
-						datasets: [{ label: "治療師完成項目數", data: totalItems, backgroundColor: ["yellow", "purple", "cyan"] }]
-					}
-				});
-
-				new Chart(incomeCtx, {
-					type: "pie",
-					data: {
-						labels: doctorNames,
-						datasets: [{ label: "收入", data: revenue, backgroundColor: ["orange", "pink", "gray"] }]
-					}
-				});
-			}
 		</script>
+
+
+
 
 
 
