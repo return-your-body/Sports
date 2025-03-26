@@ -329,43 +329,59 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 		<!-- 收入 -->
 
+		<?php
+		session_start();
+		require '../db.php';
+		?>
 
 		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-		<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
-		<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 		<style>
 			.chart-container {
 				display: flex;
 				flex-direction: column;
 				align-items: center;
-				width: 80%;
-				margin: auto;
 			}
 
 			.chart-row {
 				display: flex;
 				justify-content: center;
-				width: 100%;
 				flex-wrap: wrap;
-				margin-top: 20px;
+				gap: 20px;
 			}
 
 			.chart-box {
-				width: 30%;
+				width: 300px;
 				text-align: center;
 			}
 
 			.full-width {
-				width: 60%;
+				width: 600px;
 				text-align: center;
-				margin-bottom: 20px;
 			}
 
-			select,
-			button {
-				padding: 5px;
-				margin: 5px;
+			.modal {
+				display: none;
+				position: fixed;
+				z-index: 1000;
+				left: 0;
+				top: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.5);
+			}
+
+			.modal-content {
+				background: white;
+				padding: 20px;
+				margin: 10% auto;
+				width: 80%;
+			}
+
+			.close {
+				float: right;
+				font-size: 20px;
+				cursor: pointer;
 			}
 		</style>
 
@@ -374,19 +390,20 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			年：<select id="year"></select>
 			月：<select id="month"></select>
 			日：<select id="day"></select>
-			治療師:
-			<select id="doctor">
+			治療師：<select id="doctor">
 				<option value="0">全部</option>
 			</select>
 			<button id="searchBtn">查詢</button>
+			<br /><br />
+			圖表匯出：<button id="exportExcel">匯出 Excel</button>
+			<button id="exportPDF">匯出 PDF</button>
 		</div>
-
+		<br />
 		<div class="chart-container">
 			<div class="full-width">
 				<h4>總工作時數</h4>
 				<canvas id="workHoursChart"></canvas>
 			</div>
-
 			<div class="chart-row">
 				<div class="chart-box">
 					<h4>項目數比例</h4>
@@ -394,7 +411,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				</div>
 				<div class="chart-box">
 					<h4>治療師預約人數比例</h4>
-					<canvas id="doctorChart"></canvas>
+					<canvas id="appointmentChart"></canvas>
 				</div>
 				<div class="chart-box">
 					<h4>收入統計</h4>
@@ -403,147 +420,112 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			</div>
 		</div>
 
-	<script>
-    $(document).ready(function () {
-        populateDateSelectors();
-        fetchDoctorsAndAssistants(); // 取得所有治療師與助手
-        setTimeout(fetchData, 500); // 預設載入時查詢資料
+		<!-- 詳細資料表格 -->
+		<div id="modalDetail" class="modal">
+			<div class="modal-content">
+				<span class="close">&times;</span>
+				<h2>詳細統計數據</h2>
+				<table border="1" width="100%">
+					<thead>
+						<tr>
+							<th>治療師</th>
+							<th>類別</th>
+							<th>數量/金額</th>
+						</tr>
+					</thead>
+					<tbody id="modalDetailTable"></tbody>
+				</table>
+			</div>
+		</div>
 
-        // 綁定查詢按鈕
-        $("#searchBtn").click(function () {
-            fetchData(); // 按下查詢後重新查詢數據
-        });
+		<script>
+			$(document).ready(function () {
+				populateDate();
+				loadDoctors();
+				setTimeout(fetchAllCharts, 500);
 
-        function populateDateSelectors() {
-            let yearSelect = $("#year"), monthSelect = $("#month"), daySelect = $("#day");
-            let today = new Date();
-            let currentYear = today.getFullYear();
-            let currentMonth = today.getMonth() + 1;
-            let currentDay = today.getDate();
+				$('#searchBtn').click(fetchAllCharts);
+				$('.close').click(() => $('#modalDetail').hide());
 
-            for (let i = currentYear - 5; i <= currentYear + 1; i++) {
-                yearSelect.append(`<option value="${i}" ${i === currentYear ? 'selected' : ''}>${i}</option>`);
-            }
-            for (let i = 1; i <= 12; i++) {
-                monthSelect.append(`<option value="${i}" ${i === currentMonth ? 'selected' : ''}>${i}</option>`);
-            }
-            for (let i = 1; i <= 31; i++) {
-                daySelect.append(`<option value="${i}" ${i === currentDay ? 'selected' : ''}>${i}</option>`);
-            }
-        }
+				function populateDate() {
+					const now = new Date();
+					for (let i = now.getFullYear() - 3; i <= now.getFullYear() + 1; i++) {
+						$('#year').append(`<option value='${i}' ${i === now.getFullYear() ? 'selected' : ''}>${i}</option>`);
+					}
+					for (let i = 1; i <= 12; i++) {
+						$('#month').append(`<option value='${i}' ${i === now.getMonth() + 1 ? 'selected' : ''}>${i}</option>`);
+					}
+					for (let i = 1; i <= 31; i++) {
+						$('#day').append(`<option value='${i}' ${i === now.getDate() ? 'selected' : ''}>${i}</option>`);
+					}
+				}
 
-        function fetchDoctorsAndAssistants() {
-            $.getJSON("獲取治療師助手.php", function (data) {
-                let doctorSelect = $("#doctor");
-                doctorSelect.empty();
-                doctorSelect.append('<option value="0">全部</option>'); // 預設選擇全部
-                data.forEach(person => {
-                    doctorSelect.append(`<option value="${person.doctor_id}">${person.doctor}</option>`);
-                });
-            });
-        }
+				function loadDoctors() {
+					$.getJSON('數據查詢.php?chart=doctors', data => {
+						data.forEach(d => {
+							$('#doctor').append(`<option value='${d.doctor_id}'>${d.doctor}</option>`);
+						});
+					});
+				}
 
-        function fetchData() {
-            let year = $("#year").val();
-            let month = $("#month").val();
-            let day = $("#day").val();
-            let doctor = $("#doctor").val();
+				function fetchAllCharts() {
+					const y = $('#year').val(), m = $('#month').val(), d = $('#day').val(), doc = $('#doctor').val();
+					drawChart('workHoursChart', 'bar', '總工作時數', '總工作時數', y, m, d, doc);
+					drawChart('itemChart', 'pie', '項目數比例', 'item_count', y, m, d, doc, true);
+					drawChart('appointmentChart', 'pie', '治療師預約人數比例', 'total_appointments', y, m, d, doc);
+					drawChart('incomeChart', 'pie', '收入統計', 'total_revenue', y, m, d, doc, true);
+				}
 
-            console.log(`查詢條件: 年=${year}, 月=${month}, 日=${day}, 醫師=${doctor}`);
+				function drawChart(canvasId, type, chartName, valueKey, y, m, d, doc, enableClick) {
+					$.getJSON(`數據查詢.php?chart=${chartName}&year=${y}&month=${m}&day=${d}&doctor_id=${doc}`, res => {
+						if (!res.length) return;
+						const ctx = document.getElementById(canvasId).getContext('2d');
+						new Chart(ctx, {
+							type: type,
+							data: {
+								labels: res.map(r => r.doctor_name || r.item || r.category),
+								datasets: [{
+									label: chartName,
+									data: res.map(r => r[valueKey]),
+									backgroundColor: ['red', 'blue', 'green', 'orange', 'purple', 'cyan']
+								}]
+							},
+							options: enableClick ? {
+								onClick(evt, el) {
+									if (el.length > 0) {
+										const label = res[el[0].index].item || res[el[0].index].doctor_name || res[el[0].index].category;
+										showDetails(label);
+									}
+								}
+							} : {}
+						});
+					});
+				}
 
-            fetchChartData("總工作時數", "workHoursChart", "bar", "總工作時數", year, month, day, doctor);
-            fetchChartData("項目數比例", "itemChart", "pie", "項目數比例", year, month, day, doctor);
-            fetchChartData("治療師預約人數比例", "doctorChart", "pie", "治療師預約人數比例", year, month, day, doctor);
-            fetchIncomeChart(year, month, day, doctor);
-        }
-
-        function fetchChartData(chartType, canvasId, chartTypeFormat, label, year, month, day, doctor) {
-            $.getJSON(`數據查詢.php?year=${year}&month=${month}&day=${day}&doctor_id=${doctor}&chart=${chartType}`, function (data) {
-                if (!data.length) {
-                    console.warn(`${chartType} 無數據`);
-                    return;
-                }
-
-                let labels = data.map(d => d.doctor_name || d.item);
-                let values = data.map(d => d.total_work_hours || d.item_count || d.total_appointments || d.total_revenue);
-
-                let ctx = document.getElementById(canvasId).getContext("2d");
-                new Chart(ctx, {
-                    type: chartTypeFormat,
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: label,
-                            data: values,
-                            backgroundColor: ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'cyan', 'pink']
-                        }]
-                    }
-                });
-            }).fail(() => {
-                alert("❌ 查詢數據失敗，請檢查後端 API");
-            });
-        }
-
-        function fetchIncomeChart(year, month, day, doctor) {
-            $.getJSON(`數據查詢.php?year=${year}&month=${month}&day=${day}&doctor_id=${doctor}&chart=收入統計`, function (data) {
-                if (!data.length) {
-                    console.warn(`收入統計 無數據`);
-                    return;
-                }
-
-                let labels = data.map(d => d.item);
-                let values = data.map(d => d.total_revenue);
-
-                let ctx = document.getElementById("incomeChart").getContext("2d");
-                new Chart(ctx, {
-                    type: "pie",
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: "收入統計",
-                            data: values,
-                            backgroundColor: ['red', 'blue', 'green', 'yellow', 'purple']
-                        }]
-                    },
-                    options: {
-                        onClick: function (evt, elements) {
-                            if (elements.length > 0) {
-                                let index = elements[0].index;
-                                let itemName = labels[index];
-                                showDetails(itemName);
-                            }
-                        }
-                    }
-                });
-            }).fail(() => {
-                alert("❌ 無法獲取收入統計數據！");
-            });
-        }
-
-        function showDetails(itemName) {
-            $.getJSON(`數據查詢.php?chart=詳細數據&item=${itemName}`, function (data) {
-                let detailHTML = data.map(d =>
-                    `<tr>
-                        <td>${d.doctor_name}</td>
-                        <td>${d.category}</td>
-                        <td>${d.value}</td>
-                    </tr>`
-                ).join('');
-
-                $("#modalDetailTable tbody").html(detailHTML);
-                $("#modalDetail").show();
-            }).fail(() => {
-                alert("❌ 無法獲取詳細數據！");
-            });
-        }
-
-        $(".close").click(function () {
-            $("#modalDetail").hide();
-        });
-    });
-</script>
+				function showDetails(label) {
+					$.getJSON(`數據查詢.php?chart=詳細數據&item=${label}`, function (data) {
+						let rows = data.map(d => `<tr><td>${d.doctor_name}</td><td>${d.category}</td><td>${d.value}</td></tr>`).join('');
+						$('#modalDetailTable').html(rows);
+						$('#modalDetail').show();
+					});
+				}
+			});
 
 
+			// 匯出 Excel / PDF
+			function exportData(type) {
+				const year = $('#year').val();
+				const month = $('#month').val();
+				const day = $('#day').val();
+				const doctor_id = $('#doctor_id').val();
+				window.open(`數據查詢.php?chart=匯出&type=${type}&year=${year}&month=${month}&day=${day}&doctor_id=${doctor_id}`);
+			}
+
+			$('#exportExcel').click(() => exportData("excel"));
+			$('#exportPDF').click(() => exportData("pdf"));
+
+
+		</script>
 
 
 
