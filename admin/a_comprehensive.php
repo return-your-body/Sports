@@ -384,14 +384,13 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				cursor: pointer;
 			}
 		</style>
-
 		<h2 style="text-align: center">治療師統計數據</h2>
 		<div style="text-align: center">
 			年：<select id="year"></select>
 			月：<select id="month"></select>
 			日：<select id="day"></select>
 			治療師：<select id="doctor">
-				<option value="0">全部</option>
+				<option value="">全部</option>
 			</select>
 			<button id="searchBtn">查詢</button>
 			<br /><br />
@@ -442,14 +441,12 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			$(document).ready(function () {
 				populateDate();
 				loadDoctors();
-				setTimeout(fetchAllCharts, 500);
-
 				$('#searchBtn').click(fetchAllCharts);
 				$('.close').click(() => $('#modalDetail').hide());
 
 				function populateDate() {
 					const now = new Date();
-					for (let i = now.getFullYear() - 3; i <= now.getFullYear() + 1; i++) {
+					for (let i = now.getFullYear() - 3; i <= now.getFullYear() + 10; i++) {
 						$('#year').append(`<option value='${i}' ${i === now.getFullYear() ? 'selected' : ''}>${i}</option>`);
 					}
 					for (let i = 1; i <= 12; i++) {
@@ -461,26 +458,32 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				}
 
 				function loadDoctors() {
-					$.getJSON('數據查詢.php?chart=doctors', data => {
+					$.getJSON('獲取治療師助手.php', data => {
+						$('#doctor').empty().append(`<option value=''>全部</option>`);
 						data.forEach(d => {
-							$('#doctor').append(`<option value='${d.doctor_id}'>${d.doctor}</option>`);
+							const id = d.doctor_id || d.id;
+							const name = d.doctor || d.name;
+							$('#doctor').append(`<option value='${id}'>${name}</option>`);
 						});
 					});
 				}
 
 				function fetchAllCharts() {
 					const y = $('#year').val(), m = $('#month').val(), d = $('#day').val(), doc = $('#doctor').val();
-					drawChart('workHoursChart', 'bar', '總工作時數', '總工作時數', y, m, d, doc);
+					drawChart('workHoursChart', 'bar', '總工作時數', 'total_hours', y, m, d, doc);
 					drawChart('itemChart', 'pie', '項目數比例', 'item_count', y, m, d, doc, true);
 					drawChart('appointmentChart', 'pie', '治療師預約人數比例', 'total_appointments', y, m, d, doc);
 					drawChart('incomeChart', 'pie', '收入統計', 'total_revenue', y, m, d, doc, true);
 				}
 
-				function drawChart(canvasId, type, chartName, valueKey, y, m, d, doc, enableClick) {
+				function drawChart(canvasId, type, chartName, valueKey, y, m, d, doc, enableClick = false) {
 					$.getJSON(`數據查詢.php?chart=${chartName}&year=${y}&month=${m}&day=${d}&doctor_id=${doc}`, res => {
-						if (!res.length) return;
-						const ctx = document.getElementById(canvasId).getContext('2d');
-						new Chart(ctx, {
+						const chartContainer = document.getElementById(canvasId).getContext('2d');
+						if (!res.length) {
+							$(`#${canvasId}`).parent().html(`<p class='text-danger'>⚠️ 查無資料</p>`);
+							return;
+						}
+						new Chart(chartContainer, {
 							type: type,
 							data: {
 								labels: res.map(r => r.doctor_name || r.item || r.category),
@@ -511,21 +514,20 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				}
 			});
 
-
 			// 匯出 Excel / PDF
 			function exportData(type) {
 				const year = $('#year').val();
 				const month = $('#month').val();
 				const day = $('#day').val();
-				const doctor_id = $('#doctor_id').val();
-				window.open(`數據查詢.php?chart=匯出&type=${type}&year=${year}&month=${month}&day=${day}&doctor_id=${doctor_id}`);
+				const doctor_id = $('#doctor').val() || '';
+				const url = `數據查詢.php?chart=匯出&type=${type}&year=${year}&month=${month}&day=${day}&doctor_id=${doctor_id}`;
+				window.open(url);
 			}
 
 			$('#exportExcel').click(() => exportData("excel"));
 			$('#exportPDF').click(() => exportData("pdf"));
-
-
 		</script>
+
 
 
 
