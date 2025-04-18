@@ -646,10 +646,9 @@ if (isset($_SESSION["帳號"])) {
 		$params[] = $records_per_page;
 		$params[0] .= 'ii';
 
-		$stmt = $link->prepare("
-    SELECT 
+		$stmt = $link->prepare("SELECT 
         a.appointment_id AS id,
-        p.idcard AS idcard, -- 新增身分證欄位
+        p.idcard AS idcard,
         COALESCE(p.name, '未預約') AS name,
         CASE 
             WHEN p.gender_id = 1 THEN '男' 
@@ -674,9 +673,10 @@ if (isset($_SESSION["帳號"])) {
     LEFT JOIN user u ON d.user_id = u.user_id
     LEFT JOIN status s ON a.status_id = s.status_id
     WHERE $conditions
-    ORDER BY ds.date, st.shifttime
+    ORDER BY ds.date DESC, st.shifttime DESC
     LIMIT ?, ?
 ");
+
 
 		$stmt->bind_param(...$params);
 		$stmt->execute();

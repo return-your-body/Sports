@@ -716,36 +716,37 @@ if (isset($_SESSION["帳號"])) {
 
 		// 查詢預約資料
 		$data_sql = "SELECT 
-        a.appointment_id AS id,
-        COALESCE(p.idcard, '無資料') AS idcard,
-        COALESCE(p.name, '未預約') AS name,
-        CASE 
-            WHEN p.gender_id = 1 THEN '男' 
-            WHEN p.gender_id = 2 THEN '女' 
-            ELSE '無資料' 
-        END AS gender,
-        IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '無資料') AS birthday_with_age,
-        DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
-        st.shifttime AS shifttime,
-        d.doctor AS doctor_name,
-        COALESCE(a.note, '無') AS note,
-        COALESCE(s.status_id, 1) AS status_id,
-        COALESCE(s.status_name, '未設定') AS status_name,
-        a.created_at
-    FROM appointment a
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id
-    LEFT JOIN status s ON a.status_id = s.status_id  
-    $where_sql
-    ORDER BY 
-        FIELD(s.status_name, '看診中', '過號', '報到', '預約', '修改', '請假', '爽約', '已看診') ASC,
-        ds.date ASC, 
-        st.shifttime ASC
-    LIMIT ?, ?
-";
+		a.appointment_id AS id,
+		COALESCE(p.idcard, '無資料') AS idcard,
+		COALESCE(p.name, '未預約') AS name,
+		CASE 
+			WHEN p.gender_id = 1 THEN '男' 
+			WHEN p.gender_id = 2 THEN '女' 
+			ELSE '無資料' 
+		END AS gender,
+		IFNULL(CONCAT(DATE_FORMAT(p.birthday, '%Y-%m-%d'), ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)'), '無資料') AS birthday_with_age,
+		DATE_FORMAT(ds.date, '%Y-%m-%d') AS appointment_date,
+		st.shifttime AS shifttime,
+		d.doctor AS doctor_name,
+		COALESCE(a.note, '無') AS note,
+		COALESCE(s.status_id, 1) AS status_id,
+		COALESCE(s.status_name, '未設定') AS status_name,
+		a.created_at
+	FROM appointment a
+	LEFT JOIN people p ON a.people_id = p.people_id
+	LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+	LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+	LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+	LEFT JOIN user u ON d.user_id = u.user_id
+	LEFT JOIN status s ON a.status_id = s.status_id  
+	$where_sql
+	ORDER BY 
+		ds.date DESC,
+		st.shifttime_id DESC,
+		FIELD(s.status_name, '看診中', '過號', '報到', '預約', '修改', '請假', '爽約', '已看診') ASC
+	LIMIT ?, ?
+	";
+	
 
 		$data_stmt = $link->prepare($data_sql);
 		$params[] = $offset;

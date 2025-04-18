@@ -671,7 +671,7 @@ LEFT JOIN item i ON m.item_id = i.item_id
 LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
 WHERE ds.doctor_id = ? AND p.idcard LIKE CONCAT('%', ?, '%')
 GROUP BY a.appointment_id, p.idcard, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime
-ORDER BY created_at ASC
+ORDER BY ds.date DESC, st.shifttime DESC
 LIMIT ?, ?";
 
 		$data_stmt = $link->prepare($data_sql);
@@ -714,7 +714,7 @@ LIMIT ?, ?";
 									<th>姓名</th>
 									<th>性別</th>
 									<th>生日 (年齡)</th>
-									<th>身分證</th> <!-- 新增身分證欄位 -->
+									<th>身分證</th> 
 									<th>看診日期</th>
 									<th>看診時間</th>
 									<th>治療項目</th>
