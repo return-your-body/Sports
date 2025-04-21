@@ -25,6 +25,7 @@ if ($doctor_id != 0) {
   $where .= " AND a.doctor_id = $doctor_id";
 }
 
+// 工作統計查詢
 $work = [];
 $sql = "
   SELECT d.doctor AS doctor_name, d.doctor_id, a.work_date,
@@ -72,22 +73,38 @@ while ($r = mysqli_fetch_assoc($res)) {
     'total_hours' => $r['total_hours']
   ];
 }
-$work = array_map(function($w) {
+$work = array_map(function ($w) {
   $w['total_hours'] = round($w['total_hours'], 2);
   return $w;
 }, array_values($temp));
 
-// Leave 統計
-$whereLeave = str_replace('a.', 'l.', $where);
+// 請假統計查詢
+$whereLeave = "1";
+switch ($type) {
+  case 'year':
+    $whereLeave .= " AND YEAR(l.start_date) = $year";
+    break;
+  case 'month':
+    $whereLeave .= " AND YEAR(l.start_date) = $year AND MONTH(l.start_date) = $month";
+    break;
+  case 'day':
+  default:
+    $whereLeave .= " AND DATE(l.start_date) = '$year-$month-$day'";
+    break;
+}
+if ($doctor_id != 0) {
+  $whereLeave .= " AND l.doctor_id = $doctor_id";
+}
+
 $leave_types = [];
 $leave = [];
 $res2 = mysqli_query($link, "
-  SELECT d.doctor AS doctor_name, d.doctor_id, l.leave_type,
-    SUM(TIMESTAMPDIFF(MINUTE, l.start_date, l.end_date)) AS leave_minutes
+  SELECT d.doctor AS doctor_name, d.doctor_id, l.leave_type, l.start_date, l.end_date,
+    TIMESTAMPDIFF(MINUTE, l.start_date, l.end_date) AS leave_minutes
   FROM leaves l
   JOIN doctor d ON l.doctor_id = d.doctor_id
   WHERE l.is_approved = 1 AND $whereLeave
-  GROUP BY l.doctor_id, l.leave_type
+  ORDER BY l.doctor_id, l.start_date
 ");
 
 $temp2 = [];
@@ -96,13 +113,39 @@ while ($r = mysqli_fetch_assoc($res2)) {
   $leave_types[$r['leave_type']] = true;
   $docId = $r['doctor_id'];
   if (!isset($temp2[$docId])) {
-    $temp2[$docId] = ['doctor_name' => $r['doctor_name'], 'doctor_id' => $docId, 'total_minutes' => 0, 'details' => []];
+    $temp2[$docId] = [
+      'doctor_name' => $r['doctor_name'],
+      'doctor_id' => $docId,
+      'total_minutes' => 0,
+      'details' => []
+    ];
   }
-  $temp2[$docId]['details'][$r['leave_type']] = $r['leave_minutes'];
   $temp2[$docId]['total_minutes'] += $r['leave_minutes'];
+  $temp2[$docId]['details'][] = [
+    'leave_type' => $r['leave_type'],
+    'start' => $r['start_date'],
+    'end' => $r['end_date'],
+    'minutes' => $r['leave_minutes']
+  ];
 }
 $leave = array_values($temp2);
 $leave_types = array_keys($leave_types);
+
+// 圖表補0
+foreach ($leave as &$l) {
+  foreach ($leave_types as $lt) {
+    $found = false;
+    foreach ($l['details'] as $item) {
+      if ($item['leave_type'] === $lt) {
+        $found = true;
+        break;
+      }
+    }
+    if (!$found) {
+      $l['details'][] = ['leave_type' => $lt, 'start' => '-', 'end' => '-', 'minutes' => 0];
+    }
+  }
+}
 
 echo json_encode(['work' => $work, 'leave' => $leave, 'leave_types' => $leave_types]);
 ?>

@@ -328,8 +328,8 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		</header>
 
 		<!-- 收入 -->
-
 		<?php require '../db.php'; ?>
+
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
 		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -362,10 +362,9 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			.modal-content {
 				background: white;
 				padding: 20px;
-				margin: 5% auto;
+				margin: 10% auto;
 				width: 90%;
-				max-height: 80%;
-				overflow-y: auto;
+				max-width: 1000px;
 			}
 
 			.close {
@@ -386,29 +385,22 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 					</select>
 				</div>
 				<div class="col-auto">
-					<select id="year" name="year" class="form-select">
-						<?php for ($y = 2022; $y <= 2036; $y++)
-							echo "<option value='$y'" . ($y == date('Y') ? ' selected' : '') . ">$y</option>"; ?>
-					</select>
+					<select id="year" name="year" class="form-select"></select>
 				</div>
 				<div class="col-auto">
-					<select id="month" name="month" class="form-select">
-						<?php for ($m = 1; $m <= 12; $m++)
-							echo "<option value='$m'" . ($m == date('n') ? ' selected' : '') . ">$m</option>"; ?>
-					</select>
+					<select id="month" name="month" class="form-select"></select>
 				</div>
 				<div class="col-auto">
-					<select id="day" name="day" class="form-select">
-						<?php for ($d = 1; $d <= 31; $d++)
-							echo "<option value='$d'" . ($d == date('j') ? ' selected' : '') . ">$d</option>"; ?>
-					</select>
+					<select id="day" name="day" class="form-select"></select>
 				</div>
 				<div class="col-auto">
 					<select id="doctor_id" name="doctor_id" class="form-select">
 						<option value="0">全部</option>
-						<?php $res = mysqli_query($link, "SELECT doctor_id, doctor FROM doctor");
+						<?php
+						$res = mysqli_query($link, "SELECT doctor_id, doctor FROM doctor");
 						while ($row = mysqli_fetch_assoc($res))
-							echo "<option value='{$row['doctor_id']}'>{$row['doctor']}</option>"; ?>
+							echo "<option value='{$row['doctor_id']}'>{$row['doctor']}</option>";
+						?>
 					</select>
 				</div>
 				<div class="col-auto">
@@ -431,8 +423,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 			<div id="detailModal" class="modal">
 				<div class="modal-content">
-					<span class="close"
-						onclick="document.getElementById('detailModal').style.display='none'">&times;</span>
+					<span class="close" onclick="$('#detailModal').hide()">&times;</span>
 					<h4 id="detailTitle" class="mb-3"></h4>
 					<div id="detailTableContainer"></div>
 				</div>
@@ -464,7 +455,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 						datasets: [
 							{ label: '總工時(小時)', data: data.work.map(i => i.total_hours), backgroundColor: '#80deea' },
 							{ label: '遲到(分鐘)', data: data.work.map(i => i.late_minutes), backgroundColor: '#f48fb1' },
-							{ label: '加班(分鐘)', data: data.work.map(i => i.overtime_minutes), backgroundColor: '#fff176' },
+							{ label: '加班(分鐘)', data: data.work.map(i => i.overtime_minutes), backgroundColor: '#fff176' }
 						]
 					},
 					options: {
@@ -474,22 +465,31 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 					}
 				});
 
-				leaveChart = new Chart(ctx2, {
-					type: 'bar',
-					data: {
-						labels: data.leave.map(i => i.doctor_name),
-						datasets: data.leave_types.map((type, i) => ({
-							label: type + ' (分鐘)',
-							data: data.leave.map(d => d.details[type] || 0),
-							backgroundColor: `rgba(${100 + i * 30}, ${100 + i * 10}, ${200 - i * 20}, 0.6)`
-						}))
-					},
-					options: {
-						onClick: function (evt, item) {
-							if (item.length) showDetail('leave', leaveData[item[0].index]);
+				if (data.leave.length) {
+					document.getElementById('leaveChart').style.display = 'block';
+					leaveChart = new Chart(ctx2, {
+						type: 'bar',
+						data: {
+							labels: data.leave.map(i => i.doctor_name),
+							datasets: data.leave_types.map((type, i) => ({
+								label: type,
+								data: data.leave.map(d => {
+									let sum = 0;
+									(d.details[type] || []).forEach(v => sum += v.minutes);
+									return sum;
+								}),
+								backgroundColor: `rgba(${100 + i * 30}, ${100 + i * 10}, ${200 - i * 20}, 0.6)`
+							}))
+						},
+						options: {
+							onClick: function (evt, item) {
+								if (item.length) showDetail('leave', leaveData[item[0].index]);
+							}
 						}
-					}
-				});
+					});
+				} else {
+					document.getElementById('leaveChart').style.display = 'none';
+				}
 			}
 
 			function showDetail(type, detail) {
@@ -497,12 +497,14 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				if (type === 'work') {
 					html += '<th>日期</th><th>打卡時間</th><th>下班時間</th><th>遲到</th><th>加班</th><th>總工時</th></tr></thead><tbody>';
 					detail.details.forEach(d => {
-						html += `<tr><td>${d.work_date}</td><td>${d.clock_in_time}</td><td>${d.clock_out_time || '無'}</td><td>${d.late_minutes} 分鐘</td><td>${d.overtime_minutes} 分鐘</td><td>${d.total_hours} 小時</td></tr>`;
+						html += `<tr><td>${d.work_date}</td><td>${d.clock_in_time}</td><td>${d.clock_out_time}</td><td>${d.late_minutes} 分鐘</td><td>${d.overtime_minutes} 分鐘</td><td>${d.total_hours} 小時</td></tr>`;
 					});
 				} else {
-					html += '<th>請假類別</th><th>請假時數(分鐘)</th></tr></thead><tbody>';
-					for (const [type, mins] of Object.entries(detail.details)) {
-						html += `<tr><td>${type}</td><td>${mins}</td></tr>`;
+					html += '<th>請假類別</th><th>起</th><th>訖</th><th>原因</th><th>分鐘</th></tr></thead><tbody>';
+					for (const [type, arr] of Object.entries(detail.details)) {
+						arr.forEach(row => {
+							html += `<tr><td>${type}</td><td>${row.start}</td><td>${row.end}</td><td>${row.reason}</td><td>${row.minutes} 分鐘</td></tr>`;
+						});
 					}
 				}
 				html += '</tbody></table>';
@@ -516,8 +518,16 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				fetchData();
 			});
 
-			$(document).ready(fetchData);
+			$(document).ready(function () {
+				const now = new Date();
+				const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
+				for (let i = 2023; i <= y; i++) $('#year').append(`<option value="${i}" ${i === y ? 'selected' : ''}>${i}</option>`);
+				for (let i = 1; i <= 12; i++) $('#month').append(`<option value="${i}" ${i === m ? 'selected' : ''}>${i}</option>`);
+				for (let i = 1; i <= 31; i++) $('#day').append(`<option value="${i}" ${i === d ? 'selected' : ''}>${i}</option>`);
+				fetchData();
+			});
 		</script>
+
 
 
 
