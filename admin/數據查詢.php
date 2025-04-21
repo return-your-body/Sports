@@ -115,13 +115,24 @@ while ($r = mysqli_fetch_assoc($res_items)) {
 }
 
 // ==================== 圓餅圖 2：預約人數比例 ====================
+
+// 用排班表 s.date 做為圖表查詢依據
+if ($filterType == 'day') {
+    $dateShift = "DATE(s.date) = '$selectedDate'";
+} elseif ($filterType == 'month') {
+    $dateShift = "DATE_FORMAT(s.date, '%Y-%m') = '$selectedMonth'";
+} elseif ($filterType == 'year') {
+    $dateShift = "YEAR(s.date) = '$selectedYear'";
+}
+
 $appointmentChartData = [];
+
 $sql_appointments = "
   SELECT d.doctor AS doctor, COUNT(*) AS count
   FROM appointment a
   JOIN doctorshift s ON a.doctorshift_id = s.doctorshift_id
   JOIN doctor d ON s.doctor_id = d.doctor_id
-  WHERE $dateMedical " . ($doctor_id ? " AND d.doctor_id = $doctor_id" : "") . "
+  WHERE $dateShift " . ($doctor_id ? " AND d.doctor_id = $doctor_id" : "") . "
   GROUP BY d.doctor_id
 ";
 $res_appointments = mysqli_query($link, $sql_appointments);
