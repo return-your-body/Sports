@@ -28,16 +28,16 @@ if ($doctor_id != 0) {
 $work = [];
 $sql = "
   SELECT d.doctor AS doctor_name, d.doctor_id, a.work_date,
-  TIME_FORMAT(ds.go, '%H:%i') AS shift_start,
-  TIME_FORMAT(ds.off, '%H:%i') AS shift_end,
-  TIME_FORMAT(a.clock_in, '%H:%i') AS clock_in_time,
-  TIME_FORMAT(a.clock_out, '%H:%i') AS clock_out_time,
-  ROUND(TIMESTAMPDIFF(MINUTE, a.clock_in, IFNULL(a.clock_out, NOW()))/60, 2) AS total_hours,
-  ROUND(CASE WHEN a.clock_in > TIME(ds.go) THEN TIMESTAMPDIFF(MINUTE, TIME(ds.go), a.clock_in)/60 ELSE 0 END, 2) AS late_hours,
-  ROUND(CASE WHEN a.clock_out > TIME(ds.off) THEN TIMESTAMPDIFF(MINUTE, TIME(ds.off), a.clock_out)/60 ELSE 0 END, 2) AS overtime_hours
+    TIME_FORMAT(a.clock_in, '%H:%i') AS clock_in_time,
+    TIME_FORMAT(a.clock_out, '%H:%i') AS clock_out_time,
+    ROUND(TIMESTAMPDIFF(MINUTE, a.clock_in, IFNULL(a.clock_out, NOW())) / 60, 2) AS total_hours,
+    CASE WHEN TIME(a.clock_in) > TIME(st_go.shifttime) THEN TIMESTAMPDIFF(MINUTE, TIME(st_go.shifttime), TIME(a.clock_in)) ELSE 0 END AS late_minutes,
+    CASE WHEN TIME(a.clock_out) > TIME(st_off.shifttime) THEN TIMESTAMPDIFF(MINUTE, TIME(st_off.shifttime), TIME(a.clock_out)) ELSE 0 END AS overtime_minutes
   FROM attendance a
   JOIN doctor d ON a.doctor_id = d.doctor_id
   JOIN doctorshift ds ON ds.doctor_id = d.doctor_id AND ds.date = a.work_date
+  JOIN shifttime st_go ON st_go.shifttime_id = ds.go
+  JOIN shifttime st_off ON st_off.shifttime_id = ds.off
   WHERE a.clock_in IS NOT NULL AND $where
   ORDER BY d.doctor_id, a.work_date
 ";
@@ -51,33 +51,29 @@ while ($r = mysqli_fetch_assoc($res)) {
       'doctor_name' => $r['doctor_name'],
       'doctor_id' => $docId,
       'total_hours' => 0,
-      'late_hours' => 0,
-      'overtime_hours' => 0,
+      'late_minutes' => 0,
+      'overtime_minutes' => 0,
       'details' => []
     ];
   }
+  $r['late_minutes'] = max(0, $r['late_minutes']);
+  $r['overtime_minutes'] = max(0, $r['overtime_minutes']);
   $r['total_hours'] = max(0, $r['total_hours']);
-  $r['late_hours'] = max(0, $r['late_hours']);
-  $r['overtime_hours'] = max(0, $r['overtime_hours']);
 
   $temp[$docId]['total_hours'] += $r['total_hours'];
-  $temp[$docId]['late_hours'] += $r['late_hours'];
-  $temp[$docId]['overtime_hours'] += $r['overtime_hours'];
+  $temp[$docId]['late_minutes'] += $r['late_minutes'];
+  $temp[$docId]['overtime_minutes'] += $r['overtime_minutes'];
   $temp[$docId]['details'][] = [
     'work_date' => $r['work_date'],
-    'shift_start' => $r['shift_start'],
-    'shift_end' => $r['shift_end'],
     'clock_in_time' => $r['clock_in_time'],
     'clock_out_time' => $r['clock_out_time'],
-    'late_hours' => $r['late_hours'],
-    'overtime_hours' => $r['overtime_hours'],
+    'late_minutes' => $r['late_minutes'],
+    'overtime_minutes' => $r['overtime_minutes'],
     'total_hours' => $r['total_hours']
   ];
 }
 $work = array_map(function($w) {
-  $w['total_hours'] = round($w['total_hours'], 2) . ' 小時';
-  $w['late_hours'] = round($w['late_hours'], 2) . ' 小時';
-  $w['overtime_hours'] = round($w['overtime_hours'], 2) . ' 小時';
+  $w['total_hours'] = round($w['total_hours'], 2);
   return $w;
 }, array_values($temp));
 
@@ -87,7 +83,7 @@ $leave_types = [];
 $leave = [];
 $res2 = mysqli_query($link, "
   SELECT d.doctor AS doctor_name, d.doctor_id, l.leave_type,
-  ROUND(SUM(TIMESTAMPDIFF(MINUTE, l.start_date, l.end_date))/60, 2) AS leave_hours
+    SUM(TIMESTAMPDIFF(MINUTE, l.start_date, l.end_date)) AS leave_minutes
   FROM leaves l
   JOIN doctor d ON l.doctor_id = d.doctor_id
   WHERE l.is_approved = 1 AND $whereLeave
@@ -96,19 +92,17 @@ $res2 = mysqli_query($link, "
 
 $temp2 = [];
 while ($r = mysqli_fetch_assoc($res2)) {
+  if ($r['leave_minutes'] <= 0 || is_null($r['leave_minutes'])) continue;
   $leave_types[$r['leave_type']] = true;
   $docId = $r['doctor_id'];
   if (!isset($temp2[$docId])) {
-    $temp2[$docId] = ['doctor_name' => $r['doctor_name'], 'doctor_id' => $docId, 'total_hours' => 0, 'details' => []];
+    $temp2[$docId] = ['doctor_name' => $r['doctor_name'], 'doctor_id' => $docId, 'total_minutes' => 0, 'details' => []];
   }
-  $leave_hour = is_null($r['leave_hours']) || $r['leave_hours'] < 0 ? 0 : $r['leave_hours'];
-  $temp2[$docId]['details'][$r['leave_type']] = $leave_hour . ' 小時';
-  $temp2[$docId]['total_hours'] += $leave_hour;
-}
-foreach ($temp2 as &$v) {
-  $v['total_hours'] = round($v['total_hours'], 2) . ' 小時';
+  $temp2[$docId]['details'][$r['leave_type']] = $r['leave_minutes'];
+  $temp2[$docId]['total_minutes'] += $r['leave_minutes'];
 }
 $leave = array_values($temp2);
 $leave_types = array_keys($leave_types);
 
-echo json_encode(['work' => $work, 'leave' => $leave, 'leave_types' => $leave_types]);?>
+echo json_encode(['work' => $work, 'leave' => $leave, 'leave_types' => $leave_types]);
+?>
