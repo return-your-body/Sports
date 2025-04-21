@@ -330,10 +330,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		<!-- 收入 -->
 
 		<?php require '../db.php'; ?>
-
-
-
-
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
 		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -366,8 +362,10 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			.modal-content {
 				background: white;
 				padding: 20px;
-				margin: 10% auto;
-				width: 80%;
+				margin: 5% auto;
+				width: 90%;
+				max-height: 80%;
+				overflow-y: auto;
 			}
 
 			.close {
@@ -390,19 +388,19 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				<div class="col-auto">
 					<select id="year" name="year" class="form-select">
 						<?php for ($y = 2023; $y <= 2025; $y++)
-							echo "<option value='$y'" . ($y == 2025 ? ' selected' : '') . ">$y</option>"; ?>
+							echo "<option value='$y'" . ($y == date('Y') ? ' selected' : '') . ">$y</option>"; ?>
 					</select>
 				</div>
 				<div class="col-auto">
 					<select id="month" name="month" class="form-select">
 						<?php for ($m = 1; $m <= 12; $m++)
-							echo "<option value='$m'" . ($m == 4 ? ' selected' : '') . ">$m</option>"; ?>
+							echo "<option value='$m'" . ($m == date('n') ? ' selected' : '') . ">$m</option>"; ?>
 					</select>
 				</div>
 				<div class="col-auto">
 					<select id="day" name="day" class="form-select">
 						<?php for ($d = 1; $d <= 31; $d++)
-							echo "<option value='$d'" . ($d == 18 ? ' selected' : '') . ">$d</option>"; ?>
+							echo "<option value='$d'" . ($d == date('j') ? ' selected' : '') . ">$d</option>"; ?>
 					</select>
 				</div>
 				<div class="col-auto">
@@ -466,9 +464,9 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 					data: {
 						labels: data.work.map(i => i.doctor_name),
 						datasets: [
-							{ label: '總時數', data: data.work.map(i => i.total_hours), backgroundColor: '#80deea' },
-							{ label: '遲到時數', data: data.work.map(i => i.late_hours), backgroundColor: '#f48fb1' },
-							{ label: '加班時數', data: data.work.map(i => i.overtime_hours), backgroundColor: '#fff176' },
+							{ label: '總時數', data: data.work.map(i => parseFloat(i.total_hours)), backgroundColor: '#80deea' },
+							{ label: '遲到時數', data: data.work.map(i => parseFloat(i.late_hours)), backgroundColor: '#f48fb1' },
+							{ label: '加班時數', data: data.work.map(i => parseFloat(i.overtime_hours)), backgroundColor: '#fff176' },
 						]
 					},
 					options: {
@@ -484,7 +482,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 						labels: data.leave.map(i => i.doctor_name),
 						datasets: data.leave_types.map((type, i) => ({
 							label: type,
-							data: data.leave.map(d => d.details[type] || 0),
+							data: data.leave.map(d => parseFloat(d.details[type]) || 0),
 							backgroundColor: `rgba(${100 + i * 30}, ${100 + i * 10}, ${200 - i * 20}, 0.6)`
 						}))
 					},
@@ -499,12 +497,14 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			function showDetail(type, detail) {
 				let html = '<table class="table table-bordered"><thead><tr>';
 				if (type === 'work') {
-					html += '<th>治療師姓名</th><th>總時數</th><th>遲到時數</th><th>加班時數</th></tr></thead><tbody>';
-					html += `<tr><td>${detail.doctor_name}</td><td>${detail.total_hours}</td><td>${detail.late_hours}</td><td>${detail.overtime_hours}</td></tr>`;
+					html += '<th>日期</th><th>上班時間</th><th>打卡時間</th><th>下班時間</th><th>遲到</th><th>加班</th><th>總工時</th></tr></thead><tbody>';
+					detail.details.forEach(d => {
+						html += `<tr><td>${d.work_date}</td><td>${d.shift_start}</td><td>${d.clock_in_time}</td><td>${d.clock_out_time}</td><td>${d.late_hours} 小時</td><td>${d.overtime_hours} 小時</td><td>${d.total_hours} 小時</td></tr>`;
+					});
 				} else {
-					html += '<th>治療師姓名</th><th>請假總時數</th><th>類別</th><th>時數</th></tr></thead><tbody>';
+					html += '<th>請假類別</th><th>請假時數</th></tr></thead><tbody>';
 					for (const [type, hrs] of Object.entries(detail.details)) {
-						html += `<tr><td>${detail.doctor_name}</td><td>${detail.total_hours}</td><td>${type}</td><td>${hrs}</td></tr>`;
+						html += `<tr><td>${type}</td><td>${hrs}</td></tr>`;
 					}
 				}
 				html += '</tbody></table>';
@@ -520,7 +520,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 			$(document).ready(fetchData);
 		</script>
-
 
 
 
