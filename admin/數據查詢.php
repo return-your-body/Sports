@@ -9,23 +9,30 @@ $day = $_GET['day'] ?? date('d');
 $doctor_id = $_GET['doctor_id'] ?? 0;
 
 $where = "1";
+$dateTarget = "$year-$month-$day";
+
 switch ($type) {
   case 'year':
     $where .= " AND YEAR(a.work_date) = $year";
+    $leaveWhere = "YEAR(l.start_date) = $year OR YEAR(l.end_date) = $year";
     break;
   case 'month':
     $where .= " AND YEAR(a.work_date) = $year AND MONTH(a.work_date) = $month";
+    $leaveWhere = "(YEAR(l.start_date) = $year AND MONTH(l.start_date) = $month)
+                    OR (YEAR(l.end_date) = $year AND MONTH(l.end_date) = $month)";
     break;
   case 'day':
   default:
-    $where .= " AND a.work_date = '$year-$month-$day'";
+    $where .= " AND a.work_date = '$dateTarget'";
+    $leaveWhere = "DATE(l.start_date) <= '$dateTarget' AND DATE(l.end_date) >= '$dateTarget'";
     break;
 }
 if ($doctor_id != 0) {
   $where .= " AND a.doctor_id = $doctor_id";
+  $leaveWhere .= " AND l.doctor_id = $doctor_id";
 }
 
-// 工作統計查詢
+// ---------- 工作時數 ----------
 $work = [];
 $sql = "
   SELECT d.doctor AS doctor_name, d.doctor_id, a.work_date,
@@ -73,76 +80,60 @@ while ($r = mysqli_fetch_assoc($res)) {
     'total_hours' => $r['total_hours']
   ];
 }
-$work = array_map(function ($w) {
+$work = array_map(function($w) {
   $w['total_hours'] = round($w['total_hours'], 2);
   return $w;
 }, array_values($temp));
 
-// 請假統計查詢
-$whereLeave = "1";
-switch ($type) {
-  case 'year':
-    $whereLeave .= " AND YEAR(l.start_date) = $year";
-    break;
-  case 'month':
-    $whereLeave .= " AND YEAR(l.start_date) = $year AND MONTH(l.start_date) = $month";
-    break;
-  case 'day':
-  default:
-    $whereLeave .= " AND DATE(l.start_date) = '$year-$month-$day'";
-    break;
-}
-if ($doctor_id != 0) {
-  $whereLeave .= " AND l.doctor_id = $doctor_id";
-}
-
-$leave_types = [];
+// ---------- 請假統計 ----------
 $leave = [];
+$leave_types = [];
 $res2 = mysqli_query($link, "
-  SELECT d.doctor AS doctor_name, d.doctor_id, l.leave_type, l.start_date, l.end_date,
-    TIMESTAMPDIFF(MINUTE, l.start_date, l.end_date) AS leave_minutes
+  SELECT l.*, d.doctor AS doctor_name
   FROM leaves l
-  JOIN doctor d ON l.doctor_id = d.doctor_id
-  WHERE l.is_approved = 1 AND $whereLeave
-  ORDER BY l.doctor_id, l.start_date
+  JOIN doctor d ON d.doctor_id = l.doctor_id
+  WHERE l.is_approved = 1 AND ($leaveWhere)
 ");
 
 $temp2 = [];
 while ($r = mysqli_fetch_assoc($res2)) {
-  if ($r['leave_minutes'] <= 0 || is_null($r['leave_minutes'])) continue;
-  $leave_types[$r['leave_type']] = true;
   $docId = $r['doctor_id'];
+  $leave_type = $r['leave_type'] ?? '其他';
+  $leave_types[$leave_type] = true;
+
+  $minutes = (strtotime($r['end_date']) - strtotime($r['start_date'])) / 60;
+  if ($minutes <= 0) continue;
+
   if (!isset($temp2[$docId])) {
     $temp2[$docId] = [
-      'doctor_name' => $r['doctor_name'],
       'doctor_id' => $docId,
+      'doctor_name' => $r['doctor_name'],
       'total_minutes' => 0,
       'details' => []
     ];
   }
-  $temp2[$docId]['total_minutes'] += $r['leave_minutes'];
-  $temp2[$docId]['details'][] = [
-    'leave_type' => $r['leave_type'],
+
+  if (!isset($temp2[$docId]['details'][$leave_type])) {
+    $temp2[$docId]['details'][$leave_type] = [];
+  }
+
+  $temp2[$docId]['details'][$leave_type][] = [
     'start' => $r['start_date'],
     'end' => $r['end_date'],
-    'minutes' => $r['leave_minutes']
+    'reason' => $r['reason'],
+    'minutes' => round($minutes)
   ];
+  $temp2[$docId]['total_minutes'] += $minutes;
 }
+
 $leave = array_values($temp2);
 $leave_types = array_keys($leave_types);
 
-// 圖表補0
-foreach ($leave as &$l) {
+// 加上為 0 的類型（避免圖表錯誤）
+foreach ($leave as &$lv) {
   foreach ($leave_types as $lt) {
-    $found = false;
-    foreach ($l['details'] as $item) {
-      if ($item['leave_type'] === $lt) {
-        $found = true;
-        break;
-      }
-    }
-    if (!$found) {
-      $l['details'][] = ['leave_type' => $lt, 'start' => '-', 'end' => '-', 'minutes' => 0];
+    if (!isset($lv['details'][$lt])) {
+      $lv['details'][$lt] = [];
     }
   }
 }

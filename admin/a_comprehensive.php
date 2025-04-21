@@ -327,9 +327,8 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			</div>
 		</header>
 
-		<!-- 收入 -->
+		<!-- 統計圖 時速收入 -->
 		<?php require '../db.php'; ?>
-
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
 		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -384,15 +383,9 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 						<option value="year">整年</option>
 					</select>
 				</div>
-				<div class="col-auto">
-					<select id="year" name="year" class="form-select"></select>
-				</div>
-				<div class="col-auto">
-					<select id="month" name="month" class="form-select"></select>
-				</div>
-				<div class="col-auto">
-					<select id="day" name="day" class="form-select"></select>
-				</div>
+				<div class="col-auto"><select id="year" name="year" class="form-select"></select></div>
+				<div class="col-auto"><select id="month" name="month" class="form-select"></select></div>
+				<div class="col-auto"><select id="day" name="day" class="form-select"></select></div>
 				<div class="col-auto">
 					<select id="doctor_id" name="doctor_id" class="form-select">
 						<option value="0">全部</option>
@@ -403,9 +396,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 						?>
 					</select>
 				</div>
-				<div class="col-auto">
-					<button class="btn btn-primary" type="submit">查詢</button>
-				</div>
+				<div class="col-auto"><button class="btn btn-primary" type="submit">查詢</button></div>
 			</form>
 
 			<div class="chart-container">
@@ -465,7 +456,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 					}
 				});
 
-				if (data.leave.length) {
+				if (data.leave.length && data.leave_types.length) {
 					document.getElementById('leaveChart').style.display = 'block';
 					leaveChart = new Chart(ctx2, {
 						type: 'bar',
@@ -474,11 +465,11 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 							datasets: data.leave_types.map((type, i) => ({
 								label: type,
 								data: data.leave.map(d => {
-									let sum = 0;
-									(d.details[type] || []).forEach(v => sum += v.minutes);
-									return sum;
+									let total = 0;
+									(d.details[type] || []).forEach(v => total += v.minutes);
+									return total;
 								}),
-								backgroundColor: `rgba(${100 + i * 30}, ${100 + i * 10}, ${200 - i * 20}, 0.6)`
+								backgroundColor: `rgba(${120 + i * 20}, ${100 + i * 30}, ${220 - i * 10}, 0.6)`
 							}))
 						},
 						options: {
@@ -501,9 +492,9 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 					});
 				} else {
 					html += '<th>請假類別</th><th>起</th><th>訖</th><th>原因</th><th>分鐘</th></tr></thead><tbody>';
-					for (const [type, arr] of Object.entries(detail.details)) {
+					for (const [typeName, arr] of Object.entries(detail.details)) {
 						arr.forEach(row => {
-							html += `<tr><td>${type}</td><td>${row.start}</td><td>${row.end}</td><td>${row.reason}</td><td>${row.minutes} 分鐘</td></tr>`;
+							html += `<tr><td>${typeName}</td><td>${row.start}</td><td>${row.end}</td><td>${row.reason}</td><td>${row.minutes} 分鐘</td></tr>`;
 						});
 					}
 				}
@@ -527,6 +518,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				fetchData();
 			});
 		</script>
+
 
 
 
