@@ -30,27 +30,27 @@ $date = $_POST['date'];     // 預約日期 (YYYY-MM-DD)
 $time = $_POST['time'];     // 預約時間 (HH:mm)
 
 // **🔹 1️⃣ 檢查該 `people_id` 是否已經在該日期預約**
-$check_user_query = "
-    SELECT a.appointment_id 
-    FROM appointment a
-    JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    WHERE a.people_id = ? AND ds.date = ?
-";
+// $check_user_query = "
+//     SELECT a.appointment_id 
+//     FROM appointment a
+//     JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+//     WHERE a.people_id = ? AND ds.date = ?
+// ";
 
-$stmt_user = mysqli_prepare($link, $check_user_query);
-mysqli_stmt_bind_param($stmt_user, "is", $people_id, $date);
-mysqli_stmt_execute($stmt_user);
-$result_user = mysqli_stmt_get_result($stmt_user);
+// $stmt_user = mysqli_prepare($link, $check_user_query);
+// mysqli_stmt_bind_param($stmt_user, "is", $people_id, $date);
+// mysqli_stmt_execute($stmt_user);
+// $result_user = mysqli_stmt_get_result($stmt_user);
 
-// **🔹 如果該 `people_id` 已經在該日期預約，則回傳錯誤**
-if (mysqli_num_rows($result_user) > 0) {
-    echo json_encode([
-        'available' => false,
-        'alreadyReserved' => true,
-        'message' => '您今天已經預約過，無法再次預約'
-    ]);
-    exit;
-}
+// // **🔹 如果該 `people_id` 已經在該日期預約，則回傳錯誤**
+// if (mysqli_num_rows($result_user) > 0) {
+//     echo json_encode([
+//         'available' => false,
+//         'alreadyReserved' => true,
+//         'message' => '您今天已經預約過，無法再次預約'
+//     ]);
+//     exit;
+// }
 
 // **🔹 2️⃣ 檢查該醫生該時段是否已有預約**
 $check_query = "
