@@ -11,51 +11,38 @@ $doctor_id = $_GET['doctor_id'] ?? 0;
 if ($type === 'day') {
     $selectedDate = "$year-$month-$day";
     $dateCondition = "DATE(a.work_date) = '$selectedDate'";
-    $dateMedical = "DATE(m.created_at) = '$selectedDate'";
     $dateShift = "DATE(s.date) = '$selectedDate'";
 } elseif ($type === 'month') {
     $selectedMonth = "$year-$month";
     $dateCondition = "YEAR(a.work_date) = '$year' AND MONTH(a.work_date) = '$month'";
-    $dateMedical = "DATE_FORMAT(m.created_at, '%Y-%m') = '$selectedMonth'";
     $dateShift = "DATE_FORMAT(s.date, '%Y-%m') = '$selectedMonth'";
 } elseif ($type === 'year') {
     $selectedYear = "$year";
     $dateCondition = "YEAR(a.work_date) = '$year'";
-    $dateMedical = "YEAR(m.created_at) = '$year'";
     $dateShift = "YEAR(s.date) = '$year'";
 }
 
-// ==================== 總工作時數（clock_out 為 null 時也計算，但排除負數） ====================
+// ==================== 總工作時數（包含 clock_out 為 null） ====================
 $work = [];
 $sql = "
 SELECT d.doctor AS doctor_name, d.doctor_id, a.work_date,
   TIME_FORMAT(a.clock_in, '%H:%i') AS clock_in_time,
   TIME_FORMAT(a.clock_out, '%H:%i') AS clock_out_time,
-  ROUND(
-    TIMESTAMPDIFF(MINUTE, a.clock_in, IFNULL(a.clock_out, NOW())) / 60, 2
-  ) AS total_hours,
-  GREATEST(
-    TIMESTAMPDIFF(MINUTE,
-      (SELECT TIME(st.shifttime) FROM doctorshift ds JOIN shiftime st ON ds.go = st.shifttime_id
-       WHERE ds.date = a.work_date AND ds.doctor_id = a.doctor_id LIMIT 1),
-      TIME(a.clock_in)
-    ), 0) AS late_minutes,
-  GREATEST(
-    TIMESTAMPDIFF(MINUTE,
-      TIME(IFNULL(a.clock_out, NOW())),
-      (SELECT TIME(st.shifttime) FROM doctorshift ds JOIN shiftime st ON ds.off = st.shifttime_id
-       WHERE ds.date = a.work_date AND ds.doctor_id = a.doctor_id LIMIT 1)
-    ), 0) AS overtime_minutes
+  ROUND(TIMESTAMPDIFF(MINUTE, a.clock_in, IFNULL(a.clock_out, NOW())) / 60, 2) AS total_hours,
+  GREATEST(TIMESTAMPDIFF(MINUTE, st_start.shifttime, TIME(a.clock_in)), 0) AS late_minutes,
+  GREATEST(TIMESTAMPDIFF(MINUTE, TIME(IFNULL(a.clock_out, NOW())), st_end.shifttime), 0) AS overtime_minutes
 FROM attendance a
 JOIN doctor d ON a.doctor_id = d.doctor_id
+JOIN doctorshift s ON a.work_date = s.date AND a.doctor_id = s.doctor_id
+JOIN shiftime st_start ON s.go = st_start.shifttime_id
+JOIN shiftime st_end ON s.off = st_end.shifttime_id
 WHERE 
-  a.clock_in IS NOT NULL 
+  a.clock_in IS NOT NULL
   AND TIMESTAMPDIFF(MINUTE, a.clock_in, IFNULL(a.clock_out, NOW())) > 0
   AND $dateCondition
   " . ($doctor_id ? " AND a.doctor_id = $doctor_id" : "") . "
 ORDER BY d.doctor_id, a.work_date
 ";
-
 $res = mysqli_query($link, $sql);
 $temp = [];
 while ($r = mysqli_fetch_assoc($res)) {
@@ -76,7 +63,6 @@ while ($r = mysqli_fetch_assoc($res)) {
     $temp[$docId]['details'][] = $r;
 }
 $work = array_values($temp);
-
 // ==================== 請假資料 ====================
 $leave_types = [];
 $leave = [];
@@ -115,7 +101,7 @@ foreach ($leave as &$l) {
     }
 }
 
-// ==================== 項目數比例（+ 哪位醫師） ====================
+// ==================== 項目數比例（含治療師） ====================
 $itemsChartData = [];
 $sql_items = "
   SELECT i.item AS item, d.doctor AS doctor, COUNT(*) AS count
@@ -147,7 +133,7 @@ while ($r = mysqli_fetch_assoc($res_appointments)) {
     $appointmentChartData[] = $r;
 }
 
-// ==================== 收入統計（+ 哪位醫師） ====================
+// ==================== 收入統計（含治療師） ====================
 $incomeChartData = [];
 $sql_income = "
   SELECT i.item AS item, d.doctor AS doctor, SUM(i.price) AS total
