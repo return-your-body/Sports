@@ -25,13 +25,15 @@ if ($type === 'day') {
     $dateShift = "YEAR(s.date) = '$year'";
 }
 
-// ==================== 工作時數 ====================
+// ==================== 總工作時數（clock_out 為 null 時也計算，但排除負數） ====================
 $work = [];
 $sql = "
 SELECT d.doctor AS doctor_name, d.doctor_id, a.work_date,
   TIME_FORMAT(a.clock_in, '%H:%i') AS clock_in_time,
   TIME_FORMAT(a.clock_out, '%H:%i') AS clock_out_time,
-  ROUND(TIMESTAMPDIFF(MINUTE, a.clock_in, IFNULL(a.clock_out, NOW())) / 60, 2) AS total_hours,
+  ROUND(
+    TIMESTAMPDIFF(MINUTE, a.clock_in, IFNULL(a.clock_out, NOW())) / 60, 2
+  ) AS total_hours,
   GREATEST(
     TIMESTAMPDIFF(MINUTE,
       (SELECT TIME(st.shifttime) FROM doctorshift ds JOIN shiftime st ON ds.go = st.shifttime_id
@@ -40,16 +42,20 @@ SELECT d.doctor AS doctor_name, d.doctor_id, a.work_date,
     ), 0) AS late_minutes,
   GREATEST(
     TIMESTAMPDIFF(MINUTE,
-      TIME(a.clock_out),
+      TIME(IFNULL(a.clock_out, NOW())),
       (SELECT TIME(st.shifttime) FROM doctorshift ds JOIN shiftime st ON ds.off = st.shifttime_id
        WHERE ds.date = a.work_date AND ds.doctor_id = a.doctor_id LIMIT 1)
     ), 0) AS overtime_minutes
 FROM attendance a
 JOIN doctor d ON a.doctor_id = d.doctor_id
-WHERE a.clock_in IS NOT NULL AND $dateCondition
-" . ($doctor_id ? " AND a.doctor_id = $doctor_id" : "") . "
+WHERE 
+  a.clock_in IS NOT NULL 
+  AND TIMESTAMPDIFF(MINUTE, a.clock_in, IFNULL(a.clock_out, NOW())) > 0
+  AND $dateCondition
+  " . ($doctor_id ? " AND a.doctor_id = $doctor_id" : "") . "
 ORDER BY d.doctor_id, a.work_date
 ";
+
 $res = mysqli_query($link, $sql);
 $temp = [];
 while ($r = mysqli_fetch_assoc($res)) {
@@ -70,6 +76,7 @@ while ($r = mysqli_fetch_assoc($res)) {
     $temp[$docId]['details'][] = $r;
 }
 $work = array_values($temp);
+
 // ==================== 請假資料 ====================
 $leave_types = [];
 $leave = [];
@@ -81,7 +88,6 @@ $res2 = mysqli_query($link, "
   WHERE l.is_approved = 1 AND " . str_replace("a.work_date", "l.start_date", $dateCondition) .
   ($doctor_id ? " AND l.doctor_id = $doctor_id" : "")
 );
-
 $temp2 = [];
 while ($r = mysqli_fetch_assoc($res2)) {
     if ($r['leave_minutes'] <= 0 || is_null($r['leave_minutes'])) continue;
@@ -109,23 +115,24 @@ foreach ($leave as &$l) {
     }
 }
 
-// ==================== 圓餅圖 1：項目數比例 ====================
+// ==================== 項目數比例（+ 哪位醫師） ====================
 $itemsChartData = [];
 $sql_items = "
-  SELECT i.item AS item, COUNT(*) AS count
+  SELECT i.item AS item, d.doctor AS doctor, COUNT(*) AS count
   FROM medicalrecord m
   JOIN item i ON m.item_id = i.item_id
   JOIN appointment a ON a.appointment_id = m.appointment_id
   JOIN doctorshift s ON a.doctorshift_id = s.doctorshift_id
+  JOIN doctor d ON s.doctor_id = d.doctor_id
   WHERE $dateShift " . ($doctor_id ? " AND s.doctor_id = $doctor_id" : "") . "
-  GROUP BY i.item
+  GROUP BY i.item, d.doctor
 ";
 $res_items = mysqli_query($link, $sql_items);
 while ($r = mysqli_fetch_assoc($res_items)) {
     $itemsChartData[] = $r;
 }
 
-// ==================== 圓餅圖 2：預約人數比例 ====================
+// ==================== 預約人數比例 ====================
 $appointmentChartData = [];
 $sql_appointments = "
   SELECT d.doctor AS doctor, COUNT(*) AS count
@@ -140,16 +147,17 @@ while ($r = mysqli_fetch_assoc($res_appointments)) {
     $appointmentChartData[] = $r;
 }
 
-// ==================== 圓餅圖 3：收入統計 ====================
+// ==================== 收入統計（+ 哪位醫師） ====================
 $incomeChartData = [];
 $sql_income = "
-  SELECT i.item AS item, SUM(i.price) AS total
+  SELECT i.item AS item, d.doctor AS doctor, SUM(i.price) AS total
   FROM medicalrecord m
   JOIN item i ON m.item_id = i.item_id
   JOIN appointment a ON a.appointment_id = m.appointment_id
   JOIN doctorshift s ON a.doctorshift_id = s.doctorshift_id
+  JOIN doctor d ON s.doctor_id = d.doctor_id
   WHERE $dateShift " . ($doctor_id ? " AND s.doctor_id = $doctor_id" : "") . "
-  GROUP BY i.item
+  GROUP BY i.item, d.doctor
 ";
 $res_income = mysqli_query($link, $sql_income);
 while ($r = mysqli_fetch_assoc($res_income)) {
