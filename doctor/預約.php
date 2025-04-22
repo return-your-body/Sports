@@ -33,20 +33,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['people_id'], $_POST['
     }
 
     // 檢查使用者當天是否已有預約
-    $query_check_day = "SELECT COUNT(*) FROM appointment a 
-                        JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-                        WHERE a.people_id = ? AND ds.date = ?";
-    $stmt_check_day = mysqli_prepare($link, $query_check_day);
-    mysqli_stmt_bind_param($stmt_check_day, "is", $people_id, $date);
-    mysqli_stmt_execute($stmt_check_day);
-    mysqli_stmt_bind_result($stmt_check_day, $existing_day_count);
-    mysqli_stmt_fetch($stmt_check_day);
-    mysqli_stmt_close($stmt_check_day);
+    // $query_check_day = "SELECT COUNT(*) FROM appointment a 
+    //                     JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+    //                     WHERE a.people_id = ? AND ds.date = ?";
+    // $stmt_check_day = mysqli_prepare($link, $query_check_day);
+    // mysqli_stmt_bind_param($stmt_check_day, "is", $people_id, $date);
+    // mysqli_stmt_execute($stmt_check_day);
+    // mysqli_stmt_bind_result($stmt_check_day, $existing_day_count);
+    // mysqli_stmt_fetch($stmt_check_day);
+    // mysqli_stmt_close($stmt_check_day);
 
-    if ($existing_day_count > 0) {
-        echo "<script>alert('您已在這一天預約過其他時段，無法重複預約！'); window.history.back();</script>";
-        exit;
-    }
+    // if ($existing_day_count > 0) {
+    //     echo "<script>alert('您已在這一天預約過其他時段，無法重複預約！'); window.history.back();</script>";
+    //     exit;
+    // }
 
     // 查詢治療師當天的班表ID
     $query_shift = "SELECT doctorshift_id FROM doctorshift WHERE doctor_id = ? AND date = ?";

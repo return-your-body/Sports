@@ -676,32 +676,51 @@ if (isset($_SESSION["帳號"])) {
 
         // 查詢資料
         $query = "
-    SELECT 
-        a.appointment_id,
-        p.name AS patient_name,
-        CASE WHEN p.gender_id = 1 THEN '男' WHEN p.gender_id = 2 THEN '女' ELSE '無資料' END AS gender,
-        CASE WHEN p.birthday IS NOT NULL THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') ELSE '無資料' END AS birthday_with_age,
-        d.doctor AS doctor_name,
-        DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
-        CASE DAYOFWEEK(ds.date) 
-            WHEN 1 THEN '星期日' WHEN 2 THEN '星期一' WHEN 3 THEN '星期二' 
-            WHEN 4 THEN '星期三' WHEN 5 THEN '星期四' WHEN 6 THEN '星期五' 
-            WHEN 7 THEN '星期六' END AS consultation_weekday,
-        st.shifttime AS consultation_time,
-        a.note AS user_note,
-        GROUP_CONCAT(m.note_d ORDER BY m.created_at SEPARATOR '; ') AS doctor_notes
-    FROM medicalrecord m
-    LEFT JOIN appointment a ON m.appointment_id = a.appointment_id
-    LEFT JOIN people p ON a.people_id = p.people_id
-    LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
-    LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
-    LEFT JOIN user u ON d.user_id = u.user_id
-    LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
-    $where_sql
-    GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime, a.note
-    ORDER BY ds.date ASC
-    LIMIT ?, ?
-";
+        SELECT 
+            a.appointment_id,
+            p.name AS patient_name,
+            CASE 
+                WHEN p.gender_id = 1 THEN '男' 
+                WHEN p.gender_id = 2 THEN '女' 
+                ELSE '無資料' 
+            END AS gender,
+            CASE 
+                WHEN p.birthday IS NOT NULL 
+                    THEN CONCAT(p.birthday, ' (', TIMESTAMPDIFF(YEAR, p.birthday, CURDATE()), '歲)') 
+                ELSE '無資料' 
+            END AS birthday_with_age,
+            d.doctor AS doctor_name,
+            DATE_FORMAT(ds.date, '%Y-%m-%d') AS consultation_date,
+            CASE DAYOFWEEK(ds.date) 
+                WHEN 1 THEN '星期日' WHEN 2 THEN '星期一' WHEN 3 THEN '星期二' 
+                WHEN 4 THEN '星期三' WHEN 5 THEN '星期四' WHEN 6 THEN '星期五' 
+                WHEN 7 THEN '星期六' 
+            END AS consultation_weekday,
+            st.shifttime AS consultation_time,
+            a.note AS user_note,
+    
+            -- ✅ 只顯示最新一筆醫生備註（這樣就不會顯示 789;789）
+            (
+                SELECT m1.note_d 
+                FROM medicalrecord m1 
+                WHERE m1.appointment_id = a.appointment_id 
+                ORDER BY m1.created_at DESC 
+                LIMIT 1
+            ) AS doctor_notes
+    
+        FROM appointment a
+        LEFT JOIN people p ON a.people_id = p.people_id
+        LEFT JOIN doctorshift ds ON a.doctorshift_id = ds.doctorshift_id
+        LEFT JOIN doctor d ON ds.doctor_id = d.doctor_id
+        LEFT JOIN user u ON d.user_id = u.user_id
+        LEFT JOIN shifttime st ON a.shifttime_id = st.shifttime_id
+        -- ✅ 外層 LEFT JOIN 不用連 medicalrecord，因為備註用子查詢處理了
+        $where_sql
+        GROUP BY a.appointment_id, p.name, p.gender_id, p.birthday, d.doctor, ds.date, st.shifttime, st.shifttime_id, a.note
+        ORDER BY ds.date DESC, st.shifttime_id DESC
+        LIMIT ?, ?
+    ";
+    
 
         $params[] = $offset;
         $params[] = $records_per_page;
