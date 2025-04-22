@@ -68,14 +68,14 @@ $result_people_check = mysqli_stmt_get_result($stmt_people_check);
 $row_people_check = mysqli_fetch_assoc($result_people_check);
 
 // **🔹 若該人已經預約過，則回傳錯誤**
-if ($row_people_check['count'] > 0) {
-    echo json_encode([
-        'available' => false,
-        'alreadyReserved' => true,
-        'message' => '您今天已經預約過，無法再次預約'
-    ]);
-    exit;
-}
+// if ($row_people_check['count'] > 0) {
+//     echo json_encode([
+//         'available' => false,
+//         'alreadyReserved' => true,
+//         'message' => '您今天已經預約過，無法再次預約'
+//     ]);
+//     exit;
+// }
 
 // **🔹 2️⃣ 檢查該醫生該時段是否已有預約**
 $check_doctor_query = "
