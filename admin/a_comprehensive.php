@@ -413,6 +413,27 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				</div>
 			</div>
 
+
+			<div class="chart-row">
+				<div class="chart-box">
+					<h5 class="text-center">項目數比例</h5>
+					<canvas id="itemChart"></canvas>
+					<div id="itemTableContainer" class="mt-2"></div>
+				</div>
+				<div class="chart-box">
+					<h5 class="text-center">預約人數比例</h5>
+					<canvas id="appointmentChart"></canvas>
+					<div id="appointmentTableContainer" class="mt-2"></div>
+				</div>
+				<div class="chart-box">
+					<h5 class="text-center">收入統計</h5>
+					<canvas id="incomeChart"></canvas>
+					<div id="incomeTableContainer" class="mt-2"></div>
+				</div>
+			</div>
+		</div>
+
+
 			<div id="detailModal" class="modal">
 				<div class="modal-content">
 					<span class="close" onclick="$('#detailModal').hide()">&times;</span>
@@ -426,14 +447,16 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			let workChart, leaveChart, workData = [], leaveData = [];
 
 			function fetchData() {
-				const data = $('#filterForm').serialize();
-				$.get('數據查詢.php', data, function (res) {
-					workData = res.work;
-					leaveData = res.leave;
-					drawCharts(res);
-				}, 'json');
-			}
-
+            const data = $('#filterForm').serialize();
+            $.get('數據查詢.php', data, function (res) {
+                workData = res.work;
+                leaveData = res.leave;
+                itemCounts = res.item_counts;
+                appointmentCounts = res.appointment_counts;
+                incomeData = res.income_data;
+                drawCharts(res);
+            }, 'json');
+        }
 			function drawCharts(data) {
 				const ctx1 = document.getElementById('workChart').getContext('2d');
 				const ctx2 = document.getElementById('leaveChart').getContext('2d');

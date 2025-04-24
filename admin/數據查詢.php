@@ -137,6 +137,6 @@ foreach ($leave as &$lv) {
     }
   }
 }
-// 
+
 echo json_encode(['work' => $work, 'leave' => $leave, 'leave_types' => $leave_types]);
 ?>
