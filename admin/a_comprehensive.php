@@ -330,27 +330,22 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		<!-- 統計圖 時速收入 -->
 
 		<?php require '../db.php'; ?>
-
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
 		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 		<style>
 			.chart-container {
 				margin: 20px auto;
-				max-width: 1400px;
+				max-width: 1200px;
 			}
 
 			.chart-row {
 				display: flex;
-				flex-wrap: wrap;
 				justify-content: space-between;
-				gap: 16px;
 			}
 
 			.chart-box {
-				flex: 1 1 30%;
-				min-width: 300px;
-				max-width: 100%;
+				width: 48%;
 			}
 
 			.modal {
@@ -379,212 +374,142 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			}
 		</style>
 
-		<div class="chart-container">
-			<form id="filterForm" class="mb-4 d-flex flex-wrap justify-content-center gap-2">
-				<select id="type" name="type" class="form-select w-auto">
-					<option value="day">單日</option>
-					<option value="month">月份</option>
-					<option value="year">年度</option>
-				</select>
-				<select id="year" name="year" class="form-select w-auto"></select>
-				<select id="month" name="month" class="form-select w-auto"></select>
-				<select id="day" name="day" class="form-select w-auto"></select>
-				<select id="doctor_id" name="doctor_id" class="form-select w-auto">
-					<option value="0">全部</option>
-					<?php
-					$res = mysqli_query($link, "SELECT * FROM doctor");
-					while ($r = mysqli_fetch_assoc($res)) {
-						echo "<option value='{$r['doctor_id']}'>{$r['doctor']}</option>";
-					}
-					?>
-				</select>
-				<button type="submit" class="btn btn-primary">查詢</button>
+		<div class="container">
+			<h2 class="text-center my-4">治療師統計資料</h2>
+			<form id="filterForm" class="row g-3 justify-content-center mb-4">
+				<div class="col-auto">
+					<select id="type" name="type" class="form-select">
+						<option value="day" selected>單日</option>
+						<option value="month">整月</option>
+						<option value="year">整年</option>
+					</select>
+				</div>
+				<div class="col-auto"><select id="year" name="year" class="form-select"></select></div>
+				<div class="col-auto"><select id="month" name="month" class="form-select"></select></div>
+				<div class="col-auto"><select id="day" name="day" class="form-select"></select></div>
+				<div class="col-auto">
+					<select id="doctor_id" name="doctor_id" class="form-select">
+						<option value="0">全部</option>
+						<?php
+						$res = mysqli_query($link, "SELECT doctor_id, doctor FROM doctor");
+						while ($row = mysqli_fetch_assoc($res))
+							echo "<option value='{$row['doctor_id']}'>{$row['doctor']}</option>";
+						?>
+					</select>
+				</div>
+				<div class="col-auto"><button class="btn btn-primary" type="submit">查詢</button></div>
 			</form>
 
-			<div class="chart-row">
-				<div class="chart-box">
-					<h5 class="text-center">總工作時數</h5>
-					<canvas id="workChart"></canvas>
-					<div id="workNoData" class="text-danger text-center mt-2" style="display:none;">⚠ 無資料</div>
-				</div>
-				<div class="chart-box">
-					<h5 class="text-center">請假統計</h5>
-					<canvas id="leaveChart"></canvas>
-					<div id="leaveNoData" class="text-danger text-center mt-2" style="display:none;">⚠ 無資料</div>
+			<div class="chart-container">
+				<div class="chart-row">
+					<div class="chart-box">
+						<h5 class="text-center">總工作時數</h5>
+						<canvas id="workChart"></canvas>
+					</div>
+					<div class="chart-box">
+						<h5 class="text-center">請假統計</h5>
+						<canvas id="leaveChart"></canvas>
+					</div>
 				</div>
 			</div>
 
-			<div class="chart-row">
-				<div class="chart-box">
-					<h5 class="text-center">項目數比例</h5>
-					<canvas id="itemChart"></canvas>
-					<div id="itemTableContainer" class="mt-2"></div>
+			<div id="detailModal" class="modal">
+				<div class="modal-content">
+					<span class="close" onclick="$('#detailModal').hide()">&times;</span>
+					<h4 id="detailTitle" class="mb-3"></h4>
+					<div id="detailTableContainer"></div>
 				</div>
-				<div class="chart-box">
-					<h5 class="text-center">預約人數比例</h5>
-					<canvas id="appointmentChart"></canvas>
-					<div id="appointmentTableContainer" class="mt-2"></div>
-				</div>
-				<div class="chart-box">
-					<h5 class="text-center">收入統計</h5>
-					<canvas id="incomeChart"></canvas>
-					<div id="incomeTableContainer" class="mt-2"></div>
-				</div>
-			</div>
-		</div>
-
-		<div id="detailModal" class="modal">
-			<div class="modal-content">
-				<span class="close" onclick="$('#detailModal').hide()">×</span>
-				<h4 id="detailTitle" class="mb-3"></h4>
-				<div id="detailTableContainer"></div>
 			</div>
 		</div>
 
 		<script>
-			const chartColors = ['rgba(255, 205, 86, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(255, 99, 132, 0.7)'];
-			let workChart, leaveChart;
+			let workChart, leaveChart, workData = [], leaveData = [];
 
 			function fetchData() {
-				$.get("數據查詢.php", $('#filterForm').serialize(), function (res) {
-					drawWork(res.workChartData);
-					drawLeave(res.leave);
-					drawPie("itemChart", res.itemsChartData, 'item', 'count', 'itemTableContainer');
-					drawPie("appointmentChart", res.appointmentChartData, 'doctor', 'count', 'appointmentTableContainer');
-					drawPie("incomeChart", res.incomeChartData, 'item', 'total', 'incomeTableContainer');
+				const data = $('#filterForm').serialize();
+				$.get('數據查詢.php', data, function (res) {
+					workData = res.work;
+					leaveData = res.leave;
+					drawCharts(res);
 				}, 'json');
 			}
 
-			function drawWork(data) {
+			function drawCharts(data) {
+				const ctx1 = document.getElementById('workChart').getContext('2d');
+				const ctx2 = document.getElementById('leaveChart').getContext('2d');
 				if (workChart) workChart.destroy();
-				const ctx = document.getElementById("workChart").getContext("2d");
-				if (!data || !data.length) {
-					$('#workNoData').show();
-					new Chart(ctx, { type: 'bar', data: { labels: [], datasets: [] } });
-					return;
-				}
-				$('#workNoData').hide();
-				const labels = data.map(d => d.doctor_name);
-				const total = data.map(d => d.total_hours);
-				const late = data.map(d => d.late_minutes);
-				const ot = data.map(d => d.overtime_minutes);
-				workChart = new Chart(ctx, {
+				if (leaveChart) leaveChart.destroy();
+
+				workChart = new Chart(ctx1, {
 					type: 'bar',
 					data: {
-						labels,
+						labels: data.work.map(i => i.doctor_name),
 						datasets: [
-							{ label: "總工時(小時)", data: total, backgroundColor: chartColors[0] },
-							{ label: "遲到(分鐘)", data: late, backgroundColor: chartColors[1] },
-							{ label: "加班(分鐘)", data: ot, backgroundColor: chartColors[2] }
+							{ label: '總工時(小時)', data: data.work.map(i => i.total_hours), backgroundColor: '#80deea' },
+							{ label: '遲到(分鐘)', data: data.work.map(i => i.late_minutes), backgroundColor: '#f48fb1' },
+							{ label: '加班(分鐘)', data: data.work.map(i => i.overtime_minutes), backgroundColor: '#fff176' }
 						]
 					},
 					options: {
-						onClick: function (evt, elements) {
-							if (elements.length) {
-								const index = elements[0].index;
-								showWorkDetail(data[index]);
-							}
+						onClick: function (evt, item) {
+							if (item.length) showDetail('work', workData[item[0].index]);
 						}
 					}
 				});
+
+				if (data.leave.length && data.leave_types.length) {
+					document.getElementById('leaveChart').style.display = 'block';
+					leaveChart = new Chart(ctx2, {
+						type: 'bar',
+						data: {
+							labels: data.leave.map(i => i.doctor_name),
+							datasets: data.leave_types.map((type, i) => ({
+								label: type,
+								data: data.leave.map(d => {
+									let total = 0;
+									(d.details[type] || []).forEach(v => total += v.minutes);
+									return total;
+								}),
+								backgroundColor: `rgba(${120 + i * 20}, ${100 + i * 30}, ${220 - i * 10}, 0.6)`
+							}))
+						},
+						options: {
+							onClick: function (evt, item) {
+								if (item.length) showDetail('leave', leaveData[item[0].index]);
+							}
+						}
+					});
+				} else {
+					document.getElementById('leaveChart').style.display = 'none';
+				}
 			}
 
-			function showWorkDetail(d) {
-				let html = '<table class="table table-bordered"><thead><tr><th>日期</th><th>打卡</th><th>下班</th><th>遲到</th><th>加班</th><th>總工時</th></tr></thead><tbody>';
-				d.details.forEach(row => {
-					html += `<tr><td>${row.work_date}</td><td>${row.clock_in_time}</td><td>${row.clock_out_time ?? '-'}</td><td>${row.late_minutes} 分</td><td>${row.overtime_minutes} 分</td><td>${row.total_hours} 小時</td></tr>`;
-				});
+			function showDetail(type, detail) {
+				let html = '<table class="table table-bordered"><thead><tr>';
+				if (type === 'work') {
+					html += '<th>日期</th><th>打卡時間</th><th>下班時間</th><th>遲到</th><th>加班</th><th>總工時</th></tr></thead><tbody>';
+					detail.details.forEach(d => {
+						html += `<tr><td>${d.work_date}</td><td>${d.clock_in_time}</td><td>${d.clock_out_time}</td><td>${d.late_minutes} 分鐘</td><td>${d.overtime_minutes} 分鐘</td><td>${d.total_hours} 小時</td></tr>`;
+					});
+				} else {
+					html += '<th>請假類別</th><th>起</th><th>訖</th><th>原因</th><th>分鐘</th></tr></thead><tbody>';
+					for (const [typeName, arr] of Object.entries(detail.details)) {
+						arr.forEach(row => {
+							html += `<tr><td>${typeName}</td><td>${row.start}</td><td>${row.end}</td><td>${row.reason}</td><td>${row.minutes} 分鐘</td></tr>`;
+						});
+					}
+				}
 				html += '</tbody></table>';
-				$('#detailTitle').text(`${d.doctor_name} 的詳細工作資料`);
+				$('#detailTitle').text(`${detail.doctor_name} 的詳細${type === 'work' ? '工作' : '請假'}資料`);
 				$('#detailTableContainer').html(html);
 				$('#detailModal').show();
 			}
 
-			function drawLeave(data) {
-				if (leaveChart) leaveChart.destroy();
-				const ctx = document.getElementById("leaveChart").getContext("2d");
-				if (!data || !data.length) {
-					$('#leaveNoData').show();
-					new Chart(ctx, { type: 'bar', data: { labels: [], datasets: [] } });
-					return;
-				}
-				$('#leaveNoData').hide();
-				const summary = {}, detailRows = [];
-				data.forEach(d => {
-					for (const type in d.details) {
-						const total = d.details[type].reduce((sum, row) => {
-							detailRows.push({ ...row, type, doctor: d.doctor_name });
-							return sum + parseInt(row.minutes);
-						}, 0);
-						summary[type] = (summary[type] || 0) + total;
-					}
-				});
-				const types = Object.keys(summary);
-				const values = types.map(t => summary[t]);
-				leaveChart = new Chart(ctx, {
-					type: 'bar',
-					data: { labels: types, datasets: [{ label: '請假分鐘數', data: values, backgroundColor: chartColors }] },
-					options: {
-						onClick: function (evt, elements) {
-							if (elements.length) {
-								const t = types[elements[0].index];
-								const filtered = detailRows.filter(r => r.type === t);
-								let html = '<table class="table table-bordered"><thead><tr><th>治療師</th><th>類型</th><th>起</th><th>訖</th><th>分鐘</th><th>原因</th></tr></thead><tbody>';
-								filtered.forEach(r => {
-									html += `<tr><td>${r.doctor}</td><td>${r.type}</td><td>${r.start}</td><td>${r.end}</td><td>${r.minutes}</td><td>${r.reason || ''}</td></tr>`;
-								});
-								html += '</tbody></table>';
-								$('#detailTitle').text(`${t} 的請假紀錄`);
-								$('#detailTableContainer').html(html);
-								$('#detailModal').show();
-							}
-						}
-					}
-				});
-			}
+			$('#filterForm').submit(function (e) {
+				e.preventDefault();
+				fetchData();
+			});
 
-			function drawPie(id, dataset, labelKey, valueKey, containerId) {
-				const ctx = document.getElementById(id).getContext("2d");
-				if (!dataset || !dataset.length) {
-					document.getElementById(containerId).innerHTML = '<p class="text-danger text-center">⚠ 無資料</p>';
-					new Chart(ctx, { type: 'pie', data: { labels: [], datasets: [] } });
-					return;
-				}
-				const grouped = {};
-				dataset.forEach(d => {
-					const key = d[labelKey];
-					const doctor = d.doctor || '未指定';
-					if (!grouped[key]) grouped[key] = [];
-					grouped[key].push({ doctor, value: d[valueKey] });
-				});
-
-				const labels = Object.keys(grouped);
-				const values = labels.map(l => grouped[l].reduce((s, r) => s + parseFloat(r.value), 0));
-				new Chart(ctx, {
-					type: 'pie',
-					data: { labels, datasets: [{ data: values, backgroundColor: chartColors.slice(0, labels.length) }] },
-					options: {
-						onClick: function (evt, el) {
-							if (el.length) {
-								const i = el[0].index;
-								const label = labels[i];
-								const rows = grouped[label];
-								let html = '<table class="table table-bordered"><thead><tr><th>治療師</th><th>數值</th></tr></thead><tbody>';
-								rows.forEach(r => {
-									html += `<tr><td>${r.doctor}</td><td>${r.value}</td></tr>`;
-								});
-								html += '</tbody></table>';
-								$('#detailTitle').text(`${label} 項目 的詳細資料`);
-								$('#detailTableContainer').html(html);
-								$('#detailModal').show();
-							}
-						}
-					}
-				});
-				document.getElementById(containerId).innerHTML = ''; // 不顯示任何提示文字
-			}
-
-			// 日期選單預設、查詢送出
 			$(document).ready(function () {
 				const now = new Date();
 				const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
@@ -593,11 +518,8 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				for (let i = 1; i <= 31; i++) $('#day').append(`<option value="${i}" ${i === d ? 'selected' : ''}>${i}</option>`);
 				fetchData();
 			});
-			$('#filterForm').submit(function (e) {
-				e.preventDefault();
-				fetchData();
-			});
 		</script>
+
 
 
 
