@@ -487,7 +487,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 			function showDetail(type, detail) {
 				let html = '<table class="table table-bordered"><thead><tr>';
 				if (type === 'work') {
-					html += '<th>日期</th><th>打卡時間</th><th>下班時間</th><th>遲到</th><th>加班</th><th>總工時</th></tr></thead><tbody>';
+					html += '<th>日期</th><th>上班時間</th><th>下班時間</th><th>遲到</th><th>加班</th><th>總工時</th></tr></thead><tbody>';
 					detail.details.forEach(d => {
 						html += `<tr><td>${d.work_date}</td><td>${d.clock_in_time}</td><td>${d.clock_out_time}</td><td>${d.late_minutes} 分鐘</td><td>${d.overtime_minutes} 分鐘</td><td>${d.total_hours} 小時</td></tr>`;
 					});
