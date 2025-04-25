@@ -566,21 +566,21 @@ if (mysqli_num_rows($result) > 0) {
 
 						// 查詢請假資料
 						$query = "SELECT 
-                            l.leaves_id, 
-                            d.doctor AS doctor_name, 
-                            l.leave_type, 
-                            l.leave_type_other, 
-                            l.start_date, 
-                            l.end_date, 
-                            l.reason, 
-                            l.is_approved, 
-                            l.rejection_reason
-                          FROM leaves l
-                          LEFT JOIN doctor d ON l.doctor_id = d.doctor_id
-                          LEFT JOIN user u ON d.user_id = u.user_id
-                          WHERE u.account = ?
-                          LIMIT ? OFFSET ?";
-
+            l.leaves_id, 
+            d.doctor AS doctor_name, 
+            l.leave_type, 
+            l.leave_type_other, 
+            l.start_date, 
+            l.end_date, 
+            l.reason, 
+            l.is_approved, 
+            l.rejection_reason
+          FROM leaves l
+          LEFT JOIN doctor d ON l.doctor_id = d.doctor_id
+          LEFT JOIN user u ON d.user_id = u.user_id
+          WHERE u.account = ?
+          ORDER BY l.start_date DESC
+          LIMIT ? OFFSET ?";
 						$stmt = mysqli_prepare($link, $query);
 						mysqli_stmt_bind_param($stmt, "sii", $帳號, $limit, $offset);
 						mysqli_stmt_execute($stmt);
