@@ -15,32 +15,51 @@ switch ($type) {
   case 'year':
     $where .= " AND YEAR(a.work_date) = $year";
     $leaveWhere = "YEAR(l.start_date) = $year OR YEAR(l.end_date) = $year";
+    $dsWhere = "YEAR(ds.date) = $year";
     break;
   case 'month':
     $where .= " AND YEAR(a.work_date) = $year AND MONTH(a.work_date) = $month";
     $leaveWhere = "(YEAR(l.start_date) = $year AND MONTH(l.start_date) = $month)
                     OR (YEAR(l.end_date) = $year AND MONTH(l.end_date) = $month)";
+    $dsWhere = "YEAR(ds.date) = $year AND MONTH(ds.date) = $month";
     break;
   case 'day':
   default:
     $where .= " AND a.work_date = '$dateTarget'";
     $leaveWhere = "DATE(l.start_date) <= '$dateTarget' AND DATE(l.end_date) >= '$dateTarget'";
+    $dsWhere = "ds.date = '$dateTarget'";
     break;
 }
 if ($doctor_id != 0) {
   $where .= " AND a.doctor_id = $doctor_id";
   $leaveWhere .= " AND l.doctor_id = $doctor_id";
+  $dsWhere .= " AND ds.doctor_id = $doctor_id";
 }
 
-// ---------- 工作時數 ----------
+$leaveDates = [];
+$resLeaveForLate = mysqli_query($link, "
+  SELECT doctor_id, start_date, end_date FROM leaves
+  WHERE is_approved = 1
+");
+while ($r = mysqli_fetch_assoc($resLeaveForLate)) {
+  $start = strtotime($r['start_date']);
+  $end = strtotime($r['end_date']);
+  for ($t = $start; $t <= $end; $t += 86400) {
+    $date = date('Y-m-d', $t);
+    $leaveDates[$r['doctor_id']][$date] = true;
+  }
+}
+
 $work = [];
 $sql = "
   SELECT d.doctor AS doctor_name, d.doctor_id, a.work_date,
     TIME_FORMAT(a.clock_in, '%H:%i') AS clock_in_time,
     TIME_FORMAT(a.clock_out, '%H:%i') AS clock_out_time,
     ROUND(TIMESTAMPDIFF(MINUTE, a.clock_in, IFNULL(a.clock_out, NOW())) / 60, 2) AS total_hours,
-    CASE WHEN TIME(a.clock_in) > TIME(st_go.shifttime) THEN TIMESTAMPDIFF(MINUTE, TIME(st_go.shifttime), TIME(a.clock_in)) ELSE 0 END AS late_minutes,
-    CASE WHEN TIME(a.clock_out) > TIME(st_off.shifttime) THEN TIMESTAMPDIFF(MINUTE, TIME(st_off.shifttime), TIME(a.clock_out)) ELSE 0 END AS overtime_minutes
+    TIME(a.clock_in) AS in_time,
+    TIME(a.clock_out) AS out_time,
+    st_go.shifttime AS go_time,
+    st_off.shifttime AS off_time
   FROM attendance a
   JOIN doctor d ON a.doctor_id = d.doctor_id
   JOIN doctorshift ds ON ds.doctor_id = d.doctor_id AND ds.date = a.work_date
@@ -49,11 +68,22 @@ $sql = "
   WHERE a.clock_in IS NOT NULL AND $where
   ORDER BY d.doctor_id, a.work_date
 ";
-
 $res = mysqli_query($link, $sql);
 $temp = [];
 while ($r = mysqli_fetch_assoc($res)) {
   $docId = $r['doctor_id'];
+  $date = $r['work_date'];
+  $isLeave = isset($leaveDates[$docId][$date]);
+
+  $late = 0;
+  if (!$isLeave && $r['in_time'] > $r['go_time']) {
+    $late = (strtotime($r['in_time']) - strtotime($r['go_time'])) / 60;
+  }
+  $ot = 0;
+  if ($r['out_time'] > $r['off_time']) {
+    $ot = (strtotime($r['out_time']) - strtotime($r['off_time'])) / 60;
+  }
+
   if (!isset($temp[$docId])) {
     $temp[$docId] = [
       'doctor_name' => $r['doctor_name'],
@@ -64,28 +94,21 @@ while ($r = mysqli_fetch_assoc($res)) {
       'details' => []
     ];
   }
-  $r['late_minutes'] = max(0, $r['late_minutes']);
-  $r['overtime_minutes'] = max(0, $r['overtime_minutes']);
-  $r['total_hours'] = max(0, $r['total_hours']);
-
-  $temp[$docId]['total_hours'] += $r['total_hours'];
-  $temp[$docId]['late_minutes'] += $r['late_minutes'];
-  $temp[$docId]['overtime_minutes'] += $r['overtime_minutes'];
+  $total = max(0, $r['total_hours']);
+  $temp[$docId]['total_hours'] += $total;
+  $temp[$docId]['late_minutes'] += max(0, $late);
+  $temp[$docId]['overtime_minutes'] += max(0, $ot);
   $temp[$docId]['details'][] = [
     'work_date' => $r['work_date'],
     'clock_in_time' => $r['clock_in_time'],
     'clock_out_time' => $r['clock_out_time'],
-    'late_minutes' => $r['late_minutes'],
-    'overtime_minutes' => $r['overtime_minutes'],
-    'total_hours' => $r['total_hours']
+    'late_minutes' => round($late),
+    'overtime_minutes' => round($ot),
+    'total_hours' => round($total, 2)
   ];
 }
-$work = array_map(function($w) {
-  $w['total_hours'] = round($w['total_hours'], 2);
-  return $w;
-}, array_values($temp));
+$work = array_values($temp);
 
-// ---------- 請假統計 ----------
 $leave = [];
 $leave_types = [];
 $res2 = mysqli_query($link, "
@@ -94,16 +117,13 @@ $res2 = mysqli_query($link, "
   JOIN doctor d ON d.doctor_id = l.doctor_id
   WHERE l.is_approved = 1 AND ($leaveWhere)
 ");
-
 $temp2 = [];
 while ($r = mysqli_fetch_assoc($res2)) {
   $docId = $r['doctor_id'];
   $leave_type = $r['leave_type'] ?? '其他';
   $leave_types[$leave_type] = true;
-
   $minutes = (strtotime($r['end_date']) - strtotime($r['start_date'])) / 60;
   if ($minutes <= 0) continue;
-
   if (!isset($temp2[$docId])) {
     $temp2[$docId] = [
       'doctor_id' => $docId,
@@ -112,11 +132,9 @@ while ($r = mysqli_fetch_assoc($res2)) {
       'details' => []
     ];
   }
-
   if (!isset($temp2[$docId]['details'][$leave_type])) {
     $temp2[$docId]['details'][$leave_type] = [];
   }
-
   $temp2[$docId]['details'][$leave_type][] = [
     'start' => $r['start_date'],
     'end' => $r['end_date'],
@@ -125,11 +143,8 @@ while ($r = mysqli_fetch_assoc($res2)) {
   ];
   $temp2[$docId]['total_minutes'] += $minutes;
 }
-
 $leave = array_values($temp2);
 $leave_types = array_keys($leave_types);
-
-// 加上為 0 的類型（避免圖表錯誤）
 foreach ($leave as &$lv) {
   foreach ($leave_types as $lt) {
     if (!isset($lv['details'][$lt])) {
@@ -137,6 +152,56 @@ foreach ($leave as &$lv) {
     }
   }
 }
-// 
-echo json_encode(['work' => $work, 'leave' => $leave, 'leave_types' => $leave_types]);
+
+$item_counts = [];
+$res3 = mysqli_query($link, "
+  SELECT d.doctor AS doctor_name, i.item AS item_name, COUNT(*) AS count
+  FROM appointment ap
+  JOIN doctorshift ds ON ds.doctorshift_id = ap.doctorshift_id
+  JOIN doctor d ON ds.doctor_id = d.doctor_id
+  JOIN medicalrecord mr ON mr.appointment_id = ap.appointment_id
+  JOIN item i ON mr.item_id = i.item_id
+  WHERE $dsWhere
+  GROUP BY d.doctor_id, i.item_id
+");
+while ($r = mysqli_fetch_assoc($res3)) {
+  $item_counts[] = $r;
+}
+
+$appointment_counts = [];
+$res4 = mysqli_query($link, "
+  SELECT d.doctor AS doctor_name, COUNT(*) AS count
+  FROM appointment ap
+  JOIN doctorshift ds ON ds.doctorshift_id = ap.doctorshift_id
+  JOIN doctor d ON ds.doctor_id = d.doctor_id
+  WHERE $dsWhere
+  GROUP BY d.doctor_id
+");
+while ($r = mysqli_fetch_assoc($res4)) {
+  $appointment_counts[] = $r;
+}
+
+$income_data = [];
+$res5 = mysqli_query($link, "
+  SELECT d.doctor AS doctor_name, i.item AS item_name, SUM(i.price) AS income
+  FROM appointment ap
+  JOIN doctorshift ds ON ds.doctorshift_id = ap.doctorshift_id
+  JOIN doctor d ON ds.doctor_id = d.doctor_id
+  JOIN medicalrecord mr ON mr.appointment_id = ap.appointment_id
+  JOIN item i ON mr.item_id = i.item_id
+  WHERE $dsWhere
+  GROUP BY d.doctor_id, i.item_id
+");
+while ($r = mysqli_fetch_assoc($res5)) {
+  $income_data[] = $r;
+}
+
+echo json_encode([
+  'work' => $work,
+  'leave' => $leave,
+  'leave_types' => $leave_types,
+  'item_counts' => $item_counts,
+  'appointment_counts' => $appointment_counts,
+  'income_data' => $income_data
+]);
 ?>

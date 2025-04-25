@@ -413,112 +413,174 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				</div>
 			</div>
 
-			<div id="detailModal" class="modal">
-				<div class="modal-content">
-					<span class="close" onclick="$('#detailModal').hide()">&times;</span>
-					<h4 id="detailTitle" class="mb-3"></h4>
-					<div id="detailTableContainer"></div>
+
+			<div class="chart-row">
+				<div class="chart-box">
+					<h5 class="text-center">項目數比例</h5>
+					<canvas id="itemChart"></canvas>
+					<div id="itemTableContainer" class="mt-2"></div>
+				</div>
+				<div class="chart-box">
+					<h5 class="text-center">預約人數比例</h5>
+					<canvas id="appointmentChart"></canvas>
+					<div id="appointmentTableContainer" class="mt-2"></div>
+				</div>
+				<div class="chart-box">
+					<h5 class="text-center">收入統計</h5>
+					<canvas id="incomeChart"></canvas>
+					<div id="incomeTableContainer" class="mt-2"></div>
 				</div>
 			</div>
 		</div>
 
-		<script>
-			let workChart, leaveChart, workData = [], leaveData = [];
 
-			function fetchData() {
-				const data = $('#filterForm').serialize();
-				$.get('數據查詢.php', data, function (res) {
-					workData = res.work;
-					leaveData = res.leave;
-					drawCharts(res);
-				}, 'json');
+		<div id="detailModal" class="modal">
+			<div class="modal-content">
+				<span class="close" onclick="$('#detailModal').hide()">&times;</span>
+				<h4 id="detailTitle" class="mb-3"></h4>
+				<div id="detailTableContainer"></div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		let workChart, leaveChart, itemChart, appointmentChart, incomeChart;
+		let workData = [], leaveData = [], itemCounts = [], appointmentCounts = [], incomeData = [];
+
+		function fetchData() {
+			$('#spinner').show();
+			const data = $('#filterForm').serialize();
+			$.get('數據查詢.php', data, function (res) {
+				$('#spinner').hide();
+				workData = res.work;
+				leaveData = res.leave;
+				itemCounts = res.item_counts;
+				appointmentCounts = res.appointment_counts;
+				incomeData = res.income_data;
+				drawCharts(res);
+			}, 'json');
+		}
+
+		function drawCharts(data) {
+			function clearChart(id, chart, emptyId) {
+				if (chart) chart.destroy();
+				if (!data[id] || data[id][0]?.no_data || !data[id].length) {
+					$(`#${emptyId}`).show();
+					return true;
+				}
+				$(`#${emptyId}`).hide();
+				return false;
 			}
 
-			function drawCharts(data) {
-				const ctx1 = document.getElementById('workChart').getContext('2d');
-				const ctx2 = document.getElementById('leaveChart').getContext('2d');
-				if (workChart) workChart.destroy();
-				if (leaveChart) leaveChart.destroy();
-
-				workChart = new Chart(ctx1, {
+			if (!clearChart('work', workChart, 'workEmpty')) {
+				const ctx = document.getElementById('workChart').getContext('2d');
+				workChart = new Chart(ctx, {
 					type: 'bar',
 					data: {
-						labels: data.work.map(i => i.doctor_name),
+						labels: workData.map(i => i.doctor_name),
 						datasets: [
-							{ label: '總工時(小時)', data: data.work.map(i => i.total_hours), backgroundColor: '#80deea' },
-							{ label: '遲到(分鐘)', data: data.work.map(i => i.late_minutes), backgroundColor: '#f48fb1' },
-							{ label: '加班(分鐘)', data: data.work.map(i => i.overtime_minutes), backgroundColor: '#fff176' }
+							{ label: '總工時(小時)', data: workData.map(i => i.total_hours), backgroundColor: '#80deea' },
+							{ label: '遲到(分鐘)', data: workData.map(i => i.late_minutes), backgroundColor: '#f48fb1' },
+							{ label: '加班(分鐘)', data: workData.map(i => i.overtime_minutes), backgroundColor: '#fff176' }
 						]
 					},
 					options: {
-						onClick: function (evt, item) {
-							if (item.length) showDetail('work', workData[item[0].index]);
-						}
+						onClick: (e, i) => i.length && showDetail('work', workData[i[0].index])
 					}
 				});
-
-				if (data.leave.length && data.leave_types.length) {
-					document.getElementById('leaveChart').style.display = 'block';
-					leaveChart = new Chart(ctx2, {
-						type: 'bar',
-						data: {
-							labels: data.leave.map(i => i.doctor_name),
-							datasets: data.leave_types.map((type, i) => ({
-								label: type,
-								data: data.leave.map(d => {
-									let total = 0;
-									(d.details[type] || []).forEach(v => total += v.minutes);
-									return total;
-								}),
-								backgroundColor: `rgba(${120 + i * 20}, ${100 + i * 30}, ${220 - i * 10}, 0.6)`
-							}))
-						},
-						options: {
-							onClick: function (evt, item) {
-								if (item.length) showDetail('leave', leaveData[item[0].index]);
-							}
-						}
-					});
-				} else {
-					document.getElementById('leaveChart').style.display = 'none';
-				}
 			}
 
-			function showDetail(type, detail) {
-				let html = '<table class="table table-bordered"><thead><tr>';
-				if (type === 'work') {
-					html += '<th>日期</th><th>上班時間</th><th>下班時間</th><th>遲到</th><th>加班</th><th>總工時</th></tr></thead><tbody>';
-					detail.details.forEach(d => {
-						html += `<tr><td>${d.work_date}</td><td>${d.clock_in_time}</td><td>${d.clock_out_time}</td><td>${d.late_minutes} 分鐘</td><td>${d.overtime_minutes} 分鐘</td><td>${d.total_hours} 小時</td></tr>`;
-					});
-				} else {
-					html += '<th>請假類別</th><th>起</th><th>訖</th><th>原因</th><th>分鐘</th></tr></thead><tbody>';
-					for (const [typeName, arr] of Object.entries(detail.details)) {
-						arr.forEach(row => {
-							html += `<tr><td>${typeName}</td><td>${row.start}</td><td>${row.end}</td><td>${row.reason}</td><td>${row.minutes} 分鐘</td></tr>`;
-						});
+			if (!clearChart('leave', leaveChart, 'leaveEmpty')) {
+				const ctx = document.getElementById('leaveChart').getContext('2d');
+				leaveChart = new Chart(ctx, {
+					type: 'bar',
+					data: {
+						labels: leaveData.map(i => i.doctor_name),
+						datasets: data.leave_types.map((t, j) => ({
+							label: `${t}(分鐘)`,
+							data: leaveData.map(d => (d.details[t] || []).reduce((s, v) => s + v.minutes, 0)),
+							backgroundColor: `rgba(${120 + j * 20}, ${100 + j * 30}, ${220 - j * 10}, 0.6)`
+						}))
+					},
+					options: {
+						onClick: (e, i) => i.length && showDetail('leave', leaveData[i[0].index])
+					}
+				});
+			}
+
+			renderPie('itemChart', itemCounts, ['doctor_name', 'item_name', 'count'], '項目數詳細', 'itemTableContainer', 'itemEmpty');
+			renderPie('appointmentChart', appointmentCounts, ['doctor_name', 'count'], '預約人數詳細', 'appointmentTableContainer', 'appointmentEmpty');
+			renderPie('incomeChart', incomeData, ['doctor_name', 'item_name', 'income'], '收入統計詳細', 'incomeTableContainer', 'incomeEmpty');
+		}
+
+		function renderPie(canvasId, data, fields, title, containerId, emptyId) {
+			const ctx = document.getElementById(canvasId)?.getContext('2d');
+			if (!ctx || !data.length) {
+				$(`#${emptyId}`).text('⚠ 無資料');
+				return;
+			}
+			$(`#${emptyId}`).text('');
+			const labels = data.map(d => fields.map(f => d[f]).join(' - '));
+			const values = data.map(d => d[fields[fields.length - 1]]);
+			const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#66BB6A', '#BA68C8'];
+			if (window[canvasId]) window[canvasId].destroy();
+			window[canvasId] = new Chart(ctx, {
+				type: 'pie',
+				data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
+				options: {
+					onClick: (e, i) => {
+						if (i.length) {
+							const row = data[i[0].index];
+							let html = '<table class="table table-bordered"><thead><tr>';
+							fields.forEach(f => html += `<th>${f}</th>`);
+							html += '</tr></thead><tbody><tr>';
+							fields.forEach(f => html += `<td>${row[f]}</td>`);
+							html += '</tr></tbody></table>';
+							$('#detailTitle').text(title);
+							$('#detailTableContainer').html(html);
+							$('#detailModal').show();
+						}
 					}
 				}
-				html += '</tbody></table>';
-				$('#detailTitle').text(`${detail.doctor_name} 的詳細${type === 'work' ? '工作' : '請假'}資料`);
-				$('#detailTableContainer').html(html);
-				$('#detailModal').show();
+			});
+		}
+
+		function showDetail(type, detail) {
+			let html = '<table class="table table-bordered"><thead><tr>';
+			if (type === 'work') {
+				html += '<th>日期</th><th>上班時間</th><th>下班時間</th><th>遲到</th><th>加班</th><th>總工時</th></tr></thead><tbody>';
+				detail.details.forEach(d => {
+					html += `<tr><td>${d.work_date}</td><td>${d.clock_in_time}</td><td>${d.clock_out_time}</td><td>${d.late_minutes} 分鐘</td><td>${d.overtime_minutes} 分鐘</td><td>${d.total_hours} 小時</td></tr>`;
+				});
+			} else {
+				html += '<th>請假類別</th><th>起</th><th>訖</th><th>原因</th><th>分鐘</th></tr></thead><tbody>';
+				for (const [typeName, arr] of Object.entries(detail.details)) {
+					arr.forEach(row => {
+						html += `<tr><td>${typeName}</td><td>${row.start}</td><td>${row.end}</td><td>${row.reason}</td><td>${row.minutes} 分鐘</td></tr>`;
+					});
+				}
 			}
+			html += '</tbody></table>';
+			$('#detailTitle').text(`${detail.doctor_name} 的詳細${type === 'work' ? '工作' : '請假'}資料`);
+			$('#detailTableContainer').html(html);
+			$('#detailModal').show();
+		}
 
-			$('#filterForm').submit(function (e) {
-				e.preventDefault();
-				fetchData();
-			});
+		$('#filterForm').submit(function (e) {
+			e.preventDefault();
+			fetchData();
+		});
 
-			$(document).ready(function () {
-				const now = new Date();
-				const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
-				for (let i = 2023; i <= y; i++) $('#year').append(`<option value="${i}" ${i === y ? 'selected' : ''}>${i}</option>`);
-				for (let i = 1; i <= 12; i++) $('#month').append(`<option value="${i}" ${i === m ? 'selected' : ''}>${i}</option>`);
-				for (let i = 1; i <= 31; i++) $('#day').append(`<option value="${i}" ${i === d ? 'selected' : ''}>${i}</option>`);
-				fetchData();
-			});
-		</script>
+		$(document).ready(function () {
+			const now = new Date();
+			const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
+			for (let i = 2023; i <= y; i++) $('#year').append(`<option value="${i}" ${i === y ? 'selected' : ''}>${i}</option>`);
+			for (let i = 1; i <= 12; i++) $('#month').append(`<option value="${i}" ${i === m ? 'selected' : ''}>${i}</option>`);
+			for (let i = 1; i <= 31; i++) $('#day').append(`<option value="${i}" ${i === d ? 'selected' : ''}>${i}</option>`);
+			fetchData();
+		});
+
+	</script>
 
 
 	</div>
