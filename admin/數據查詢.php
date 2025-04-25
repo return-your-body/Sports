@@ -32,6 +32,21 @@ if ($doctor_id != 0) {
   $leaveWhere .= " AND l.doctor_id = $doctor_id";
 }
 
+// 預先抓出請假資料用於排除遲到
+$leaveDates = [];
+$resLeaveForLate = mysqli_query($link, "
+  SELECT doctor_id, start_date, end_date FROM leaves
+  WHERE is_approved = 1
+");
+while ($r = mysqli_fetch_assoc($resLeaveForLate)) {
+  $start = strtotime($r['start_date']);
+  $end = strtotime($r['end_date']);
+  for ($t = $start; $t <= $end; $t += 86400) {
+    $date = date('Y-m-d', $t);
+    $leaveDates[$r['doctor_id']][$date] = true;
+  }
+}
+
 // ---------- 工作時數 ----------
 $work = [];
 $sql = "
@@ -39,8 +54,8 @@ $sql = "
     TIME_FORMAT(a.clock_in, '%H:%i') AS clock_in_time,
     TIME_FORMAT(a.clock_out, '%H:%i') AS clock_out_time,
     ROUND(TIMESTAMPDIFF(MINUTE, a.clock_in, IFNULL(a.clock_out, NOW())) / 60, 2) AS total_hours,
-    CASE WHEN TIME(a.clock_in) > TIME(st_go.shifttime) THEN TIMESTAMPDIFF(MINUTE, TIME(st_go.shifttime), TIME(a.clock_in)) ELSE 0 END AS late_minutes,
-    CASE WHEN TIME(a.clock_out) > TIME(st_off.shifttime) THEN TIMESTAMPDIFF(MINUTE, TIME(st_off.shifttime), TIME(a.clock_out)) ELSE 0 END AS overtime_minutes
+    TIMESTAMPDIFF(MINUTE, TIME(st_go.shifttime), TIME(a.clock_in)) AS raw_late_minutes,
+    TIMESTAMPDIFF(MINUTE, TIME(st_off.shifttime), TIME(a.clock_out)) AS raw_overtime_minutes
   FROM attendance a
   JOIN doctor d ON a.doctor_id = d.doctor_id
   JOIN doctorshift ds ON ds.doctor_id = d.doctor_id AND ds.date = a.work_date
@@ -54,6 +69,9 @@ $res = mysqli_query($link, $sql);
 $temp = [];
 while ($r = mysqli_fetch_assoc($res)) {
   $docId = $r['doctor_id'];
+  $date = $r['work_date'];
+  $isLeave = isset($leaveDates[$docId][$date]);
+
   if (!isset($temp[$docId])) {
     $temp[$docId] = [
       'doctor_name' => $r['doctor_name'],
@@ -64,26 +82,23 @@ while ($r = mysqli_fetch_assoc($res)) {
       'details' => []
     ];
   }
-  $r['late_minutes'] = max(0, $r['late_minutes']);
-  $r['overtime_minutes'] = max(0, $r['overtime_minutes']);
-  $r['total_hours'] = max(0, $r['total_hours']);
+  $late = ($isLeave || $r['raw_late_minutes'] < 0) ? 0 : $r['raw_late_minutes'];
+  $overtime = ($r['raw_overtime_minutes'] < 0) ? 0 : $r['raw_overtime_minutes'];
+  $total = max(0, $r['total_hours']);
 
-  $temp[$docId]['total_hours'] += $r['total_hours'];
-  $temp[$docId]['late_minutes'] += $r['late_minutes'];
-  $temp[$docId]['overtime_minutes'] += $r['overtime_minutes'];
+  $temp[$docId]['total_hours'] += $total;
+  $temp[$docId]['late_minutes'] += $late;
+  $temp[$docId]['overtime_minutes'] += $overtime;
   $temp[$docId]['details'][] = [
     'work_date' => $r['work_date'],
     'clock_in_time' => $r['clock_in_time'],
     'clock_out_time' => $r['clock_out_time'],
-    'late_minutes' => $r['late_minutes'],
-    'overtime_minutes' => $r['overtime_minutes'],
-    'total_hours' => $r['total_hours']
+    'late_minutes' => $late,
+    'overtime_minutes' => $overtime,
+    'total_hours' => $total
   ];
 }
-$work = array_map(function($w) {
-  $w['total_hours'] = round($w['total_hours'], 2);
-  return $w;
-}, array_values($temp));
+$work = array_values($temp);
 
 // ---------- 請假統計 ----------
 $leave = [];
@@ -94,13 +109,11 @@ $res2 = mysqli_query($link, "
   JOIN doctor d ON d.doctor_id = l.doctor_id
   WHERE l.is_approved = 1 AND ($leaveWhere)
 ");
-
 $temp2 = [];
 while ($r = mysqli_fetch_assoc($res2)) {
   $docId = $r['doctor_id'];
   $leave_type = $r['leave_type'] ?? '其他';
   $leave_types[$leave_type] = true;
-
   $minutes = (strtotime($r['end_date']) - strtotime($r['start_date'])) / 60;
   if ($minutes <= 0) continue;
 
@@ -112,11 +125,9 @@ while ($r = mysqli_fetch_assoc($res2)) {
       'details' => []
     ];
   }
-
   if (!isset($temp2[$docId]['details'][$leave_type])) {
     $temp2[$docId]['details'][$leave_type] = [];
   }
-
   $temp2[$docId]['details'][$leave_type][] = [
     'start' => $r['start_date'],
     'end' => $r['end_date'],
@@ -125,11 +136,8 @@ while ($r = mysqli_fetch_assoc($res2)) {
   ];
   $temp2[$docId]['total_minutes'] += $minutes;
 }
-
 $leave = array_values($temp2);
 $leave_types = array_keys($leave_types);
-
-// 加上為 0 的類型（避免圖表錯誤）
 foreach ($leave as &$lv) {
   foreach ($leave_types as $lt) {
     if (!isset($lv['details'][$lt])) {
@@ -137,6 +145,6 @@ foreach ($leave as &$lv) {
     }
   }
 }
-// 
+
 echo json_encode(['work' => $work, 'leave' => $leave, 'leave_types' => $leave_types]);
 ?>
