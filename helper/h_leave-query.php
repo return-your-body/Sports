@@ -72,7 +72,9 @@ $query = "SELECT leaves_id, leave_type, leave_type_other, start_date, end_date,
                  reason, is_approved, rejection_reason 
           FROM leaves 
           WHERE doctor_id = ? 
+          ORDER BY start_date DESC 
           LIMIT ? OFFSET ?";
+
 $stmt = mysqli_prepare($link, $query);
 mysqli_stmt_bind_param($stmt, "iii", $doctor_id, $limit, $offset);
 mysqli_stmt_execute($stmt);
