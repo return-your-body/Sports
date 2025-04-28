@@ -13,41 +13,28 @@ $dateTarget = "$year-$month-$day";
 
 switch ($type) {
   case 'year':
-    $where .= " AND YEAR(a.work_date) = $year";
+    $where .= " AND YEAR(ds.date) = $year";
     $leaveWhere = "YEAR(l.start_date) = $year OR YEAR(l.end_date) = $year";
     break;
   case 'month':
-    $where .= " AND YEAR(a.work_date) = $year AND MONTH(a.work_date) = $month";
+    $where .= " AND YEAR(ds.date) = $year AND MONTH(ds.date) = $month";
     $leaveWhere = "(YEAR(l.start_date) = $year AND MONTH(l.start_date) = $month)
                     OR (YEAR(l.end_date) = $year AND MONTH(l.end_date) = $month)";
     break;
   case 'day':
   default:
-    $where .= " AND a.work_date = '$dateTarget'";
+    $where .= " AND ds.date = '$dateTarget'";
     $leaveWhere = "DATE(l.start_date) <= '$dateTarget' AND DATE(l.end_date) >= '$dateTarget'";
     break;
 }
 if ($doctor_id != 0) {
-  $where .= " AND a.doctor_id = $doctor_id";
+  $where .= " AND ds.doctor_id = $doctor_id";
   $leaveWhere .= " AND l.doctor_id = $doctor_id";
 }
 
-$leaveDates = [];
-$resLeaveForLate = mysqli_query($link, "
-  SELECT doctor_id, start_date, end_date FROM leaves
-  WHERE is_approved = 1
-");
-while ($r = mysqli_fetch_assoc($resLeaveForLate)) {
-  $start = strtotime($r['start_date']);
-  $end = strtotime($r['end_date']);
-  for ($t = $start; $t <= $end; $t += 86400) {
-    $date = date('Y-m-d', $t);
-    $leaveDates[$r['doctor_id']][$date] = true;
-  }
-}
-
+// 撈打卡資料（正常有打卡）
 $work = [];
-$sql = "
+$res = mysqli_query($link, "
   SELECT d.doctor AS doctor_name, d.doctor_id, a.work_date,
     TIME_FORMAT(a.clock_in, '%H:%i') AS clock_in_time,
     TIME_FORMAT(a.clock_out, '%H:%i') AS clock_out_time,
@@ -63,23 +50,11 @@ $sql = "
   JOIN shifttime st_off ON st_off.shifttime_id = ds.off
   WHERE a.clock_in IS NOT NULL AND $where
   ORDER BY d.doctor_id, a.work_date
-";
-$res = mysqli_query($link, $sql);
+");
+
 $temp = [];
 while ($r = mysqli_fetch_assoc($res)) {
   $docId = $r['doctor_id'];
-  $date = $r['work_date'];
-  $isLeave = isset($leaveDates[$docId][$date]);
-
-  $late = 0;
-  if (!$isLeave && $r['in_time'] > $r['go_time']) {
-    $late = (strtotime($r['in_time']) - strtotime($r['go_time'])) / 60;
-  }
-  $ot = 0;
-  if ($r['out_time'] > $r['off_time']) {
-    $ot = (strtotime($r['out_time']) - strtotime($r['off_time'])) / 60;
-  }
-
   if (!isset($temp[$docId])) {
     $temp[$docId] = [
       'doctor_name' => $r['doctor_name'],
@@ -87,10 +62,21 @@ while ($r = mysqli_fetch_assoc($res)) {
       'total_hours' => 0,
       'late_minutes' => 0,
       'overtime_minutes' => 0,
+      'absent_count' => 0,
       'details' => []
     ];
   }
+
+  $late = 0;
+  if ($r['in_time'] > $r['go_time']) {
+    $late = (strtotime($r['in_time']) - strtotime($r['go_time'])) / 60;
+  }
+  $ot = 0;
+  if ($r['out_time'] > $r['off_time']) {
+    $ot = (strtotime($r['out_time']) - strtotime($r['off_time'])) / 60;
+  }
   $total = max(0, $r['total_hours']);
+  
   $temp[$docId]['total_hours'] += $total;
   $temp[$docId]['late_minutes'] += max(0, $late);
   $temp[$docId]['overtime_minutes'] += max(0, $ot);
@@ -103,8 +89,44 @@ while ($r = mysqli_fetch_assoc($res)) {
     'total_hours' => round($total, 2)
   ];
 }
+
+// 🔥 這邊補曠工資料（有排班但沒打卡）
+$res_absent = mysqli_query($link, "
+  SELECT d.doctor AS doctor_name, d.doctor_id, ds.date AS work_date
+  FROM doctorshift ds
+  JOIN doctor d ON ds.doctor_id = d.doctor_id
+  LEFT JOIN attendance a ON a.doctor_id = ds.doctor_id AND a.work_date = ds.date
+  WHERE a.attendance_id IS NULL
+    AND $where
+");
+
+while ($r = mysqli_fetch_assoc($res_absent)) {
+  $docId = $r['doctor_id'];
+  if (!isset($temp[$docId])) {
+    $temp[$docId] = [
+      'doctor_name' => $r['doctor_name'],
+      'doctor_id' => $docId,
+      'total_hours' => 0,
+      'late_minutes' => 0,
+      'overtime_minutes' => 0,
+      'absent_count' => 0,
+      'details' => []
+    ];
+  }
+  $temp[$docId]['absent_count']++;
+  $temp[$docId]['details'][] = [
+    'work_date' => $r['work_date'],
+    'clock_in_time' => '-',
+    'clock_out_time' => '-',
+    'late_minutes' => '-',
+    'overtime_minutes' => '-',
+    'total_hours' => '曠工'
+  ];
+}
+
 $work = array_values($temp);
 
+// 請假統計
 $leave = [];
 $leave_types = [];
 $res2 = mysqli_query($link, "
@@ -113,6 +135,7 @@ $res2 = mysqli_query($link, "
   JOIN doctor d ON d.doctor_id = l.doctor_id
   WHERE l.is_approved = 1 AND ($leaveWhere)
 ");
+
 $temp2 = [];
 while ($r = mysqli_fetch_assoc($res2)) {
   $docId = $r['doctor_id'];
@@ -141,8 +164,9 @@ while ($r = mysqli_fetch_assoc($res2)) {
 }
 $leave = array_values($temp2);
 
+// 最後輸出
 echo json_encode([
   'work' => $work,
-  'leave' => $leave,
+  'leave' => $leave
 ]);
 ?>
