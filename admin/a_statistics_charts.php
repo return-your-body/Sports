@@ -328,155 +328,352 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 		</header>
 
 		<!-- 統計圖 時速收入 -->
-        <?php
-require '../db.php';
-?>
+		<?php
+		require '../db.php';
+		?>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <style>
-    .chart-row {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 20px;
-    }
-    .chart-box {
-      flex: 1 1 32%;
-      min-height: 300px;
-      position: relative;
-    }
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: 9999;
-    }
-    .modal-content {
-      background: white;
-      padding: 20px;
-      margin: 10% auto;
-      width: 90%;
-      max-width: 1000px;
-    }
-    .close {
-      float: right;
-      font-size: 24px;
-      cursor: pointer;
-    }
-    .spinner-border {
-      position: absolute;
-      top: 45%;
-      left: 45%;
-    }
-  </style>
+		<style>
+			.chart-row {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: space-between;
+				gap: 20px;
+			}
 
-<div class="container">
-  <h2 class="text-center my-4">項目／預約／收入 統計圖表</h2>
-  <form id="filterForm" class="row g-3 justify-content-center mb-4">
-    <div class="col-auto">
-      <select id="type" name="type" class="form-select">
-        <option value="day">單日</option>
-        <option value="month">整月</option>
-        <option value="year">整年</option>
-      </select>
-    </div>
-    <div class="col-auto"><select id="year" name="year" class="form-select"></select></div>
-    <div class="col-auto"><select id="month" name="month" class="form-select"></select></div>
-    <div class="col-auto"><select id="day" name="day" class="form-select"></select></div>
-    <div class="col-auto">
-      <select id="doctor_id" name="doctor_id" class="form-select">
-        <option value="0">全部</option>
-        <?php
-        $res = mysqli_query($link, "SELECT doctor_id, doctor FROM doctor");
-        while ($row = mysqli_fetch_assoc($res))
-          echo "<option value='{$row['doctor_id']}'>{$row['doctor']}</option>";
-        ?>
-      </select>
-    </div>
-    <div class="col-auto"><button class="btn btn-primary" type="submit">查詢</button></div>
-  </form>
-  <div class="chart-row">
-    <div class="chart-box">
-      <h5 class="text-center">項目數比例</h5>
-      <canvas id="itemChart"></canvas>
-      <div class="text-center text-danger" id="itemEmpty"></div>
-    </div>
-    <div class="chart-box">
-      <h5 class="text-center">預約人數比例</h5>
-      <canvas id="appointmentChart"></canvas>
-      <div class="text-center text-danger" id="appointmentEmpty"></div>
-    </div>
-    <div class="chart-box">
-      <h5 class="text-center">收入統計</h5>
-      <canvas id="incomeChart"></canvas>
-      <div class="text-center text-danger" id="incomeEmpty"></div>
-    </div>
-  </div>
-  <div id="detailModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="$('#detailModal').hide()">&times;</span>
-      <h4 id="detailTitle" class="mb-3"></h4>
-      <div id="detailTableContainer"></div>
-    </div>
-  </div>
-</div>
-<script>
-function fetchChartData() {
-  const data = $('#filterForm').serialize();
-  $.get('數據查詢2.php', data, function (res) {
-    renderPie('itemChart', res.item_counts, ['doctor_name', 'item_name', 'count'], '項目數詳細', 'itemEmpty');
-    renderPie('appointmentChart', res.appointment_counts, ['doctor_name', 'count'], '預約人數詳細', 'appointmentEmpty');
-    renderPie('incomeChart', res.income_data, ['doctor_name', 'item_name', 'income'], '收入統計詳細', 'incomeEmpty');
-  }, 'json');
-}
-function renderPie(id, data, fields, title, emptyId) {
-  const ctx = document.getElementById(id)?.getContext('2d');
-  if (!ctx || !data.length) {
-    $(`#${emptyId}`).text('⚠ 無資料');
-    return;
-  }
-  $(`#${emptyId}`).text('');
-  const labels = data.map(d => fields.map(f => d[f]).join(' - '));
-  const values = data.map(d => d[fields.at(-1)]);
-  const chartColors = ['#FF6384', '#36A2EB', '#FFCE56', '#66BB6A', '#BA68C8'];
-  new Chart(ctx, {
-    type: 'pie',
-    data: { labels, datasets: [{ data: values, backgroundColor: chartColors }] },
-    options: {
-      onClick: (e, i) => {
-        if (i.length) {
-          const row = data[i[0].index];
-          let html = '<table class="table table-bordered"><thead><tr>';
-          fields.forEach(f => html += `<th>${f}</th>`);
-          html += '</tr></thead><tbody><tr>';
-          fields.forEach(f => html += `<td>${row[f]}</td>`);
-          html += '</tr></tbody></table>';
-          $('#detailTitle').text(title);
-          $('#detailTableContainer').html(html);
-          $('#detailModal').show();
-        }
-      }
-    }
+			.chart-box {
+				flex: 1 1 32%;
+				min-height: 300px;
+				text-align: center;
+				position: relative;
+			}
+
+			.modal {
+				display: none;
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.6);
+				z-index: 9999;
+			}
+
+			.modal-content {
+				background: white;
+				padding: 20px;
+				margin: 10% auto;
+				width: 90%;
+				max-width: 1000px;
+			}
+
+			.close {
+				float: right;
+				font-size: 24px;
+				cursor: pointer;
+			}
+
+			.spinner-border {
+				width: 3rem;
+				height: 3rem;
+			}
+
+			.text-danger-bold {
+				font-weight: bold;
+				color: red;
+			}
+		</style>
+
+		<div class="container">
+			<h2 class="text-center my-4">項目／預約／收入 統計圖表</h2>
+
+			<form id="filterForm" class="row g-3 justify-content-center mb-4">
+				<div class="col-auto">
+					<select id="type" name="type" class="form-select">
+						<option value="day">單日</option>
+						<option value="month">整月</option>
+						<option value="year">整年</option>
+					</select>
+				</div>
+				<div class="col-auto"><select id="year" name="year" class="form-select"></select></div>
+				<div class="col-auto"><select id="month" name="month" class="form-select"></select></div>
+				<div class="col-auto"><select id="day" name="day" class="form-select"></select></div>
+				<div class="col-auto">
+					<select id="doctor_id" name="doctor_id" class="form-select">
+						<option value="0">全部</option>
+						<?php
+						$res = mysqli_query($link, "SELECT doctor_id, doctor FROM doctor");
+						while ($row = mysqli_fetch_assoc($res)) {
+							echo "<option value='{$row['doctor_id']}'>{$row['doctor']}</option>";
+						}
+						?>
+					</select>
+				</div>
+				<div class="col-auto">
+					<select id="item_name" name="item_name" class="form-select">
+						<option value="全部">全部項目</option>
+						<?php
+						$res = mysqli_query($link, "SELECT DISTINCT item FROM item");
+						while ($row = mysqli_fetch_assoc($res)) {
+							echo "<option value='{$row['item']}'>{$row['item']}</option>";
+						}
+						?>
+					</select>
+				</div>
+				<div class="col-auto"><button class="btn btn-primary" type="submit">查詢</button></div>
+				<div class="col-auto">
+					<a href="a_comprehensive.php" class="btn btn-secondary">返回圖表</a>
+				</div>
+			</form>
+
+			<div id="loadingSpinner" class="text-center" style="display:none; margin-top: 20px;">
+				<div class="spinner-border text-primary" role="status">
+					<span class="visually-hidden">Loading...</span>
+				</div>
+			</div>
+
+			<div class="chart-row">
+				<div class="chart-box">
+					<h5 class="text-center">項目數比例</h5>
+					<canvas id="itemChart"></canvas>
+					<div id="itemEmpty" class="text-danger-bold"></div>
+				</div>
+				<div class="chart-box">
+					<h5 class="text-center">預約人數比例</h5>
+					<canvas id="appointmentChart"></canvas>
+					<div id="appointmentEmpty" class="text-danger-bold"></div>
+				</div>
+				<div class="chart-box">
+					<h5 class="text-center">收入統計</h5>
+					<canvas id="incomeChart"></canvas>
+					<div id="incomeEmpty" class="text-danger-bold"></div>
+				</div>
+			</div>
+
+			<div id="detailModal" class="modal">
+				<div class="modal-content">
+					<span class="close" onclick="$('#detailModal').hide()">&times;</span>
+					<h4 id="detailTitle" class="mb-3"></h4>
+					<div id="detailTableContainer"></div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			let charts = {};
+			let globalData = {}; // 保存所有資料
+
+			function fetchChartData() {
+				$('#loadingSpinner').show();
+				const data = $('#filterForm').serialize();
+				$.get('數據查詢2.php', data, function (res) {
+					globalData = res;
+					renderItemChart(res.item_summary);
+					renderAppointmentChart(res.appointment_counts);
+					renderIncomeChart(res.income_summary);
+					$('#loadingSpinner').hide();
+				}, 'json').fail(function () {
+					$('#loadingSpinner').hide();
+				});
+			}
+
+			// 項目數比例
+			function renderItemChart(data) {
+				const ctx = document.getElementById('itemChart')?.getContext('2d');
+				if (charts['itemChart']) charts['itemChart'].destroy();
+				if (!ctx || !data.length) {
+					$('#itemEmpty').text('⚠ 無資料');
+					return;
+				}
+				$('#itemEmpty').text('');
+				const labels = data.map(d => d.item_name);
+				const values = data.map(d => d.count);
+				const chartColors = generateColors(values.length);
+				charts['itemChart'] = new Chart(ctx, {
+					type: 'pie',
+					data: { labels, datasets: [{ data: values, backgroundColor: chartColors }] },
+					options: {
+						onClick: (e, i) => {
+							if (i.length) showItemDetails(labels[i[0].index]);
+						}
+					}
+				});
+			}
+
+			// 預約人數比例
+			function renderAppointmentChart(data) {
+				const ctx = document.getElementById('appointmentChart')?.getContext('2d');
+				if (charts['appointmentChart']) charts['appointmentChart'].destroy();
+				if (!ctx || !data.length) {
+					$('#appointmentEmpty').text('⚠ 無資料');
+					return;
+				}
+				$('#appointmentEmpty').text('');
+				const labels = data.map(d => d.doctor_name);
+				const values = data.map(d => d.count);
+				const chartColors = generateColors(values.length);
+				charts['appointmentChart'] = new Chart(ctx, {
+					type: 'pie',
+					data: { labels, datasets: [{ data: values, backgroundColor: chartColors }] },
+					options: {
+						onClick: () => {
+							showAppointmentDetails();
+						}
+					}
+				});
+			}
+
+			// 收入統計
+			function renderIncomeChart(data) {
+				const ctx = document.getElementById('incomeChart')?.getContext('2d');
+				if (charts['incomeChart']) charts['incomeChart'].destroy();
+				if (!ctx || !data.length) {
+					$('#incomeEmpty').text('⚠ 無資料');
+					return;
+				}
+				$('#incomeEmpty').text('');
+				const labels = data.map(d => d.item_name);
+				const values = data.map(d => d.total_income);
+				const chartColors = generateColors(values.length);
+				charts['incomeChart'] = new Chart(ctx, {
+					type: 'pie',
+					data: { labels, datasets: [{ data: values, backgroundColor: chartColors }] },
+					options: {
+						onClick: (e, i) => {
+							if (i.length) showIncomeDetails(labels[i[0].index]);
+						}
+					}
+				});
+			}
+
+			// ✨ 詳細表格 - 項目數比例
+			function showItemDetails(item_name) {
+				let totalCount = 0;
+				let html = `
+	<table class="table table-bordered">
+	  <thead><tr><th>日期</th><th>治療師</th><th>項目名稱</th><th>次數</th></tr></thead><tbody>
+  `;
+				globalData.item_details.filter(d => d.item_name === item_name)
+					.forEach(d => {
+						html += `<tr><td>${d.record_date || '-'}</td><td>${d.doctor_name}</td><td>${d.item_name}</td><td>${d.count}</td></tr>`;
+						totalCount += parseInt(d.count);
+					});
+				html += `</tbody>
+	<tfoot><tr><th colspan="3" style="text-align:right;">總次數：</th><th>${totalCount}</th></tr></tfoot>
+	</table>`;
+
+				$('#detailTitle').text('項目數詳細');
+				$('#detailTableContainer').html(html);
+				$('#detailModal').show();
+			}
+
+			// ✨ 詳細表格 - 預約人數比例
+			function showAppointmentDetails() {
+  let totalCount = 0;
+  let html = `
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>日期</th>
+          <th>治療師</th>
+          <th>預約者</th>
+          <th>預約日期</th>
+          <th>時間</th>
+          <th>使用項目</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  let sortedDetails = [...globalData.appointment_details];
+  sortedDetails.sort((a, b) => {
+    const dateA = new Date(`${a.record_date} ${a.appointment_time}`);
+    const dateB = new Date(`${b.record_date} ${b.appointment_time}`);
+    return dateA - dateB;
   });
+
+  sortedDetails.forEach(d => {
+    html += `
+      <tr>
+        <td>${d.record_date || '-'}</td>
+        <td>${d.doctor_name || '-'}</td>
+        <td>${d.user_name || '-'}</td>
+        <td>${d.record_date || '-'}</td>
+        <td>${d.appointment_time || '-'}</td>
+        <td>${d.item_names || '-'}</td>
+      </tr>
+    `;
+    totalCount++;
+  });
+
+  html += `
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="5" style="text-align:right;">總人次：</th>
+          <th>${totalCount}</th>
+        </tr>
+      </tfoot>
+    </table>`;
+
+  $('#detailTitle').text('預約詳細');
+  $('#detailTableContainer').html(html);
+  $('#detailModal').show();
 }
-$('#filterForm').submit(function (e) {
-  e.preventDefault();
-  fetchChartData();
-});
-$(document).ready(function () {
-  const now = new Date();
-  for (let i = 2023; i <= now.getFullYear(); i++) $('#year').append(`<option value="${i}" ${i === now.getFullYear() ? 'selected' : ''}>${i}</option>`);
-  for (let i = 1; i <= 12; i++) $('#month').append(`<option value="${i}" ${i === now.getMonth() + 1 ? 'selected' : ''}>${i}</option>`);
-  for (let i = 1; i <= 31; i++) $('#day').append(`<option value="${i}" ${i === now.getDate() ? 'selected' : ''}>${i}</option>`);
-  fetchChartData();
-});
-</script>
+
+
+			// ✨ 詳細表格 - 收入統計
+			function showIncomeDetails(item_name) {
+				let totalIncome = 0;
+				let html = `
+	<table class="table table-bordered">
+	  <thead><tr><th>日期</th><th>治療師</th><th>項目名稱</th><th>單價</th><th>總收入</th></tr></thead><tbody>
+  `;
+				globalData.income_details.filter(d => d.item_name === item_name)
+					.forEach(d => {
+						html += `<tr><td>${d.record_date || '-'}</td><td>${d.doctor_name}</td><td>${d.item_name}</td><td>${d.unit_price}</td><td>${d.total_income}</td></tr>`;
+						totalIncome += parseFloat(d.total_income);
+					});
+				html += `</tbody>
+	<tfoot><tr><th colspan="4" style="text-align:right;">總收入：</th><th>${totalIncome}</th></tr></tfoot>
+	</table>`;
+
+				$('#detailTitle').text('收入統計詳細');
+				$('#detailTableContainer').html(html);
+				$('#detailModal').show();
+			}
+
+			// ✨ 自動配色
+			function generateColors(count) {
+				const colors = [];
+				for (let i = 0; i < count; i++) {
+					const r = Math.floor(Math.random() * 200) + 30;
+					const g = Math.floor(Math.random() * 200) + 30;
+					const b = Math.floor(Math.random() * 200) + 30;
+					colors.push(`rgba(${r}, ${g}, ${b}, 0.7)`);
+				}
+				return colors;
+			}
+
+			// ✨ 初始載入
+			$('#filterForm').submit(function (e) {
+				e.preventDefault();
+				fetchChartData();
+			});
+
+			$(document).ready(function () {
+				const now = new Date();
+				for (let i = 2023; i <= now.getFullYear(); i++) $('#year').append(`<option value="${i}" ${i === now.getFullYear() ? 'selected' : ''}>${i}</option>`);
+				for (let i = 1; i <= 12; i++) $('#month').append(`<option value="${i}" ${i === now.getMonth() + 1 ? 'selected' : ''}>${i}</option>`);
+				for (let i = 1; i <= 31; i++) $('#day').append(`<option value="${i}" ${i === now.getDate() ? 'selected' : ''}>${i}</option>`);
+				fetchChartData();
+			});
+
+		</script>
+
+
 
 
 
