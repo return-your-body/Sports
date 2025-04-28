@@ -345,6 +345,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
   .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; }
   .modal-content { background: white; padding: 20px; margin: 10% auto; width: 90%; max-width: 1000px; }
   .close { float: right; font-size: 24px; cursor: pointer; }
+  .spinner-border { width: 3rem; height: 3rem; }
 </style>
 
 <div class="container" id="mainContainer">
@@ -375,23 +376,28 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
     <div class="col-auto"><a href="a_statistics_charts.php" class="btn btn-secondary">其他圖表</a></div>
   </form>
 
+  <div id="loadingSpinner" class="text-center" style="display:none;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
   <div class="text-center mb-4">
     <button class="btn btn-success" onclick="downloadChart('workChart', '總工作時數')">匯出總工時圖表(PNG)</button>
     <button class="btn btn-success" onclick="downloadChart('leaveChart', '請假統計')">匯出請假統計圖表(PNG)</button>
     <button class="btn btn-danger" onclick="downloadAllChartsPDF()">匯出全部圖表(PDF)</button>
     <button class="btn btn-primary" onclick="downloadAllDataExcel()">匯出詳細資料(Excel)</button>
-	<!-- <button class="btn btn-warning" onclick="sendReportEmail()">寄送今日報表到Email</button> -->
   </div>
 
   <div class="chart-container">
     <div class="chart-row">
       <div class="chart-box">
-        <h5 class="text-center">總工作時數</h5>
+        <h5>總工作時數</h5>
         <canvas id="workChart"></canvas>
         <div id="workEmpty" class="no-data" style="display:none;">⚠ 無資料</div>
       </div>
       <div class="chart-box">
-        <h5 class="text-center">請假統計</h5>
+        <h5>請假統計</h5>
         <canvas id="leaveChart"></canvas>
         <div id="leaveEmpty" class="no-data" style="display:none;">⚠ 無資料</div>
       </div>
@@ -412,20 +418,23 @@ let workChart, leaveChart;
 let workData = [], leaveData = [];
 
 function fetchData() {
+  $('#loadingSpinner').show();
   const data = $('#filterForm').serialize();
   $.get('數據查詢.php', data, function (res) {
     workData = res.work;
     leaveData = res.leave;
     calculateAbsentRate();
     drawCharts();
-  }, 'json');
+    $('#loadingSpinner').hide();
+  }, 'json').fail(function () {
+    $('#loadingSpinner').hide();
+    alert('❌ 資料取得失敗');
+  });
 }
 
 function calculateAbsentRate() {
   $('#warningArea').remove();
   let warningList = [];
-  let maxRate = 0;
-  let maxDoctor = null;
 
   workData.forEach(doctor => {
     const absent = doctor.absent_count || 0;
@@ -434,18 +443,9 @@ function calculateAbsentRate() {
     if (totalDays === 0) return;
     const absentRate = (absent / totalDays) * 100;
     doctor.absent_rate = absentRate.toFixed(1);
-
-    if (absentRate > maxRate) {
-      maxRate = absentRate;
-      maxDoctor = doctor.doctor_name;
-    }
     if (absentRate >= 20) {
       warningList.push(`${doctor.doctor_name}（曠工率 ${doctor.absent_rate}%）`);
     }
-  });
-
-  workData.forEach(doctor => {
-    doctor.highlight = (doctor.doctor_name === maxDoctor);
   });
 
   if (warningList.length) {
@@ -474,30 +474,10 @@ function drawCharts() {
           { label: '總工時(小時)', data: workData.map(i => i.total_hours), backgroundColor: '#80deea' },
           { label: '遲到(分鐘)', data: workData.map(i => i.late_minutes), backgroundColor: '#f48fb1' },
           { label: '加班(分鐘)', data: workData.map(i => i.overtime_minutes), backgroundColor: '#fff176' },
-          {
-            label: '曠工次數(次)',
-            data: workData.map(i => i.absent_count),
-            backgroundColor: workData.map(i =>
-              i.absent_count >= 2 ? (i.highlight ? '#d50000' : '#ff1744') : '#ff8a65'
-            )
-          }
+          { label: '曠工次數(次)', data: workData.map(i => i.absent_count), backgroundColor: '#ff8a65' }
         ]
       },
       options: {
-        plugins: {
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const index = context.dataIndex;
-                const doctor = workData[index];
-                if (context.dataset.label === '曠工次數(次)') {
-                  return `曠工次數: ${doctor.absent_count}次 (曠工率 ${doctor.absent_rate || 0}%)`;
-                }
-                return `${context.dataset.label}: ${context.formattedValue}`;
-              }
-            }
-          }
-        },
         onClick: (e, i) => i.length && showDetail('work', workData[i[0].index])
       }
     });
@@ -515,7 +495,7 @@ function drawCharts() {
         datasets: leaveData[0]?.details ? Object.keys(leaveData[0].details).map((typeName, idx) => ({
           label: `${typeName}(分鐘)`,
           data: leaveData.map(d => (d.details[typeName] || []).reduce((s, v) => s + v.minutes, 0)),
-          backgroundColor: `rgba(${120 + idx * 20}, ${100 + idx * 30}, ${220 - idx * 10}, 0.6)`
+          backgroundColor: `rgba(${120+idx*20}, ${100+idx*30}, ${220-idx*10}, 0.6)`
         })) : []
       },
       options: {
@@ -530,15 +510,28 @@ function drawCharts() {
 function showDetail(type, detail) {
   let html = '<table class="table table-bordered"><thead><tr>';
   if (type === 'work') {
-    html += '<th>日期</th><th>上班時間</th><th>下班時間</th><th>遲到</th><th>加班</th><th>總工時</th></tr></thead><tbody>';
+    html += '<th>日期</th><th>上班</th><th>下班</th><th>遲到</th><th>加班</th><th>總工時</th></tr></thead><tbody>';
     detail.details.forEach(d => {
-      html += `<tr><td>${d.work_date}</td><td>${d.clock_in_time}</td><td>${d.clock_out_time}</td><td>${d.late_minutes}</td><td>${d.overtime_minutes}</td><td>${d.total_hours === '曠工' ? '<span style="color:red;font-weight:bold;">⚠ 曠工</span>' : d.total_hours}</td></tr>`;
+      html += `<tr>
+        <td>${d.work_date}</td>
+        <td>${d.clock_in_time}</td>
+        <td>${d.clock_out_time}</td>
+        <td>${d.late_minutes !== '-' ? d.late_minutes + ' 分鐘' : '-'}</td>
+        <td>${d.overtime_minutes !== '-' ? d.overtime_minutes + ' 分鐘' : '-'}</td>
+        <td>${d.total_hours === '曠工' ? '<span style="color:red;font-weight:bold;">⚠ 曠工</span>' : d.total_hours + ' 小時'}</td>
+      </tr>`;
     });
   } else {
     html += '<th>請假類別</th><th>起</th><th>訖</th><th>原因</th><th>分鐘</th></tr></thead><tbody>';
     for (const [typeName, arr] of Object.entries(detail.details)) {
       arr.forEach(row => {
-        html += `<tr><td>${typeName}</td><td>${row.start}</td><td>${row.end}</td><td>${row.reason}</td><td>${row.minutes} 分鐘</td></tr>`;
+        html += `<tr>
+          <td>${typeName}</td>
+          <td>${row.start}</td>
+          <td>${row.end}</td>
+          <td>${row.reason}</td>
+          <td>${row.minutes} 分鐘</td>
+        </tr>`;
       });
     }
   }
@@ -547,6 +540,7 @@ function showDetail(type, detail) {
   $('#detailTableContainer').html(html);
   $('#detailModal').show();
 }
+
 
 function downloadChart(canvasId, title) {
   const canvas = document.getElementById(canvasId);
@@ -569,7 +563,7 @@ function downloadAllChartsPDF() {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
       if (idx > 0) pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, 20, pdfWidth, pdfHeight - 20);
+      pdf.addImage(imgData, 'PNG', 0, 20, pdfWidth, pdfHeight-20);
     });
     pdf.save(`治療師統計報表_${new Date().toISOString().slice(0,10)}.pdf`);
   });
@@ -577,7 +571,9 @@ function downloadAllChartsPDF() {
 
 function downloadAllDataExcel() {
   let wb = XLSX.utils.book_new();
-  let workRows = [["日期", "治療師", "上班時間", "下班時間", "遲到(分鐘)", "加班(分鐘)", "總工時"]];
+  
+  // 出勤資料
+  let workRows = [["日期", "治療師", "上班時間", "下班時間", "遲到(分鐘)", "加班(分鐘)", "總工時(小時)"]];
   workData.forEach(doctor => {
     doctor.details.forEach(detail => {
       workRows.push([
@@ -585,15 +581,16 @@ function downloadAllDataExcel() {
         doctor.doctor_name,
         detail.clock_in_time,
         detail.clock_out_time,
-        detail.late_minutes,
-        detail.overtime_minutes,
-        detail.total_hours === '曠工' ? '⚠ 曠工' : detail.total_hours
+        detail.late_minutes !== '-' ? `${detail.late_minutes} 分鐘` : '-',
+        detail.overtime_minutes !== '-' ? `${detail.overtime_minutes} 分鐘` : '-',
+        detail.total_hours === '曠工' ? '⚠ 曠工' : `${detail.total_hours} 小時`
       ]);
     });
   });
   let workSheet = XLSX.utils.aoa_to_sheet(workRows);
   XLSX.utils.book_append_sheet(wb, workSheet, "出勤資料");
 
+  // 請假資料
   let leaveRows = [["治療師", "請假類別", "起", "訖", "原因", "分鐘"]];
   leaveData.forEach(doctor => {
     for (const [typeName, arr] of Object.entries(doctor.details)) {
@@ -604,7 +601,7 @@ function downloadAllDataExcel() {
           detail.start,
           detail.end,
           detail.reason,
-          detail.minutes
+          `${detail.minutes} 分鐘`
         ]);
       });
     }
@@ -615,45 +612,21 @@ function downloadAllDataExcel() {
   XLSX.writeFile(wb, `治療師統計資料_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
+
 $('#filterForm').submit(function (e) {
   e.preventDefault();
-  const formData = $('#filterForm').serializeArray();
-  localStorage.setItem('lastFilter', JSON.stringify(formData));
   fetchData();
 });
 
 $(document).ready(function () {
   const now = new Date();
   const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
-  for (let i = 2023; i <= y; i++) $('#year').append(`<option value="${i}" ${i === y ? 'selected' : ''}>${i}</option>`);
-  for (let i = 1; i <= 12; i++) $('#month').append(`<option value="${i}" ${i === m ? 'selected' : ''}>${i}</option>`);
-  for (let i = 1; i <= 31; i++) $('#day').append(`<option value="${i}" ${i === d ? 'selected' : ''}>${i}</option>`);
-  
-  const lastFilter = localStorage.getItem('lastFilter');
-  if (lastFilter) {
-    const filters = JSON.parse(lastFilter);
-    filters.forEach(f => {
-      $(`[name="${f.name}"]`).val(f.value);
-    });
-  }
+  for (let i = 2023; i <= y; i++) $('#year').append(`<option value="${i}" ${i===y?'selected':''}>${i}</option>`);
+  for (let i = 1; i <= 12; i++) $('#month').append(`<option value="${i}" ${i===m?'selected':''}>${i}</option>`);
+  for (let i = 1; i <= 31; i++) $('#day').append(`<option value="${i}" ${i===d?'selected':''}>${i}</option>`);
   fetchData();
 });
-
-
-// function sendReportEmail() {
-//   if (!confirm('確定要寄送今日統計報表到指定Email？')) return;
-
-//   $.post('報表寄信.php', {}, function (res) {
-//     if (res.success) {
-//       alert('✅ 報表已成功寄出！');
-//     } else {
-//       alert('❌ 報表寄送失敗：' + res.message);
-//     }
-//   }, 'json');
-// }
-
 </script>
-
 
 		</div>
 		<!-- Global Mailform Output-->
