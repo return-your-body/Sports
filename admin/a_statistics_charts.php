@@ -404,9 +404,8 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 						<option value="0">全部</option>
 						<?php
 						$res = mysqli_query($link, "SELECT doctor_id, doctor FROM doctor");
-						while ($row = mysqli_fetch_assoc($res)) {
+						while ($row = mysqli_fetch_assoc($res))
 							echo "<option value='{$row['doctor_id']}'>{$row['doctor']}</option>";
-						}
 						?>
 					</select>
 				</div>
@@ -415,31 +414,20 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 						<option value="全部">全部項目</option>
 						<?php
 						$res = mysqli_query($link, "SELECT DISTINCT item FROM item");
-						while ($row = mysqli_fetch_assoc($res)) {
+						while ($row = mysqli_fetch_assoc($res))
 							echo "<option value='{$row['item']}'>{$row['item']}</option>";
-						}
 						?>
 					</select>
 				</div>
 				<div class="col-auto"><button class="btn btn-primary" type="submit">查詢</button></div>
-				<div class="col-auto">
-					<a href="a_comprehensive.php" class="btn btn-secondary">返回其他圖表</a>
-				</div>
+				<div class="col-auto"><a href="a_comprehensive.php" class="btn btn-secondary">返回圖表</a></div>
 			</form>
 
 			<div class="text-center mb-4">
+				<button class="btn btn-success" onclick="downloadChart('itemChart', '項目數比例')">匯出項目數圖(PNG)</button>
 				<button class="btn btn-success"
-					onclick="downloadChart('itemChart', '項目數比例', 'png')">匯出項目數圖(PNG)</button>
-				<!-- <button class="btn btn-success"
-					onclick="downloadChart('itemChart', '項目數比例', 'jpg')">匯出項目數圖(JPG)</button> -->
-				<button class="btn btn-success"
-					onclick="downloadChart('appointmentChart', '預約人數比例', 'png')">匯出預約人數圖(PNG)</button>
-				<!-- <button class="btn btn-success"
-					onclick="downloadChart('appointmentChart', '預約人數比例', 'jpg')">匯出預約人數圖(JPG)</button> -->
-				<button class="btn btn-success"
-					onclick="downloadChart('incomeChart', '收入統計', 'png')">匯出收入統計圖(PNG)</button>
-				<!-- <button class="btn btn-success"
-					onclick="downloadChart('incomeChart', '收入統計', 'jpg')">匯出收入統計圖(JPG)</button> -->
+					onclick="downloadChart('appointmentChart', '預約人數比例')">匯出預約人數圖(PNG)</button>
+				<button class="btn btn-success" onclick="downloadChart('incomeChart', '收入統計')">匯出收入統計圖(PNG)</button>
 				<button class="btn btn-danger" onclick="downloadAllChartsPDF()">匯出全部圖表(PDF)</button>
 				<button class="btn btn-primary" onclick="downloadAllDataExcel()">匯出詳細資料(Excel)</button>
 			</div>
@@ -476,7 +464,6 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				</div>
 			</div>
 		</div>
-
 		<script>
 			let charts = {};
 			let globalData = {};
@@ -486,16 +473,16 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				const data = $('#filterForm').serialize();
 				$.get('數據查詢2.php', data, function (res) {
 					globalData = res;
-					renderPie('itemChart', res.item_summary, 'item_name', 'count');
-					renderPie('appointmentChart', res.appointment_counts, 'doctor_name', 'count');
-					renderPie('incomeChart', res.income_summary, 'item_name', 'total_income');
+					renderPie('itemChart', res.item_summary, 'item_name', 'count', '次');
+					renderPie('appointmentChart', res.appointment_counts, 'doctor_name', 'count', '人');
+					renderPie('incomeChart', res.income_summary, 'item_name', 'total_income', '元');
 					$('#loadingSpinner').hide();
 				}, 'json').fail(function () {
 					$('#loadingSpinner').hide();
 				});
 			}
 
-			function renderPie(id, data, labelField, valueField) {
+			function renderPie(id, data, labelField, valueField, unit) {
 				const ctx = document.getElementById(id)?.getContext('2d');
 				if (charts[id]) charts[id].destroy();
 				const emptyDiv = document.getElementById(id.replace('Chart', 'Empty'));
@@ -520,7 +507,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 							datalabels: {
 								color: '#333',
 								font: { weight: 'bold' },
-								formatter: (value, ctx) => `${ctx.chart.data.labels[ctx.dataIndex]} (${value})`
+								formatter: (value, ctx) => `${ctx.chart.data.labels[ctx.dataIndex]} (${value}${unit})`
 							}
 						},
 						onClick: (e, i) => {
@@ -544,15 +531,21 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 			function showDetail(chartId, index) {
 				let detailList = [];
+				let title = '';
+
 				if (chartId === 'itemChart') {
 					detailList = globalData.item_details;
+					title = '【項目數比例】詳細資料';
 				} else if (chartId === 'appointmentChart') {
 					detailList = globalData.appointment_details;
+					title = '【預約人數比例】詳細資料';
 				} else if (chartId === 'incomeChart') {
 					detailList = globalData.income_details;
+					title = '【收入統計】詳細資料';
 				}
 
 				if (!detailList.length) return;
+
 				let html = '<table class="table table-bordered"><thead><tr>';
 				if (chartId === 'itemChart') {
 					html += '<th>日期</th><th>治療師</th><th>項目</th><th>次數</th>';
@@ -563,29 +556,42 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				}
 				html += '</tr></thead><tbody>';
 
+				let sum = 0;
 				detailList.forEach(d => {
 					html += '<tr>';
 					if (chartId === 'itemChart') {
-						html += `<td>${d.record_date || '-'}</td><td>${d.doctor_name || '-'}</td><td>${d.item_name || '-'}</td><td>${d.count}</td>`;
+						html += `<td>${d.record_date || '-'}</td><td>${d.doctor_name || '-'}</td><td>${d.item_name || '-'}</td><td>${d.count || 0} 次</td>`;
+						sum += Number(d.count);
 					} else if (chartId === 'appointmentChart') {
 						html += `<td>${d.record_date || '-'}</td><td>${d.doctor_name || '-'}</td><td>${d.user_name || '-'}</td><td>${d.appointment_time || '-'}</td><td>${d.item_names || '-'}</td>`;
+						sum++;
 					} else {
-						html += `<td>${d.record_date || '-'}</td><td>${d.doctor_name || '-'}</td><td>${d.item_name || '-'}</td><td>${d.unit_price}</td><td>${d.total_income}</td>`;
+						html += `<td>${d.record_date || '-'}</td><td>${d.doctor_name || '-'}</td><td>${d.item_name || '-'}</td><td>${d.unit_price || 0} 元</td><td>${d.total_income || 0} 元</td>`;
+						sum += Number(d.total_income);
 					}
 					html += '</tr>';
 				});
 
-				html += '</tbody></table>';
-				$('#detailTitle').text('詳細資料');
+				html += '</tbody><tfoot><tr><td colspan="5" class="text-end fw-bold">';
+				if (chartId === 'itemChart') {
+					html += `總次數：${sum} 次`;
+				} else if (chartId === 'appointmentChart') {
+					html += `總人數：${sum} 人`;
+				} else {
+					html += `總收入：${sum} 元`;
+				}
+				html += '</td></tr></tfoot></table>';
+
+				$('#detailTitle').text(title);
 				$('#detailTableContainer').html(html);
 				$('#detailModal').show();
 			}
 
-			function downloadChart(id, title, type) {
+			function downloadChart(id, title) {
 				const canvas = document.getElementById(id);
 				const link = document.createElement('a');
-				link.href = canvas.toDataURL(`image/${type}`);
-				link.download = `${title}_${new Date().toISOString().slice(0, 10)}.${type}`;
+				link.href = canvas.toDataURL('image/png');
+				link.download = `${title}_${new Date().toISOString().slice(0, 10)}.png`;
 				link.click();
 			}
 
@@ -610,8 +616,60 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 
 			function downloadAllDataExcel() {
 				let wb = XLSX.utils.book_new();
-				// Same logic to export detailed table to Excel...
+
+				// 項目數比例
+				let itemRows = [["日期", "治療師", "項目名稱", "次數"]];
+				let totalItemCount = 0;
+				globalData.item_details?.forEach(d => {
+					itemRows.push([
+						d.record_date || '-',
+						d.doctor_name || '-',
+						d.item_name || '-',
+						d.count || 0
+					]);
+					totalItemCount += parseInt(d.count) || 0;
+				});
+				itemRows.push(["", "", "總次數", totalItemCount]);
+				let itemSheet = XLSX.utils.aoa_to_sheet(itemRows);
+				XLSX.utils.book_append_sheet(wb, itemSheet, "項目數比例");
+
+				// 預約人數比例
+				let appRows = [["日期", "治療師", "預約者", "時間", "使用項目"]];
+				let totalAppCount = 0;
+				globalData.appointment_details?.forEach(d => {
+					appRows.push([
+						d.record_date || '-',
+						d.doctor_name || '-',
+						d.user_name || '-',
+						d.appointment_time || '-',
+						d.item_names || '-'
+					]);
+					totalAppCount++;
+				});
+				appRows.push(["", "", "", "總人數", totalAppCount]);
+				let appSheet = XLSX.utils.aoa_to_sheet(appRows);
+				XLSX.utils.book_append_sheet(wb, appSheet, "預約人數比例");
+
+				// 收入統計
+				let incomeRows = [["日期", "治療師", "項目名稱", "單價", "總收入"]];
+				let totalIncome = 0;
+				globalData.income_details?.forEach(d => {
+					incomeRows.push([
+						d.record_date || '-',
+						d.doctor_name || '-',
+						d.item_name || '-',
+						d.unit_price || 0,
+						d.total_income || 0
+					]);
+					totalIncome += parseFloat(d.total_income) || 0;
+				});
+				incomeRows.push(["", "", "", "總收入", totalIncome]);
+				let incomeSheet = XLSX.utils.aoa_to_sheet(incomeRows);
+				XLSX.utils.book_append_sheet(wb, incomeSheet, "收入統計");
+
+				XLSX.writeFile(wb, `項目預約收入統計_${new Date().toISOString().slice(0, 10)}.xlsx`);
 			}
+
 
 			$('#filterForm').submit(function (e) {
 				e.preventDefault();
@@ -625,6 +683,7 @@ $pendingCount = $pendingCountResult->fetch_assoc()['pending_count'];
 				for (let i = 1; i <= 31; i++) $('#day').append(`<option value="${i}" ${i === now.getDate() ? 'selected' : ''}>${i}</option>`);
 				fetchChartData();
 			});
+
 		</script>
 
 

@@ -9,30 +9,33 @@ $day = $_GET['day'] ?? date('d');
 $doctor_id = $_GET['doctor_id'] ?? 0;
 
 $where = "1";
+$leaveWhere = "1"; // <--- 新增 leave 查詢條件
 $dateTarget = "$year-$month-$day";
 
+// 時間篩選
 switch ($type) {
   case 'year':
     $where .= " AND YEAR(ds.date) = $year";
-    $leaveWhere = "YEAR(l.start_date) = $year OR YEAR(l.end_date) = $year";
+    $leaveWhere .= " AND (YEAR(l.start_date) = $year OR YEAR(l.end_date) = $year)";
     break;
   case 'month':
     $where .= " AND YEAR(ds.date) = $year AND MONTH(ds.date) = $month";
-    $leaveWhere = "(YEAR(l.start_date) = $year AND MONTH(l.start_date) = $month)
-                    OR (YEAR(l.end_date) = $year AND MONTH(l.end_date) = $month)";
+    $leaveWhere .= " AND ((YEAR(l.start_date) = $year AND MONTH(l.start_date) = $month) OR (YEAR(l.end_date) = $year AND MONTH(l.end_date) = $month))";
     break;
   case 'day':
   default:
     $where .= " AND ds.date = '$dateTarget'";
-    $leaveWhere = "DATE(l.start_date) <= '$dateTarget' AND DATE(l.end_date) >= '$dateTarget'";
+    $leaveWhere .= " AND (DATE(l.start_date) <= '$dateTarget' AND DATE(l.end_date) >= '$dateTarget')";
     break;
 }
+
+// 治療師篩選
 if ($doctor_id != 0) {
   $where .= " AND ds.doctor_id = $doctor_id";
   $leaveWhere .= " AND l.doctor_id = $doctor_id";
 }
 
-// 先查出所有請假範圍
+// 取得請假期間（做曠工判斷用）
 $leaveDates = [];
 $resLeave = mysqli_query($link, "
   SELECT doctor_id, start_date, end_date
@@ -48,9 +51,9 @@ while ($r = mysqli_fetch_assoc($resLeave)) {
   }
 }
 
-// 撈打卡資料（正常有打卡）
+// 出勤資料（有打卡）
 $work = [];
-$res = mysqli_query($link, "
+$resWork = mysqli_query($link, "
   SELECT d.doctor AS doctor_name, d.doctor_id, a.work_date,
     TIME_FORMAT(a.clock_in, '%H:%i') AS clock_in_time,
     TIME_FORMAT(a.clock_out, '%H:%i') AS clock_out_time,
@@ -69,7 +72,7 @@ $res = mysqli_query($link, "
 ");
 
 $temp = [];
-while ($r = mysqli_fetch_assoc($res)) {
+while ($r = mysqli_fetch_assoc($resWork)) {
   $docId = $r['doctor_id'];
   $date = $r['work_date'];
 
@@ -91,10 +94,12 @@ while ($r = mysqli_fetch_assoc($res)) {
   if (!$isLeave && $r['in_time'] > $r['go_time']) {
     $late = (strtotime($r['in_time']) - strtotime($r['go_time'])) / 60;
   }
+
   $ot = 0;
   if ($r['out_time'] > $r['off_time']) {
     $ot = (strtotime($r['out_time']) - strtotime($r['off_time'])) / 60;
   }
+
   $total = max(0, $r['total_hours']);
   
   $temp[$docId]['total_hours'] += $total;
@@ -110,8 +115,8 @@ while ($r = mysqli_fetch_assoc($res)) {
   ];
 }
 
-// 🔥 查有排班但沒打卡
-$res_absent = mysqli_query($link, "
+// 補上：排班有但沒打卡（判斷曠工）
+$resAbsent = mysqli_query($link, "
   SELECT d.doctor AS doctor_name, d.doctor_id, ds.date AS work_date
   FROM doctorshift ds
   JOIN doctor d ON ds.doctor_id = d.doctor_id
@@ -119,12 +124,12 @@ $res_absent = mysqli_query($link, "
   WHERE a.attendance_id IS NULL AND $where
 ");
 
-while ($r = mysqli_fetch_assoc($res_absent)) {
+while ($r = mysqli_fetch_assoc($resAbsent)) {
   $docId = $r['doctor_id'];
   $date = $r['work_date'];
 
   $isLeave = isset($leaveDates[$docId][$date]);
-  if ($isLeave) continue; // ✅ 有請假，不算曠工
+  if ($isLeave) continue; // 有請假，不算曠工
 
   if (!isset($temp[$docId])) {
     $temp[$docId] = [
@@ -150,9 +155,9 @@ while ($r = mysqli_fetch_assoc($res_absent)) {
 
 $work = array_values($temp);
 
-// 📝 撈請假統計
+// 請假資料
 $leave = [];
-$res2 = mysqli_query($link, "
+$resLeaveData = mysqli_query($link, "
   SELECT l.*, d.doctor AS doctor_name
   FROM leaves l
   JOIN doctor d ON d.doctor_id = l.doctor_id
@@ -160,7 +165,7 @@ $res2 = mysqli_query($link, "
 ");
 
 $temp2 = [];
-while ($r = mysqli_fetch_assoc($res2)) {
+while ($r = mysqli_fetch_assoc($resLeaveData)) {
   $docId = $r['doctor_id'];
   $leave_type = $r['leave_type'] ?? '其他';
   $minutes = (strtotime($r['end_date']) - strtotime($r['start_date'])) / 60;
@@ -185,9 +190,10 @@ while ($r = mysqli_fetch_assoc($res2)) {
   ];
   $temp2[$docId]['total_minutes'] += $minutes;
 }
+
 $leave = array_values($temp2);
 
-// 最後輸出
+// 最後輸出 JSON
 echo json_encode([
   'work' => $work,
   'leave' => $leave
