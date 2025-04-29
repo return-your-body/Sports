@@ -536,6 +536,47 @@ ORDER BY ds.date, d.doctor_id";
                 <label for="month">選擇月份：</label>
                 <select id="month"></select>
                 <a href="a_addds2.php">新增班表</a>
+
+                <!-- 設定離職 按鈕 -->
+                <button onclick="openResignModal()" class="btn btn-danger">設定離職</button>
+
+                <!-- 離職彈窗 -->
+                <div id="resignModal"
+                    style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%, -30%); background:#fff; padding:30px; border:1px solid #ccc; box-shadow: 0px 0px 10px rgba(0,0,0,0.3); z-index:1000;">
+                    <h4>選擇要離職的治療師/助手</h4>
+                    <form action="離職.php" method="POST">
+                        <select name="doctor_id" required>
+                            <option value="">請選擇</option>
+                            <?php
+                            require '../db.php';
+                            $result = $link->query("SELECT doctor_id, doctor FROM doctor WHERE d_status='在職'");
+                            while ($row = $result->fetch_assoc()) {
+                                echo "<option value='{$row['doctor_id']}'>{$row['doctor']}</option>";
+                            }
+                            ?>
+                        </select>
+                        <br><br>
+                        <button type="submit" class="btn btn-danger">確認離職</button>
+                        <button type="button" onclick="closeResignModal()" class="btn btn-secondary">取消</button>
+                    </form>
+                </div>
+
+                <script>
+                    // 開啟離職視窗
+                    function openResignModal() {
+                        document.getElementById('resignModal').style.display = 'block';
+                    }
+
+                    // 關閉離職視窗
+                    function closeResignModal() {
+                        document.getElementById('resignModal').style.display = 'none';
+                    }
+                </script>
+
+
+
+
+
                 <div style="overflow-x: auto; max-width: 100%;">
                     <table class="table-custom">
                         <thead>
